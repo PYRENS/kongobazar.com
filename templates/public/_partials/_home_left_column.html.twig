@@ -1,0 +1,115 @@
+{# ==========================================================================
+   Colonne de gauche de la page d'accueil (même largeur que la sidebar Rayons)
+   Contexte attendu :
+     - adSidebarTop, adSidebarMiddle : Advertisement|null (zoneKey sidebar_top / sidebar_middle)
+     - bestSellers   : Product[] (findBestSellersInStock)
+     - newArrivals   : Product[] (ORDER BY createdAt DESC)
+     - latestPost    : BlogPost|null (dernier article publié)
+   ========================================================================== #}
+<aside class="home-left-col">
+
+    {% if adSidebarTop is defined and adSidebarTop %}
+        <a href="{{ path('ads_click', { id: adSidebarTop.id }) }}" class="home-ad-slot">
+            <img src="{{ vich_uploader_asset(adSidebarTop, 'imageFile') }}" alt="{{ adSidebarTop.title }}" loading="lazy">
+        </a>
+    {% endif %}
+
+    {# --- Meilleures ventes --- #}
+    <div class="home-mini-carousel" data-mini-carousel data-per-page="1">
+        <div class="home-mini-carousel-head">
+            <h6>{{ 'home.best_sellers'|trans }}</h6>
+            <div class="home-mini-carousel-dots">
+                <button type="button" class="dot active" data-page="0"></button>
+                <button type="button" class="dot" data-page="1"></button>
+            </div>
+        </div>
+        <div class="home-mini-carousel-track">
+            {% for product in bestSellers|default([]) %}
+                <div class="home-mini-product">
+                    <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="home-mini-product-img">
+                        <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
+                    </a>
+                    <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="home-mini-product-title">{{ product.title }}</a>
+                    <span class="home-mini-product-price">{{ product.basePrice }} {{ product.currency }}</span>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {# --- Icônes de réassurance --- #}
+    <ul class="home-trust-list">
+        <li>
+            <i class="bi bi-shield-check"></i>
+            <div>
+                <strong>{{ 'home.trust.payment_title'|trans }}</strong>
+                <span>{{ 'home.trust.payment_text'|trans }}</span>
+            </div>
+        </li>
+        <li>
+            <i class="bi bi-geo-alt"></i>
+            <div>
+                <strong>{{ 'home.trust.relay_title'|trans }}</strong>
+                <span>{{ 'home.trust.relay_text'|trans }}</span>
+            </div>
+        </li>
+        <li>
+            <i class="bi bi-arrow-return-left"></i>
+            <div>
+                <strong>{{ 'home.trust.return_title'|trans }}</strong>
+                <span>{{ 'home.trust.return_text'|trans }}</span>
+            </div>
+        </li>
+        <li>
+            <i class="bi bi-rocket-takeoff"></i>
+            <div>
+                <strong>{{ 'home.trust.seller_title'|trans }}</strong>
+                <span>{{ 'home.trust.seller_text'|trans }}</span>
+            </div>
+        </li>
+    </ul>
+
+    {% if adSidebarMiddle is defined and adSidebarMiddle %}
+        <a href="{{ path('ads_click', { id: adSidebarMiddle.id }) }}" class="home-ad-slot">
+            <img src="{{ vich_uploader_asset(adSidebarMiddle, 'imageFile') }}" alt="{{ adSidebarMiddle.title }}" loading="lazy">
+        </a>
+    {% endif %}
+
+    {# --- Dernier article de blog --- #}
+    {% if latestPost is defined and latestPost %}
+        <div class="home-blog-latest">
+            <h6>{{ 'home.latest_blog'|trans }}</h6>
+            <a href="{{ path('blog_show', { slug: latestPost.slug }) }}" class="home-blog-card">
+                {% if latestPost.coverImageName %}
+                    <img src="{{ vich_uploader_asset(latestPost, 'coverImageFile') }}" alt="{{ latestPost.title }}" loading="lazy">
+                {% endif %}
+                <div class="home-blog-card-body">
+                    <span class="home-blog-card-title">{{ latestPost.title }}</span>
+                    <span class="home-blog-card-date">{{ latestPost.publishedAt ? latestPost.publishedAt|date('d M Y') : '' }}</span>
+                </div>
+            </a>
+        </div>
+    {% endif %}
+
+    {# --- Nouveaux articles --- #}
+    <div class="home-mini-carousel" data-mini-carousel data-per-page="1">
+        <div class="home-mini-carousel-head">
+            <h6>{{ 'home.new_arrivals_short'|trans }}</h6>
+            <div class="home-mini-carousel-dots">
+                <button type="button" class="dot active" data-page="0"></button>
+                <button type="button" class="dot" data-page="1"></button>
+            </div>
+        </div>
+        <div class="home-mini-carousel-track">
+            {% for product in newArrivals|default([]) %}
+                <div class="home-mini-product">
+                    <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="home-mini-product-img">
+                        <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
+                    </a>
+                    <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="home-mini-product-title">{{ product.title }}</a>
+                    <span class="home-mini-product-price">{{ product.basePrice }} {{ product.currency }}</span>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</aside>

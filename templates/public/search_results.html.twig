@@ -1,0 +1,30 @@
+{% extends 'public/base.html.twig' %}
+
+{% block title %}Résultats pour "{{ term }}" — KongoBazar{% endblock %}
+{% block meta_description %}Découvrez les produits correspondant à "{{ term }}" sur KongoBazar, la marketplace de référence en RDC.{% endblock %}
+
+{% block body %}
+    <div class="container-kb" style="padding: 30px 0;">
+        <h4>{{ 'search.results_for'|trans({'%term%': term}) }} ({{ products|length }})</h4>
+
+        {% if products|length > 0 %}
+            <div class="home-product-grid" style="margin-top: 20px;">
+                {% for product in products %}
+                    <div class="product-card">
+                        <div class="product-card-media">
+                            <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
+                        </div>
+                        <div class="product-card-body">
+                            <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="product-card-title">{{ product.title }}</a>
+                            <div class="product-card-price">
+                                <span class="price-now">{{ product.basePrice }} {{ product.currency }}</span>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-muted" style="margin-top:20px;">{{ 'search.no_results'|trans }}</p>
+        {% endif %}
+    </div>
+{% endblock %}

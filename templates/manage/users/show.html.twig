@@ -1,0 +1,145 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}{{ targetUser.email }}{% endblock %}
+{% block page_icon %}bi-person{% endblock %}
+{% block page_title %}Détails utilisateur{% endblock %}
+
+{% block body %}
+    <div class="admin-card">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;">
+            {% if targetUser.avatarName %}
+                <img src="{{ vich_uploader_asset(targetUser, 'avatarFile') }}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;">
+            {% else %}
+                <span style="width:64px;height:64px;border-radius:50%;background:{{ targetUser.adminSidebarColor|default('var(--admin-primary)') }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;">
+                    {{ targetUser.initials }}
+                </span>
+            {% endif %}
+            <div>
+                <h5 style="margin:0;">{{ targetUser.getFullName()|default(targetUser.email) }}</h5>
+                <span class="admin-badge admin-badge--{{ targetUser.status == 'banned' ? 'banned' : (targetUser.status == 'suspended' ? 'disabled' : 'active') }}">
+                    {{ targetUser.status }}
+                </span>
+            </div>
+        </div>
+
+        <div class="admin-actions">
+            <a href="{{ path('manage_users_index') }}" class="admin-btn admin-btn--outline">← Retour à la liste</a>
+            <a href="{{ path('manage_users_message', { id: targetUser.id }) }}" class="admin-btn admin-btn--warning">
+                <i class="bi bi-envelope"></i> Message
+            </a>
+            <a href="{{ path('manage_users_activity', { id: targetUser.id }) }}" class="admin-btn admin-btn--primary">
+                <i class="bi bi-graph-up"></i> Activité
+            </a>
+            <form action="{{ path('manage_users_toggle_disable', { id: targetUser.id }) }}" method="post">
+                <button type="submit" class="admin-btn admin-btn--outline">
+                    <i class="bi {{ targetUser.status == 'suspended' ? 'bi-check-circle' : 'bi-pause-circle' }}"></i>
+                    {{ targetUser.status == 'suspended' ? 'Activer' : 'Désactiver' }}
+                </button>
+            </form>
+            <form action="{{ path('manage_users_ban', { id: targetUser.id }) }}" method="post">
+                <button type="submit" class="admin-btn admin-btn--danger">
+                    <i class="bi bi-slash-circle"></i> {{ targetUser.status == 'banned' ? 'Débannir' : 'Bannir' }}
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="admin-card">
+        <h6><i class="bi bi-person-vcard"></i> Informations générales</h6>
+        <table class="admin-table" style="box-shadow:none;margin-bottom:16px;">
+            <tr><td><strong>Prénom</strong></td><td>{{ targetUser.firstName|default('—') }}</td></tr>
+            <tr><td><strong>Nom</strong></td><td>{{ targetUser.lastName|default('—') }}</td></tr>
+            <tr><td><strong>Email</strong></td><td>{{ targetUser.email }}</td></tr>
+            <tr><td><strong>Téléphone</strong></td><td>{{ targetUser.phone|default('—') }}</td></tr>
+            <tr><td><strong>Adresse</strong></td><td>{{ targetUser.address|default('—') }}</td></tr>
+            <tr><td><strong>Localisation</strong></td><td>{{ localisation|default('—') }}</td></tr>
+            <tr><td><strong>Profil</strong></td><td>{{ sellerTypeLabel }}</td></tr>
+            {% if sellerProfile %}
+                <tr>
+                    <td><strong>{{ sellerTypeLabel }}</strong></td>
+                    <td>
+                        {{ sellerProfile.displayName }} —
+                        <a href="{{ path('partner_show', { slug: sellerProfile.slug }) }}" target="_blank">Voir la page <i class="bi bi-box-arrow-up-right"></i></a>
+                    </td>
+                </tr>
+            {% endif %}
+            <tr><td><strong>Inscrit le</strong></td><td>{{ targetUser.createdAt ? targetUser.createdAt|date('d/m/Y H:i') : '—' }}</td></tr>
+        </table>
+
+        <button type="button" class="admin-btn admin-btn--outline" id="toggleEditForm">
+            <i class="bi bi-pencil"></i> Modifier
+        </button>
+
+        <form method="post" action="{{ path('manage_users_update', { id: targetUser.id }) }}" class="row g-3 mt-1" id="editUserForm" style="display:none;">
+            <div class="col-md-6">
+                <label class="form-label">Prénom</label>
+                <input type="text" name="first_name" class="form-control" value="{{ targetUser.firstName }}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Nom</label>
+                <input type="text" name="last_name" class="form-control" value="{{ targetUser.lastName }}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Téléphone</label>
+                <input type="text" name="phone" class="form-control" value="{{ targetUser.phone }}">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Adresse (numéro - voie - quartier)</label>
+                <input type="text" name="address" class="form-control" value="{{ targetUser.address }}" placeholder="ex: 12 - Avenue Kasa-Vubu - Lemba">
+            </div>
+
+            <div class="col-12">
+                <label class="form-label">Localisation</label>
+                <div class="geo-picker" data-geo-picker>
+                    <select data-geo-level="1">
+                        <option value="">Province</option>
+                        {% for province in root_categories_geo %}
+                            <option value="{{ province.id }}">{{ province.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <input type="hidden" name="administrative_unit" data-geo-final-value value="{{ targetUser.administrativeUnit ? targetUser.administrativeUnit.id : '' }}">
+            </div>
+
+            <div class="col-12">
+                <button type="submit" class="admin-btn admin-btn--primary">Enregistrer</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="admin-card">
+        <h6><i class="bi bi-clock-history"></i> Historique de connexion</h6>
+        {% if loginHistory|length > 0 %}
+            <table class="admin-table" style="box-shadow:none;">
+                <thead><tr><th>Date</th><th>Adresse IP</th><th>Appareil</th></tr></thead>
+                <tbody>
+                    {% for entry in loginHistory %}
+                        <tr>
+                            <td>{{ entry.loggedInAt|date('d/m/Y H:i') }}</td>
+                            <td>{{ entry.ipAddress|default('—') }}</td>
+                            <td style="font-size:11px;color:#999;">{{ entry.userAgent|default('—')|slice(0, 60) }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="text-muted">Aucune connexion enregistrée pour l'instant.</p>
+        {% endif %}
+    </div>
+
+    <div class="admin-card">
+        <h6><i class="bi bi-journal-text"></i> Journal d'activité</h6>
+        <p class="text-muted" style="margin:0;">
+            Le système de journalisation (AuditLog) existe dans le modèle de données, mais aucune action de la plateforme n'écrit encore dedans.
+        </p>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        document.getElementById('toggleEditForm').addEventListener('click', () => {
+            const form = document.getElementById('editUserForm');
+            form.style.display = form.style.display === 'none' ? 'flex' : 'none';
+        });
+    </script>
+{% endblock %}

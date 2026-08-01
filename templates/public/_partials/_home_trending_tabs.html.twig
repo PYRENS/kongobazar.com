@@ -1,0 +1,93 @@
+{# ==========================================================================
+   "Articles tendances" — onglets par catégorie (Category.featuredHomepageTab),
+   grille de produits avec interactions au survol :
+     - gauche de la carte : panier / aperçu rapide / wishlist
+     - droite de la carte : vignettes galerie (ProductImage), le survol
+       remplace temporairement l'image principale affichée
+   Contexte attendu :
+     - trendingTabCategories : Category[] (featuredHomepageTab = true, triées par featuredHomepagePosition)
+     - trendingProductsByCategory : { categorySlug: Product[] } — un tableau de produits par catégorie
+   ========================================================================== #}
+<section class="home-trending">
+    <div class="home-trending-head">
+        <span class="home-section-badge">{{ 'home.trending_articles'|trans }}</span>
+        <div class="home-trending-tabs" role="tablist">
+            {% for category in trendingTabCategories|default([]) %}
+                <button type="button"
+                        class="trending-tab{{ loop.first ? ' active' : '' }}"
+                        data-tab-target="trending-panel-{{ category.id }}"
+                        role="tab"
+                        aria-selected="{{ loop.first ? 'true' : 'false' }}">
+                    {{ category.name }}
+                </button>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="home-trending-panels">
+        {% for category in trendingTabCategories|default([]) %}
+            <div class="trending-panel{{ loop.first ? ' active' : '' }}" id="trending-panel-{{ category.id }}">
+                <div class="home-product-grid">
+                    {% for product in (trendingProductsByCategory[category.slug] ?? []) %}
+                        <div class="product-card">
+                            <div class="product-card-media">
+                                <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}"
+                                     alt="{{ product.title }}"
+                                     class="product-card-main-image"
+                                     data-main-image
+                                     loading="lazy">
+
+                                {# NOTE: le contrôleur devra fournir un simple product.isRecent (bool)
+                                   calculé côté PHP plutôt que de comparer des dates ici en Twig #}
+                                {% if product.isRecent is defined and product.isRecent %}
+                                    <span class="badge-new">{{ 'home.new'|trans }}</span>
+                                {% endif %}
+                                {% if product.compareAtPrice %}
+                                    <span class="badge-discount">
+                                        -{{ ((1 - (product.basePrice / product.compareAtPrice)) * 100)|round }}%
+                                    </span>
+                                {% endif %}
+
+                                {# Actions au survol, à gauche #}
+                                <div class="product-card-actions-left">
+                                    <button type="button" class="card-action" data-add-to-cart="{{ product.id }}" aria-label="{{ 'product.add_to_cart'|trans }}">
+                                        <i class="bi bi-cart3"></i>
+                                    </button>
+                                    <button type="button" class="card-action" data-quick-view="{{ product.id }}" aria-label="{{ 'product.quick_view'|trans }}">
+                                        <i class="bi bi-search"></i>
+                                    </button>
+                                    <button type="button" class="card-action" data-add-to-wishlist="{{ product.id }}" aria-label="{{ 'product.add_to_wishlist'|trans }}">
+                                        <i class="bi bi-heart"></i>
+                                    </button>
+                                </div>
+
+                                {# Vignettes galerie, à droite #}
+                                {% if product.images|length > 1 %}
+                                    <div class="product-card-gallery-thumbs">
+                                        {% for image in product.images|slice(0, 4) %}
+                                            <button type="button"
+                                                    class="gallery-thumb{{ loop.first ? ' active' : '' }}"
+                                                    data-swap-image="{{ vich_uploader_asset(image, 'imageFile') }}">
+                                                <img src="{{ vich_uploader_asset(image, 'imageFile') }}" alt="" loading="lazy">
+                                            </button>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="product-card-body">
+                                <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="product-card-title">{{ product.title }}</a>
+                                <div class="product-card-price">
+                                    <span class="price-now">{{ product.basePrice }} {{ product.currency }}</span>
+                                    {% if product.compareAtPrice %}
+                                        <span class="price-old">{{ product.compareAtPrice }} {{ product.currency }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</section>

@@ -1,0 +1,82 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}{{ category ? 'Modifier' : 'Ajouter' }} — Catégorie{% endblock %}
+{% block page_icon %}bi-tags{% endblock %}
+{% block page_title %}{{ category ? 'Modifier' : 'Ajouter' }} une catégorie{% endblock %}
+
+{% block body %}
+    <div class="admin-card" style="max-width:500px;">
+        <form method="post" enctype="multipart/form-data"
+              action="{{ category ? path('manage_categories_update', { id: category.id }) : path('manage_categories_create') }}">
+
+            {% if not category %}
+                <input type="hidden" name="parent_id" value="{{ parent ? parent.id : '' }}">
+                <p class="text-muted">Rattachée à : <strong>{{ parent ? parent.name : 'Aucune (rayon racine)' }}</strong></p>
+            {% else %}
+                <p class="text-muted">Rattachée à : <strong>{{ parent ? parent.name : 'Aucune (rayon racine)' }}</strong></p>
+            {% endif %}
+
+            <div class="mb-3">
+                <label class="form-label">Nom</label>
+                <input type="text" name="name" class="form-control" value="{{ category ? category.name : '' }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Icône (classe Bootstrap Icons, ex: bi-cpu)</label>
+                <input type="text" name="icon" class="form-control" value="{{ category ? category.icon : '' }}" placeholder="bi-tag">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Couleur de thème</label>
+                <input type="color" name="theme_color" class="form-control form-control-color" value="{{ category and category.themeColor ? category.themeColor : '#2FA8E0' }}">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Position (ordre d'affichage)</label>
+                <input type="number" name="position" class="form-control" value="{{ category ? category.position : 0 }}">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Image</label>
+                <div class="admin-upload-preview-row">
+                    {% if category and category.imageName %}
+                        <div class="admin-upload-preview-box">
+                            <span class="admin-upload-preview-label">Actuelle</span>
+                            <img src="{{ vich_uploader_asset(category, 'imageFile') }}" class="admin-upload-preview-img">
+                        </div>
+                    {% endif %}
+                    <div class="admin-upload-preview-box" id="newImagePreviewBox" style="display:none;">
+                        <span class="admin-upload-preview-label">Nouvelle (aperçu)</span>
+                        <img src="" class="admin-upload-preview-img" id="newImagePreview">
+                    </div>
+                </div>
+                <input type="file" name="image" class="form-control" id="imageInput" accept="image/*">
+            </div>
+
+            <button type="submit" class="admin-btn admin-btn--primary">Enregistrer</button>
+            <a href="{{ path('manage_categories_index', parent ? { parent: parent.id } : {}) }}" class="admin-btn admin-btn--outline">Annuler</a>
+        </form>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        document.getElementById('imageInput').addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            const box = document.getElementById('newImagePreviewBox');
+            const preview = document.getElementById('newImagePreview');
+
+            if (!file) {
+                box.style.display = 'none';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (ev) {
+                preview.src = ev.target.result;
+                box.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,85 @@
+{# ==========================================================================
+   Bloc hero de la page d'accueil :
+   sidebar "Les Rayons" (liste courte, triée par position = priorité) | carousel | 2 pubs
+   Chaque rayon a une flèche à droite ; au survol (desktop), un mega menu
+   flyout s'ouvre à droite affichant ses sous-catégories en colonnes.
+   ========================================================================== #}
+
+<section class="homepage-hero-row">
+    <div class="rayons-sidebar rayons-sidebar--flat">
+        <h5 class="rayons-title">{{ 'menu.top_rayons'|trans }}</h5>
+        <ul class="cat-tree cat-tree--flat">
+            {% for rayon in top_rayons() %}
+                <li class="cat-item level-0 rayon-flyout-trigger">
+                    <a href="{{ path('catalog_rayon', { slug: rayon.slug }) }}" class="cat-label">
+                        <i class="bi {{ rayon.icon|default('bi-tag') }} menu-item-icon"></i>
+                        {{ rayon.name }}
+                        {% if rayon.children|length > 0 %}
+                            <i class="bi bi-chevron-right rayon-flyout-arrow"></i>
+                        {% endif %}
+                    </a>
+
+                    {% if rayon.children|length > 0 %}
+                        <div class="rayon-flyout">
+                            <div class="rayon-flyout-columns">
+                                {% for child in rayon.children|slice(0, 4) %}
+                                    <div class="rayon-flyout-col">
+                                        <h6>{{ child.name|upper }}</h6>
+                                        <ul>
+                                            {% for grandchild in child.children|slice(0, 6) %}
+                                                <li><a href="{{ path('catalog_category', { slug: grandchild.slug }) }}">{{ grandchild.name }}</a></li>
+                                            {% else %}
+                                                <li><a href="{{ path('catalog_category', { slug: child.slug }) }}">{{ 'menu.voir_tout'|trans }}</a></li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <a href="{{ path('catalog_rayon', { slug: rayon.slug }) }}" class="rayon-flyout-see-all">
+                                {{ 'menu.voir_tout'|trans }} <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+        <button type="button" class="rayons-see-all" data-bs-toggle="offcanvas" data-bs-target="#mainMenuOffcanvas">
+            {{ 'menu.voir_tous_rayons'|trans }} <i class="bi bi-chevron-right"></i>
+        </button>
+    </div>
+
+    <div class="hero-carousel" id="heroCarousel">
+        {% if heroSlides is defined and heroSlides|length > 0 %}
+            <div class="hero-carousel-progress">
+                {% for ad in heroSlides %}
+                    <button class="progress-track" type="button" data-index="{{ loop.index0 }}"
+                            aria-label="{{ 'hero.go_to_slide'|trans({'%number%': loop.index}) }}">
+                        <span class="progress-fill"></span>
+                    </button>
+                {% endfor %}
+            </div>
+            <div class="hero-carousel-slides">
+                {% for ad in heroSlides %}
+                    <a href="{{ path('ads_click', { id: ad.id }) }}"
+                       class="hero-slide{{ loop.first ? ' active' : '' }}"
+                       style="background-image:url('{{ vich_uploader_asset(ad, 'imageFile') }}')"
+                       aria-hidden="{{ loop.first ? 'false' : 'true' }}">
+                    </a>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="hero-side-ads">
+        {% if sideAdTop is defined and sideAdTop %}
+            <a href="{{ path('ads_click', { id: sideAdTop.id }) }}" class="hero-side-ad">
+                <img src="{{ vich_uploader_asset(sideAdTop, 'imageFile') }}" alt="{{ sideAdTop.title }}" loading="lazy">
+            </a>
+        {% endif %}
+        {% if sideAdBottom is defined and sideAdBottom %}
+            <a href="{{ path('ads_click', { id: sideAdBottom.id }) }}" class="hero-side-ad">
+                <img src="{{ vich_uploader_asset(sideAdBottom, 'imageFile') }}" alt="{{ sideAdBottom.title }}" loading="lazy">
+            </a>
+        {% endif %}
+    </div>
+</section>

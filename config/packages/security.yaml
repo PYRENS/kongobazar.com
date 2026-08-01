@@ -1,0 +1,103 @@
+security:
+    password_hashers:
+        App\Entity\User:
+            algorithm: auto
+
+    providers:
+        app_user_provider:
+            entity:
+                class: App\Entity\User
+                property: email
+
+    firewalls:
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+
+        manage:
+            pattern: ^/
+            host: manage\.kongobazar\.com$
+            provider: app_user_provider
+            custom_authenticator: App\Security\LoginFormAuthenticator
+            logout:
+                path: manage_logout
+                target: manage_login
+            login_throttling:
+                max_attempts: 5
+                interval: '15 minutes'
+
+        pro:
+            pattern: ^/
+            host: pro\.kongobazar\.com$
+            provider: app_user_provider
+            custom_authenticator: App\Security\LoginFormAuthenticator
+            logout:
+                path: pro_logout
+                target: pro_login
+            login_throttling:
+                max_attempts: 5
+                interval: '15 minutes'
+
+        store:
+            pattern: ^/
+            host: store\.kongobazar\.com$
+            provider: app_user_provider
+            custom_authenticator: App\Security\LoginFormAuthenticator
+            logout:
+                path: store_logout
+                target: store_login
+            login_throttling:
+                max_attempts: 5
+                interval: '15 minutes'
+
+        relay:
+            pattern: ^/
+            host: relay\.kongobazar\.com$
+            provider: app_user_provider
+            custom_authenticator: App\Security\LoginFormAuthenticator
+            logout:
+                path: relay_logout
+                target: relay_login
+            login_throttling:
+                max_attempts: 5
+                interval: '15 minutes'
+
+        main:
+            pattern: ^/
+            provider: app_user_provider
+            custom_authenticator: App\Security\LoginFormAuthenticator
+            logout:
+                path: public_logout
+                target: public_login
+            login_throttling:
+                max_attempts: 5
+                interval: '15 minutes'
+
+    access_control:
+        # manage.kongobazar.com — réservé aux modérateurs/admins
+        - { path: ^/login, host: manage\.kongobazar\.com$, roles: PUBLIC_ACCESS }
+        - { path: ^/, host: manage\.kongobazar\.com$, roles: ROLE_MODERATOR }
+
+        # pro.kongobazar.com — réservé aux ROLE_PRO
+        - { path: ^/login, host: pro\.kongobazar\.com$, roles: PUBLIC_ACCESS }
+        - { path: ^/, host: pro\.kongobazar\.com$, roles: ROLE_PRO }
+
+        # store.kongobazar.com — réservé aux ROLE_STORE_ADMIN
+        - { path: ^/login, host: store\.kongobazar\.com$, roles: PUBLIC_ACCESS }
+        - { path: ^/, host: store\.kongobazar\.com$, roles: ROLE_STORE_ADMIN }
+
+        # relay.kongobazar.com — réservé aux ROLE_RELAY_AGENT
+        - { path: ^/login, host: relay\.kongobazar\.com$, roles: PUBLIC_ACCESS }
+        - { path: ^/, host: relay\.kongobazar\.com$, roles: ROLE_RELAY_AGENT }
+
+        # kongobazar.com — public, avec quelques zones protégées (compte, commandes...)
+        - { path: ^/login, roles: PUBLIC_ACCESS }
+        - { path: ^/register, roles: PUBLIC_ACCESS }
+        - { path: ^/account, roles: ROLE_USER }
+
+    role_hierarchy:
+        ROLE_STORE_ADMIN: ROLE_USER
+        ROLE_PRO: ROLE_USER
+        ROLE_RELAY_AGENT: ROLE_USER
+        ROLE_MODERATOR: ROLE_USER
+        ROLE_SUPER_ADMIN: [ROLE_MODERATOR, ROLE_STORE_ADMIN, ROLE_PRO, ROLE_RELAY_AGENT]

@@ -1,0 +1,22 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Envoyer un message{% endblock %}
+{% block page_icon %}bi-chat-left-dots{% endblock %}
+{% block page_title %}Message à {{ targetUser.email }}{% endblock %}
+
+{% block body %}
+    <div class="admin-card" style="max-width:600px;">
+        <form method="post">
+            <div class="mb-3">
+                <label class="form-label">Sujet</label>
+                <input type="text" name="subject" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Message</label>
+                <textarea name="body" class="form-control" rows="6" required></textarea>
+            </div>
+            <button type="submit" class="admin-btn admin-btn--primary">Envoyer</button>
+            <a href="{{ path('manage_users_index') }}" class="admin-btn admin-btn--outline">Annuler</a>
+        </form>
+    </div>
+{% endblock %}

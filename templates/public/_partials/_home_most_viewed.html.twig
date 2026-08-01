@@ -1,0 +1,29 @@
+{# ==========================================================================
+   "Most Viewed" — produits les plus consultés (ProductViewLog, tendance 7 jours)
+   Contexte attendu :
+     - mostViewedProducts : résultat de ProductViewLogRepository::findMostVisited()
+   ========================================================================== #}
+<section class="home-most-viewed">
+    <div class="most-viewed-head">
+        <span>{{ 'home.most_viewed'|trans }}</span>
+    </div>
+    <div class="home-product-grid home-product-grid--4">
+        {% for item in mostViewedProducts|default([]) %}
+            {% set product = item.product %}
+            <div class="product-card product-card--compact">
+                <div class="product-card-media">
+                    <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
+                </div>
+                <div class="product-card-body">
+                    <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="product-card-title">{{ product.title }}</a>
+                    <div class="product-card-price">
+                        <span class="price-now">{{ product.basePrice }} {{ product.currency }}</span>
+                        {% if product.compareAtPrice %}
+                            <span class="price-old">{{ product.compareAtPrice }} {{ product.currency }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</section>

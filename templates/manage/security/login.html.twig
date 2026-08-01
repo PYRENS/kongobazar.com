@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion — Back-Office Administration</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body style="background:#0f2a20; min-height:100vh; display:flex; align-items:center; justify-content:center;">
+
+    <div class="card shadow" style="width:100%; max-width:380px;">
+        <div class="card-body p-4">
+            <h5 class="mb-1"><i class="bi bi-shield-lock" style="color:#1F4E3D;"></i> Back-Office</h5>
+            <p class="text-muted mb-4">Administration & Modération KongoBazar</p>
+
+            {% if error %}
+                <div class="alert alert-danger py-2 small">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+            {% endif %}
+
+            <form method="post">
+                <div class="mb-3">
+                    <label for="email" class="form-label">Identifiant</label>
+                    <input type="email" name="email" id="email" class="form-control" value="{{ last_username }}" required autofocus>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Mot de passe</label>
+                    <input type="password" name="password" id="password" class="form-control" required>
+                </div>
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+                <button type="submit" class="btn w-100" style="background:#1F4E3D; color:#fff;">
+                    Se connecter
+                </button>
+                <p class="text-center mt-3 mb-0 small text-muted">
+                    <i class="bi bi-info-circle"></i> Authentification à deux facteurs à venir
+                </p>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,95 @@
+{% extends 'public/base.html.twig' %}
+
+{% block title %}Mon Panier — KongoBazar{% endblock %}
+
+{% block body %}
+{% set display = cart_display_subtotal() %}
+<div class="cart-page-title-block">
+    <h4 class="cart-page-title">Mon Panier <span class="cart-page-count">({{ summary.itemCount }} article{{ summary.itemCount > 1 ? 's' : '' }})</span></h4>
+</div>
+
+<div class="cart-page">
+    <div class="cart-page-items">
+
+        {% if summary.lines|length > 0 %}
+            {% for line in summary.lines %}
+                {% set item = line.item %}
+                {% set variant = item.variant %}
+                {% set product = variant.product %}
+                <div class="cart-line" data-cart-line data-item-id="{{ item.id }}">
+                    <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="cart-line-image">
+                        <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}">
+                    </a>
+
+                    <div class="cart-line-info">
+                        <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="cart-line-title">{{ product.title }}</a>
+
+                        {% if variant.color or variant.size %}
+                            <span class="cart-line-variant">
+                                {% if variant.color %}{{ variant.color.name }}{% endif %}
+                                {% if variant.color and variant.size %} · {% endif %}
+                                {% if variant.size %}{{ variant.size.name }}{% endif %}
+                            </span>
+                        {% endif %}
+
+                        {% if product.sellerProfile %}
+                            <span class="cart-line-seller">
+                                Vendu par
+                                <a href="{{ path('partner_show', { slug: product.sellerProfile.slug }) }}">{{ product.sellerProfile.displayName }}</a>
+                            </span>
+                        {% endif %}
+
+                        {% if product.getCurrentDiscountedPrice() %}
+                            <span class="cart-line-badge"><i class="bi bi-tag"></i> Soldes</span>
+                        {% endif %}
+
+                        {% if product.getShippingDelayLabel() %}
+                            <span class="cart-line-shipping"><i class="bi bi-truck"></i> Expédition sous {{ product.getShippingDelayLabel() }} jours</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="cart-line-qty-stepper">
+                        <button type="button" class="qty-btn" data-qty-decrease>
+                            {% if item.quantity <= 1 %}<i class="bi bi-trash"></i>{% else %}−{% endif %}
+                        </button>
+                        <span class="qty-value" data-qty-value>{{ item.quantity }}</span>
+                        <button type="button" class="qty-btn" data-qty-increase{{ item.quantity >= variant.quantity ? ' disabled' : '' }}>+</button>
+                    </div>
+
+                    <div class="cart-line-price">
+                        {% if product.compareAtPrice %}
+                            <span class="price-old">{{ (product.compareAtPrice * item.quantity)|number_format(2) }} {{ line.currency }}</span>
+                        {% endif %}
+                        <span class="price-now"><span data-line-total>{{ line.lineTotal }}</span> {{ line.currency }}</span>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="cart-empty-state">
+                <i class="bi bi-cart-x cart-empty-icon"></i>
+                <p class="cart-empty">Votre panier est vide.</p>
+                <a href="{{ path('public_home') }}" class="btn btn-primary">Continuer mes achats</a>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if summary.lines|length > 0 %}
+        <aside class="cart-page-summary">
+            <div class="cart-summary-card">
+                <h6>Récapitulatif ({{ summary.itemCount }} produit{{ summary.itemCount > 1 ? 's' : '' }})</h6>
+                <div class="cart-summary-row">
+                    <span>Prix total</span>
+                    <strong><span data-cart-summary-total>{{ display.amount }}</span> {{ display.currency }}</strong>
+                </div>
+                <a href="{{ path('checkout_index') }}" class="btn btn-primary cart-checkout-btn">Passer commande</a>
+            </div>
+
+            <div class="cart-trust-card">
+                <p><i class="bi bi-shield-check"></i> Paiement sécurisé — fonds bloqués jusqu'à réception</p>
+                <p><i class="bi bi-geo-alt"></i> Retrait possible en point relais partout en RDC</p>
+                <p><i class="bi bi-arrow-return-left"></i> Retour protégé si le colis est refusé</p>
+            </div>
+        </aside>
+    {% endif %}
+</div>
+{% endblock %}

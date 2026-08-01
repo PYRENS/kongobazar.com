@@ -1,0 +1,109 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Utilisateurs{% endblock %}
+{% block page_icon %}bi-people{% endblock %}
+{% block page_title %}Gestion des utilisateurs{% endblock %}
+
+{% block body %}
+    <form method="get" class="admin-search-bar">
+        <input type="text" name="q" placeholder="Rechercher par email, téléphone ou nom..." value="{{ currentTerm }}">
+        <button type="submit" class="admin-btn admin-btn--primary"><i class="bi bi-search"></i> Rechercher</button>
+    </form>
+
+    <form method="get" class="admin-filter-bar">
+        <input type="hidden" name="q" value="{{ currentTerm }}">
+        <input type="hidden" name="sort" value="{{ currentSort }}">
+        <input type="hidden" name="dir" value="{{ currentDir }}">
+
+        <select name="type" onchange="this.form.submit()">
+            <option value="">Tous les types</option>
+            {% for t in ['Particulier', 'Vendeur Pro', 'Boutique', 'Point Relais'] %}
+                <option value="{{ t }}" {{ currentType == t ? 'selected' : '' }}>{{ t }}</option>
+            {% endfor %}
+        </select>
+
+        <select name="minRating" onchange="this.form.submit()">
+            <option value="">Toutes notations</option>
+            <option value="4" {{ currentMinRating == '4' ? 'selected' : '' }}>4 étoiles et +</option>
+            <option value="3" {{ currentMinRating == '3' ? 'selected' : '' }}>3 étoiles et +</option>
+            <option value="2" {{ currentMinRating == '2' ? 'selected' : '' }}>2 étoiles et +</option>
+        </select>
+
+        <select name="unit" onchange="this.form.submit()">
+            <option value="">Toutes localisations</option>
+            {% for province in provinces %}
+                <option value="{{ province.id }}" {{ currentUnit == province.id ? 'selected' : '' }}>{{ province.name }}</option>
+            {% endfor %}
+        </select>
+
+        {% if currentType or currentMinRating or currentUnit %}
+            <a href="{{ path('manage_users_index', { q: currentTerm, sort: currentSort, dir: currentDir }) }}" class="admin-btn admin-btn--outline">
+                <i class="bi bi-x-circle"></i> Réinitialiser les filtres
+            </a>
+        {% endif %}
+    </form>
+
+    {% macro sortLink(field, label, currentSort, currentDir, currentTerm) %}
+        {% set nextDir = (currentSort == field and currentDir == 'ASC') ? 'DESC' : 'ASC' %}
+        <a href="?sort={{ field }}&dir={{ nextDir }}&q={{ currentTerm }}" class="admin-sort-link">
+            {{ label }}
+            {% if currentSort == field %}<i class="bi bi-caret-{{ currentDir == 'ASC' ? 'up' : 'down' }}-fill"></i>{% endif %}
+        </a>
+    {% endmacro %}
+    {% import _self as self %}
+
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>{{ self.sortLink('email', 'Email', currentSort, currentDir, currentTerm) }}</th>
+                <th>{{ self.sortLink('lastName', 'Nom / Prénom', currentSort, currentDir, currentTerm) }}</th>
+                <th>Localisation</th>
+                <th>Type</th>
+                <th>Notation</th>
+                <th>{{ self.sortLink('createdAt', 'Inscrit le', currentSort, currentDir, currentTerm) }}</th>
+                <th>{{ self.sortLink('status', 'Statut', currentSort, currentDir, currentTerm) }}</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+                {% set user = row.user %}
+                <tr>
+                    <td>
+                        {% if user.avatarName %}
+                            <img src="{{ vich_uploader_asset(user, 'avatarFile') }}" class="admin-avatar" alt="">
+                        {% else %}
+                            <span class="admin-avatar admin-avatar--initials">{{ user.initials }}</span>
+                        {% endif %}
+                        {{ user.email }}
+                    </td>
+                    <td>{{ user.getFullName()|default('—') }}</td>
+                    <td>{{ row.localisation|default('—') }}</td>
+                    <td>{{ row.typeLabel }}</td>
+                    <td>{{ row.rating ? row.rating|number_format(1) ~ ' / 5' : '—' }}</td>
+                    <td>{{ user.createdAt ? user.createdAt|date('d/m/Y') : '—' }}</td>
+                    <td>
+                        <span class="admin-badge admin-badge--{{ user.status == 'banned' ? 'banned' : (user.status == 'suspended' ? 'disabled' : 'active') }}">
+                            {{ user.status|default('active') }}
+                        </span>
+                    </td>
+                    <td class="admin-actions">
+                        <a href="{{ path('manage_users_show', { id: user.id }) }}" class="admin-btn admin-btn--outline">
+                            <i class="bi bi-eye"></i> Détails
+                        </a>
+                        <form action="{{ path('manage_users_toggle_disable', { id: user.id }) }}" method="post">
+                            <button type="submit" class="admin-btn admin-btn--outline">
+                                {{ user.status == 'suspended' ? 'Réactiver' : 'Désactiver' }}
+                            </button>
+                        </form>
+                        <a href="{{ path('manage_users_message', { id: user.id }) }}" class="admin-btn admin-btn--warning">
+                            <i class="bi bi-envelope"></i>
+                        </a>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="8" class="text-muted">Aucun utilisateur ne correspond à ces critères.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

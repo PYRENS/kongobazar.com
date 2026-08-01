@@ -1,0 +1,11 @@
+{% extends 'public/base.html.twig' %}
+
+{% block title %}{{ title }} — KongoBazar{% endblock %}
+{% block meta_description %}{{ description|default(title ~ ' sur KongoBazar, la marketplace de référence en RDC.') }}{% endblock %}
+
+{% block body %}
+    <div class="container-kb" style="padding: 40px 0;">
+        <h1>{{ title }}</h1>
+        <p class="text-muted">{{ description|default('Page en construction.') }}</p>
+    </div>
+{% endblock %}

@@ -1,0 +1,11 @@
+<div class="offcanvas offcanvas-end" tabindex="-1" id="cartOffcanvas">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title"><i class="bi bi-cart3"></i> {{ 'cart.title'|trans }}</h5>
+        <button type="button" class="btn-close-custom" data-bs-dismiss="offcanvas" aria-label="{{ 'menu.close'|trans }}">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+    <div class="offcanvas-body" data-cart-offcanvas-body>
+        {% include 'public/_partials/_cart_offcanvas_body.html.twig' %}
+    </div>
+</div>

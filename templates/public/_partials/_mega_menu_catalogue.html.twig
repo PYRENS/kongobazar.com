@@ -1,0 +1,43 @@
+{# ==========================================================================
+   Mega menu affiché au survol du lien "Catalogue" de la nav principale
+   (desktop uniquement, cf. main.css media query).
+   Attend en contexte :
+     - rootCategories : Category[] (niveau 1 = rayons)
+     - megaMenuAds     : Advertisement[] (zoneKey = mega_menu_catalogue)
+   Chaque rayon affiche ses 5 premières sous-catégories triées par `position`
+   (Category::$children est déjà trié via #[ORM\OrderBy(['position' => 'ASC'])]).
+   ========================================================================== #}
+<div class="mega-menu" id="megaMenuCatalogue">
+    <div class="container-kb">
+        <div class="mega-menu-columns">
+            {% for rayon in root_categories() %}
+                <div class="mega-menu-col">
+                    <h6 class="mega-menu-col-title"><i class="bi {{ rayon.icon|default('bi-tag') }}"></i> {{ rayon.name|upper }}</h6>
+                    <ul>
+                        {% for child in rayon.children|slice(0, 5) %}
+                            <li>
+                                <a href="{{ path('catalog_category', { slug: child.slug }) }}">
+                                    {{ child.name }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    <a href="{{ path('catalog_rayon', { slug: rayon.slug }) }}" class="mega-menu-see-all">
+                        {{ 'menu.voir_tout'|trans }}
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% set ads = mega_menu_ads() %}
+        {% if ads|length > 0 %}
+            <div class="mega-menu-ads">
+                {% for ad in ads %}
+                    <a href="{{ path('ads_click', { id: ad.id }) }}" class="mega-menu-ad">
+                        <img src="{{ vich_uploader_asset(ad, 'imageFile') }}" alt="{{ ad.title }}" loading="lazy">
+                    </a>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</div>

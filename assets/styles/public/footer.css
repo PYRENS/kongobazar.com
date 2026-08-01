@@ -1,0 +1,221 @@
+/* ==========================================================================
+   KongoBazar — Footer, palette bleue alignée sur le header (--kb-blue)
+   ========================================================================== */
+
+.site-footer { margin-top: 40px; color: #444; background: #fff; }
+
+.footer-newsletter { background: var(--kb-blue); padding: 30px 0; }
+.footer-newsletter-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 60px;
+    flex-wrap: wrap;
+}
+.newsletter-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.newsletter-icon {
+    font-size: 32px;
+    color: #fff;
+    transform: rotate(-20deg);
+}
+.newsletter-texts {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.newsletter-title {
+    font-size: 19px;
+    font-weight: 800;
+    color: #fff;
+}
+.newsletter-text {
+    font-size: 16px;
+    color: #fff;
+}
+.newsletter-form {
+    display: flex;
+    align-items: stretch;
+}
+.newsletter-form input {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 4px 0 0 4px;
+    min-width: 340px;
+    font-size: 14px;
+}
+.newsletter-form button {
+    background: #13719c;/*var(--kb-primary);*/
+    color: #fff;
+    border: none;
+    padding: 0 32px;
+    border-radius: 0 4px 4px 0;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.newsletter-form button:hover{
+    background: #1183bc;
+}
+
+/* --- Ligne 1 : marque + 2 colonnes + mosaïque --- */
+.footer-top-row { background: #fff; }
+.footer-top-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr 1.6fr;
+    gap: 30px;
+    padding: 36px 0;
+}
+.footer-brand-logo { font-size: 22px; font-weight: 800; }
+.footer-brand-logo .logo-kongo { color: #1a1a1a; }
+.footer-brand-logo .logo-bazar { color: var(--kb-blue); }
+.footer-brand p { font-size: 13px; color: #777; margin-top: 12px; line-height: 1.6; }
+
+.footer-col h6 {
+    color: #1a1a1a;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    position: relative;
+    padding-bottom: 8px;
+}
+.footer-col h6::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 30px;
+    height: 2px;
+    background: var(--kb-blue);
+}
+.footer-col ul { list-style: none; margin: 0; padding: 0; }
+.footer-col li { margin-bottom: 2px; }
+.footer-col a { color: #777; font-size: 13px; text-decoration: none; }
+.footer-col a:hover { color: var(--kb-blue); text-decoration: none; }
+
+.footer-mosaic-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    position: relative;
+    min-height: 190px;
+    background: #f2f2f2;
+    border-radius: 6px;
+    padding: 6px;
+}
+.footer-mosaic-item img { width: 100%; height: 90px; object-fit: cover; display: block; }
+.footer-mosaic-caption {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 14px;
+    color: #444;
+}
+.footer-mosaic-caption strong { color: var(--kb-blue); }
+
+/* --- Ligne 2 : 6 colonnes restantes --- */
+.footer-columns-wrapper { background: #fff; }
+.footer-columns-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 24px;
+    padding: 30px 0;
+}
+
+/* --- Bandeau de mots-clés --- */
+.footer-ticker { background: #fff; border-top: none; }
+.footer-ticker-inner {
+    padding: 16px 0;
+    font-size: 12px;
+    color: #999;
+    text-align: center;
+    line-height: 2;
+}
+.footer-ticker-inner a { color: #999; text-decoration: none; }
+.footer-ticker-inner a:hover { color: var(--kb-blue); }
+.ticker-sep { margin: 0 8px; color: #ddd; }
+
+/* --- Bannière Call Us --- */
+.footer-contact-band { background: #fff; padding: 20px 0; }
+.footer-contact-inner {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    border: 1px solid #f7f7f7;
+    border-radius: 6px;
+    padding: 20px 24px;
+    flex-wrap: wrap;
+}
+
+.footer-contact-phone span,
+.footer-address span { display: block; font-size: 12px; color: #999; }
+.footer-contact-phone strong,
+.footer-address strong { color: #1a1a1a; font-size: 15px; }
+.footer-contact-phone em { color: var(--kb-blue); font-style: normal; }
+.footer-social-icons { display: flex; gap: 14px; margin-left: auto; }
+.footer-social-icons a {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid #ddd;
+    color: #555;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.footer-social-icons a:hover { background: var(--kb-blue); border-color: var(--kb-blue); color: #fff; }
+
+.footer-contact-photo img {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+/* --- Ligne de liens rapides --- */
+.footer-bottom-links { background: #fff; border-top: 1px solid var(--kb-border); }
+.footer-bottom-links-inner {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    padding: 16px 0;
+    flex-wrap: wrap;
+}
+.footer-bottom-links-inner a { color: #777; font-size: 13px; text-decoration: none; }
+.footer-bottom-links-inner a:hover { color: var(--kb-blue); }
+
+/* --- Copyright --- */
+.footer-bottom-bar { background: #222; }
+.footer-bottom-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 0;
+    font-size: 12px;
+    color: #999;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.footer-payment-icons { display: flex; gap: 12px; align-items: center; }
+.footer-payment-icons span {
+    background: #3a3a3a;
+    color: #ccc;
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 3px;
+}
+.footer-payment-icons i { font-size: 20px; color: #ccc; }
+
+@media (max-width: 991px) {
+    .footer-top-grid { grid-template-columns: 1fr 1fr; }
+    .footer-mosaic { grid-column: span 2; }
+}
+@media (max-width: 767px) {
+    .footer-top-grid { grid-template-columns: 1fr; }
+    .footer-columns-grid { grid-template-columns: repeat(2, 1fr); }
+    .footer-newsletter-inner { flex-direction: column; align-items: flex-start; }
+}

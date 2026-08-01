@@ -1,0 +1,50 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Produits — {{ category.name }}{% endblock %}
+{% block page_icon %}bi-box-seam{% endblock %}
+{% block page_title %}Produits de "{{ category.name }}"{% endblock %}
+
+{% block body %}
+    <a href="{{ path('manage_categories_index', category.parent ? { parent: category.parent.id } : {}) }}" class="admin-btn admin-btn--outline" style="margin-bottom:16px;">
+        ← Retour aux catégories
+    </a>
+
+    <form method="get" class="admin-filter-bar">
+        <input type="text" name="q" placeholder="Rechercher un produit..." value="{{ currentTerm }}">
+        <select name="status" onchange="this.form.submit()">
+            <option value="">Tous statuts</option>
+            {% for s in ['active', 'draft', 'suspended', 'coming_soon', 'archived'] %}
+                <option value="{{ s }}" {{ currentStatus == s ? 'selected' : '' }}>{{ s }}</option>
+            {% endfor %}
+        </select>
+        <select name="sort" onchange="this.form.submit()">
+            <option value="newest" {{ currentSort == 'newest' ? 'selected' : '' }}>Plus récent</option>
+            <option value="price_asc" {{ currentSort == 'price_asc' ? 'selected' : '' }}>Prix croissant</option>
+            <option value="price_desc" {{ currentSort == 'price_desc' ? 'selected' : '' }}>Prix décroissant</option>
+        </select>
+        <button type="submit" class="admin-btn admin-btn--primary"><i class="bi bi-search"></i></button>
+    </form>
+
+    <table class="admin-table">
+        <thead>
+            <tr><th>Produit</th><th>Vendeur</th><th>Prix</th><th>Statut</th><th>Stock</th></tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+                <tr>
+                    <td>{{ product.title }}</td>
+                    <td>{{ product.sellerProfile ? product.sellerProfile.displayName : '—' }}</td>
+                    <td>{{ product.basePrice }} {{ product.currency }}</td>
+                    <td><span class="admin-badge admin-badge--active">{{ product.status }}</span></td>
+                    <td>
+                        {% set totalStock = 0 %}
+                        {% for variant in product.variants %}{% set totalStock = totalStock + variant.quantity %}{% endfor %}
+                        {{ totalStock }}
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="5" class="text-muted">Aucun produit ne correspond à ces critères.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

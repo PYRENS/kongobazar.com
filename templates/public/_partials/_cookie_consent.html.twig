@@ -1,0 +1,87 @@
+{# ==========================================================================
+   Bannière de consentement cookies (RGPD).
+   Reflète le vrai registre de cookies du site — voir doc de reprise.
+   Rouvrable à tout moment via un lien avec l'attribut data-cookie-settings
+   (présent dans le footer, colonne "Informations légales").
+   ========================================================================== #}
+<div class="cookie-consent-overlay" id="cookieConsentOverlay" hidden>
+    <div class="cookie-consent-box">
+        <div class="cookie-consent-header">
+            <span class="cookie-consent-logo">
+                <span class="logo-kongo">Kongo</span><span class="logo-bazar">Bazar</span> <span class="text-secondary">({{ 'cookies.title_suffix'|trans }})</span>
+            </span>
+        </div>
+
+        <div class="cookie-consent-tabs">
+            <button type="button" class="cookie-tab active" data-cookie-tab="consent">{{ 'cookies.tab_consent'|trans }}</button>
+            <button type="button" class="cookie-tab" data-cookie-tab="details">{{ 'cookies.tab_details'|trans }}</button>
+            <button type="button" class="cookie-tab" data-cookie-tab="about">{{ 'cookies.tab_about'|trans }}</button>
+        </div>
+
+        {# --- Onglet 1 : Consentement --- #}
+        <div class="cookie-panel active" id="cookiePanel-consent">
+            <h6>{{ 'cookies.title'|trans }}</h6>
+            <p>{{ 'cookies.intro'|trans }}</p>
+
+            <div class="cookie-consent-actions">
+                <button type="button" class="btn-cookie btn-cookie--outline" data-cookie-action="reject">{{ 'cookies.reject'|trans }}</button>
+                <button type="button" class="btn-cookie btn-cookie--outline" data-cookie-goto-tab="details">{{ 'cookies.customize'|trans }} <i class="bi bi-chevron-right"></i></button>
+                <button type="button" class="btn-cookie btn-cookie--primary" data-cookie-action="accept-all">{{ 'cookies.accept_all'|trans }}</button>
+            </div>
+        </div>
+
+        {# --- Onglet 2 : Détails --- #}
+        <div class="cookie-panel" id="cookiePanel-details">
+            <div class="cookie-category">
+                <div class="cookie-category-head">
+                    <span><i class="bi bi-chevron-down"></i> {{ 'cookies.cat_necessary'|trans }} <span class="cookie-count">3</span></span>
+                    <span class="cookie-toggle cookie-toggle--locked" title="{{ 'cookies.always_active'|trans }}"><span class="cookie-toggle-dot"></span></span>
+                </div>
+                <p>{{ 'cookies.cat_necessary_desc'|trans }}</p>
+            </div>
+
+            <div class="cookie-category">
+                <div class="cookie-category-head">
+                    <span><i class="bi bi-chevron-down"></i> {{ 'cookies.cat_preferences'|trans }} <span class="cookie-count">0</span></span>
+                    <button type="button" class="cookie-toggle" data-cookie-toggle="preferences" aria-pressed="false"><span class="cookie-toggle-dot"></span></button>
+                </div>
+                <p>{{ 'cookies.cat_preferences_desc'|trans }}</p>
+            </div>
+
+            <div class="cookie-category">
+                <div class="cookie-category-head">
+                    <span><i class="bi bi-chevron-down"></i> {{ 'cookies.cat_statistics'|trans }} <span class="cookie-count">0</span></span>
+                    <button type="button" class="cookie-toggle" data-cookie-toggle="statistics" aria-pressed="false"><span class="cookie-toggle-dot"></span></button>
+                </div>
+                <p>{{ 'cookies.cat_statistics_desc'|trans }}</p>
+            </div>
+
+            <div class="cookie-category">
+                <div class="cookie-category-head">
+                    <span><i class="bi bi-chevron-down"></i> {{ 'cookies.cat_marketing'|trans }} <span class="cookie-count">0</span></span>
+                    <button type="button" class="cookie-toggle" data-cookie-toggle="marketing" aria-pressed="false"><span class="cookie-toggle-dot"></span></button>
+                </div>
+                <p>{{ 'cookies.cat_marketing_desc'|trans }}</p>
+            </div>
+
+            <div class="cookie-consent-actions">
+                <button type="button" class="btn-cookie btn-cookie--outline" data-cookie-action="reject">{{ 'cookies.reject'|trans }}</button>
+                <button type="button" class="btn-cookie btn-cookie--outline" data-cookie-action="accept-selection">{{ 'cookies.accept_selection'|trans }}</button>
+                <button type="button" class="btn-cookie btn-cookie--primary" data-cookie-action="accept-all">{{ 'cookies.accept_all'|trans }}</button>
+            </div>
+        </div>
+
+        {# --- Onglet 3 : À propos --- #}
+        <div class="cookie-panel" id="cookiePanel-about">
+            <p>{{ 'cookies.about_p1'|trans }}</p>
+            <p>{{ 'cookies.about_p2'|trans }}</p>
+            <p>{{ 'cookies.about_p3'|trans|raw }}</p>
+
+            <div class="cookie-consent-actions">
+                <button type="button" class="btn-cookie btn-cookie--outline" data-cookie-action="reject">{{ 'cookies.reject'|trans }}</button>
+                <button type="button" class="btn-cookie btn-cookie--outline" data-cookie-goto-tab="details">{{ 'cookies.customize'|trans }} <i class="bi bi-chevron-right"></i></button>
+                <button type="button" class="btn-cookie btn-cookie--primary" data-cookie-action="accept-all">{{ 'cookies.accept_all'|trans }}</button>
+            </div>
+        </div>
+    </div>
+</div>

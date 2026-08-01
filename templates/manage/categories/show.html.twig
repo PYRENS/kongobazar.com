@@ -1,0 +1,126 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}{{ category.name }} — Catégorie{% endblock %}
+{% block page_icon %}bi-tags{% endblock %}
+{% block page_title %}{{ category.name }}{% endblock %}
+
+{% block body %}
+    <div class="admin-card">
+        <div class="admin-info-illustration-row">
+            <div class="admin-info-col">
+                <h6><i class="bi bi-info-circle"></i> Informations de la catégorie</h6>
+                <table class="admin-table" style="box-shadow:none;margin-bottom:16px;">
+                    <tr><td><strong>Nom</strong></td><td>{{ category.name }}</td></tr>
+                    <tr><td><strong>Icône</strong></td><td><i class="bi {{ category.icon|default('bi-tag') }}"></i> {{ category.icon|default('—') }}</td></tr>
+                    <tr>
+                        <td><strong>Couleur</strong></td>
+                        <td>
+                            {% if category.themeColor %}
+                                <span style="display:inline-block;width:16px;height:16px;border-radius:3px;background:{{ category.themeColor }};border:1px solid #ddd;vertical-align:middle;margin-right:6px;"></span>{{ category.themeColor }}
+                            {% else %}—{% endif %}
+                        </td>
+                    </tr>
+                    <tr><td><strong>Position</strong></td><td>{{ category.position }}</td></tr>
+                    <tr><td><strong>Rattachée à</strong></td><td>{{ category.parent ? category.parent.name : 'Aucune (rayon racine)' }}</td></tr>
+                    <tr><td><strong>Produits (avec sous-catégories)</strong></td><td>{{ productCount }}</td></tr>
+                    <tr>
+                        <td><strong>Statut</strong></td>
+                        <td><span class="admin-badge admin-badge--{{ category.active ? 'active' : 'disabled' }}">{{ category.active ? 'Active' : 'Désactivée' }}</span></td>
+                    </tr>
+                </table>
+
+                <div class="admin-actions">
+                    <a href="{{ path('manage_categories_index', category.parent ? { parent: category.parent.id } : {}) }}" class="admin-btn admin-btn--outline">← Retour</a>
+                    <a href="{{ path('manage_categories_edit', { id: category.id }) }}" class="admin-btn admin-btn--outline"><i class="bi bi-pencil"></i> Modifier</a>
+                    <form action="{{ path('manage_categories_toggle', { id: category.id }) }}" method="post">
+                        <button type="submit" class="admin-btn admin-btn--outline">
+                            <i class="bi {{ category.active ? 'bi-pause-circle' : 'bi-check-circle' }}"></i>
+                            {{ category.active ? 'Désactiver' : 'Activer' }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="admin-illustration-col">
+                <span class="admin-illustration-label">Illustration</span>
+                {% if category.imageName %}
+                    <img src="{{ vich_uploader_asset(category, 'imageFile') }}" class="admin-illustration-preview">
+                {% else %}
+                    <div class="admin-illustration-empty">
+                        <i class="bi bi-image"></i>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-card">
+        <h6><i class="bi bi-diagram-3"></i> Sous-catégories</h6>
+        <a href="{{ path('manage_categories_new', { parent: category.id }) }}" class="admin-btn admin-btn--primary" style="margin-bottom:12px;">
+            <i class="bi bi-plus-lg"></i> Ajouter sous {{ category.name }}
+        </a>
+
+    {% macro sortLink(field, label, currentSort, currentDir) %}
+        {% set nextDir = (currentSort == field and currentDir == 'ASC') ? 'DESC' : 'ASC' %}
+        <a href="?sort={{ field }}&dir={{ nextDir }}" class="admin-sort-link">
+            {{ label }}
+            {% if currentSort == field %}
+                <i class="bi bi-caret-{{ currentDir == 'ASC' ? 'up' : 'down' }}-fill"></i>
+            {% else %}
+                <i class="bi bi-arrow-down-up admin-sort-icon-idle"></i>
+            {% endif %}
+        </a>
+    {% endmacro %}
+        {% import _self as self %}
+
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Icône</th>
+                    <th>{{ self.sortLink('name', 'Nom', currentSort, currentDir) }}</th>
+                    <th>{{ self.sortLink('childrenCount', 'Sous-catégories', currentSort, currentDir) }}</th>
+                    <th>{{ self.sortLink('productCount', 'Produits', currentSort, currentDir) }}</th>
+                    <th>Couleur</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in childRows %}
+                    {% set child = row.category %}
+                    <tr>
+                        <td>
+                            {% if child.imageName %}
+                                <img src="{{ vich_uploader_asset(child, 'imageFile') }}" style="width:40px;height:40px;border-radius:4px;object-fit:cover;">
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td><i class="bi {{ child.icon|default('bi-tag') }}" style="font-size:18px;"></i></td>
+                        <td><a href="{{ path('manage_categories_show', { id: child.id }) }}">{{ child.name }}</a></td>
+                        <td>
+                            {% if row.childrenCount > 0 %}
+                                <a href="{{ path('manage_categories_index', { parent: child.id }) }}">{{ row.childrenCount }} <i class="bi bi-box-arrow-in-right"></i></a>
+                            {% else %}<span class="text-muted">0</span>{% endif %}
+                        </td>
+                        <td>
+                            {% if row.productCount > 0 %}
+                                <a href="{{ path('manage_categories_products', { id: child.id }) }}">{{ row.productCount }}</a>
+                            {% else %}0{% endif %}
+                        </td>
+                        <td>
+                            {% if child.themeColor %}
+                                <span style="display:inline-block;width:20px;height:20px;border-radius:4px;background:{{ child.themeColor }};border:1px solid #ddd;vertical-align:middle;"></span>
+                            {% else %}<span class="text-muted">—</span>{% endif %}
+                        </td>
+                        <td class="admin-actions">
+                            <a href="{{ path('manage_categories_edit', { id: child.id }) }}" class="admin-btn admin-btn--outline"><i class="bi bi-pencil"></i></a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="7" class="text-muted">Aucune sous-catégorie.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

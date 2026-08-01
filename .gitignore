@@ -1,0 +1,30 @@
+###> symfony/framework-bundle ###
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+/var/
+/vendor/
+###< symfony/framework-bundle ###
+
+###> symfony/asset-mapper ###
+/public/assets/
+/assets/vendor/
+###< symfony/asset-mapper ###
+
+###> phpunit/phpunit ###
+/phpunit.result.cache
+/.phpunit.result.cache
+/phpunit.xml
+/.phpunit.cache/
+###< phpunit/phpunit ###
+
+# Dossier d'uploads (externe au projet, ne doit jamais être versionné)
+/kongobazar-uploads/
+
+# IDE / Système
+.idea/
+.vscode/
+*.DS_Store
+Thumbs.db

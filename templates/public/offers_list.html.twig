@@ -1,0 +1,50 @@
+{% extends 'public/base.html.twig' %}
+
+{% block title %}{{ title }} — KongoBazar{% endblock %}
+{% block meta_description %}Découvrez {{ title|lower }} sur KongoBazar, la marketplace de référence en RDC.{% endblock %}
+
+{% block body %}
+<div class="offers-page">
+    <aside class="offers-filters">
+        <h6>{{ 'offers.filter_category'|trans }}</h6>
+        <form method="get" class="offers-filter-form">
+            <select name="category" onchange="this.form.submit()">
+                <option value="">{{ 'offers.all_categories'|trans }}</option>
+                {% for cat in categories %}
+                    <option value="{{ cat.id }}" {{ currentCategoryId == cat.id ? 'selected' : '' }}>{{ cat.name }}</option>
+                {% endfor %}
+            </select>
+
+            <h6>{{ 'offers.filter_sort'|trans }}</h6>
+            <select name="sort" onchange="this.form.submit()">
+                <option value="newest" {{ currentSort == 'newest' ? 'selected' : '' }}>{{ 'offers.sort_newest'|trans }}</option>
+                <option value="price_asc" {{ currentSort == 'price_asc' ? 'selected' : '' }}>{{ 'offers.sort_price_asc'|trans }}</option>
+                <option value="price_desc" {{ currentSort == 'price_desc' ? 'selected' : '' }}>{{ 'offers.sort_price_desc'|trans }}</option>
+            </select>
+        </form>
+    </aside>
+
+    <div class="offers-results">
+        <h4>{{ title }} <span class="offers-count">({{ products|length }})</span></h4>
+
+        {% if products|length > 0 %}
+            <div class="home-product-grid" data-offers-grid>
+                {% include 'public/_partials/_offers_product_cards.html.twig' %}
+            </div>
+
+            {% if hasMore %}
+                <button type="button" class="btn btn-outline offers-load-more"
+                        data-offers-load-more
+                        data-mode="{{ mode }}"
+                        data-category="{{ currentCategoryId }}"
+                        data-sort="{{ currentSort }}"
+                        data-offset="{{ nextOffset }}">
+                    {{ 'offers.load_more'|trans }}
+                </button>
+            {% endif %}
+        {% else %}
+            <p class="text-muted">{{ 'offers.no_results'|trans }}</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

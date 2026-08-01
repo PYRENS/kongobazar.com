@@ -1,0 +1,24 @@
+vich_uploader:
+    db_driver: orm
+
+    mappings:
+        product_images:
+            uri_prefix: /media/products
+            upload_destination: '%env(UPLOADS_PUBLIC_PATH)%/products'
+            namer: Vich\UploaderBundle\Naming\SmartUniqueNamer
+
+        private_documents:
+            uri_prefix: /internal-storage
+            upload_destination: '%env(UPLOADS_PRIVATE_PATH)%'
+            namer: Vich\UploaderBundle\Naming\SmartUniqueNamer
+
+        # mapping pour les visuels publicitaires
+        ad_banners:
+            uri_prefix: /media/ads
+            upload_destination: '%env(UPLOADS_PUBLIC_PATH)%/ads'
+            namer: Vich\UploaderBundle\Naming\SmartUniqueNamer
+
+        category_illustrations:
+            uri_prefix: /media/illustrations
+            upload_destination: '%env(UPLOADS_PUBLIC_PATH)%/illustrations'
+            namer: App\Uploader\Namer\CategoryIllustrationNamer

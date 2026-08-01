@@ -1,0 +1,163 @@
+{# ==========================================================================
+   Footer complet — disposition fidèle au modèle de référence,
+   palette bleue (--kb-blue), alignée sur le header.
+   ========================================================================== #}
+<footer class="site-footer">
+
+    {# --- Newsletter --- #}
+    <div class="footer-newsletter">
+        <div class="container-kb footer-newsletter-inner">
+            <div class="newsletter-info">
+                <i class="bi bi-send newsletter-icon"></i>
+                <div class="newsletter-texts">
+                    <span class="newsletter-title">{{ 'footer.newsletter'|trans }}</span>
+                    <span class="newsletter-text">{{ 'footer.newsletter_text'|trans }}</span>
+                </div>
+            </div>
+            <form class="newsletter-form" action="{{ path('newsletter_subscribe') }}" method="post">
+                <input type="email" name="email" placeholder="{{ 'footer.email_placeholder'|trans }}" required>
+                <button type="submit">{{ 'footer.subscribe'|trans }}</button>
+            </form>
+        </div>
+    </div>
+
+    {# --- Ligne 1 : bloc marque + 2 premières colonnes + mosaïque photo --- #}
+    <div class="footer-top-row">
+        <div class="container-kb footer-top-grid">
+            <div class="footer-brand">
+                <span class="footer-brand-logo">
+                    <span class="logo-kongo">Kongo</span><span class="logo-bazar">Bazar</span>
+                </span>
+                <p>{{ 'footer.brand_description'|trans }}</p>
+            </div>
+
+            {% set columnLabels = {
+                'footer_col_1': 'footer.col.kongobazar'|trans,
+                'footer_col_2': 'footer.col.account'|trans,
+            } %}
+            {% for location, label in columnLabels %}
+                <div class="footer-col">
+                    <h6>{{ label }}</h6>
+                    <ul>
+                        {% for item in (footerColumns[location] ?? []) %}
+                            <li>
+                                <a href="{{ item.internalRoute ? path(item.internalRoute) : item.url }}"
+                                   {% if item.openInNewTab %}target="_blank" rel="noopener"{% endif %}>
+                                    {{ item.label }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+
+            {% if footerMosaicAds is defined and footerMosaicAds|length > 0 %}
+                <div class="footer-mosaic">
+                    <div class="footer-mosaic-grid">
+                        {% for ad in footerMosaicAds|slice(0, 6) %}
+                            <a href="{{ path('ads_click', { id: ad.id }) }}" class="footer-mosaic-item">
+                                <img src="{{ vich_uploader_asset(ad, 'imageFile') }}" alt="{{ ad.title }}" loading="lazy">
+                            </a>
+                        {% endfor %}
+                    </div>
+                    <div class="footer-mosaic-caption">
+                        {{ 'footer.follow_us'|trans }} <strong>#KongoBazar</strong>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# --- Ligne 2 : 6 colonnes restantes --- #}
+    <div class="footer-columns-wrapper">
+        <div class="container-kb footer-columns-grid">
+            {% set moreColumnLabels = {
+                'footer_col_3': 'footer.col.legal'|trans,
+                'footer_col_4': 'footer.col.customer_service'|trans,
+                'footer_col_5': 'footer.col.practical'|trans,
+                'footer_col_6': 'footer.col.earn_more'|trans,
+                'footer_col_7': 'footer.col.help_support'|trans,
+                'footer_col_8': 'footer.col.contact'|trans,
+            } %}
+            {% for location, label in moreColumnLabels %}
+                <div class="footer-col">
+                    <h6>{{ label }}</h6>
+                    <ul>
+                        {% for item in (footerColumns[location] ?? []) %}
+                            <li>
+                                <a href="{{ item.internalRoute ? path(item.internalRoute) : item.url }}"
+                                   {% if item.openInNewTab %}target="_blank" rel="noopener"{% endif %}>
+                                    {{ item.label }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                        {% if location == 'footer_col_3' %}
+                            <li><a href="#" data-cookie-settings>{{ 'cookies.footer_link'|trans }}</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {# --- Bannière "Call Us" avec photo en arrière-plan (déplacée avant le bandeau marques) --- #}
+    <div class="footer-contact-band">
+        <div class="container-kb footer-contact-inner">
+            {% if footerCallUsPhoto is defined and footerCallUsPhoto %}
+                <div class="footer-contact-photo">
+                    <img src="{{ vich_uploader_asset(footerCallUsPhoto, 'imageFile') }}" alt="Support KongoBazar" loading="lazy">
+                </div>
+            {% endif %}
+            <div class="footer-contact-phone">
+                <span>{{ 'footer.call_us'|trans }}</span>
+                <strong>+243 000 000 000 <em>({{ 'footer.available_24_7'|trans }})</em></strong>
+            </div>
+            <div class="footer-social-icons">
+                <a href="#" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+                <a href="#" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+                <a href="#" aria-label="Twitter"><i class="bi bi-twitter-x"></i></a>
+                <a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+            </div>
+            <div class="footer-address">
+                <span>{{ 'footer.address'|trans }}</span>
+                <strong>Kinshasa, Gombe — RDC</strong>
+            </div>
+        </div>
+    </div>
+
+    {# --- Bandeau de mots-clés défilants (déplacé après Call Us) --- #}
+    {% if footerBrands is defined and footerBrands|length > 0 %}
+        <div class="footer-ticker">
+            <div class="container-kb footer-ticker-inner">
+                {% for brand in footerBrands %}
+                    <a href="{{ path('catalog_brand', { slug: brand.slug }) }}">{{ brand.name }}</a>{% if not loop.last %}<span class="ticker-sep">|</span>{% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    {# --- Ligne de liens rapides --- #}
+    {% if footerBottomLinks is defined and footerBottomLinks|length > 0 %}
+        <div class="footer-bottom-links">
+            <div class="container-kb footer-bottom-links-inner">
+                {% for item in footerBottomLinks %}
+                    <a href="{{ item.internalRoute ? path(item.internalRoute) : item.url }}">{{ item.label }}</a>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    {# --- Copyright + moyens de paiement --- #}
+    <div class="footer-bottom-bar">
+        <div class="container-kb footer-bottom-inner">
+            <span>&copy; {{ "now"|date("Y") }} KongoBazar. {{ 'footer.rights_reserved'|trans }}</span>
+            <div class="footer-payment-icons">
+                <span title="M-Pesa">M-Pesa</span>
+                <span title="Orange Money">Orange Money</span>
+                <span title="Airtel Money">Airtel Money</span>
+                <span title="Afrimoney">Afrimoney</span>
+                <i class="bi bi-credit-card" title="Visa / Mastercard"></i>
+            </div>
+        </div>
+    </div>
+</footer>

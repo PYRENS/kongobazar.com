@@ -1,0 +1,9 @@
+User-agent: *
+Disallow: /panier
+Disallow: /commande
+Disallow: /compte
+Disallow: /preferences
+Disallow: /geo/
+Disallow: /recherche/suggest
+
+Sitemap: https://kongobazar.com/sitemap.xml

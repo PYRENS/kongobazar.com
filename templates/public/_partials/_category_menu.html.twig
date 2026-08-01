@@ -1,0 +1,72 @@
+{# ==========================================================================
+   Menu "à tiroirs" (drill-down), façon Cdiscount.
+   showIcons = true uniquement pour le premier niveau (rayons).
+   ========================================================================== #}
+
+{% macro renderMenuScreen(items, screenId, title, backLabel, backTarget, seeAllUrl, showIcons) %}
+    <div class="menu-screen{{ screenId == 'menu-screen-root' ? ' active' : '' }}" id="{{ screenId }}">
+        {% if backTarget %}
+            <button type="button" class="menu-screen-back" data-goto-screen="{{ backTarget }}">
+                <i class="bi bi-chevron-left"></i> {{ backLabel }}
+            </button>
+        {% endif %}
+
+        {% if title %}
+            <span class="menu-screen-title">{{ title }}</span>
+        {% endif %}
+
+        <ul class="menu-screen-list">
+            {% for item in items %}
+                <li>
+                    {% if item.children|length > 0 %}
+                        <button type="button" class="menu-screen-row" data-goto-screen="menu-screen-{{ item.id }}">
+                            <span>
+                                {% if showIcons %}<i class="bi {{ item.icon|default('bi-tag') }} menu-item-icon"></i>{% endif %}
+                                {{ item.name }}
+                            </span>
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    {% else %}
+                        <a href="{{ path('catalog_category', { slug: item.slug }) }}" class="menu-screen-row">
+                            <span>
+                                {% if showIcons %}<i class="bi {{ item.icon|default('bi-tag') }} menu-item-icon"></i>{% endif %}
+                                {{ item.name }}
+                            </span>
+                        </a>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+        {% if seeAllUrl %}
+            <a href="{{ seeAllUrl }}" class="menu-screen-see-all">
+                {{ 'menu.voir_tout'|trans }} <i class="bi bi-arrow-right"></i>
+            </a>
+        {% endif %}
+    </div>
+{% endmacro %}
+
+{% macro renderCategoryScreens(category) %}
+    {% import _self as menu %}
+    {% if category.children|length > 0 %}
+        {{ menu.renderMenuScreen(
+            category.children,
+            'menu-screen-' ~ category.id,
+            category.name,
+            category.parent ? category.parent.name : 'menu.retour_principal'|trans,
+            category.parent ? 'menu-screen-' ~ category.parent.id : 'menu-screen-root',
+            path('catalog_rayon', { slug: category.slug }),
+            false
+        ) }}
+        {% for child in category.children %}
+            {{ menu.renderCategoryScreens(child) }}
+        {% endfor %}
+    {% endif %}
+{% endmacro %}
+
+{% macro drillMenu(rootCategories) %}
+    {% import _self as menu %}
+    {{ menu.renderMenuScreen(rootCategories, 'menu-screen-root', 'menu.nos_rayons'|trans, null, null, null, true) }}
+    {% for rayon in rootCategories %}
+        {{ menu.renderCategoryScreens(rayon) }}
+    {% endfor %}
+{% endmacro %}

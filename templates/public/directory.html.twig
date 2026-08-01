@@ -1,0 +1,85 @@
+{% extends 'public/base.html.twig' %}
+
+{% block title %}Notre Réseau — KongoBazar{% endblock %}
+{% block meta_description %}Trouvez les vendeurs Pro, boutiques vérifiées et points relais KongoBazar près de chez vous, à Kinshasa et bientôt dans toute la RDC.{% endblock %}
+
+{% block body %}
+<div class="container-kb" style="padding: 30px 0;">
+    <h4 class="mb-4">Notre Réseau — Pro, Boutiques & Points Relais</h4>
+
+    <div class="network-stats">
+        <div class="network-stat-item">
+            <i class="bi bi-people"></i>
+            <div>
+                <strong>{{ networkStats.particuliers }}</strong>
+                <span>{{ 'directory.stat_individuals'|trans }}</span>
+            </div>
+        </div>
+        <div class="network-stat-item">
+            <i class="bi bi-briefcase"></i>
+            <div>
+                <strong>{{ networkStats.pro }}</strong>
+                <span>{{ 'directory.stat_pro'|trans }}</span>
+            </div>
+        </div>
+        <div class="network-stat-item">
+            <i class="bi bi-shop"></i>
+            <div>
+                <strong>{{ networkStats.store }}</strong>
+                <span>{{ 'directory.stat_store'|trans }}</span>
+            </div>
+        </div>
+        <div class="network-stat-item">
+            <i class="bi bi-geo-alt"></i>
+            <div>
+                <strong>{{ networkStats.relay }}</strong>
+                <span>{{ 'directory.stat_relay'|trans }}</span>
+            </div>
+        </div>
+    </div>
+
+    <form method="get" class="directory-filters">
+        <input type="search" name="q" placeholder="{{ 'directory.search_placeholder'|trans }}" value="{{ currentTerm }}">
+
+        <select name="type">
+            <option value="">{{ 'directory.all_types'|trans }}</option>
+            <option value="pro" {{ currentType == 'pro' ? 'selected' : '' }}>{{ 'directory.type_pro'|trans }}</option>
+            <option value="store" {{ currentType == 'store' ? 'selected' : '' }}>{{ 'directory.type_store'|trans }}</option>
+            <option value="relay" {{ currentType == 'relay' ? 'selected' : '' }}>{{ 'directory.type_relay'|trans }}</option>
+        </select>
+
+        <div class="location-cascade" data-geo-cascade>
+            <select data-geo-level="1">
+                <option value="">Province</option>
+                {% for loc in locations %}
+                    <option value="{{ loc.id }}">{{ loc.name }}</option>
+                {% endfor %}
+            </select>
+            <div class="geo-cascade-extra" data-geo-extra></div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">{{ 'directory.search_button'|trans }}</button>
+    </form>
+
+    <div class="directory-results">
+        {% if results|length > 0 %}
+            {% for item in results %}
+                {% set profile = item.profile %}
+                <a href="{{ path('partner_show', { slug: profile.slug }) }}" class="directory-card">
+                    {% if profile.logoName %}
+                        <img src="{{ vich_uploader_asset(profile, 'logoFile') }}" alt="{{ profile.displayName }}" class="directory-card-logo">
+                    {% else %}
+                        <span class="directory-card-logo directory-card-logo--empty"><i class="bi bi-shop"></i></span>
+                    {% endif %}
+                    <div>
+                        <strong>{{ profile.displayName }}</strong>
+                        <span class="directory-card-type">{{ item.typeLabel }}</span>
+                    </div>
+                </a>
+            {% endfor %}
+        {% else %}
+            <p class="text-muted">{{ 'directory.no_results'|trans }}</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

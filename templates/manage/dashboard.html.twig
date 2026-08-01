@@ -1,0 +1,92 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Tableau de bord{% endblock %}
+{% block page_icon %}bi-speedometer2{% endblock %}
+{% block page_title %}Tableau de bord{% endblock %}
+
+{% block body %}
+    <div class="dashboard-tabs">
+        <button type="button" class="dashboard-tab active" data-dashboard-tab="numbers">
+            <i class="bi bi-123"></i> Chiffres
+        </button>
+        <button type="button" class="dashboard-tab" data-dashboard-tab="charts">
+            <i class="bi bi-bar-chart"></i> Graphiques
+        </button>
+    </div>
+
+    <div class="dashboard-panel active" id="dashboardPanel-numbers">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="admin-card">
+                    <div style="font-size:28px;font-weight:800;color:var(--admin-primary);">{{ totalUsers }}</div>
+                    <div style="color:#999;font-size:13px;">Utilisateurs inscrits</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="admin-card">
+                    <div style="font-size:28px;font-weight:800;color:var(--admin-primary);">{{ totalSellers }}</div>
+                    <div style="color:#999;font-size:13px;">Profils vendeurs</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-panel" id="dashboardPanel-charts">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="admin-card">
+                    <h6>Inscriptions (6 derniers mois)</h6>
+                    <div class="chart-box"><canvas id="signupsChart"></canvas></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="admin-card">
+                    <h6>Répartition dans le réseau</h6>
+                    <div class="chart-box"><canvas id="networkChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script>
+        document.querySelectorAll('[data-dashboard-tab]').forEach((tab) => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.dashboard-tab').forEach((t) => t.classList.remove('active'));
+                document.querySelectorAll('.dashboard-panel').forEach((p) => p.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById('dashboardPanel-' + tab.dataset.dashboardTab).classList.add('active');
+            });
+        });
+
+        new Chart(document.getElementById('signupsChart'), {
+            type: 'line',
+            data: {
+                labels: [{% for row in signupsByMonth %}'{{ row.ym }}',{% endfor %}],
+                datasets: [{
+                    label: 'Inscriptions',
+                    data: [{% for row in signupsByMonth %}{{ row.total }},{% endfor %}],
+                    borderColor: '#2FA8E0',
+                    backgroundColor: 'rgba(47,168,224,0.15)',
+                    tension: 0.3,
+                    fill: true,
+                }],
+            },
+            options: { maintainAspectRatio: false, plugins: { legend: { display: false } } },
+        });
+
+        new Chart(document.getElementById('networkChart'), {
+            type: 'doughnut',
+            data: {
+                labels: [{% for row in networkBreakdown %}'{{ row.label }}',{% endfor %}],
+                datasets: [{
+                    data: [{% for row in networkBreakdown %}{{ row.total }},{% endfor %}],
+                    backgroundColor: ['#C9992A', '#2FA8E0', '#43a047', '#e53935', '#8e44ad'],
+                }],
+            },
+            options: { maintainAspectRatio: false },
+        });
+    </script>
+{% endblock %}

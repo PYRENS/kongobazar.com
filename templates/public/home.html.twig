@@ -1,0 +1,34 @@
+{% extends 'public/base.html.twig' %}
+
+{% block title %}KongoBazar — La marketplace de référence en RDC{% endblock %}
+
+{% block body %}
+    {% include 'public/_partials/_hero.html.twig' %}
+
+    <div class="home-layout">
+        {% include 'public/_partials/_home_left_column.html.twig' %}
+
+        <div class="home-center-col">
+            {% include 'public/_partials/_home_center_top.html.twig' %}
+            {% include 'public/_partials/_home_trending_tabs.html.twig' %}
+
+            {# Un bloc par catégorie sélectionnée (Category.featuredHomepageBlock),
+               le contrôleur fournira une liste "featuredBlocks" avec, pour chacune,
+               les variables attendues par _home_category_block.html.twig #}
+            {% for block in featuredBlocks|default([]) %}
+                {% include 'public/_partials/_home_category_block.html.twig' with {
+                    category: block.category,
+                    blockColor: block.color,
+                    blockIcon: block.icon,
+                    productsBySort: block.productsBySort,
+                    blockBanner: block.banner
+                } %}
+            {% endfor %}
+
+            {% include 'public/_partials/_home_top_categories_vendors.html.twig' %}
+            {% include 'public/_partials/_home_popular_tags.html.twig' %}
+            {% include 'public/_partials/_home_trust_badges.html.twig' %}
+            {% include 'public/_partials/_home_most_viewed.html.twig' %}
+        </div>
+    </div>
+{% endblock %}

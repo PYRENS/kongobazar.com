@@ -1,0 +1,227 @@
+{% extends 'public/base.html.twig' %}
+
+{% block title %}{{ product.title }} — KongoBazar{% endblock %}
+{% block meta_description %}{{ product.description|striptags|slice(0, 155) }}{% endblock %}
+{% block og_image %}
+    {% if product.images|length > 0 %}
+        {{ app.request.schemeAndHttpHost ~ vich_uploader_asset(product.images|first, 'imageFile') }}
+    {% else %}
+        {{ app.request.schemeAndHttpHost ~ asset('images/og-default.jpg') }}
+    {% endif %}
+{% endblock %}
+
+{% block body %}
+<div class="product-page-layout">
+    {% include 'public/_partials/_product_sidebar.html.twig' %}
+
+    <div class="product-page" data-product-slug="{{ product.slug }}">
+
+        <div class="product-gallery">
+            <div class="product-gallery-main">
+                <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}"
+                     alt="{{ product.title }}" data-product-main-image>
+            </div>
+            {% if product.images|length > 1 %}
+                <div class="product-gallery-thumbs">
+                    {% for image in product.images %}
+                        <button type="button" class="product-thumb{{ loop.first ? ' active' : '' }}"
+                                data-swap-image="{{ vich_uploader_asset(image, 'imageFile') }}">
+                            <img src="{{ vich_uploader_asset(image, 'imageFile') }}" alt="">
+                        </button>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="product-info">
+            {% if product.brand %}
+                <a href="{{ path('catalog_brand', { slug: product.brand.slug }) }}" class="product-brand-link">{{ product.brand.name }}</a>
+            {% endif %}
+            <h1 class="product-title">{{ product.title }}</h1>
+
+            <div class="product-rating-row">
+                <span class="product-stars">★★★★☆</span>
+                <span class="product-rating-count">({{ 'product.reviews_soon'|trans }})</span>
+            </div>
+
+            <div class="product-price-block">
+                {% if product.getCurrentDiscountedPrice() %}
+                    <span class="price-now">{{ product.getCurrentDiscountedPrice() }} {{ product.currency }}</span>
+                    <span class="price-old">{{ product.basePrice }} {{ product.currency }}</span>
+                    <span class="badge-discount-inline">-{{ product.getActiveDiscountPercent() }}%</span>
+                {% else %}
+                    <span class="price-now">{{ product.basePrice }} {{ product.currency }}</span>
+                {% endif %}
+            </div>
+
+            {% if product.isComingSoon() %}
+                <div class="product-coming-soon-banner">
+                    <i class="bi bi-hourglass-split"></i>
+                    {{ 'product.coming_soon_in'|trans({'%category%': product.category ? product.category.name : ''}) }}
+                </div>
+
+                {% if product.preorderEnabled %}
+                    <p class="product-preorder-label"><i class="bi bi-clock-history"></i> {{ 'product.available_preorder'|trans }}</p>
+                {% else %}
+                    <a href="{{ path('product_follow_availability', { slug: product.slug }) }}" class="btn btn-outline product-follow-btn">
+                        <i class="bi bi-bell"></i> {{ 'product.notify_me'|trans }}
+                    </a>
+                {% endif %}
+            {% endif %}
+
+
+            <div class="product-meta-rows">
+                {% if product.brand %}
+                    <div class="product-meta-row"><span>{{ 'product.brand'|trans }}</span><strong>{{ product.brand.name }}</strong></div>
+                {% endif %}
+                <div class="product-meta-row"><span>{{ 'product.reference'|trans }}</span><strong>{{ product.reference }}</strong></div>
+                <div class="product-meta-row">
+                    <span>{{ 'product.stock'|trans }}</span>
+                    <strong class="product-stock-check" data-stock-badge>
+                        <i class="bi bi-question-circle"></i> {{ 'product.select_options'|trans }}
+                    </strong>
+                </div>
+                {% if product.getShippingDelayLabel() %}
+                    <div class="product-meta-row">
+                        <span>{{ 'product.shipping'|trans }}</span>
+                        <strong>{{ 'home.ships_in'|trans({'%range%': product.getShippingDelayLabel()}) }}</strong>
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if product.getActiveDiscountEndAt() %}
+                <div class="home-deal-countdown" data-countdown-end="{{ product.getActiveDiscountEndAt()|date('c') }}">
+                    <span class="hurry-up">{{ 'home.hurry_up'|trans }}</span>
+                    <div class="countdown-boxes">
+                        <div><span data-cd-days>--</span><small>{{ 'home.days'|trans }}</small></div>
+                        <div><span data-cd-hours>--</span><small>{{ 'home.hours'|trans }}</small></div>
+                        <div><span data-cd-mins>--</span><small>{{ 'home.mins'|trans }}</small></div>
+                        <div><span data-cd-secs>--</span><small>{{ 'home.secs'|trans }}</small></div>
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if product.negotiable %}
+                <p class="product-negotiable"><i class="bi bi-chat-dots"></i> {{ 'product.negotiable'|trans }}</p>
+            {% endif %}
+
+            {% if colors|length > 0 %}
+                <div class="product-option-group">
+                    <span class="product-option-label">{{ 'product.color'|trans }}</span>
+                    <div class="product-swatches">
+                        {% for color in colors %}
+                            <button type="button" class="color-swatch" data-color-id="{{ color.id }}"
+                                    style="background:{{ color.hexCode|default('#ccc') }}" title="{{ color.name }}"></button>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if sizes|length > 0 %}
+                <div class="product-option-group">
+                    <span class="product-option-label">{{ 'product.size'|trans }}</span>
+                    <div class="product-sizes">
+                        {% for size in sizes %}
+                            <button type="button" class="size-swatch" data-size-id="{{ size.id }}">{{ size.name }}</button>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="product-stock-info" data-stock-info-text>
+                <i class="bi bi-box-seam"></i> <span data-stock-text>{{ 'product.select_options'|trans }}</span>
+            </div>
+
+            <div class="product-action-row">
+                <div class="product-qty-stepper">
+                    <button type="button" class="qty-btn" data-product-qty-decrease>−</button>
+                    <span class="qty-value" data-product-qty-value>1</span>
+                    <button type="button" class="qty-btn" data-product-qty-increase>+</button>
+                </div>
+                <button type="button" class="btn btn-primary product-add-btn" data-product-add-to-cart disabled>
+                    <i class="bi bi-cart3"></i> {{ 'product.add_to_cart'|trans }}
+                </button>
+                <button type="button" class="btn product-buy-now-btn" data-product-buy-now disabled>
+                    {{ 'product.buy_now'|trans }}
+                </button>
+            </div>
+
+            <div class="product-secondary-actions">
+                <a href="{{ path('wishlist_add', { variantId: 0 }) }}" class="product-secondary-link" data-wishlist-link>
+                    <i class="bi bi-heart"></i> {{ 'product.add_to_wishlist'|trans }}
+                </a>
+                <span class="product-secondary-link product-secondary-link--soon">
+                    <i class="bi bi-arrow-left-right"></i> {{ 'product.add_to_compare'|trans }} ({{ 'header.coming_soon'|trans }})
+                </span>
+            </div>
+
+            <button type="button" class="product-share-btn" data-share-btn
+                    data-share-title="{{ product.title }}"
+                    data-share-text="{{ product.title }} — {{ product.basePrice }} {{ product.currency }} sur KongoBazar">
+                <i class="bi bi-share"></i> {{ 'product.share'|trans }}
+            </button>
+            {% if product.sellerProfile %}
+                <a href="{{ path('partner_show', { slug: product.sellerProfile.slug }) }}" class="product-seller-card">
+                    {% if product.sellerProfile.logoName %}
+                        <img src="{{ vich_uploader_asset(product.sellerProfile, 'logoFile') }}" alt="" class="product-seller-logo">
+                    {% else %}
+                        <span class="product-seller-logo product-seller-logo--empty"><i class="bi bi-shop"></i></span>
+                    {% endif %}
+                    <span>
+                        <strong>{{ product.sellerProfile.displayName }}</strong>
+                        <span class="product-seller-link-text">{{ 'product.view_shop'|trans }}</span>
+                    </span>
+                </a>
+            {% endif %}
+        </div>
+
+        <div class="product-tabs-block">
+            <div class="product-tabs-nav">
+                <button type="button" class="product-tab active" data-product-tab-target="tab-description">{{ 'product.tab_description'|trans }}</button>
+                <button type="button" class="product-tab" data-product-tab-target="tab-reviews">{{ 'product.tab_reviews'|trans }}</button>
+                <button type="button" class="product-tab" data-product-tab-target="tab-size-guide">{{ 'product.tab_size_guide'|trans }}</button>
+            </div>
+
+            <div class="product-tab-panel active" id="tab-description">
+                <p>{{ product.description }}</p>
+            </div>
+            <div class="product-tab-panel" id="tab-reviews">
+                <p class="text-muted">{{ 'product.reviews_coming_soon'|trans }}</p>
+            </div>
+            <div class="product-tab-panel" id="tab-size-guide">
+                <p class="text-muted">{{ 'product.size_guide_coming_soon'|trans }}</p>
+            </div>
+        </div>
+
+        {% if recommendations|length > 0 %}
+            <div class="product-recommendations-block">
+                <h5>{{ 'product.recommended_with'|trans }}</h5>
+                <div class="home-product-grid">
+                    {% for reco in recommendations %}
+                        <div class="product-card">
+                            <div class="product-card-media">
+                                <img src="{{ reco.images|length > 0 ? vich_uploader_asset(reco.images|first, 'imageFile') : '' }}" alt="{{ reco.title }}" loading="lazy">
+                                {% if reco.compareAtPrice %}
+                                    <span class="badge-discount">
+                                        -{{ ((1 - (reco.basePrice / reco.compareAtPrice)) * 100)|round }}%
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <div class="product-card-body">
+                                <a href="{{ path('catalog_product', { slug: reco.slug }) }}" class="product-card-title">{{ reco.title }}</a>
+                                <div class="product-card-price">
+                                    <span class="price-now">{{ reco.basePrice }} {{ reco.currency }}</span>
+                                    {% if reco.compareAtPrice %}
+                                        <span class="price-old">{{ reco.compareAtPrice }} {{ reco.currency }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,66 @@
+{# ==========================================================================
+   Haut de la colonne centrale : petite bannière promo + Deals + bannière pub
+   Contexte attendu :
+     - promoStrip   : Advertisement|null (zoneKey homepage_promo_strip)
+     - dealsProducts: Product[] avec DiscountCampaign active
+     - centerAdBanner: Advertisement|null (zoneKey homepage_center_banner)
+   ========================================================================== #}
+{% if promoStrip is defined and promoStrip %}
+    <a href="{{ path('ads_click', { id: promoStrip.id }) }}" class="home-promo-strip">
+        <img src="{{ vich_uploader_asset(promoStrip, 'imageFile') }}" alt="{{ promoStrip.title }}" loading="lazy">
+    </a>
+{% endif %}
+
+<section class="home-deals" data-mini-carousel data-per-page="2">
+    <div class="home-deals-head">
+        <span class="home-section-badge">{{ 'home.deals_of_week'|trans }}</span>
+        <div class="home-carousel-nav">
+            <button type="button" class="carousel-arrow" data-carousel-prev aria-label="{{ 'home.prev'|trans }}"><i class="bi bi-chevron-left"></i></button>
+            <button type="button" class="carousel-arrow" data-carousel-next aria-label="{{ 'home.next'|trans }}"><i class="bi bi-chevron-right"></i></button>
+        </div>
+    </div>
+    <div class="home-deals-track">
+        {% for deal in dealsProducts|default([]) %}
+            <div class="home-deal-card">
+                <div class="home-deal-image">
+                    <img src="{{ deal.images|length > 0 ? vich_uploader_asset(deal.images|first, 'imageFile') : '' }}" alt="{{ deal.title }}" loading="lazy">
+                    {% if deal.activeDiscountPercent is defined %}
+                        <span class="badge-discount">-{{ deal.activeDiscountPercent }}%</span>
+                    {% endif %}
+                </div>
+                <div class="home-deal-info">
+                    <h5>{{ deal.title }}</h5>
+                    <div class="home-deal-rating">★★★★☆</div>
+                    <p class="home-deal-desc">{{ deal.description|striptags|slice(0, 90) }}…</p>
+                    {% if deal.getShippingDelayLabel() %}
+                        <p class="home-deal-shipping">
+                            <i class="bi bi-truck"></i>
+                            {{ 'home.ships_in'|trans({'%range%': deal.getShippingDelayLabel()}) }}
+                        </p>
+                    {% endif %}
+                    <div class="home-deal-price">
+                        <span class="price-now">{{ deal.currentDiscountedPrice|default(deal.basePrice) }} {{ deal.currency }}</span>
+                        {% if deal.activeDiscountPercent is defined %}
+                            <span class="price-old">{{ deal.basePrice }} {{ deal.currency }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="home-deal-countdown" data-countdown-end="{{ deal.activeDiscountEndAt|default('')|date('c') }}">
+                        <span class="hurry-up">{{ 'home.hurry_up'|trans }}</span>
+                        <div class="countdown-boxes">
+                            <div><span data-cd-days>--</span><small>{{ 'home.days'|trans }}</small></div>
+                            <div><span data-cd-hours>--</span><small>{{ 'home.hours'|trans }}</small></div>
+                            <div><span data-cd-mins>--</span><small>{{ 'home.mins'|trans }}</small></div>
+                            <div><span data-cd-secs>--</span><small>{{ 'home.secs'|trans }}</small></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+
+{% if centerAdBanner is defined and centerAdBanner %}
+    <a href="{{ path('ads_click', { id: centerAdBanner.id }) }}" class="home-center-banner">
+        <img src="{{ vich_uploader_asset(centerAdBanner, 'imageFile') }}" alt="{{ centerAdBanner.title }}" loading="lazy">
+    </a>
+{% endif %}

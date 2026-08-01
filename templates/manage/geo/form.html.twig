@@ -1,0 +1,62 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}{{ unit ? 'Modifier' : 'Ajouter' }} — Entités admin.{% endblock %}
+{% block page_icon %}bi-geo-alt{% endblock %}
+{% block page_title %}{{ unit ? 'Modifier' : 'Ajouter' }} une entité administrative{% endblock %}
+
+{% block body %}
+    <div class="admin-card" style="max-width:500px;">
+        {% if unit %}
+            <p class="text-muted">Rattachée à : <strong>{{ unit.parent ? unit.parent.name : 'Aucune (niveau 1)' }}</strong></p>
+        {% endif %}
+
+        <form method="post" action="{{ unit ? path('manage_geo_update', { id: unit.id }) : path('manage_geo_create') }}">
+
+            {% if not unit %}
+                <div class="mb-3">
+                    <label class="form-label">Entité parente (laisser vide pour créer une province de niveau 1)</label>
+                    <div class="geo-picker" data-geo-picker>
+                        <select data-geo-level="1">
+                            <option value="">— Aucune (créer une province) —</option>
+                            {% for province in provinces %}
+                                <option value="{{ province.id }}" {{ parent and parent.id == province.id ? 'selected' : '' }}>{{ province.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <input type="hidden" name="parent_id" data-geo-final-value value="{{ parent ? parent.id : '' }}">
+                    <small class="text-muted">Choisissez le niveau le plus profond auquel rattacher la nouvelle entité — par exemple, sélectionnez "Kinshasa" puis "Kinshasa Ville" pour ajouter une nouvelle commune.</small>
+                </div>
+            {% endif %}
+
+            <div class="mb-3">
+                <label class="form-label">Nom</label>
+                <input type="text" name="name" class="form-control" value="{{ unit ? unit.name : '' }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Type</label>
+                <input type="text" name="type_label" class="form-control" value="{{ unit ? unit.typeLabel : '' }}"
+                       list="typeLabelSuggestions" placeholder="Province, Ville, Territoire, Commune, Secteur, Chefferie, Groupement, Quartier...">
+                <datalist id="typeLabelSuggestions">
+                    <option value="Province">
+                    <option value="Ville">
+                    <option value="Territoire">
+                    <option value="Commune">
+                    <option value="Secteur">
+                    <option value="Chefferie">
+                    <option value="Groupement">
+                    <option value="Quartier">
+                </datalist>
+            </div>
+
+            <div class="mb-3 form-check form-switch">
+                <input type="checkbox" name="active" value="1" class="form-check-input" id="activeSwitch"
+                       {{ (unit is null or unit.active) ? 'checked' : '' }}>
+                <label class="form-check-label" for="activeSwitch">Actif</label>
+            </div>
+
+            <button type="submit" class="admin-btn admin-btn--primary">Enregistrer</button>
+            <a href="{{ path('manage_geo_index', parent ? { parent: parent.id } : {}) }}" class="admin-btn admin-btn--outline">Annuler</a>
+        </form>
+    </div>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Paramètres{% endblock %}
+{% block page_icon %}bi-gear{% endblock %}
+{% block page_title %}Paramètres d'affichage{% endblock %}
+
+{% block body %}
+    <div class="admin-card" style="max-width:500px;">
+        <form method="post" action="{{ path('manage_settings_save') }}">
+            <div class="mb-3">
+                <label class="form-label">Couleur de la barre latérale</label>
+                <input type="color" name="sidebar_color" class="form-control form-control-color"
+                       value="{{ app.user.adminSidebarColor|default('#1F4E3D') }}">
+            </div>
+            <div class="mb-3 form-check form-switch">
+                <input type="checkbox" name="dark_mode" value="1" class="form-check-input" id="darkModeSwitch"
+                       {{ app.user.adminDarkMode ? 'checked' : '' }}>
+                <label class="form-check-label" for="darkModeSwitch">Mode nuit</label>
+            </div>
+            <button type="submit" class="admin-btn admin-btn--primary">Enregistrer</button>
+        </form>
+    </div>
+{% endblock %}

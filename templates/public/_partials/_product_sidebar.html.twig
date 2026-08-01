@@ -1,0 +1,35 @@
+<aside class="product-page-sidebar">
+    <div class="rayons-sidebar rayons-sidebar--flat">
+        <h5 class="rayons-title">{{ 'menu.top_rayons'|trans }}</h5>
+        <ul class="cat-tree cat-tree--flat">
+            {% for rayon in top_rayons() %}
+                <li class="cat-item level-0">
+                    <a href="{{ path('catalog_rayon', { slug: rayon.slug }) }}" class="cat-label">
+                        <i class="bi {{ rayon.icon|default('bi-tag') }} menu-item-icon"></i>
+                        {{ rayon.name }}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    {% set sidebarAd = product_sidebar_ad() %}
+    {% if sidebarAd %}
+        <a href="{{ path('ads_click', { id: sidebarAd.id }) }}" class="home-ad-slot">
+            <img src="{{ vich_uploader_asset(sidebarAd, 'imageFile') }}" alt="{{ sidebarAd.title }}" loading="lazy">
+        </a>
+    {% endif %}
+
+    <div class="product-sidebar-bestsellers">
+        <h6>{{ 'home.best_sellers'|trans }}</h6>
+        {% for p in best_sellers_widget(4) %}
+            <a href="{{ path('catalog_product', { slug: p.slug }) }}" class="home-mini-product">
+                <span class="home-mini-product-img">
+                    <img src="{{ p.images|length > 0 ? vich_uploader_asset(p.images|first, 'imageFile') : '' }}" alt="{{ p.title }}" loading="lazy">
+                </span>
+                <span class="home-mini-product-title">{{ p.title }}</span>
+                <span class="home-mini-product-price">{{ p.basePrice }} {{ p.currency }}</span>
+            </a>
+        {% endfor %}
+    </div>
+</aside>

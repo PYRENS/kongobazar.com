@@ -1,0 +1,61 @@
+{# ==========================================================================
+   "Top Catégories" (illustrées) + "Top Vendeur"
+   Contexte attendu :
+     - topCategories : Category[] (imageName non nul, triées par position)
+     - topVendors    : SellerProfile[] avec averageRating, salesCount, topProducts (4 Product)
+   ========================================================================== #}
+<section class="home-top-categories">
+    <div class="home-top-categories-head">
+        <h4>{{ 'home.top_categories'|trans }}</h4>
+        <a href="{{ path('catalog_index') }}" class="see-all-link">{{ 'home.see_all_products'|trans }} <i class="bi bi-arrow-up-right"></i></a>
+    </div>
+    <div class="home-top-categories-track" data-mini-carousel data-per-page="8">
+        <button type="button" class="carousel-arrow carousel-arrow--edge left" data-carousel-prev aria-label="{{ 'home.prev'|trans }}"><i class="bi bi-chevron-left"></i></button>
+        {% for category in topCategories|default([]) %}
+            <a href="{{ path('catalog_category', { slug: category.slug }) }}" class="top-category-item">
+                <span class="top-category-circle">
+                    <img src="{{ vich_uploader_asset(category, 'imageFile') }}" alt="{{ category.name }}" loading="lazy">
+                </span>
+                <span class="top-category-label">{{ category.name }}</span>
+            </a>
+        {% endfor %}
+        <button type="button" class="carousel-arrow carousel-arrow--edge right" data-carousel-next aria-label="{{ 'home.next'|trans }}"><i class="bi bi-chevron-right"></i></button>
+    </div>
+</section>
+
+<section class="home-top-vendors">
+    <div class="home-top-vendors-head">
+        <h4>{{ 'home.top_vendors'|trans }}</h4>
+        <p>{{ 'home.browse_all_vendors'|trans }} <a href="{{ path('network_index') }}">{{ 'home.all_vendors'|trans }}</a></p>
+    </div>
+    <div class="home-vendors-grid">
+        {% for vendor in topVendors|default([]) %}
+            <div class="vendor-card">
+                <div class="vendor-card-head">
+                    {% if vendor.logoName %}
+                        <img src="{{ vich_uploader_asset(vendor, 'logoFile') }}" alt="{{ vendor.storeName|default('Vendeur') }}" class="vendor-logo" loading="lazy">
+                    {% else %}
+                        <span class="vendor-logo-placeholder"><i class="bi bi-shop"></i></span>
+                    {% endif %}
+                    <div class="vendor-card-info">
+                        <strong>{{ vendor.storeName|default(vendor.user.email) }}</strong>
+                        <span class="vendor-product-count">{{ vendor.products|default([])|length }} {{ 'home.products'|trans }}</span>
+                        <span class="vendor-rating">
+                            {% for i in 1..5 %}
+                                <i class="bi {{ i <= (vendor.averageRating|default(0)|round) ? 'bi-star-fill' : 'bi-star' }}"></i>
+                            {% endfor %}
+                            <span class="vendor-sales">{{ 'home.sales'|trans }} {{ vendor.salesCount|default(0) }}</span>
+                        </span>
+                    </div>
+                </div>
+                <div class="vendor-card-products">
+                    {% for product in vendor.topProducts|default([])|slice(0, 4) %}
+                        <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="vendor-product-thumb">
+                            <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</section>

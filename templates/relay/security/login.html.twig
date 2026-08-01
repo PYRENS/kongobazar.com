@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion — Agent Relais</title>
+</head>
+<body style="background:#fff; min-height:100vh; display:flex; align-items:center; justify-content:center; font-family:system-ui, sans-serif;">
+
+    <div style="width:100%; max-width:340px; padding:20px;">
+        <h5 style="color:#43a047; margin-bottom:4px;">📦 KongoBazar Relais</h5>
+        <p style="color:#777; margin-bottom:20px; font-size:14px;">Connexion agent</p>
+
+        {% if error %}
+            <div style="background:#fdecea; color:#c0392b; padding:8px 12px; border-radius:4px; font-size:13px; margin-bottom:16px;">
+                {{ error.messageKey|trans(error.messageData, 'security') }}
+            </div>
+        {% endif %}
+
+        <form method="post">
+            <input type="email" name="email" placeholder="Email" value="{{ last_username }}" required autofocus
+                   style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #ddd; border-radius:4px; font-size:15px;">
+            <input type="password" name="password" placeholder="Mot de passe" required
+                   style="width:100%; padding:12px; margin-bottom:14px; border:1px solid #ddd; border-radius:4px; font-size:15px;">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+            <button type="submit" style="width:100%; padding:14px; background:#43a047; color:#fff; border:none; border-radius:4px; font-weight:700; font-size:15px;">
+                Se connecter
+            </button>
+        </form>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,77 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Activité de {{ targetUser.email }}{% endblock %}
+{% block page_icon %}bi-graph-up{% endblock %}
+{% block page_title %}Activité — {{ targetUser.email }}{% endblock %}
+
+{% block body %}
+    {% if not sellerProfile %}
+        <div class="admin-card">
+            <p class="text-muted" style="margin:0;">Cet utilisateur n'a pas de profil vendeur — aucune activité de vente à afficher.</p>
+        </div>
+    {% else %}
+        <div class="row">
+            <div class="col-md-4">
+                <div class="admin-card">
+                    <div style="font-size:24px;font-weight:800;color:var(--admin-primary);">
+                        {{ averageRating ? averageRating|number_format(1) ~ ' / 5' : '—' }}
+                    </div>
+                    <div style="color:#999;font-size:13px;">Note moyenne</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="admin-card">
+                    <div style="font-size:24px;font-weight:800;color:var(--admin-primary);">{{ products|length }}</div>
+                    <div style="color:#999;font-size:13px;">Produits (10 derniers)</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="admin-card">
+                    <div style="font-size:24px;font-weight:800;color:#999;">—</div>
+                    <div style="color:#999;font-size:13px;">Ventes <span class="admin-nav-soon">Bientôt</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <h6>Derniers produits</h6>
+            {% if products|length > 0 %}
+                <table class="admin-table">
+                    <thead><tr><th>Produit</th><th>Prix</th><th>Statut</th></tr></thead>
+                    <tbody>
+                        {% for product in products %}
+                            <tr>
+                                <td>{{ product.title }}</td>
+                                <td>{{ product.basePrice }} {{ product.currency }}</td>
+                                <td>{{ product.status }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="text-muted">Aucun produit enregistré.</p>
+            {% endif %}
+        </div>
+
+        <div class="admin-card">
+            <h6>Derniers avis reçus</h6>
+            {% if reviews|length > 0 %}
+                <table class="admin-table">
+                    <thead><tr><th>Note</th><th>Commentaire</th></tr></thead>
+                    <tbody>
+                        {% for review in reviews %}
+                            <tr>
+                                <td>{{ review.rating }} / 5</td>
+                                <td>{{ review.comment|default('—') }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="text-muted">Aucun avis reçu pour le moment.</p>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <a href="{{ path('manage_users_show', { id: targetUser.id }) }}" class="admin-btn admin-btn--outline">← Retour au détail</a>
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Entités admin.{% endblock %}
+{% block page_icon %}bi-geo-alt{% endblock %}
+{% block page_title %}Entités administratives{% endblock %}
+
+{% block body %}
+    <form method="get" class="admin-search-bar">
+        <input type="text" name="q" placeholder="Rechercher une entité par nom (ex: Lemba, Salongo...)" value="{{ searchTerm }}">
+        <button type="submit" class="admin-btn admin-btn--primary"><i class="bi bi-search"></i> Rechercher</button>
+        {% if isSearchMode %}
+            <a href="{{ path('manage_geo_index') }}" class="admin-btn admin-btn--outline">
+                <i class="bi bi-x-circle"></i> Effacer
+            </a>
+        {% endif %}
+    </form>
+
+    {% if not isSearchMode %}
+        <nav class="admin-breadcrumb">
+            <a href="{{ path('manage_geo_index') }}"><i class="bi bi-house"></i> Racine</a>
+            {% for unit in breadcrumb %}
+                <i class="bi bi-chevron-right"></i>
+                <a href="{{ path('manage_geo_index', { parent: unit.id }) }}">{{ unit.name }}</a>
+            {% endfor %}
+        </nav>
+
+        <div class="admin-actions" style="margin:16px 0;">
+        <a href="{{ path('manage_geo_new', parent ? { parent: parent.id } : {}) }}" class="admin-btn admin-btn--primary">
+            <i class="bi bi-plus-lg"></i> Ajouter {{ parent ? 'sous ' ~ parent.name : 'une entité' }}
+        </a>
+        </div>
+    {% else %}
+        <p class="text-muted">{{ rows|length }} résultat(s) pour "{{ searchTerm }}"</p>
+    {% endif %}
+
+    {% macro sortLink(field, label, currentSort, currentDir) %}
+        {% set nextDir = (currentSort == field and currentDir == 'ASC') ? 'DESC' : 'ASC' %}
+        <a href="?sort={{ field }}&dir={{ nextDir }}" class="admin-sort-link">
+            {{ label }}
+            {% if currentSort == field %}<i class="bi bi-caret-{{ currentDir == 'ASC' ? 'up' : 'down' }}-fill"></i>{% endif %}
+        </a>
+    {% endmacro %}
+    {% import _self as self %}
+
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>{{ self.sortLink('name', 'Nom', currentSort, currentDir) }}</th>
+                {% if isSearchMode %}<th>Chemin complet</th>{% endif %}
+                <th>Type</th>
+                <th>Statut</th>
+                <th>Sous-entités</th>
+                <th><i class="bi bi-person"></i> {{ self.sortLink('countParticulier', 'Particuliers', currentSort, currentDir) }}</th>
+                <th><i class="bi bi-briefcase"></i> {{ self.sortLink('countPro', 'Pro', currentSort, currentDir) }}</th>
+                <th><i class="bi bi-shop"></i> {{ self.sortLink('countStore', 'Magasin', currentSort, currentDir) }}</th>
+                <th><i class="bi bi-geo-alt"></i> {{ self.sortLink('countRelay', 'Relais', currentSort, currentDir) }}</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+                {% set unit = row.unit %}
+                <tr>
+                    <td>{{ unit.name }}</td>
+                    {% if isSearchMode %}<td class="text-muted" style="font-size:12px;">{{ unit.getFullPath() }}</td>{% endif %}
+                    <td>{{ unit.typeLabel|default('—') }}</td>
+                    <td>
+                        <span class="admin-badge admin-badge--{{ unit.active ? 'active' : 'disabled' }}">
+                            {{ unit.active ? 'Actif' : 'Désactivé' }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if row.childrenCount > 0 %}
+                            <a href="{{ path('manage_geo_index', { parent: unit.id }) }}">
+                                {{ row.childrenCount }} <i class="bi bi-box-arrow-in-right"></i>
+                            </a>
+                        {% else %}
+                            <span class="text-muted">0</span>
+                        {% endif %}
+                    </td>
+                    
+                    <td>
+                        {% if row.countParticulier > 0 %}
+                            <a href="{{ path('manage_users_index', { province: unit.getAncestorAtLevel(1).id|default(unit.id) }) }}">{{ row.countParticulier }}</a>
+                        {% else %}0{% endif %}
+                    </td>
+                    <td>
+                        {% if row.countPro > 0 %}
+                            <a href="{{ path('manage_users_index', { type: 'Vendeur Pro', province: unit.getAncestorAtLevel(1).id|default(unit.id) }) }}">{{ row.countPro }}</a>
+                        {% else %}0{% endif %}
+                    </td>
+                    <td>
+                        {% if row.countStore > 0 %}
+                            <a href="{{ path('manage_users_index', { type: 'Boutique', province: unit.getAncestorAtLevel(1).id|default(unit.id) }) }}">{{ row.countStore }}</a>
+                        {% else %}0{% endif %}
+                    </td>
+                    <td>
+                        {% if row.countRelay > 0 %}
+                            <a href="{{ path('manage_users_index', { type: 'Point Relais', province: unit.getAncestorAtLevel(1).id|default(unit.id) }) }}">{{ row.countRelay }}</a>
+                        {% else %}0{% endif %}
+                    </td>
+
+                    <td class="admin-actions">
+                        <a href="{{ path('manage_geo_edit', { id: unit.id }) }}" class="admin-btn admin-btn--outline">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form action="{{ path('manage_geo_toggle', { id: unit.id }) }}" method="post">
+                            <button type="submit" class="admin-btn admin-btn--outline">
+                                {{ unit.active ? 'Désactiver' : 'Activer' }}
+                            </button>
+                        </form>
+                        <form action="{{ path('manage_geo_delete', { id: unit.id }) }}" method="post"
+                              onsubmit="return confirm('Supprimer {{ unit.name }} et TOUS ses descendants ? Cette action est irréversible.');">
+                            <button type="submit" class="admin-btn admin-btn--danger">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="10" class="text-muted">Aucune entité trouvée.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% for product in products %}
+    <div class="product-card">
+        <div class="product-card-media">
+            <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
+            {% if mode == 'coming_soon' %}
+                <span class="badge-discount" style="background:#777;border-radius:4px;">{{ 'offers.badge_soon'|trans }}</span>
+            {% elseif product.compareAtPrice %}
+                <span class="badge-discount">
+                    -{{ ((1 - (product.basePrice / product.compareAtPrice)) * 100)|round }}%
+                </span>
+            {% endif %}
+        </div>
+        <div class="product-card-body">
+            <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="product-card-title">{{ product.title }}</a>
+            <div class="product-card-price">
+                <span class="price-now">{{ product.basePrice }} {{ product.currency }}</span>
+                {% if product.compareAtPrice %}
+                    <span class="price-old">{{ product.compareAtPrice }} {{ product.currency }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endfor %}

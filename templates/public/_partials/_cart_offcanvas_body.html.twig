@@ -1,0 +1,49 @@
+{% set summary = cart_summary() %}
+{% if summary.lines|length > 0 %}
+    <div class="cart-items">
+        {% for line in summary.lines %}
+            {% set item = line.item %}
+            {% set variant = item.variant %}
+            <div class="cart-item">
+                <img src="{{ variant.imageName ? vich_uploader_asset(variant, 'imageFile') : '' }}" alt="{{ variant.product.title }}">
+                <div class="cart-item-info">
+                    <span class="cart-item-name">{{ variant.product.title }}</span>
+                    {% if variant.color or variant.size %}
+                        <span class="cart-item-variant">
+                            {% if variant.color %}{{ variant.color.name }}{% endif %}
+                            {% if variant.color and variant.size %} · {% endif %}
+                            {% if variant.size %}{{ variant.size.name }}{% endif %}
+                        </span>
+                    {% endif %}
+                    <span class="cart-item-qty">{{ item.quantity }} x {{ line.unitPrice }} {{ line.currency }}</span>
+                    {% if not line.available %}
+                        <span class="cart-item-warning">{{ 'cart.stock_reduced'|trans }}</span>
+                    {% endif %}
+                </div>
+                <form action="{{ path('cart_remove', { id: item.id }) }}" method="post">
+                    <button type="submit" class="cart-item-remove" aria-label="{{ 'cart.remove_item'|trans }}">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </form>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="cart-summary">
+        <div class="cart-subtotal">
+            <span>{{ 'cart.subtotal'|trans }}</span>
+            {% set display = cart_display_subtotal() %}
+            <span>{{ display.amount }} {{ display.currency }}</span>
+        </div>
+    </div>
+
+    <div class="cart-actions">
+        <a href="{{ path('cart_index') }}" class="btn btn-outline">{{ 'cart.view_cart'|trans }}</a>
+        <a href="{{ path('checkout_index') }}" class="btn btn-primary">{{ 'cart.checkout'|trans }}</a>
+    </div>
+{% else %}
+    <div class="cart-empty-state">
+        <i class="bi bi-cart-x cart-empty-icon"></i>
+        <p class="cart-empty">{{ 'cart.empty'|trans }}</p>
+    </div>
+{% endif %}

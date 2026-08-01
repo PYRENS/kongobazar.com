@@ -1,0 +1,43 @@
+{# ==========================================================================
+   "Popular Tags" — logos de marques mises en avant + mosaïque lifestyle
+   Contexte attendu :
+     - featuredBrands   : Brand[] (featuredHomepage = true, triées par featuredHomepagePosition)
+     - adLifestyleLeft   : Advertisement|null (zoneKey homepage_lifestyle_left)
+     - adLifestyleCenter : Advertisement|null (zoneKey homepage_lifestyle_center)
+     - adLifestyleRight  : Advertisement|null (zoneKey homepage_lifestyle_right)
+   ========================================================================== #}
+<section class="home-popular-tags">
+    <div class="popular-tags-grid">
+        <aside class="popular-tags-brands">
+            {% for brand in featuredBrands|default([]) %}
+                <a href="{{ path('catalog_brand', { slug: brand.slug }) }}" class="brand-tag-item" title="{{ brand.name }}">
+                    {% if brand.logoName %}
+                        <img src="{{ vich_uploader_asset(brand, 'logoFile') }}" alt="{{ brand.name }}" loading="lazy">
+                    {% else %}
+                        <span class="brand-tag-fallback">{{ brand.name|slice(0, 2)|upper }}</span>
+                    {% endif %}
+                </a>
+            {% endfor %}
+        </aside>
+
+        <div class="popular-tags-lifestyle">
+            {% if adLifestyleLeft is defined and adLifestyleLeft %}
+                <a href="{{ path('ads_click', { id: adLifestyleLeft.id }) }}" class="lifestyle-cell lifestyle-cell--side">
+                    <img src="{{ vich_uploader_asset(adLifestyleLeft, 'imageFile') }}" alt="{{ adLifestyleLeft.title }}" loading="lazy">
+                </a>
+            {% endif %}
+
+            {% if adLifestyleCenter is defined and adLifestyleCenter %}
+                <a href="{{ path('ads_click', { id: adLifestyleCenter.id }) }}" class="lifestyle-cell lifestyle-cell--center">
+                    <img src="{{ vich_uploader_asset(adLifestyleCenter, 'imageFile') }}" alt="{{ adLifestyleCenter.title }}" loading="lazy">
+                </a>
+            {% endif %}
+
+            {% if adLifestyleRight is defined and adLifestyleRight %}
+                <a href="{{ path('ads_click', { id: adLifestyleRight.id }) }}" class="lifestyle-cell lifestyle-cell--side">
+                    <img src="{{ vich_uploader_asset(adLifestyleRight, 'imageFile') }}" alt="{{ adLifestyleRight.title }}" loading="lazy">
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</section>

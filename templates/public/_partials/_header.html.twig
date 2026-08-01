@@ -1,0 +1,225 @@
+{# ==========================================================================
+   Header complet du site public (kongobazar.com)
+   Toutes les données de navigation (rayons, tendances, menu personnalisé,
+   pubs mega menu, panier) sont désormais fournies par des fonctions Twig
+   centralisées (voir src/Twig/AppExtension.php), pas par le contrôleur.
+   Ça évite qu'un contrôleur qui oublie de les transmettre fasse planter
+   le header (ex. DirectoryController).
+   ========================================================================== #}
+{% import 'public/_partials/_category_menu.html.twig' as menu %}
+{% set cart = current_cart() %}
+{% set cartSummary = cart_summary() %}
+{# Icônes sociales flottantes, fixes sur le bord gauche #}
+<div class="social-float">
+    <a href="#" class="social-float-item fb" aria-label="Facebook"><i class="icon-facebook bi bi-facebook"></i></a>
+    <a href="#" class="social-float-item tw" aria-label="Twitter"><i class="icon-twitter bi bi-twitter-x"></i></a>
+    <a href="#" class="social-float-item gp" aria-label="Google+"><i class="icon-google bi bi-google"></i></a>
+    <a href="#" class="social-float-item pi" aria-label="Pinterest"><i class="icon-pinterest bi bi-pinterest"></i></a>
+    <a href="#" class="social-float-item ig" aria-label="Instagram"><i class="icon-instagram bi bi-instagram"></i></a>
+</div>
+
+<header id="site-header" class="site-header">
+    {# --- Barre d'info du haut --- #}
+    <div class="top-bar">
+        <div class="container-kb top-bar-inner">
+            <span class="top-bar-welcome">{{ 'header.welcome'|trans }}</span>
+            <div class="top-bar-links">
+                <div class="topbar-dropdown">
+                    <button type="button" class="topbar-dropdown-toggle">
+                        <i class="bi bi-person"></i> {{ 'header.my_account'|trans }} <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <div class="topbar-dropdown-panel">
+                        <a href="{{ path('account_index') }}"><i class="bi bi-box-arrow-in-right"></i> {{ 'header.login'|trans }}</a>
+                        <a href="{{ path('account_index') }}"><i class="bi bi-bag-check"></i> {{ 'header.order_history'|trans }}</a>
+                        <a href="{{ path('checkout_index') }}"><i class="bi bi-credit-card"></i> {{ 'header.checkout'|trans }}</a>
+                    </div>
+                </div>
+
+                <span class="topbar-sep">|</span>
+
+                <a href="{{ path('wishlist_index') }}" class="topbar-simple-link">
+                    <i class="bi bi-heart"></i> {{ 'header.my_wishlist'|trans }}
+                </a>
+
+                <span class="topbar-sep">|</span>
+
+                {% set languages = [
+                    { code: 'fr', abbr: 'FR', label: 'Français', flag: 'fi-fr', enabled: true },
+                    { code: 'en', abbr: 'EN', label: 'English', flag: 'fi-gb', enabled: false },
+                    { code: 'ln', abbr: 'LN', label: 'Lingala', flag: 'fi-cd', enabled: false },
+                    { code: 'kg', abbr: 'KG', label: 'Kikongo', flag: 'fi-cd', enabled: false },
+                    { code: 'tsh', abbr: 'TSH', label: 'Tshiluba', flag: 'fi-cd', enabled: false },
+                    { code: 'sw', abbr: 'SW', label: 'Kiswahili', flag: 'fi-cd', enabled: false },
+                ] %}
+                {% set currentLang = languages|filter(l => l.code == current_locale())|first %}
+
+                <div class="topbar-dropdown">
+                    <button type="button" class="topbar-dropdown-toggle">
+                        <span class="fi {{ currentLang.flag }}"></span> {{ currentLang.abbr }} <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <div class="topbar-dropdown-panel">
+                        {% for lang in languages %}
+                            {% if lang.enabled %}
+                                <form action="{{ path('set_preferences') }}" method="post" class="setting-mini-form">
+                                    <input type="hidden" name="locale" value="{{ lang.code }}">
+                                    <button type="submit" class="lang-row{{ lang.code == current_locale() ? ' active' : '' }}">
+                                        <span class="fi {{ lang.flag }}"></span> {{ lang.label }}
+                                        {% if lang.code == current_locale() %}<i class="bi bi-check"></i>{% endif %}
+                                    </button>
+                                </form>
+                            {% else %}
+                                <span class="lang-row lang-row--disabled">
+                                    <span class="fi {{ lang.flag }}"></span> {{ lang.label }}
+                                </span>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <span class="topbar-sep">|</span>
+
+                {% set currencies = [{ code: 'USD', flag: 'fi-us' }, { code: 'CDF', flag: 'fi-cd' }] %}
+                {% set currentCur = currencies|filter(c => c.code == current_currency())|first %}
+
+                <div class="topbar-dropdown">
+                    <button type="button" class="topbar-dropdown-toggle">
+                        <span class="fi {{ currentCur.flag }}"></span> {{ currentCur.code }} <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <div class="topbar-dropdown-panel">
+                        {% for cur in currencies %}
+                            <form action="{{ path('set_preferences') }}" method="post" class="setting-mini-form">
+                                <input type="hidden" name="currency" value="{{ cur.code }}">
+                                <button type="submit" class="lang-row{{ cur.code == current_currency() ? ' active' : '' }}">
+                                    <span class="fi {{ cur.flag }}"></span> {{ cur.code }}
+                                    {% if cur.code == current_currency() %}<i class="bi bi-check"></i>{% endif %}
+                                </button>
+                            </form>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# --- Ligne principale : logo / recherche / panier --- #}
+    <div class="main-header">
+        <div class="container-kb main-header-inner">
+            <a href="{{ path('public_home') }}" class="logo">
+                <span class="logo-kongo">Kongo</span><span class="logo-bazar">Bazar</span>
+            </a>
+
+            <form class="search-form" action="{{ path('catalog_search') }}" method="get" role="search">
+                <input type="search" name="q" placeholder="{{ 'header.search_placeholder'|trans }}" autocomplete="off">
+                <button type="submit" aria-label="{{ 'header.search_submit'|trans }}"><i class="icon-search bi bi-search"></i></button>
+                <div class="search-suggestions" hidden></div>
+            </form>
+
+            <button class="cart-trigger" type="button" data-bs-toggle="offcanvas" data-bs-target="#cartOffcanvas">
+                <i class="icon-cart bi bi-cart3 cart-trigger-icon"></i>
+                <span class="cart-trigger-divider"></span>
+                <span class="cart-trigger-text">
+                    <span class="cart-trigger-label">{{ 'cart.my_cart'|trans }}</span>
+                    <span class="cart-trigger-detail">
+                        <strong data-cart-count>{{ cartSummary.itemCount }}</strong> {{ 'cart.items_suffix'|trans }}
+                        <span class="cart-trigger-sep">-</span>
+                        {% set display = cart_display_subtotal() %}
+                        <strong data-cart-total>{{ display.amount }}</strong> {{ display.currency }}
+                    </span>
+                </span>
+            </button>
+        </div>
+    </div>
+
+    {# --- Navigation principale + mega menu --- #}
+    <nav class="main-nav">
+        <div class="container-kb main-nav-inner">
+            <ul class="nav-items">
+                <li>
+                    <button type="button" class="nav-rayons-trigger" data-bs-toggle="offcanvas" data-bs-target="#mainMenuOffcanvas">
+                        <i class="bi bi-list"></i> {{ 'nav.all_rayons'|trans }}
+                    </button>
+                </li>
+                <li class="{{ app.request.attributes.get('_route') == 'public_home' ? 'active' : '' }}">
+                    <a href="{{ path('public_home') }}">{{ 'nav.home'|trans }}</a>
+                </li>
+                <li class="has-mega-menu">
+                    <a href="{{ path('catalog_index') }}">{{ 'nav.catalogue'|trans }}</a>
+                    {% include 'public/_partials/_mega_menu_catalogue.html.twig' %}
+                </li>
+
+                <li class="nav-simple-dropdown">
+                    <button type="button" class="nav-simple-dropdown-toggle">
+                        {{ 'nav.offers'|trans }} <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <div class="nav-simple-dropdown-panel">
+                        <a href="{{ path('catalog_offers_individual') }}"><i class="bi bi-person"></i> {{ 'nav.offers_individual'|trans }}</a>
+                        <a href="{{ path('catalog_offers_professional') }}"><i class="bi bi-briefcase"></i> {{ 'nav.offers_professional'|trans }}</a>
+                        <a href="{{ path('catalog_offers_store') }}"><i class="bi bi-shop"></i> {{ 'nav.offers_store'|trans }}</a>
+                        <a href="{{ path('catalog_offers_kongobazar') }}"><i class="bi bi-award"></i> {{ 'nav.offers_kongobazar'|trans }}</a>
+                    </div>
+                </li>
+
+                {% for item in header_custom_menu() %}
+                    <li>
+                        <a href="{{ item.internalRoute ? path(item.internalRoute) : item.url }}"
+                           {% if item.openInNewTab %}target="_blank" rel="noopener"{% endif %}>
+                            {{ item.label }}
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </nav>
+
+    {# --- Bandeau "Tendances" (catégories les plus visitées, 7 derniers jours) --- #}
+    {% set trends = trending_categories() %}
+    {% if trends|length > 0 %}
+        <div class="trends-bar">
+            <div class="container-kb trends-bar-inner">
+                <span class="trends-label">{{ 'home.trends.label'|trans }} <i class="bi bi-chevron-right"></i></span>
+                {% for item in trends %}
+                    <a href="{{ path('catalog_category', { slug: item.category.slug }) }}">{{ item.category.name }}</a>
+                    {% if not loop.last %}<i class="bi bi-chevron-right trends-sep"></i>{% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+</header>
+
+{# --- Header condensé, affiché en JS au scroll (voir main.js) --- #}
+<header id="site-header-condensed" class="site-header-condensed">
+    <div class="container-kb site-header-condensed-inner">
+        <button class="hamburger-toggle" type="button" data-bs-toggle="offcanvas" data-bs-target="#mainMenuOffcanvas" aria-label="{{ 'menu.open'|trans }}">
+            <i class="icon-menu bi bi-list"></i>
+        </button>
+        <a href="{{ path('public_home') }}" class="logo-small">
+            <span class="logo-kongo">Kongo</span><span class="logo-bazar">Bazar</span>
+        </a>
+        <form class="search-form-condensed" action="{{ path('catalog_search') }}" method="get">
+            <input type="search" name="q" placeholder="{{ 'header.search_placeholder'|trans }}" autocomplete="off">
+            <div class="search-suggestions" hidden></div>
+        </form>
+        <button class="cart-trigger cart-trigger--condensed" type="button" data-bs-toggle="offcanvas" data-bs-target="#cartOffcanvas">
+            <i class="icon-cart bi bi-cart3"></i>
+            <strong class="cart-count" data-cart-count>{{ cartSummary.itemCount }}</strong>
+        </button>
+    </div>
+</header>
+
+{# --- Tiroir latéral partagé : menu mobile / hamburger du header condensé --- #}
+<div class="offcanvas offcanvas-start" tabindex="-1" id="mainMenuOffcanvas">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title">{{ 'menu.title'|trans }}</h5>
+        <button type="button" class="btn-close-custom" data-bs-dismiss="offcanvas" aria-label="{{ 'menu.close'|trans }}">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+    <div class="offcanvas-body">
+        {{ menu.drillMenu(root_categories()) }}
+    </div>
+</div>
+
+{# --- Bouton retour en haut, affiché en JS au scroll --- #}
+<button id="back-to-top" class="back-to-top" type="button" aria-label="{{ 'header.back_to_top'|trans }}">
+    <i class="icon-arrow-up bi bi-arrow-up"></i>
+</button>

@@ -1,0 +1,37 @@
+{# ==========================================================================
+   Fil d'Ariane — jamais affiché sur l'accueil, jamais s'il n'y a rien à montrer.
+   Chaque contrôleur passe une variable "breadcrumbs" : tableau de
+   { label: string, url: string|null }. Le dernier élément (page courante)
+   n'est jamais un lien, même si une url est fournie par erreur.
+   ========================================================================== #}
+{% set trail = breadcrumbs|default([]) %}
+{% if app.request.attributes.get('_route') != 'public_home' and trail|length > 0 %}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "Accueil", "item": "{{ path('public_home') }}"}
+            {% for item in trail %}
+            ,{"@type": "ListItem", "position": {{ loop.index + 1 }}, "name": {{ item.label|json_encode|raw }}{% if item.url %}, "item": "{{ item.url }}"{% endif %}}
+            {% endfor %}
+        ]
+    }
+    </script>
+    
+    <nav class="breadcrumb-bar" aria-label="Fil d'Ariane">
+        <div class="container-kb breadcrumb-inner">
+            <a href="{{ path('public_home') }}" class="breadcrumb-item breadcrumb-home">
+                <i class="bi bi-house-door"></i>
+            </a>
+            {% for item in trail %}
+                <i class="bi bi-chevron-right breadcrumb-sep"></i>
+                {% if item.url and not loop.last %}
+                    <a href="{{ item.url }}" class="breadcrumb-item">{{ item.label }}</a>
+                {% else %}
+                    <span class="breadcrumb-item breadcrumb-item--current">{{ item.label }}</span>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </nav>
+{% endif %}
