@@ -1,0 +1,40 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block body %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h4 mb-0">Motorisations</h1>
+        <a href="{{ path('manage_vehicle_engines_new') }}" class="btn btn-primary btn-sm">+ Nouvelle motorisation</a>
+    </div>
+
+    <table class="table admin-table">
+        <thead>
+            <tr>
+                <th>Marque / Modèle / Variante</th>
+                <th>Moteur</th>
+                <th>CV / kW</th>
+                <th>Énergie</th>
+                <th>Période</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for engine in engines %}
+                <tr>
+                    <td>{{ engine.brandNameCache }} {{ engine.modelNameCache }} {{ engine.variantNameCache }}</td>
+                    <td>{{ engine.label }}</td>
+                    <td>{{ engine.powerCv ?: '-' }} CV / {{ engine.powerKw ?: '-' }} kW</td>
+                    <td>{{ engine.fuelType ? engine.fuelType.name : '-' }}</td>
+                    <td>{{ engine.periodLabel ?: '-' }}</td>
+                    <td class="text-end">
+                        <a href="{{ path('manage_vehicle_engines_edit', {id: engine.id}) }}" class="btn btn-sm btn-outline-secondary">Modifier</a>
+                        <form action="{{ path('manage_vehicle_engines_delete', {id: engine.id}) }}" method="post" class="d-inline" onsubmit="return confirm('Supprimer cette motorisation ?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer</button>
+                        </form>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="6" class="text-muted">Aucune motorisation pour l'instant.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

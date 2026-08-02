@@ -1,0 +1,120 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}{{ brand.name }}{% endblock %}
+{% block page_icon %}bi-award{% endblock %}
+{% block page_title %}{{ brand.name }}{% endblock %}
+
+{% block body %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h4 mb-0">{{ brand.name }}</h1>
+        <div>
+            <a href="{{ path('manage_brands_edit', {id: brand.id}) }}" class="btn btn-outline-secondary btn-sm">Modifier</a>
+            <a href="{{ path('manage_brands_index') }}" class="btn btn-outline-secondary btn-sm">Retour à la liste</a>
+        </div>
+    </div>
+
+    {# --- Section 1 : Informations --- #}
+    <div class="card mb-4">
+        <div class="card-header">Informations</div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-2 text-center">
+                    {% if brand.logoName %}
+                        <img src="{{ vich_uploader_asset(brand, 'logoFile') }}" alt="" style="max-width:100px;max-height:100px;object-fit:contain;">
+                    {% else %}
+                        <span class="text-muted">Aucun logo</span>
+                    {% endif %}
+                </div>
+                <div class="col-md-10">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-3">Pays</dt>
+                        <dd class="col-sm-9">
+                            {% if brand.pays %}
+                                <span class="fi fi-{{ brand.pays.iso2|lower }}"></span> {{ brand.pays.name }}
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-3">Type</dt>
+                        <dd class="col-sm-9">
+                            {% if brand.type %}
+                                {{ brand.type|join(', ') }}
+                            {% else %}
+                                <span class="text-muted">Générique</span>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-3">Vérifiée</dt>
+                        <dd class="col-sm-9">{{ brand.verified ? 'Oui' : 'Non' }}</dd>
+
+                        <dt class="col-sm-3">Statut</dt>
+                        <dd class="col-sm-9">
+                            <form action="{{ path('manage_brands_toggle', {id: brand.id}) }}" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-sm {{ brand.active ? 'btn-success' : 'btn-outline-secondary' }}">
+                                    {{ brand.active ? 'Actif' : 'Inactif' }}
+                                </button>
+                            </form>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# --- Section 2 : Modèles (Auto/Moto) ou Produits (autres marques) --- #}
+    <div class="card">
+        <div class="card-header">
+            {{ isVehicle ? 'Modèles véhicules' : 'Produits' }}
+        </div>
+        <div class="card-body p-0">
+            {% if isVehicle %}
+                <table class="table admin-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Nom alternatif</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for model in vehicleModels %}
+                            <tr>
+                                <td>{{ model.name }}</td>
+                                <td>{{ model.name2 ?: '—' }}</td>
+                                <td class="text-end">
+                                    <a href="{{ path('manage_vehicle_models_edit', {id: model.id}) }}" class="btn btn-sm btn-outline-secondary">Modifier</a>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="3" class="text-muted p-3">Aucun modèle pour cette marque.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <table class="table admin-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Titre</th>
+                            <th>Prix</th>
+                            <th>Statut</th>
+                            <th>Créé le</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                            <tr>
+                                <td>{{ product.title }}</td>
+                                <td>{{ product.basePrice }} {{ product.currency }}</td>
+                                <td>{{ product.status }}</td>
+                                <td>{{ product.createdAt ? product.createdAt|date('d/m/Y') : '—' }}</td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="4" class="text-muted p-3">Aucun produit pour cette marque.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

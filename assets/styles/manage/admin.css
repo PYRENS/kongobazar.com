@@ -343,21 +343,94 @@ body.admin-body {
 }
 
 /* --------------------------------------------------------------------------
-   Aperçu upload (formulaires)
+   Upload d'image (formulaires) — dropzone + vignettes Nouvelle/Ancienne
    -------------------------------------------------------------------------- */
-.admin-upload-preview-row {
+.admin-file-upload-group {
     display: flex;
+    align-items: flex-start;
     gap: 12px;
     margin-bottom: 10px;
+    flex-wrap: wrap;
 }
-.admin-upload-preview-box { display: flex; flex-direction: column; gap: 4px; }
-.admin-upload-preview-label { font-size: 11px; color: #999; }
-.admin-upload-preview-img {
-    width: 80px;
-    height: 80px;
+.admin-upload-input-hidden {
+    display: none;
+}
+.admin-upload-dropzone {
+    width: 110px;
+    height: 110px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #f8f9fb;
+    color: #8a8f98;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.admin-upload-dropzone i { font-size: 20px; }
+.admin-upload-dropzone span { font-size: 13px; font-weight: 500; }
+.admin-upload-dropzone:hover {
+    background: #eef6fc;
+    border-color: #2FA8E0;
+    color: #2FA8E0;
+}
+.admin-dark .admin-upload-dropzone {
+    background: #22282f;
+    border-color: #3a3f46;
+    color: #9aa1ab;
+}
+.admin-dark .admin-upload-dropzone:hover {
+    background: #263340;
+    border-color: #2FA8E0;
+    color: #2FA8E0;
+}
+
+.admin-upload-thumb { display: flex; flex-direction: column; gap: 4px; }
+.admin-upload-thumb-label {
+    display: block;
+    font-size: 11px;
+    line-height: 14px;
+    min-height: 14px;
+    color: #999;
+}
+.admin-upload-thumb-inner {
+    position: relative;
+    width: 110px;
+    height: 110px;
+}
+.admin-upload-thumb-inner img {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
-    border-radius: 6px;
+    border-radius: 10px;
     border: 1px solid #eee;
+}
+.admin-upload-remove {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #fff;
+    border: 1px solid #f3c0c0;
+    color: #dc3545;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,.15);
+}
+.admin-upload-remove:hover {
+    background: #dc3545;
+    border-color: #dc3545;
+    color: #fff;
 }
 
 /* --------------------------------------------------------------------------
@@ -369,4 +442,72 @@ body.admin-body {
 }
 .admin-table a:hover {
     text-decoration: underline;
+}
+
+/* --------------------------------------------------------------------------
+   Country picker (Pays) — dropdown personnalisé avec drapeaux flag-icons
+   -------------------------------------------------------------------------- */
+.admin-country-picker {
+    position: relative;
+}
+.admin-country-picker-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    text-align: left;
+}
+.admin-country-picker-toggle .fi {
+    margin-right: 4px;
+}
+.admin-country-picker-panel {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 20;
+    background: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,.1);
+}
+.admin-country-picker-search {
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    border-bottom: 1px solid #eee;
+    outline: none;
+}
+.admin-country-picker-list {
+    max-height: 260px;
+    overflow-y: auto;
+}
+.admin-country-picker-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+}
+.admin-country-picker-row:hover {
+    background: #f5f7fa;
+}
+.admin-dark .admin-country-picker-toggle,
+.admin-dark .admin-country-picker-panel {
+    background: #22282f;
+    border-color: #3a3f46;
+    color: #e4e6eb;
+}
+.admin-dark .admin-country-picker-row:hover {
+    background: #263340;
 }

@@ -1,0 +1,96 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Modèles véhicules{% endblock %}
+{% block page_icon %}bi-car-front{% endblock %}
+{% block page_title %}Modèles véhicules{% endblock %}
+
+{% macro sortLink(field, label, currentSort, currentDir) %}
+    {% set nextDir = (currentSort == field and currentDir == 'ASC') ? 'DESC' : 'ASC' %}
+    <a href="?sort={{ field }}&dir={{ nextDir }}" class="admin-sort-link">
+        {{ label }}
+        {% if currentSort == field %}
+            <i class="bi bi-caret-{{ currentDir == 'ASC' ? 'up' : 'down' }}-fill"></i>
+        {% else %}
+            <i class="bi bi-arrow-down-up admin-sort-icon-idle"></i>
+        {% endif %}
+    </a>
+{% endmacro %}
+{% import _self as self %}
+
+{% block body %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h4 mb-0">Modèles véhicules</h1>
+        <a href="{{ path('manage_vehicle_models_new') }}" class="btn btn-primary btn-sm">+ Nouveau modèle</a>
+    </div>
+
+    <form method="get" class="mb-3 d-flex align-items-center gap-3 flex-wrap">
+        <input type="text" name="q" class="form-control" style="max-width: 260px;" placeholder="Rechercher un modèle..." value="{{ searchTerm }}">
+        <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-search"></i></button>
+
+        <select name="brand" class="form-select" style="max-width: 300px;" onchange="this.form.submit()">
+            <option value="">— Toutes les marques —</option>
+            {% for brand in brands %}
+                <option value="{{ brand.id }}" {{ selectedBrandId == brand.id ? 'selected' : '' }}>{{ brand.name }}</option>
+            {% endfor %}
+        </select>
+
+        <div class="form-check">
+            <input type="checkbox" name="auto" value="1" class="form-check-input" id="filterAuto" onchange="this.form.submit()"
+                {{ filterAuto ? 'checked' : '' }}>
+            <label class="form-check-label" for="filterAuto">Auto</label>
+        </div>
+        <div class="form-check">
+            <input type="checkbox" name="moto" value="1" class="form-check-input" id="filterMoto" onchange="this.form.submit()"
+                {{ filterMoto ? 'checked' : '' }}>
+            <label class="form-check-label" for="filterMoto">Moto</label>
+        </div>
+
+        {% if selectedBrandId or filterAuto or filterMoto or searchTerm %}
+            <a href="{{ path('manage_vehicle_models_index') }}" class="btn btn-sm btn-outline-secondary">Réinitialiser</a>
+        {% endif %}
+    </form>
+
+    <table class="table admin-table">
+        <thead>
+            <tr>
+                <th>Logo</th>
+                <th>{{ self.sortLink('brand', 'Marque', currentSort, currentDir) }}</th>
+                <th>{{ self.sortLink('name', 'Nom', currentSort, currentDir) }}</th>
+                <th>{{ self.sortLink('name2', 'Nom alternatif', currentSort, currentDir) }}</th>
+                <th>{{ self.sortLink('type', 'Type', currentSort, currentDir) }}</th>
+                <th>{{ self.sortLink('primaryCount', 'Variante/Motorisation', currentSort, currentDir) }}</th>
+                <th>{{ self.sortLink('engineCount', 'Motorisation', currentSort, currentDir) }}</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+                {% set model = row.model %}
+                <tr>
+                    <td>
+                        {% if model.brand.logoName %}
+                            <img src="{{ vich_uploader_asset(model.brand, 'logoFile') }}" alt="" style="width:28px;height:28px;object-fit:contain;">
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ model.brand.name }}</td>
+                    <td><a href="{{ path('manage_vehicle_models_show', {id: model.id}) }}">{{ model.name }}</a></td>
+                    <td>{{ model.name2 ?: '—' }}</td>
+                    <td>{{ model.isMoto ? 'Moto' : 'Auto' }}</td>
+                    <td>{{ row.primaryCount }}</td>
+                    <td>{{ row.engineCount is not null ? row.engineCount : '—' }}</td>
+                    <td class="text-end">
+                        <a href="{{ path('manage_vehicle_models_show', {id: model.id}) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i> Voir</a>
+                        <a href="{{ path('manage_vehicle_models_edit', {id: model.id}) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i> Modifier</a>
+                        <form action="{{ path('manage_vehicle_models_delete', {id: model.id}) }}" method="post" class="d-inline" onsubmit="return confirm('Supprimer ce modèle ?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="8" class="text-muted">Aucun modèle pour l'instant.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

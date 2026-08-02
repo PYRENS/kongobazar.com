@@ -1,0 +1,36 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block body %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h4 mb-0">Variantes véhicules</h1>
+        <a href="{{ path('manage_vehicle_variants_new') }}" class="btn btn-primary btn-sm">+ Nouvelle variante</a>
+    </div>
+
+    <table class="table admin-table">
+        <thead>
+            <tr>
+                <th>Modèle</th>
+                <th>Variante</th>
+                <th>Période</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for variant in variants %}
+                <tr>
+                    <td>{{ variant.model.brand.name }} {{ variant.model.name }}</td>
+                    <td>{{ variant.name ?: '-' }}</td>
+                    <td>{{ variant.monthBegin }}/{{ variant.yearBegin }} — {{ variant.monthEnd ? variant.monthEnd ~ '/' ~ variant.yearEnd : '...' }}</td>
+                    <td class="text-end">
+                        <a href="{{ path('manage_vehicle_variants_edit', {id: variant.id}) }}" class="btn btn-sm btn-outline-secondary">Modifier</a>
+                        <form action="{{ path('manage_vehicle_variants_delete', {id: variant.id}) }}" method="post" class="d-inline" onsubmit="return confirm('Supprimer cette variante ?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer</button>
+                        </form>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="4" class="text-muted">Aucune variante pour l'instant.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

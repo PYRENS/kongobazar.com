@@ -18,6 +18,28 @@ class ProductRepository extends ServiceEntityRepository
         parent::__construct($registry, Product::class);
     }
 
+    public function countByBrand(int $brandId): int
+    {
+        return (int) $this->createQueryBuilder('p')
+            ->select('COUNT(p.id)')
+            ->andWhere('p.brand = :brandId')
+            ->setParameter('brandId', $brandId)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /** @return Product[] */
+    public function findByBrand(int $brandId, int $limit = 100): array
+    {
+        return $this->createQueryBuilder('p')
+            ->andWhere('p.brand = :brandId')
+            ->setParameter('brandId', $brandId)
+            ->orderBy('p.createdAt', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
     public function findBestSellersInStock(int $limit = 8): array
     {
         return $this->createQueryBuilder('p')

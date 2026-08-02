@@ -22,3 +22,8 @@ vich_uploader:
             uri_prefix: /media/illustrations
             upload_destination: '%env(UPLOADS_PUBLIC_PATH)%/illustrations'
             namer: App\Uploader\Namer\CategoryIllustrationNamer
+
+        logos_brands:
+            uri_prefix: /media/logos_brands
+            upload_destination: '%env(UPLOADS_PUBLIC_PATH)%/logos_brands'
+            namer: Vich\UploaderBundle\Naming\SmartUniqueNamer

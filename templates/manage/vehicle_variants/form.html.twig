@@ -1,0 +1,52 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block body %}
+    <h1 class="h4 mb-3">{{ variant ? 'Modifier la variante' : 'Nouvelle variante' }}</h1>
+
+    <form method="post" action="{{ variant ? path('manage_vehicle_variants_update', {id: variant.id}) : path('manage_vehicle_variants_new') }}">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Marque</label>
+                <select class="form-select" data-vehicle-brand-select>
+                    <option value="">— Choisir —</option>
+                    {% for brand in brands %}
+                        <option value="{{ brand.id }}" {{ variant and variant.model and variant.model.brand.id == brand.id ? 'selected' : '' }}>{{ brand.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Modèle</label>
+                <select name="model_id" class="form-select" data-vehicle-model-select data-preselected="{{ variant and variant.model ? variant.model.id : '' }}" required>
+                    <option value="">— Choisissez d'abord une marque —</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Nom de la variante (optionnel)</label>
+            <input type="text" name="name" class="form-control" value="{{ variant ? variant.name : '' }}">
+        </div>
+
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Mois début</label>
+                <input type="text" name="month_begin" class="form-control" maxlength="2" placeholder="MM" value="{{ variant ? variant.monthBegin : '' }}" required>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Année début</label>
+                <input type="number" name="year_begin" class="form-control" value="{{ variant ? variant.yearBegin : '' }}" required>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Mois fin</label>
+                <input type="text" name="month_end" class="form-control" maxlength="2" placeholder="MM (vide = en cours)" value="{{ variant ? variant.monthEnd : '' }}">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Année fin</label>
+                <input type="number" name="year_end" class="form-control" placeholder="vide = en cours" value="{{ variant ? variant.yearEnd : '' }}">
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-success">Enregistrer</button>
+        <a href="{{ path('manage_vehicle_variants_index') }}" class="btn btn-outline-secondary">Annuler</a>
+    </form>
+{% endblock %}

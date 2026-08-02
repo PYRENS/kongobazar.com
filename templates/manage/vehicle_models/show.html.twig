@@ -1,0 +1,97 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}{{ model.name }}{% endblock %}
+{% block page_icon %}bi-car-front{% endblock %}
+{% block page_title %}{{ model.name }}{% endblock %}
+
+{% block body %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h4 mb-0">{{ model.brand.name }} {{ model.name }}</h1>
+        <div>
+            <a href="{{ path('manage_vehicle_models_edit', {id: model.id}) }}" class="btn btn-outline-secondary btn-sm">Modifier</a>
+            <a href="{{ path('manage_vehicle_models_index') }}" class="btn btn-outline-secondary btn-sm">Retour à la liste</a>
+        </div>
+    </div>
+
+    {# --- Section 1 : Informations --- #}
+    <div class="card mb-4">
+        <div class="card-header">Informations</div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-2">Marque</dt>
+                <dd class="col-sm-10">{{ model.brand.name }}</dd>
+
+                <dt class="col-sm-2">Nom</dt>
+                <dd class="col-sm-10">{{ model.name }}</dd>
+
+                <dt class="col-sm-2">Nom alternatif</dt>
+                <dd class="col-sm-10">{{ model.name2 ?: '—' }}</dd>
+
+                <dt class="col-sm-2">Type</dt>
+                <dd class="col-sm-10">{{ model.isMoto ? 'Moto' : 'Auto' }}</dd>
+            </dl>
+        </div>
+    </div>
+
+    {# --- Section 2 : Variantes (Auto) ou Motorisations (Moto) --- #}
+    <div class="card">
+        <div class="card-header">
+            {{ model.isMoto ? 'Motorisations' : 'Variantes' }}
+        </div>
+        <div class="card-body p-0">
+            {% if model.isMoto %}
+                <table class="table admin-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Moteur</th>
+                            <th>CV / kW</th>
+                            <th>Cylindrée</th>
+                            <th>Énergie</th>
+                            <th>Période</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for engine in engines %}
+                            <tr>
+                                <td>{{ engine.label }}</td>
+                                <td>{{ engine.powerCv ?: '-' }} CV / {{ engine.powerKw ?: '-' }} kW</td>
+                                <td>{{ engine.displacementCc ? engine.displacementCc ~ ' cm³' : '-' }}</td>
+                                <td>{{ engine.fuelType ? engine.fuelType.name : '-' }}</td>
+                                <td>{{ engine.periodLabel ?: '-' }}</td>
+                                <td class="text-end">
+                                    <a href="{{ path('manage_vehicle_engines_edit', {id: engine.id}) }}" class="btn btn-sm btn-outline-secondary">Modifier</a>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="6" class="text-muted p-3">Aucune motorisation pour ce modèle.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <table class="table admin-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Variante</th>
+                            <th>Période</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for variant in variants %}
+                            <tr>
+                                <td><a href="{{ path('manage_vehicle_variants_edit', {id: variant.id}) }}">{{ variant.name ?: '-' }}</a></td>
+                                <td>{{ variant.monthBegin }}/{{ variant.yearBegin }} — {{ variant.monthEnd ? variant.monthEnd ~ '/' ~ variant.yearEnd : '...' }}</td>
+                                <td class="text-end">
+                                    <a href="{{ path('manage_vehicle_variants_edit', {id: variant.id}) }}" class="btn btn-sm btn-outline-secondary">Modifier</a>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="3" class="text-muted p-3">Aucune variante pour ce modèle.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

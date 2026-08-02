@@ -92,6 +92,15 @@ class Product
     #[ORM\Column(length: 10, options: ['default' => 'new'])]
     private string $condition = 'new'; // 'new' | 'used'
 
+    #[ORM\OneToOne(mappedBy: 'product', targetEntity: VehicleListingDetails::class, cascade: ['persist', 'remove'])]
+    private ?VehicleListingDetails $vehicleListingDetails = null;
+
+    #[ORM\OneToOne(mappedBy: 'product', targetEntity: PartListingDetails::class, cascade: ['persist', 'remove'])]
+    private ?PartListingDetails $partListingDetails = null;
+
+    #[ORM\OneToOne(mappedBy: 'product', targetEntity: PropertyListingDetails::class, cascade: ['persist', 'remove'])]
+    private ?PropertyListingDetails $propertyListingDetails = null;
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
@@ -103,6 +112,55 @@ class Product
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function getVehicleListingDetails(): ?VehicleListingDetails
+    {
+        return $this->vehicleListingDetails;
+    }
+
+    public function setVehicleListingDetails(?VehicleListingDetails $vehicleListingDetails): static
+    {
+        // met à jour le côté propriétaire de la relation
+        if (null !== $vehicleListingDetails && $vehicleListingDetails->getProduct() !== $this) {
+            $vehicleListingDetails->setProduct($this);
+        }
+
+        $this->vehicleListingDetails = $vehicleListingDetails;
+
+        return $this;
+    }
+
+    public function getPartListingDetails(): ?PartListingDetails
+    {
+        return $this->partListingDetails;
+    }
+
+    public function setPartListingDetails(?PartListingDetails $partListingDetails): static
+    {
+        if (null !== $partListingDetails && $partListingDetails->getProduct() !== $this) {
+            $partListingDetails->setProduct($this);
+        }
+
+        $this->partListingDetails = $partListingDetails;
+
+        return $this;
+    }
+
+    public function getPropertyListingDetails(): ?PropertyListingDetails
+    {
+        return $this->propertyListingDetails;
+    }
+
+    public function setPropertyListingDetails(?PropertyListingDetails $propertyListingDetails): static
+    {
+        if (null !== $propertyListingDetails && $propertyListingDetails->getProduct() !== $this) {
+            $propertyListingDetails->setProduct($this);
+        }
+
+        $this->propertyListingDetails = $propertyListingDetails;
+
+        return $this;
     }
 
     public function getSellerProfile(): ?SellerProfile

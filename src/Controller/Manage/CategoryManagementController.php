@@ -89,7 +89,11 @@ class CategoryManagementController extends AbstractController
         $parentId = $request->query->get('parent') ? (int) $request->query->get('parent') : null;
         $parent = $parentId ? $repository->find($parentId) : null;
 
-        return $this->render('manage/categories/form.html.twig', ['category' => null, 'parent' => $parent]);
+        return $this->render('manage/categories/form.html.twig', [
+            'category' => null,
+            'parent' => $parent,
+            'rootCategories' => $repository->findRootCategories(),
+        ]);
     }
 
     #[Route('/categories/nouveau', name: 'manage_categories_create', host: 'manage.kongobazar.com', methods: ['POST'])]
@@ -113,20 +117,46 @@ class CategoryManagementController extends AbstractController
     }
 
     #[Route('/categories/{id}/modifier', name: 'manage_categories_edit', host: 'manage.kongobazar.com', methods: ['GET'])]
-    public function edit(Category $category): Response
+    public function edit(Category $category, CategoryRepository $repository): Response
     {
-        return $this->render('manage/categories/form.html.twig', ['category' => $category, 'parent' => $category->getParent()]);
+        return $this->render('manage/categories/form.html.twig', [
+            'category' => $category,
+            'parent' => $category->getParent(),
+            'rootCategories' => $repository->findRootCategories($category->getId()),
+        ]);
     }
 
     #[Route('/categories/{id}/modifier', name: 'manage_categories_update', host: 'manage.kongobazar.com', methods: ['POST'])]
-    public function update(Category $category, Request $request, EntityManagerInterface $em): RedirectResponse
+    public function update(Category $category, Request $request, EntityManagerInterface $em, CategoryRepository $repository): RedirectResponse
     {
         $this->hydrate($category, $request, $em);
+
+        $parentId = $request->request->get('parent_id') ? (int) $request->request->get('parent_id') : null;
+        $newParent = $parentId ? $repository->find($parentId) : null;
+
+        if ($this->wouldCreateCycle($category, $newParent)) {
+            $this->addFlash('error', 'Impossible : une catégorie ne peut pas être rattachée à elle-même ou à l\'une de ses sous-catégories.');
+            return $this->redirectToRoute('manage_categories_edit', ['id' => $category->getId()]);
+        }
+
+        $category->setParent($newParent);
         $em->flush();
 
         $this->addFlash('success', $category->getName() . ' mise à jour.');
         $parentId = $category->getParent()?->getId();
         return $this->redirectToRoute('manage_categories_index', $parentId ? ['parent' => $parentId] : []);
+    }
+
+    private function wouldCreateCycle(Category $category, ?Category $newParent): bool
+    {
+        $current = $newParent;
+        while ($current !== null) {
+            if ($current->getId() === $category->getId()) {
+                return true;
+            }
+            $current = $current->getParent();
+        }
+        return false;
     }
 
     private function hydrate(Category $category, Request $request, EntityManagerInterface $em): void

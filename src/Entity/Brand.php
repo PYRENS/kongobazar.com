@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\File\File;
 use Vich\UploaderBundle\Mapping\Annotation as Vich;
 
 #[ORM\Entity(repositoryClass: BrandRepository::class)]
+#[Vich\Uploadable]
 class Brand
 {
     #[ORM\Id]
@@ -17,7 +18,7 @@ class Brand
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 100)]
+    #[ORM\Column(length: 100, unique: true)]
     private ?string $name = null;
 
     #[ORM\Column(length: 120, unique: true)]
@@ -26,8 +27,21 @@ class Brand
     #[ORM\Column]
     private ?bool $verified = null;
 
+    #[ORM\Column(options: ['default' => true])]
+    private bool $active = true;
 
-    #[Vich\UploadableField(mapping: 'product_images', fileNameProperty: 'logoName')]
+    /**
+     * Domaines d'usage de la marque (ex: ['auto'], ['moto'], ['auto', 'moto']).
+     * Laissé à null pour les marques génériques (mode, électronique...).
+     */
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $type = null;
+
+    #[ORM\ManyToOne(targetEntity: Pays::class, inversedBy: 'brands')]
+    private ?Pays $pays = null;
+
+
+    #[Vich\UploadableField(mapping: 'logos_brands', fileNameProperty: 'logoName')]
     private ?File $logoFile = null;
 
     #[ORM\Column(nullable: true)]
@@ -45,6 +59,9 @@ class Brand
 
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $updatedAt = null;
 
     public function __construct()
     {
@@ -81,11 +98,22 @@ class Brand
         return $this;
     }
 
+    public function isActive(): bool
+    {
+        return $this->active;
+    }
+
+    public function setActive(bool $active): static
+    {
+        $this->active = $active;
+
+        return $this;
+    }
+
     public function isVerified(): ?bool
     {
         return $this->verified;
     }
-
     public function setVerified(bool $verified): static
     {
         $this->verified = $verified;
@@ -93,9 +121,49 @@ class Brand
         return $this;
     }
 
+    public function getType(): ?array
+    {
+        return $this->type;
+    }
+
+    public function setType(?array $type): static
+    {
+        $this->type = $type;
+
+        return $this;
+    }
+
+    public function hasType(string $type): bool
+    {
+        return null !== $this->type && in_array($type, $this->type, true);
+    }
+
+    public function getPays(): ?Pays
+    {
+        return $this->pays;
+    }
+
+    public function setPays(?Pays $pays): static
+    {
+        $this->pays = $pays;
+
+        return $this;
+    }
+
     public function setLogoFile(?File $file = null): void
     {
         $this->logoFile = $file;
+        if (null !== $file) {
+            // Force Doctrine à détecter un changement réel sur l'entité,
+            // sans quoi Vich ne déclenche jamais le traitement du fichier
+            // si aucun autre champ n'a été modifié en même temps.
+            $this->updatedAt = new \DateTimeImmutable();
+        }
+    }
+
+    public function getUpdatedAt(): ?\DateTimeImmutable
+    {
+        return $this->updatedAt;
     }
 
     public function getLogoFile(): ?File

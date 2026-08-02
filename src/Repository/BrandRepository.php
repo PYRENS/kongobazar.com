@@ -25,6 +25,18 @@ class BrandRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /** Marques typées Auto et/ou Moto uniquement (exclut les marques génériques). */
+    public function findVehicleBrands(): array
+    {
+        return $this->createQueryBuilder('b')
+            ->andWhere('b.type LIKE :auto OR b.type LIKE :moto')
+            ->setParameter('auto', '%"auto"%')
+            ->setParameter('moto', '%"moto"%')
+            ->orderBy('b.name', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     //    /**
     //     * @return Brand[] Returns an array of Brand objects
     //     */

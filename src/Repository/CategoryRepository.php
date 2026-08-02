@@ -16,13 +16,17 @@ class CategoryRepository extends ServiceEntityRepository
         parent::__construct($registry, Category::class);
     }
 
-    public function findRootCategories(): array
+    public function findRootCategories(?int $excludeId = null): array
     {
-        return $this->createQueryBuilder('c')
+        $qb = $this->createQueryBuilder('c')
             ->andWhere('c.parent IS NULL')
-            ->orderBy('c.position', 'ASC')
-            ->getQuery()
-            ->getResult();
+            ->orderBy('c.position', 'ASC');
+
+        if ($excludeId) {
+            $qb->andWhere('c.id != :excludeId')->setParameter('excludeId', $excludeId);
+        }
+
+        return $qb->getQuery()->getResult();
     }
 
     public function findFeaturedHomepageTabs(): array
@@ -72,7 +76,7 @@ class CategoryRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function findChildrenOf(?int $parentId): array
+    public function findChildrenOf(?int $parentId, ?int $excludeId = null): array
     {
         $qb = $this->createQueryBuilder('c')->orderBy('c.position', 'ASC');
 
@@ -80,6 +84,10 @@ class CategoryRepository extends ServiceEntityRepository
             $qb->andWhere('c.parent = :parentId')->setParameter('parentId', $parentId);
         } else {
             $qb->andWhere('c.parent IS NULL');
+        }
+
+        if ($excludeId) {
+            $qb->andWhere('c.id != :excludeId')->setParameter('excludeId', $excludeId);
         }
 
         return $qb->getQuery()->getResult();

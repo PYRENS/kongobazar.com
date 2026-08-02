@@ -1,0 +1,86 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Marques{% endblock %}
+{% block page_icon %}bi-award{% endblock %}
+{% block page_title %}Marques{% endblock %}
+
+{% macro sortLink(field, label, currentSort, currentDir) %}
+    {% set nextDir = (currentSort == field and currentDir == 'ASC') ? 'DESC' : 'ASC' %}
+    <a href="?sort={{ field }}&dir={{ nextDir }}" class="admin-sort-link">
+        {{ label }}
+        {% if currentSort == field %}
+            <i class="bi bi-caret-{{ currentDir == 'ASC' ? 'up' : 'down' }}-fill"></i>
+        {% else %}
+            <i class="bi bi-arrow-down-up admin-sort-icon-idle"></i>
+        {% endif %}
+    </a>
+{% endmacro %}
+{% import _self as self %}
+
+{% block body %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h4 mb-0">Marques</h1>
+        <a href="{{ path('manage_brands_new') }}" class="btn btn-primary btn-sm">+ Nouvelle marque</a>
+    </div>
+
+    <table class="table admin-table">
+        <thead>
+            <tr>
+                <th>Logo</th>
+                <th>{{ self.sortLink('name', 'Nom', currentSort, currentDir) }}</th>
+                <th>{{ self.sortLink('pays', 'Pays', currentSort, currentDir) }}</th>
+                <th>{{ self.sortLink('type', 'Type', currentSort, currentDir) }}</th>
+                <th>{{ self.sortLink('verified', 'Vérifiée', currentSort, currentDir) }}</th>
+                <th>{{ self.sortLink('count', 'Nb.', currentSort, currentDir) }}</th>
+                <th>Actif</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+                {% set brand = row.brand %}
+                <tr>
+                    <td>
+                        {% if brand.logoName %}
+                            <img src="{{ vich_uploader_asset(brand, 'logoFile') }}" alt="" style="width:32px;height:32px;object-fit:contain;">
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td><a href="{{ path('manage_brands_show', {id: brand.id}) }}">{{ brand.name }}</a></td>
+                    <td>
+                        {% if brand.pays %}
+                            <span class="fi fi-{{ brand.pays.iso2|lower }}"></span> {{ brand.pays.name }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if brand.type %}
+                            {{ brand.type|join(', ') }}
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ brand.verified ? 'Oui' : 'Non' }}</td>
+                    <td>{{ row.count }} {{ row.countLabel }}</td>
+                    <td>
+                        <form action="{{ path('manage_brands_toggle', {id: brand.id}) }}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm {{ brand.active ? 'btn-success' : 'btn-outline-secondary' }}">
+                                {{ brand.active ? 'Actif' : 'Inactif' }}
+                            </button>
+                        </form>
+                    </td>
+                    <td class="text-end">
+                        <a href="{{ path('manage_brands_edit', {id: brand.id}) }}" class="btn btn-sm btn-outline-secondary">Modifier</a>
+                        <form action="{{ path('manage_brands_delete', {id: brand.id}) }}" method="post" class="d-inline" onsubmit="return confirm('Supprimer cette marque ?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer</button>
+                        </form>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="8" class="text-muted">Aucune marque pour l'instant.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

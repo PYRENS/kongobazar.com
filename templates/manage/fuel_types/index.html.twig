@@ -1,0 +1,34 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block body %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h4 mb-0">Énergies (carburants)</h1>
+        <a href="{{ path('manage_fuel_types_new') }}" class="btn btn-primary btn-sm">+ Ajouter</a>
+    </div>
+
+    <table class="table admin-table">
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Actif</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for fuelType in fuelTypes %}
+                <tr>
+                    <td>{{ fuelType.name }}</td>
+                    <td>{{ fuelType.active ? 'Oui' : 'Non' }}</td>
+                    <td class="text-end">
+                        <a href="{{ path('manage_fuel_types_edit', {id: fuelType.id}) }}" class="btn btn-sm btn-outline-secondary">Modifier</a>
+                        <form action="{{ path('manage_fuel_types_delete', {id: fuelType.id}) }}" method="post" class="d-inline" onsubmit="return confirm('Supprimer cette énergie ?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer</button>
+                        </form>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="3" class="text-muted">Aucune énergie pour l'instant.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
