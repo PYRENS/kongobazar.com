@@ -132,24 +132,15 @@ class CategoryAttributeManagementController extends AbstractController
                 continue;
             }
 
+            // Plus de copie de données — juste un nouveau lien vers la même caractéristique du catalogue.
             $copy = new CategoryAttribute();
             $copy->setCategory($category);
-            $copy->setName($source->getName());
-            $copy->setDataType($source->getDataType());
-            $copy->setUnit($source->getUnit());
+            $copy->setCharacteristic($source->getCharacteristic());
             $copy->setPosition($source->getPosition());
             $copy->setNullable($source->isNullable());
             $copy->setFilterable($source->isFilterable());
             $copy->setShowOnCard($source->isShowOnCard());
             $copy->setGroupTag($source->getGroupTag());
-
-            foreach ($source->getOptions() as $option) {
-                $optionCopy = new CategoryAttributeOption();
-                $optionCopy->setLabel($option->getLabel());
-                $optionCopy->setPosition($option->getPosition());
-                $optionCopy->setColorHex($option->getColorHex());
-                $copy->addOption($optionCopy);
-            }
 
             $em->persist($copy);
             $copied++;
@@ -163,18 +154,36 @@ class CategoryAttributeManagementController extends AbstractController
 
     private function hydrate(CategoryAttribute $attribute, Request $request, EntityManagerInterface $em): void
     {
-        $attribute->setName((string) $request->request->get('name'));
-        $attribute->setDataType((string) $request->request->get('data_type', 'text'));
-        $attribute->setUnit($request->request->get('unit') ?: null);
+        $name = (string) $request->request->get('name');
+        $dataType = (string) $request->request->get('data_type', 'text');
+        $unit = $request->request->get('unit') ?: null;
+
         $attribute->setPosition((int) $request->request->get('position', 0));
         $attribute->setNullable((bool) $request->request->get('nullable'));
         $attribute->setFilterable((bool) $request->request->get('filterable'));
         $attribute->setShowOnCard((bool) $request->request->get('show_on_card'));
         $attribute->setGroupTag($request->request->get('group_tag') ?: null);
 
-        // Gestion des options (uniquement pertinent pour dataType = select)
+        $characteristic = $attribute->getCharacteristic();
+
+        if (null === $characteristic) {
+            // Nouvelle liaison : réutilise une caractéristique existante du catalogue si le nom/unité/type correspond exactement, sinon en crée une.
+            $characteristicRepo = $em->getRepository(\App\Entity\Characteristic::class);
+            $characteristic = $characteristicRepo->findOneByExactMatch($name, $unit, $dataType)
+                ?? new \App\Entity\Characteristic();
+            $attribute->setCharacteristic($characteristic);
+        }
+
+        // Édition en place — modifie la fiche du catalogue partagé (répercuté partout où elle est liée, volontairement).
+        $characteristic->setName($name);
+        $characteristic->setDataType($dataType);
+        $characteristic->setUnit($unit);
+
+        $em->persist($characteristic);
+
+        // Gestion des options (uniquement pertinent pour dataType = select), désormais portées par Characteristic
         $existingOptions = [];
-        foreach ($attribute->getOptions() as $option) {
+        foreach ($characteristic->getOptions() as $option) {
             $existingOptions[$option->getId()] = $option;
         }
 
@@ -198,18 +207,17 @@ class CategoryAttributeManagementController extends AbstractController
                 $existingOptions[$optionId]->setColorHex($color);
                 $keptIds[] = $optionId;
             } else {
-                $newOption = new CategoryAttributeOption();
+                $newOption = new \App\Entity\CharacteristicOption();
                 $newOption->setLabel($label);
                 $newOption->setPosition($i);
                 $newOption->setColorHex($color);
-                $attribute->addOption($newOption);
+                $characteristic->addOption($newOption);
             }
         }
 
-        // Supprime les options retirées du formulaire
         foreach ($existingOptions as $id => $option) {
             if (!in_array($id, $keptIds, true)) {
-                $attribute->removeOption($option);
+                $characteristic->removeOption($option);
             }
         }
     }

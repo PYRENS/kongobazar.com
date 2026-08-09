@@ -381,7 +381,7 @@ class ProductManagementController extends AbstractController
             match ($categoryAttribute->getDataType()) {
                 'number' => $value->setNumberValue((string) $raw),
                 'boolean' => $value->setBooleanValue('1' === $raw),
-                'select' => $value->setCategoryAttributeOption($em->getRepository(CategoryAttributeOption::class)->find((int) $raw)),
+                'select' => $value->setCategoryAttributeOption($em->getRepository(\App\Entity\CharacteristicOption::class)->find((int) $raw)),
                 default => $value->setTextValue((string) $raw),
             };
 

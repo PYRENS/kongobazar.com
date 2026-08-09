@@ -2,20 +2,20 @@
 
 namespace App\Entity;
 
-use App\Repository\CategoryAttributeOptionRepository;
+use App\Repository\CharacteristicOptionRepository;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: CategoryAttributeOptionRepository::class)]
-class CategoryAttributeOption
+#[ORM\Entity(repositoryClass: CharacteristicOptionRepository::class)]
+class CharacteristicOption
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: CategoryAttribute::class, inversedBy: 'options')]
+    #[ORM\ManyToOne(targetEntity: Characteristic::class, inversedBy: 'options')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
-    private ?CategoryAttribute $categoryAttribute = null;
+    private ?Characteristic $characteristic = null;
 
     #[ORM\Column(length: 100)]
     private ?string $label = null;
@@ -23,7 +23,6 @@ class CategoryAttributeOption
     #[ORM\Column(options: ['default' => 0])]
     private int $position = 0;
 
-    /** Code hexadécimal optionnel, pour afficher une pastille colorée si cette option est une couleur. */
     #[ORM\Column(length: 7, nullable: true)]
     private ?string $colorHex = null;
 
@@ -32,14 +31,14 @@ class CategoryAttributeOption
         return $this->id;
     }
 
-    public function getCategoryAttribute(): ?CategoryAttribute
+    public function getCharacteristic(): ?Characteristic
     {
-        return $this->categoryAttribute;
+        return $this->characteristic;
     }
 
-    public function setCategoryAttribute(?CategoryAttribute $categoryAttribute): static
+    public function setCharacteristic(?Characteristic $characteristic): static
     {
-        $this->categoryAttribute = $categoryAttribute;
+        $this->characteristic = $characteristic;
         return $this;
     }
 

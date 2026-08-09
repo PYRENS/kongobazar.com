@@ -2,9 +2,7 @@
 
 namespace App\Entity;
 
-use App\Entity\CategoryAttributeOption;
 use App\Repository\CategoryAttributeRepository;
-use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -20,16 +18,9 @@ class CategoryAttribute
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?Category $category = null;
 
-    #[ORM\Column(length: 100)]
-    private ?string $name = null;
-
-    /** 'text' | 'number' | 'select' | 'boolean' */
-    #[ORM\Column(length: 20)]
-    private string $dataType = 'text';
-
-    /** Unité pour les nombres, ex: "cm", "kg", "m²". */
-    #[ORM\Column(length: 20, nullable: true)]
-    private ?string $unit = null;
+    #[ORM\ManyToOne(targetEntity: Characteristic::class)]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'RESTRICT')]
+    private ?Characteristic $characteristic = null;
 
     #[ORM\Column(options: ['default' => 0])]
     private int $position = 0;
@@ -43,19 +34,8 @@ class CategoryAttribute
     #[ORM\Column(options: ['default' => false])]
     private bool $showOnCard = false;
 
-    /** Étiquette informelle de regroupement dans l'admin, ex: "auto". */
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $groupTag = null;
-
-    /** @var Collection<int, CategoryAttributeOption> */
-    #[ORM\OneToMany(targetEntity: CategoryAttributeOption::class, mappedBy: 'categoryAttribute', cascade: ['persist', 'remove'], orphanRemoval: true)]
-    #[ORM\OrderBy(['position' => 'ASC'])]
-    private Collection $options;
-
-    public function __construct()
-    {
-        $this->options = new ArrayCollection();
-    }
 
     public function getId(): ?int
     {
@@ -73,36 +53,14 @@ class CategoryAttribute
         return $this;
     }
 
-    public function getName(): ?string
+    public function getCharacteristic(): ?Characteristic
     {
-        return $this->name;
+        return $this->characteristic;
     }
 
-    public function setName(string $name): static
+    public function setCharacteristic(?Characteristic $characteristic): static
     {
-        $this->name = $name;
-        return $this;
-    }
-
-    public function getDataType(): string
-    {
-        return $this->dataType;
-    }
-
-    public function setDataType(string $dataType): static
-    {
-        $this->dataType = $dataType;
-        return $this;
-    }
-
-    public function getUnit(): ?string
-    {
-        return $this->unit;
-    }
-
-    public function setUnit(?string $unit): static
-    {
-        $this->unit = $unit;
+        $this->characteristic = $characteristic;
         return $this;
     }
 
@@ -161,24 +119,28 @@ class CategoryAttribute
         return $this;
     }
 
-    /** @return Collection<int, CategoryAttributeOption> */
+    // --- Passerelles vers le catalogue global : tout le code existant qui lit
+    // attr.name / attr.unit / attr.dataType / attr.options continue de fonctionner
+    // sans aucune modification, Twig et PHP appellent ces getters de façon transparente.
+
+    public function getName(): ?string
+    {
+        return $this->characteristic?->getName();
+    }
+
+    public function getUnit(): ?string
+    {
+        return $this->characteristic?->getUnit();
+    }
+
+    public function getDataType(): string
+    {
+        return $this->characteristic?->getDataType() ?? 'text';
+    }
+
+    /** @return Collection<int, CharacteristicOption> */
     public function getOptions(): Collection
     {
-        return $this->options;
-    }
-
-    public function addOption(CategoryAttributeOption $option): static
-    {
-        if (!$this->options->contains($option)) {
-            $this->options->add($option);
-            $option->setCategoryAttribute($this);
-        }
-        return $this;
-    }
-
-    public function removeOption(CategoryAttributeOption $option): static
-    {
-        $this->options->removeElement($option);
-        return $this;
+        return $this->characteristic->getOptions();
     }
 }

@@ -30,9 +30,9 @@ class ProductAttributeValue
     #[ORM\Column(nullable: true)]
     private ?bool $booleanValue = null;
 
-    #[ORM\ManyToOne(targetEntity: CategoryAttributeOption::class)]
+    #[ORM\ManyToOne(targetEntity: CharacteristicOption::class)]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
-    private ?CategoryAttributeOption $categoryAttributeOption = null;
+    private ?CharacteristicOption $categoryAttributeOption = null;
 
     public function getId(): ?int
     {
@@ -94,12 +94,12 @@ class ProductAttributeValue
         return $this;
     }
 
-    public function getCategoryAttributeOption(): ?CategoryAttributeOption
+    public function getCategoryAttributeOption(): ?CharacteristicOption
     {
         return $this->categoryAttributeOption;
     }
 
-    public function setCategoryAttributeOption(?CategoryAttributeOption $categoryAttributeOption): static
+    public function setCategoryAttributeOption(?CharacteristicOption $categoryAttributeOption): static
     {
         $this->categoryAttributeOption = $categoryAttributeOption;
         return $this;

@@ -78,6 +78,21 @@ class ProductRepository extends ServiceEntityRepository
     }
 
     /** @return Product[] */
+    public function searchByCategoryAndTerm(int $categoryId, string $term, ?int $excludeId = null, int $limit = 15): array
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->andWhere('p.category = :categoryId')->setParameter('categoryId', $categoryId)
+            ->andWhere('p.title LIKE :term')->setParameter('term', '%' . $term . '%')
+            ->setMaxResults($limit);
+
+        if ($excludeId) {
+            $qb->andWhere('p.id != :excludeId')->setParameter('excludeId', $excludeId);
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /** @return Product[] */
     public function findByBrand(int $brandId, int $limit = 100): array
     {
         return $this->createQueryBuilder('p')

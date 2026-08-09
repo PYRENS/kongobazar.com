@@ -9,5 +9,5 @@
 {% endif %}
 
 {% if mode != 'vehicle_offer' %}
-    {% include 'manage/_partials/_product_fields_attributes.html.twig' with {attributes: attributes, existingAttributeValues: existingAttributeValues, categoryId: category.id} %}
+    {% include 'manage/_partials/_product_fields_attributes.html.twig' with {attributes: attributes, existingAttributeValues: existingAttributeValues, categoryId: category.id, productId: product ? product.id : null} %}
 {% endif %}

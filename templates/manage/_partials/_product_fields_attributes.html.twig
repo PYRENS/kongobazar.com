@@ -2,10 +2,24 @@
     <h6><i class="bi bi-sliders"></i> Caractéristiques</h6>
 
     <input type="hidden" id="attrPasteCategoryId" value="{{ categoryId }}">
+    <input type="hidden" id="attrDuplicateProductId" value="{{ productId ?: '' }}">
 
-    <button type="button" id="toggleAttrPasteBtn" class="btn btn-sm btn-outline-primary mb-3">
-        <i class="bi bi-clipboard-plus"></i> Coller des caractéristiques brutes
-    </button>
+    <div class="d-flex gap-2 mb-3">
+        <button type="button" id="toggleAttrPasteBtn" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-clipboard-plus"></i> Coller des caractéristiques brutes
+        </button>
+        <button type="button" id="toggleAttrDuplicateBtn" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-files"></i> Dupliquer depuis un autre produit
+        </button>
+    </div>
+
+    <div id="attrDuplicateBlock" style="display:none;" class="mb-3 p-2" style="border:1px solid #eee;border-radius:6px;">
+        <label class="form-label">Produit source (même catégorie)</label>
+        <input type="text" id="attrDuplicateSearchInput" class="form-control" style="max-width:400px;" placeholder="Rechercher un produit..." autocomplete="off">
+        <div id="attrDuplicateSearchResults" class="list-group mt-1" style="max-width:400px;position:relative;z-index:10;"></div>
+
+        <div id="attrDuplicateChecklist" class="mt-3"></div>
+    </div>
 
     <div id="attrPasteBlock" style="display:none;" class="mb-3">
         <textarea id="attrPasteText" class="form-control" rows="8" placeholder="Longueur [mm]: 1133&#10;Année jusqu'à: 09 / 2005&#10;Code moteur: K9K 766"></textarea>
