@@ -49,6 +49,7 @@ class VehicleModelManagementController extends AbstractController
             'rows' => $rows,
             'brands' => $brandRepository->findVehicleBrands(),
             'selectedBrandId' => $brandId,
+            'selectedBrand' => $brandId ? $brandRepository->find($brandId) : null,
             'filterAuto' => $filterAuto,
             'filterMoto' => $filterMoto,
             'searchTerm' => $searchTerm,
@@ -60,14 +61,95 @@ class VehicleModelManagementController extends AbstractController
     #[Route('/vehicules/modeles/{id}', name: 'manage_vehicle_models_show', host: 'manage.kongobazar.com', methods: ['GET'], requirements: ['id' => '\d+'])]
     public function show(
         VehicleModel $model,
+        Request $request,
         \App\Repository\VehicleVariantRepository $variantRepository,
         \App\Repository\VehicleEngineRepository $engineRepository
     ): Response {
+        $perPage = 10;
+        $variantsPage = max(1, (int) $request->query->get('variants_page', 1));
+        $enginesPage = max(1, (int) $request->query->get('engines_page', 1));
+        $variantsSort = $request->query->get('variants_sort', 'yearBegin');
+        $variantsDir = $request->query->get('variants_dir', 'DESC');
+        $enginesSort = $request->query->get('engines_sort', 'label');
+        $enginesDir = $request->query->get('engines_dir', 'ASC');
+
+        $allVariants = $model->isMoto() ? [] : $variantRepository->findByModel($model->getId());
+        $allEngines = $model->isMoto()
+            ? $engineRepository->findByModel($model->getId())
+            : $engineRepository->findByModelViaVariants($model->getId());
+
+        $allVariants = $this->sortVariants($allVariants, $variantsSort, $variantsDir);
+        $allEngines = $this->sortEngines($allEngines, $enginesSort, $enginesDir);
+
         return $this->render('manage/vehicle_models/show.html.twig', [
             'model' => $model,
-            'variants' => $model->isMoto() ? [] : $variantRepository->findByModel($model->getId()),
-            'engines' => $model->isMoto() ? $engineRepository->findByModel($model->getId()) : [],
+            'variants' => array_slice($allVariants, ($variantsPage - 1) * $perPage, $perPage),
+            'variantsPage' => $variantsPage,
+            'variantsPages' => max(1, (int) ceil(count($allVariants) / $perPage)),
+            'variantsTotal' => count($allVariants),
+            'variantsSort' => $variantsSort,
+            'variantsDir' => $variantsDir,
+            'engines' => array_slice($allEngines, ($enginesPage - 1) * $perPage, $perPage),
+            'enginesPage' => $enginesPage,
+            'enginesPages' => max(1, (int) ceil(count($allEngines) / $perPage)),
+            'enginesTotal' => count($allEngines),
+            'enginesSort' => $enginesSort,
+            'enginesDir' => $enginesDir,
         ]);
+    }
+
+    private function sortVariants(array $variants, string $field, string $dir): array
+    {
+        $allowed = ['name', 'yearBegin', 'engineCount'];
+        if (!in_array($field, $allowed, true)) {
+            $field = 'yearBegin';
+        }
+        $dirMultiplier = strtoupper($dir) === 'DESC' ? -1 : 1;
+
+        usort($variants, function ($a, $b) use ($field, $dirMultiplier) {
+            $valA = match ($field) {
+                'engineCount' => $a->getEngines()->count(),
+                'yearBegin' => $a->getYearBegin() ?? 0,
+                default => $a->getName() ?? '',
+            };
+            $valB = match ($field) {
+                'engineCount' => $b->getEngines()->count(),
+                'yearBegin' => $b->getYearBegin() ?? 0,
+                default => $b->getName() ?? '',
+            };
+            return $dirMultiplier * ($valA <=> $valB);
+        });
+
+        return $variants;
+    }
+
+    private function sortEngines(array $engines, string $field, string $dir): array
+    {
+        $allowed = ['label', 'powerCv', 'powerKw', 'period', 'fuelType'];
+        if (!in_array($field, $allowed, true)) {
+            $field = 'label';
+        }
+        $dirMultiplier = strtoupper($dir) === 'DESC' ? -1 : 1;
+
+        usort($engines, function ($a, $b) use ($field, $dirMultiplier) {
+            $valA = match ($field) {
+                'powerCv' => $a->getPowerCv() ?? -1,
+                'powerKw' => $a->getPowerKw() ?? -1,
+                'period' => $a->getYearStart() ?? 0,
+                'fuelType' => $a->getFuelType()?->getName() ?? '',
+                default => $a->getLabel(),
+            };
+            $valB = match ($field) {
+                'powerCv' => $b->getPowerCv() ?? -1,
+                'powerKw' => $b->getPowerKw() ?? -1,
+                'period' => $b->getYearStart() ?? 0,
+                'fuelType' => $b->getFuelType()?->getName() ?? '',
+                default => $b->getLabel(),
+            };
+            return $dirMultiplier * ($valA <=> $valB);
+        });
+
+        return $engines;
     }
 
     private function sortRows(array $rows, string $field, string $dir): array

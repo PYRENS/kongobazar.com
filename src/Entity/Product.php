@@ -9,6 +9,9 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 
 #[ORM\Entity(repositoryClass: ProductRepository::class)]
+#[ORM\Index(name: 'idx_product_status', columns: ['status'])]
+#[ORM\Index(name: 'idx_product_condition', columns: ['condition'])]
+#[ORM\Index(name: 'idx_product_created_at', columns: ['created_at'])]
 class Product
 {
     #[ORM\Id]
@@ -89,8 +92,12 @@ class Product
     #[ORM\Column(options: ['default' => false])]
     private bool $preorderEnabled = false;
 
-    #[ORM\Column(length: 10, options: ['default' => 'new'])]
+    #[ORM\Column(name: '`condition`', length: 10, options: ['default' => 'new'])]
     private string $condition = 'new'; // 'new' | 'used'
+
+    /** Stock du produit "à plat" (sans variante). Ignoré si le produit a des variantes — voir getEffectiveQuantity(). */
+    #[ORM\Column(options: ['default' => 1])]
+    private int $quantity = 1;
 
     #[ORM\OneToOne(mappedBy: 'product', targetEntity: VehicleListingDetails::class, cascade: ['persist', 'remove'])]
     private ?VehicleListingDetails $vehicleListingDetails = null;
@@ -293,6 +300,32 @@ class Product
     {
         $this->updatedAt = $updatedAt;
         return $this;
+    }
+
+    public function getQuantity(): int
+    {
+        return $this->quantity;
+    }
+
+    public function setQuantity(int $quantity): static
+    {
+        $this->quantity = $quantity;
+
+        return $this;
+    }
+
+    /** Stock réel à afficher/vérifier : somme des variantes si le produit en a, sinon le stock direct. */
+    public function getEffectiveQuantity(): int
+    {
+        if (count($this->variants) > 0) {
+            $sum = 0;
+            foreach ($this->variants as $variant) {
+                $sum += $variant->getQuantity();
+            }
+            return $sum;
+        }
+
+        return $this->quantity;
     }
 
     public function getVariants(): Collection

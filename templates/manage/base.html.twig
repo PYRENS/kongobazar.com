@@ -34,7 +34,7 @@
             <li class="{{ app.request.attributes.get('_route') starts with 'manage_brands' ? 'active' : '' }}">
                 <a href="{{ path('manage_brands_index') }}"><i class="bi bi-award"></i> Marques</a>
             </li>
-            {% set autoMotoRoutes = ['manage_vehicle_models', 'manage_vehicle_variants', 'manage_vehicle_engines', 'manage_fuel_types'] %}
+            {% set autoMotoRoutes = ['manage_vehicle_models', 'manage_vehicle_variants', 'manage_vehicle_engines', 'manage_fuel_types', 'manage_vehicle_import'] %}
             {% set autoMotoRefTypes = ['permis', 'types-moto'] %}
             {% set autoMotoActive = false %}
             {% for r in autoMotoRoutes %}
@@ -65,6 +65,15 @@
                     <li class="{{ app.request.attributes.get('_route') starts with 'manage_reference' and app.request.get('type') == 'types-moto' ? 'active' : '' }}">
                         <a href="{{ path('manage_reference_index', {type: 'types-moto'}) }}"><i class="bi bi-scooter"></i> Types de moto</a>
                     </li>
+                    <li class="{{ app.request.attributes.get('_route') starts with 'manage_vehicle_import' ? 'active' : '' }}">
+                        <a href="{{ path('manage_vehicle_import') }}"><i class="bi bi-upload"></i> Import motorisations</a>
+                    </li>
+                    <li class="{{ app.request.attributes.get('_route') starts with 'manage_vehicle_search' ? 'active' : '' }}">
+                        <a href="{{ path('manage_vehicle_search') }}"><i class="bi bi-search"></i> Recherche</a>
+                    </li>
+                    <li class="{{ app.request.attributes.get('_route') starts with 'manage_part_catalog' ? 'active' : '' }}">
+                        <a href="{{ path('manage_part_catalog_index') }}"><i class="bi bi-collection"></i> Catalogue Pièces</a>
+                    </li>
                 </ul>
             </li>
 
@@ -72,7 +81,7 @@
                 <a href="{{ path('manage_reference_index', {type: 'periodes-location'}) }}"><i class="bi bi-calendar-range"></i> Périodes de location</a>
             </li>
             <li class="{{ app.request.attributes.get('_route') starts with 'manage_products' ? 'active' : '' }}">
-                <a href="#"><i class="bi bi-box-seam"></i> Produits <span class="admin-nav-soon">Bientôt</span></a>
+                <a href="{{ path('manage_products_index') }}"><i class="bi bi-box-seam"></i> Produits</a>
             </li>
             <li class="{{ app.request.attributes.get('_route') starts with 'manage_ads' ? 'active' : '' }}">
                 <a href="#"><i class="bi bi-megaphone"></i> Publicités <span class="admin-nav-soon">Bientôt</span></a>
@@ -93,8 +102,13 @@
         </div>
     </nav>
 
+    <div class="admin-sidebar-overlay" id="sidebarOverlay"></div>
+
     <main class="admin-main">
         <header class="admin-topbar">
+            <button type="button" class="admin-sidebar-burger" id="sidebarBurgerToggle" aria-label="Ouvrir le menu">
+                <i class="bi bi-list"></i>
+            </button>
             <h5><i class="bi {% block page_icon %}bi-circle{% endblock %}"></i> {% block page_title %}Tableau de bord{% endblock %}</h5>
             <div class="admin-topbar-user">
                 <button type="button" class="admin-darkmode-toggle" id="darkModeQuickToggle" aria-label="Basculer le mode nuit">
@@ -128,6 +142,31 @@
     <script src="{{ asset('js/manage/geo-picker.js') }}"></script>
     <script src="{{ asset('js/manage/category-picker.js') }}"></script>
     <script src="{{ asset('js/manage/vehicle-model-picker.js') }}"></script>
+    <script src="{{ asset('js/manage/product-pickers.js') }}"></script>
+    <script src="{{ asset('js/manage/part-compatibility.js') }}"></script>
+    <script src="{{ asset('js/manage/product-attribute-paste.js') }}"></script>
+    <script src="{{ asset('js/manage/part-brand-autocomplete.js') }}"></script>
+    <script src="{{ asset('js/manage/part-catalog-compatibility.js') }}"></script>
+    <script>
+        (function () {
+            const burger = document.getElementById('sidebarBurgerToggle');
+            const sidebar = document.querySelector('.admin-sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (!burger || !sidebar || !overlay) return;
+
+            const close = () => {
+                sidebar.classList.remove('admin-sidebar--open');
+                overlay.classList.remove('admin-sidebar-overlay--visible');
+            };
+            const toggle = () => {
+                sidebar.classList.toggle('admin-sidebar--open');
+                overlay.classList.toggle('admin-sidebar-overlay--visible');
+            };
+
+            burger.addEventListener('click', toggle);
+            overlay.addEventListener('click', close);
+        })();
+    </script>
     {% block javascripts %}{% endblock %}
 </body>
 </html>

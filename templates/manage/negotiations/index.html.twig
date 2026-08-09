@@ -1,0 +1,60 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Négociations & Paiements{% endblock %}
+{% block page_icon %}bi-cash-coin{% endblock %}
+{% block page_title %}Négociations & Paiements{% endblock %}
+
+{% block body %}
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Produit</th>
+                <th>Acheteur</th>
+                <th>Vendeur</th>
+                <th>Montant</th>
+                <th>Statut</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for thread in threads %}
+                {% set link = thread.paymentLink %}
+                {% set escrow = thread.order ? thread.order.escrowTransaction : null %}
+                <tr>
+                    <td>{{ thread.product ? thread.product.title : '—' }}</td>
+                    <td>{{ thread.buyer ? thread.buyer.email : '—' }}</td>
+                    <td>{{ thread.seller ? thread.seller.email : '—' }}</td>
+                    <td>{{ link.amount }} $</td>
+                    <td>
+                        {% if not link.used %}
+                            <span class="admin-badge admin-badge--disabled">En attente de paiement</span>
+                        {% elseif escrow and escrow.status == 'held' %}
+                            <span class="admin-badge admin-badge--disabled">Payé — séquestre</span>
+                        {% elseif escrow and escrow.status == 'released' %}
+                            <span class="admin-badge admin-badge--active">Débloqué</span>
+                        {% else %}
+                            <span class="admin-badge admin-badge--active">Payé</span>
+                        {% endif %}
+                    </td>
+                    <td class="admin-actions">
+                        {% if not link.used %}
+                            <form action="{{ path('manage_negotiations_mark_paid', {id: thread.id}) }}" method="post" onsubmit="return confirm('Confirmer que le paiement a bien été reçu ?');">
+                                <button type="submit" class="admin-btn admin-btn--primary">Marquer payé</button>
+                            </form>
+                        {% elseif escrow and escrow.status == 'held' %}
+                            <div class="mb-1">
+                                <small class="text-muted">Authenticité : <strong>{{ escrow.authenticityCode }}</strong></small>
+                            </div>
+                            <form action="{{ path('manage_escrow_release', {id: escrow.id}) }}" method="post" class="d-flex gap-1">
+                                <input type="text" name="code" placeholder="Code déblocage" class="form-control form-control-sm" style="width:120px;" required>
+                                <button type="submit" class="admin-btn admin-btn--outline">Débloquer</button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="6" class="text-muted">Aucune négociation avec lien de paiement.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

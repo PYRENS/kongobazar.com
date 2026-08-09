@@ -1,0 +1,40 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Nouvelle fiche catalogue{% endblock %}
+{% block page_icon %}bi-collection{% endblock %}
+{% block page_title %}Nouvelle fiche catalogue{% endblock %}
+
+{% block body %}
+    <form method="post" action="{{ path('manage_part_catalog_create') }}">
+        <div class="mb-3">
+            <label class="form-label">Nom</label>
+            <input type="text" name="name" class="form-control" required placeholder="ex: Courroie de distribution GATES Micro-V">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Catégorie</label>
+            <div class="category-picker" data-category-picker id="categoryPickerRoot">
+                <select data-category-level="1" class="form-select">
+                    <option value="">— Choisir —</option>
+                    {% for root in rootCategories %}
+                        <option value="{{ root.id }}">{{ root.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <small class="text-muted d-block mt-1">Sélectionné : <strong id="categorySelectedDisplay">aucune</strong></small>
+            <input type="hidden" name="category_id" id="categoryIdInput" data-ancestor-ids="">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">EAN (optionnel)</label>
+            <input type="text" name="ean" class="form-control" style="max-width:300px;">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Référence fabricant (optionnel)</label>
+            <input type="text" name="manufacturer_ref" class="form-control" style="max-width:300px;">
+        </div>
+
+        <button type="submit" class="btn btn-success">Créer</button>
+        <a href="{{ path('manage_part_catalog_index') }}" class="btn btn-outline-secondary">Annuler</a>
+    </form>
+{% endblock %}

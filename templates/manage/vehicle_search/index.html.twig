@@ -1,0 +1,317 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Recherche des véhicules{% endblock %}
+{% block page_icon %}bi-search{% endblock %}
+{% block page_title %}Recherche des véhicules{% endblock %}
+
+{% block body %}
+    <div class="mb-3">
+        <div class="form-check form-check-inline">
+            <input type="radio" name="search_type" value="auto" class="form-check-input" id="searchTypeAuto" checked>
+            <label class="form-check-label" for="searchTypeAuto">Auto</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input type="radio" name="search_type" value="moto" class="form-check-input" id="searchTypeMoto">
+            <label class="form-check-label" for="searchTypeMoto">Moto</label>
+        </div>
+    </div>
+
+    <div class="d-flex align-items-end gap-2 flex-wrap mb-4">
+        <div>
+            <label class="form-label d-block">Marque</label>
+            <select id="brandSelect" class="form-select" style="min-width:220px;">
+                <option value="">— Choisir —</option>
+            </select>
+        </div>
+
+        <button type="button" id="brandRefresh" class="btn btn-outline-secondary" style="display:none;" title="Rafraîchir les modèles">
+            <i class="bi bi-arrow-clockwise"></i>
+        </button>
+
+        <div id="modelWrap" style="display:none;">
+            <label class="form-label d-block">Modèle</label>
+            <select id="modelSelect" class="form-select" style="min-width:220px;">
+                <option value="">— Choisir —</option>
+            </select>
+        </div>
+
+        <button type="button" id="modelRefresh" class="btn btn-outline-secondary" style="display:none;" title="Rafraîchir">
+            <i class="bi bi-arrow-clockwise"></i>
+        </button>
+
+        <div id="variantWrap" style="display:none;">
+            <label class="form-label d-block" id="thirdSelectLabel">Variante</label>
+            <select id="thirdSelect" class="form-select" style="min-width:220px;">
+                <option value="">— Choisir —</option>
+            </select>
+        </div>
+
+        <button type="button" id="variantRefresh" class="btn btn-outline-secondary" style="display:none;" title="Rafraîchir">
+            <i class="bi bi-arrow-clockwise"></i>
+        </button>
+    </div>
+
+    <h6 id="tableTitle">Modèles</h6>
+    <div id="resultTable">
+        <p class="text-muted">Choisis une marque pour commencer.</p>
+    </div>
+
+    <script>
+        (function () {
+            const brandSelect = document.getElementById('brandSelect');
+            const brandRefresh = document.getElementById('brandRefresh');
+            const modelWrap = document.getElementById('modelWrap');
+            const modelSelect = document.getElementById('modelSelect');
+            const modelRefresh = document.getElementById('modelRefresh');
+            const variantWrap = document.getElementById('variantWrap');
+            const thirdSelect = document.getElementById('thirdSelect');
+            const thirdSelectLabel = document.getElementById('thirdSelectLabel');
+            const variantRefresh = document.getElementById('variantRefresh');
+            const tableTitle = document.getElementById('tableTitle');
+            const resultTable = document.getElementById('resultTable');
+
+            let currentSort = null;
+            let currentDir = 'ASC';
+            let currentLevel = null; // 'models' | 'variants' | 'engines-model' | 'engines-variant'
+
+            function getType() {
+                return document.querySelector('input[name="search_type"]:checked').value;
+            }
+
+            function resetBelow(from) {
+                if (from <= 1) {
+                    modelWrap.style.display = 'none';
+                    modelRefresh.style.display = 'none';
+                    modelSelect.innerHTML = '<option value="">— Choisir —</option>';
+                }
+                if (from <= 2) {
+                    variantWrap.style.display = 'none';
+                    variantRefresh.style.display = 'none';
+                    thirdSelect.innerHTML = '<option value="">— Choisir —</option>';
+                }
+            }
+
+            function loadBrands() {
+                resetBelow(1);
+                resultTable.innerHTML = '<p class="text-muted">Choisis une marque pour commencer.</p>';
+                tableTitle.textContent = 'Modèles';
+                fetch('{{ path("manage_vehicle_search_brands") }}?type=' + getType())
+                    .then((r) => r.json())
+                    .then((data) => {
+                        brandSelect.innerHTML = '<option value="">— Choisir —</option>';
+                        data.options.forEach((b) => {
+                            const opt = document.createElement('option');
+                            opt.value = b.id;
+                            opt.textContent = b.name;
+                            brandSelect.appendChild(opt);
+                        });
+                    });
+            }
+
+            document.querySelectorAll('input[name="search_type"]').forEach((r) => r.addEventListener('change', loadBrands));
+            loadBrands();
+
+            brandSelect.addEventListener('change', function () {
+                resetBelow(1);
+                if (!brandSelect.value) {
+                    brandRefresh.style.display = 'none';
+                    resultTable.innerHTML = '<p class="text-muted">Choisis une marque pour commencer.</p>';
+                    return;
+                }
+                brandRefresh.style.display = 'inline-block';
+                loadModels();
+            });
+            brandRefresh.addEventListener('click', loadModels);
+
+            function loadModels() {
+                currentLevel = 'models';
+                currentSort = null;
+                tableTitle.textContent = 'Modèles';
+                fetch('{{ path("manage_vehicle_search_models") }}?brand=' + brandSelect.value + '&type=' + getType())
+                    .then((r) => r.json())
+                    .then((data) => {
+                        modelSelect.innerHTML = '<option value="">— Choisir —</option>';
+                        data.options.forEach((m) => {
+                            const opt = document.createElement('option');
+                            opt.value = m.id;
+                            opt.textContent = m.name;
+                            modelSelect.appendChild(opt);
+                        });
+                        modelWrap.style.display = 'block';
+                        renderModelsTable(data.rows);
+                    });
+            }
+
+            modelSelect.addEventListener('change', function () {
+                resetBelow(2);
+                if (!modelSelect.value) {
+                    modelRefresh.style.display = 'none';
+                    loadModels();
+                    return;
+                }
+                modelRefresh.style.display = 'inline-block';
+                loadThirdLevel();
+            });
+            modelRefresh.addEventListener('click', loadThirdLevel);
+
+            function loadThirdLevel() {
+                if (getType() === 'auto') {
+                    currentLevel = 'variants';
+                    thirdSelectLabel.textContent = 'Variante';
+                    tableTitle.textContent = 'Variantes';
+                    fetch('{{ path("manage_vehicle_search_variants") }}?model=' + modelSelect.value)
+                        .then((r) => r.json())
+                        .then((data) => {
+                            thirdSelect.innerHTML = '<option value="">— Choisir —</option>';
+                            data.options.forEach((v) => {
+                                const opt = document.createElement('option');
+                                opt.value = v.id;
+                                opt.textContent = v.name;
+                                thirdSelect.appendChild(opt);
+                            });
+                            variantWrap.style.display = 'block';
+                            renderVariantsTable(data.rows);
+                        });
+                } else {
+                    currentLevel = 'engines-model';
+                    tableTitle.textContent = 'Motorisations';
+                    fetch('{{ path("manage_vehicle_search_engines") }}?model=' + modelSelect.value)
+                        .then((r) => r.json())
+                        .then((data) => {
+                            variantWrap.style.display = 'none';
+                            renderEnginesTable(data.rows);
+                        });
+                }
+            }
+
+            thirdSelect.addEventListener('change', function () {
+                if (!thirdSelect.value) {
+                    variantRefresh.style.display = 'none';
+                    loadThirdLevel();
+                    return;
+                }
+                variantRefresh.style.display = 'inline-block';
+                loadEnginesByVariant();
+            });
+            variantRefresh.addEventListener('click', loadEnginesByVariant);
+
+            function loadEnginesByVariant() {
+                currentLevel = 'engines-variant';
+                tableTitle.textContent = 'Motorisations';
+                fetch('{{ path("manage_vehicle_search_engines") }}?variant=' + thirdSelect.value)
+                    .then((r) => r.json())
+                    .then((data) => renderEnginesTable(data.rows));
+            }
+
+            function sortLinkHandler(field) {
+                if (currentSort === field) {
+                    currentDir = currentDir === 'ASC' ? 'DESC' : 'ASC';
+                } else {
+                    currentSort = field;
+                    currentDir = 'ASC';
+                }
+                reloadCurrentLevel();
+            }
+
+            function reloadCurrentLevel() {
+                const sortParam = '&sort=' + currentSort + '&dir=' + currentDir;
+                if (currentLevel === 'models') {
+                    fetch('{{ path("manage_vehicle_search_models") }}?brand=' + brandSelect.value + '&type=' + getType() + sortParam)
+                        .then((r) => r.json()).then((data) => renderModelsTable(data.rows));
+                } else if (currentLevel === 'variants') {
+                    fetch('{{ path("manage_vehicle_search_variants") }}?model=' + modelSelect.value + sortParam)
+                        .then((r) => r.json()).then((data) => renderVariantsTable(data.rows));
+                } else if (currentLevel === 'engines-model') {
+                    fetch('{{ path("manage_vehicle_search_engines") }}?model=' + modelSelect.value + sortParam)
+                        .then((r) => r.json()).then((data) => renderEnginesTable(data.rows));
+                } else if (currentLevel === 'engines-variant') {
+                    fetch('{{ path("manage_vehicle_search_engines") }}?variant=' + thirdSelect.value + sortParam)
+                        .then((r) => r.json()).then((data) => renderEnginesTable(data.rows));
+                }
+            }
+
+            function sortHeader(field, label) {
+                const arrow = currentSort === field ? (currentDir === 'ASC' ? ' ▲' : ' ▼') : '';
+                return '<th style="cursor:pointer;" data-sort="' + field + '">' + label + arrow + '</th>';
+            }
+
+            function bindSortHeaders() {
+                resultTable.querySelectorAll('th[data-sort]').forEach((th) => {
+                    th.addEventListener('click', () => sortLinkHandler(th.dataset.sort));
+                });
+            }
+
+            function esc(s) { const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
+
+            function renderModelsTable(rows) {
+                let html = '<table class="admin-table"><thead><tr><th>Logo</th>';
+                html += sortHeader('name', 'Nom');
+                html += '<th>Nom alternatif</th>';
+                html += sortHeader('primaryCount', 'Variantes/Motorisations');
+                html += sortHeader('engineCount', 'Motorisations');
+                html += '<th>Actions</th></tr></thead><tbody>';
+                rows.forEach((row) => {
+                    html += '<tr>';
+                    html += '<td>' + (row.brandLogoUrl ? '<img src="' + row.brandLogoUrl + '" style="width:28px;height:28px;object-fit:contain;">' : '—') + '</td>';
+                    html += '<td><a href="' + row.showUrl + '">' + esc(row.name) + '</a></td>';
+                    html += '<td>' + esc(row.name2 || '—') + '</td>';
+                    html += '<td>' + (row.primaryCount > 0 ? row.primaryCount : 0) + '</td>';
+                    html += '<td>' + (row.engineCount !== null ? row.engineCount : '—') + '</td>';
+                    html += '<td class="admin-actions"><a href="' + row.editUrl + '" class="admin-btn admin-btn--outline"><i class="bi bi-pencil"></i></a>';
+                    html += '<form action="' + row.deleteUrl + '" method="post" onsubmit="return confirm(\'Supprimer ce modèle ?\');"><button type="submit" class="admin-btn admin-btn--outline"><i class="bi bi-trash"></i></button></form></td>';
+                    html += '</tr>';
+                });
+                if (rows.length === 0) html += '<tr><td colspan="6" class="text-muted">Aucun modèle.</td></tr>';
+                html += '</tbody></table>';
+                resultTable.innerHTML = html;
+                bindSortHeaders();
+            }
+
+            function renderVariantsTable(rows) {
+                let html = '<table class="admin-table"><thead><tr>';
+                html += sortHeader('name', 'Variante');
+                html += sortHeader('period', 'Période');
+                html += sortHeader('engineCount', 'Motorisations');
+                html += '<th>Actions</th></tr></thead><tbody>';
+                rows.forEach((row) => {
+                    html += '<tr>';
+                    html += '<td><a href="' + row.showUrl + '">' + esc(row.name) + '</a></td>';
+                    html += '<td>' + esc(row.period) + '</td>';
+                    html += '<td>' + (row.engineCount > 0 ? row.engineCount : 0) + '</td>';
+                    html += '<td class="admin-actions"><a href="' + row.editUrl + '" class="admin-btn admin-btn--outline"><i class="bi bi-pencil"></i></a>';
+                    html += '<form action="' + row.deleteUrl + '" method="post" onsubmit="return confirm(\'Supprimer cette variante ?\');"><button type="submit" class="admin-btn admin-btn--outline"><i class="bi bi-trash"></i></button></form></td>';
+                    html += '</tr>';
+                });
+                if (rows.length === 0) html += '<tr><td colspan="4" class="text-muted">Aucune variante.</td></tr>';
+                html += '</tbody></table>';
+                resultTable.innerHTML = html;
+                bindSortHeaders();
+            }
+
+            function renderEnginesTable(rows) {
+                let html = '<table class="admin-table"><thead><tr>';
+                html += sortHeader('label', 'Moteur');
+                html += sortHeader('powerCv', 'CV');
+                html += sortHeader('powerKw', 'kW');
+                html += sortHeader('fuelType', 'Énergie');
+                html += sortHeader('period', 'Période');
+                html += '<th>Actions</th></tr></thead><tbody>';
+                rows.forEach((row) => {
+                    html += '<tr>';
+                    html += '<td>' + esc(row.label) + '</td>';
+                    html += '<td>' + (row.powerCv ?? '-') + '</td>';
+                    html += '<td>' + (row.powerKw ?? '-') + '</td>';
+                    html += '<td>' + esc(row.fuelType || '-') + '</td>';
+                    html += '<td>' + esc(row.period || '-') + '</td>';
+                    html += '<td class="admin-actions"><a href="' + row.editUrl + '" class="admin-btn admin-btn--outline"><i class="bi bi-pencil"></i></a>';
+                    html += '<form action="' + row.deleteUrl + '" method="post" onsubmit="return confirm(\'Supprimer cette motorisation ?\');"><button type="submit" class="admin-btn admin-btn--outline"><i class="bi bi-trash"></i></button></form></td>';
+                    html += '</tr>';
+                });
+                if (rows.length === 0) html += '<tr><td colspan="6" class="text-muted">Aucune motorisation.</td></tr>';
+                html += '</tbody></table>';
+                resultTable.innerHTML = html;
+                bindSortHeaders();
+            }
+        })();
+    </script>
+{% endblock %}

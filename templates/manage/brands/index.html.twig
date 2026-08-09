@@ -28,6 +28,7 @@
             <tr>
                 <th>Logo</th>
                 <th>{{ self.sortLink('name', 'Nom', currentSort, currentDir) }}</th>
+                <th>Sigle</th>
                 <th>{{ self.sortLink('pays', 'Pays', currentSort, currentDir) }}</th>
                 <th>{{ self.sortLink('type', 'Type', currentSort, currentDir) }}</th>
                 <th>{{ self.sortLink('verified', 'Vérifiée', currentSort, currentDir) }}</th>
@@ -48,6 +49,7 @@
                         {% endif %}
                     </td>
                     <td><a href="{{ path('manage_brands_show', {id: brand.id}) }}">{{ brand.name }}</a></td>
+                    <td>{{ brand.sigle ?: '—' }}</td>
                     <td>
                         {% if brand.pays %}
                             <span class="fi fi-{{ brand.pays.iso2|lower }}"></span> {{ brand.pays.name }}
@@ -63,7 +65,17 @@
                         {% endif %}
                     </td>
                     <td>{{ brand.verified ? 'Oui' : 'Non' }}</td>
-                    <td>{{ row.count }} {{ row.countLabel }}</td>
+                    <td>
+                        {% if row.count > 0 %}
+                            {% if row.isVehicle %}
+                                <a href="{{ path('manage_vehicle_models_index', {brand: brand.id}) }}">{{ row.count }} {{ row.countLabel }}</a>
+                            {% else %}
+                                <a href="{{ path('manage_brands_products', {id: brand.id}) }}">{{ row.count }} {{ row.countLabel }}</a>
+                            {% endif %}
+                        {% else %}
+                            0 {{ row.countLabel }}
+                        {% endif %}
+                    </td>
                     <td>
                         <form action="{{ path('manage_brands_toggle', {id: brand.id}) }}" method="post" class="d-inline">
                             <button type="submit" class="btn btn-sm {{ brand.active ? 'btn-success' : 'btn-outline-secondary' }}">

@@ -1,0 +1,11 @@
+<div class="mb-3">
+    <label class="form-label">Délai d'expédition (jours)</label>
+    <div class="row">
+        <div class="col-md-6">
+            <input type="number" name="shipping_min_days" class="form-control" placeholder="Min" value="{{ product ? product.shippingMinDays : '' }}">
+        </div>
+        <div class="col-md-6">
+            <input type="number" name="shipping_max_days" class="form-control" placeholder="Max" value="{{ product ? product.shippingMaxDays : '' }}">
+        </div>
+    </div>
+</div>

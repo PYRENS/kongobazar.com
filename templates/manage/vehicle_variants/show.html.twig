@@ -1,0 +1,106 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}{{ variant.name ?: '-' }} — Variante{% endblock %}
+{% block page_icon %}bi-diagram-3{% endblock %}
+{% block page_title %}{{ variant.model.brand.name }} {{ variant.model.name }} {{ variant.name ?: '-' }}{% endblock %}
+
+{% macro sortLink(field, label, currentSort, currentDir) %}
+    {% set nextDir = (currentSort == field and currentDir == 'ASC') ? 'DESC' : 'ASC' %}
+    <a href="?sort={{ field }}&dir={{ nextDir }}" class="admin-sort-link">
+        {{ label }}
+        {% if currentSort == field %}
+            <i class="bi bi-caret-{{ currentDir == 'ASC' ? 'up' : 'down' }}-fill"></i>
+        {% else %}
+            <i class="bi bi-arrow-down-up admin-sort-icon-idle"></i>
+        {% endif %}
+    </a>
+{% endmacro %}
+{% import _self as self %}
+
+{% block body %}
+    <nav class="admin-breadcrumb">
+        <a href="{{ path('manage_brands_index') }}"><i class="bi bi-award"></i> Marques</a>
+        <i class="bi bi-chevron-right"></i>
+        <a href="{{ path('manage_brands_show', {id: variant.model.brand.id}) }}">{{ variant.model.brand.name }}</a>
+        <i class="bi bi-chevron-right"></i>
+        <a href="{{ path('manage_vehicle_models_show', {id: variant.model.id}) }}">{{ variant.model.name }}</a>
+        <i class="bi bi-chevron-right"></i>
+        <span>{{ variant.name ?: '-' }}</span>
+    </nav>
+
+    <div class="admin-card" style="margin-top:12px;">
+        <div class="admin-info-illustration-row">
+            <div class="admin-info-col">
+                <h6><i class="bi bi-info-circle"></i> Informations de la variante</h6>
+                <table class="admin-table" style="box-shadow:none;margin-bottom:16px;">
+                    <tr><td><strong>Marque</strong></td><td>{{ variant.model.brand.name }}</td></tr>
+                    <tr><td><strong>Modèle</strong></td><td>{{ variant.model.name }}</td></tr>
+                    <tr><td><strong>Variante</strong></td><td>{{ variant.name ?: '-' }}</td></tr>
+                    <tr>
+                        <td><strong>Période</strong></td>
+                        <td>{{ variant.monthBegin }}/{{ variant.yearBegin }} — {{ variant.monthEnd ? variant.monthEnd ~ '/' ~ variant.yearEnd : '...' }}</td>
+                    </tr>
+                    <tr><td><strong>Motorisations</strong></td><td>{{ engines|length }}</td></tr>
+                </table>
+
+                <div class="admin-actions">
+                    <a href="{{ path('manage_vehicle_variants_index') }}" class="admin-btn admin-btn--outline">← Retour</a>
+                    <a href="{{ path('manage_vehicle_variants_edit', {id: variant.id}) }}" class="admin-btn admin-btn--outline"><i class="bi bi-pencil"></i> Modifier</a>
+                    <form action="{{ path('manage_vehicle_variants_delete', {id: variant.id}) }}" method="post" onsubmit="return confirm('Supprimer cette variante ?');">
+                        <button type="submit" class="admin-btn admin-btn--outline"><i class="bi bi-trash"></i> Supprimer</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="admin-illustration-col">
+                <span class="admin-illustration-label">Marque</span>
+                {% if variant.model.brand.logoName %}
+                    <img src="{{ vich_uploader_asset(variant.model.brand, 'logoFile') }}" class="admin-illustration-preview admin-illustration-preview--logo">
+                {% else %}
+                    <div class="admin-illustration-empty">
+                        <i class="bi bi-award"></i>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-card" id="motorisations">
+        <h6><i class="bi bi-gear"></i> Motorisations</h6>
+        <a href="{{ path('manage_vehicle_engines_new', {variant: variant.id}) }}" class="admin-btn admin-btn--primary" style="margin-bottom:12px;">
+            <i class="bi bi-plus-lg"></i> Ajouter une motorisation
+        </a>
+
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>{{ self.sortLink('label', 'Moteur', currentSort, currentDir) }}</th>
+                    <th>{{ self.sortLink('powerCv', 'Puissance CV', currentSort, currentDir) }}</th>
+                    <th>{{ self.sortLink('powerKw', 'Puissance kW', currentSort, currentDir) }}</th>
+                    <th>{{ self.sortLink('period', 'Période', currentSort, currentDir) }}</th>
+                    <th>{{ self.sortLink('fuelType', 'Énergie', currentSort, currentDir) }}</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for engine in engines %}
+                    <tr>
+                        <td>{{ engine.label }}</td>
+                        <td>{{ engine.powerCv ?: '-' }}</td>
+                        <td>{{ engine.powerKw ?: '-' }}</td>
+                        <td>{{ engine.periodLabel ?: '-' }}</td>
+                        <td>{{ engine.fuelType ? engine.fuelType.name : '-' }}</td>
+                        <td class="admin-actions">
+                            <a href="{{ path('manage_vehicle_engines_edit', {id: engine.id}) }}" class="admin-btn admin-btn--outline"><i class="bi bi-pencil"></i></a>
+                            <form action="{{ path('manage_vehicle_engines_delete', {id: engine.id}) }}" method="post" onsubmit="return confirm('Supprimer cette motorisation ?');">
+                                <button type="submit" class="admin-btn admin-btn--outline"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="6" class="text-muted">Aucune motorisation pour cette variante.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

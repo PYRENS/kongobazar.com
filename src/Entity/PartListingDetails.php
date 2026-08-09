@@ -19,6 +19,9 @@ class PartListingDetails
     #[ORM\JoinColumn(nullable: false, unique: true)]
     private ?Product $product = null;
 
+    #[ORM\ManyToOne(targetEntity: PartCatalogEntry::class)]
+    private ?PartCatalogEntry $partCatalogEntry = null;
+
     /** Références OEM propres à la pièce (souvent plusieurs selon marché/facelift). */
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $oemCodes = null;
@@ -33,9 +36,14 @@ class PartListingDetails
     #[ORM\OneToMany(targetEntity: PartCompatibility::class, mappedBy: 'partListingDetails', cascade: ['persist', 'remove'], orphanRemoval: true)]
     private Collection $compatibilities;
 
+    /** @var Collection<int, PartEngineCompatibility> */
+    #[ORM\OneToMany(targetEntity: PartEngineCompatibility::class, mappedBy: 'partListingDetails', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $engineCompatibilities;
+
     public function __construct()
     {
         $this->compatibilities = new ArrayCollection();
+        $this->engineCompatibilities = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -52,6 +60,17 @@ class PartListingDetails
     {
         $this->product = $product;
 
+        return $this;
+    }
+
+    public function getPartCatalogEntry(): ?PartCatalogEntry
+    {
+        return $this->partCatalogEntry;
+    }
+
+    public function setPartCatalogEntry(?PartCatalogEntry $partCatalogEntry): static
+    {
+        $this->partCatalogEntry = $partCatalogEntry;
         return $this;
     }
 
@@ -111,6 +130,27 @@ class PartListingDetails
     {
         $this->compatibilities->removeElement($compatibility);
 
+        return $this;
+    }
+
+    /** @return Collection<int, PartEngineCompatibility> */
+    public function getEngineCompatibilities(): Collection
+    {
+        return $this->engineCompatibilities;
+    }
+
+    public function addEngineCompatibility(PartEngineCompatibility $ec): static
+    {
+        if (!$this->engineCompatibilities->contains($ec)) {
+            $this->engineCompatibilities->add($ec);
+            $ec->setPartListingDetails($this);
+        }
+        return $this;
+    }
+
+    public function removeEngineCompatibility(PartEngineCompatibility $ec): static
+    {
+        $this->engineCompatibilities->removeElement($ec);
         return $this;
     }
 }

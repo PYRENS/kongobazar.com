@@ -1,97 +1,185 @@
 {% extends 'manage/base.html.twig' %}
 
-{% block title %}{{ model.name }}{% endblock %}
+{% block title %}{{ model.name }} — Modèle{% endblock %}
 {% block page_icon %}bi-car-front{% endblock %}
-{% block page_title %}{{ model.name }}{% endblock %}
+{% block page_title %}{{ model.brand.name }} {{ model.name }}{% endblock %}
+
+{% macro sortLink(field, label, param, currentSort, currentDir, anchor) %}
+    {% set nextDir = (currentSort == field and currentDir == 'ASC') ? 'DESC' : 'ASC' %}
+    <a href="?{{ param }}_sort={{ field }}&{{ param }}_dir={{ nextDir }}#{{ anchor }}" class="admin-sort-link">
+        {{ label }}
+        {% if currentSort == field %}
+            <i class="bi bi-caret-{{ currentDir == 'ASC' ? 'up' : 'down' }}-fill"></i>
+        {% else %}
+            <i class="bi bi-arrow-down-up admin-sort-icon-idle"></i>
+        {% endif %}
+    </a>
+{% endmacro %}
+{% import _self as self %}
 
 {% block body %}
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="h4 mb-0">{{ model.brand.name }} {{ model.name }}</h1>
-        <div>
-            <a href="{{ path('manage_vehicle_models_edit', {id: model.id}) }}" class="btn btn-outline-secondary btn-sm">Modifier</a>
-            <a href="{{ path('manage_vehicle_models_index') }}" class="btn btn-outline-secondary btn-sm">Retour à la liste</a>
+    <nav class="admin-breadcrumb">
+        <a href="{{ path('manage_brands_index') }}"><i class="bi bi-award"></i> Marques</a>
+        <i class="bi bi-chevron-right"></i>
+        <a href="{{ path('manage_brands_show', {id: model.brand.id}) }}">{{ model.brand.name }}</a>
+        <i class="bi bi-chevron-right"></i>
+        <span>{{ model.name }}</span>
+    </nav>
+
+    <div class="admin-card" style="margin-top:12px;">
+        <div class="admin-info-illustration-row">
+            <div class="admin-info-col">
+                <h6><i class="bi bi-info-circle"></i> Informations du modèle</h6>
+                <table class="admin-table" style="box-shadow:none;margin-bottom:16px;">
+                    <tr><td><strong>Marque</strong></td><td><a href="{{ path('manage_brands_show', {id: model.brand.id}) }}">{{ model.brand.name }}</a></td></tr>
+                    <tr><td><strong>Nom</strong></td><td>{{ model.name }}</td></tr>
+                    <tr><td><strong>Nom alternatif</strong></td><td>{{ model.name2 ?: '—' }}</td></tr>
+                    <tr><td><strong>Type</strong></td><td>{{ model.isMoto ? 'Moto' : 'Auto' }}</td></tr>
+                    {% if not model.isMoto %}
+                        <tr>
+                            <td><strong>Variantes</strong></td>
+                            <td>
+                                {% if variantsTotal > 0 %}
+                                    <a href="#variantes">{{ variantsTotal }}</a>
+                                {% else %}
+                                    0
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endif %}
+                    <tr>
+                        <td><strong>Motorisations</strong></td>
+                        <td>
+                            {% if enginesTotal > 0 %}
+                                <a href="#motorisations">{{ enginesTotal }}</a>
+                            {% else %}
+                                0
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+
+                <div class="admin-actions">
+                    <a href="{{ path('manage_vehicle_models_index') }}" class="admin-btn admin-btn--outline">← Retour</a>
+                    <a href="{{ path('manage_vehicle_models_edit', {id: model.id}) }}" class="admin-btn admin-btn--outline"><i class="bi bi-pencil"></i> Modifier</a>
+                </div>
+            </div>
+
+            <div class="admin-illustration-col">
+                <span class="admin-illustration-label">Marque</span>
+                <a href="{{ path('manage_brands_show', {id: model.brand.id}) }}">
+                    {% if model.brand.logoName %}
+                        <img src="{{ vich_uploader_asset(model.brand, 'logoFile') }}" class="admin-illustration-preview admin-illustration-preview--logo">
+                    {% else %}
+                        <div class="admin-illustration-empty">
+                            <i class="bi bi-award"></i>
+                        </div>
+                    {% endif %}
+                </a>
+            </div>
         </div>
     </div>
 
-    {# --- Section 1 : Informations --- #}
-    <div class="card mb-4">
-        <div class="card-header">Informations</div>
-        <div class="card-body">
-            <dl class="row mb-0">
-                <dt class="col-sm-2">Marque</dt>
-                <dd class="col-sm-10">{{ model.brand.name }}</dd>
+    {# --- Section 2 : Variantes --- #}
+    <div class="admin-card" id="variantes">
+        <h6><i class="bi bi-diagram-3"></i> Variantes du modèle</h6>
+        {% if not model.isMoto %}
+        {% if not model.isMoto %}
+            <a href="{{ path('manage_vehicle_variants_new', {model: model.id}) }}" class="admin-btn admin-btn--primary" style="margin-bottom:12px;">
+                <i class="bi bi-plus-lg"></i> Ajouter une variante
+            </a>
+        {% endif %}
+        {% endif %}
 
-                <dt class="col-sm-2">Nom</dt>
-                <dd class="col-sm-10">{{ model.name }}</dd>
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>{{ self.sortLink('name', 'Variante', 'variants', variantsSort, variantsDir, 'variantes') }}</th>
+                    <th>{{ self.sortLink('yearBegin', 'Période', 'variants', variantsSort, variantsDir, 'variantes') }}</th>
+                    <th>{{ self.sortLink('engineCount', 'Motorisations', 'variants', variantsSort, variantsDir, 'variantes') }}</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for variant in variants %}
+                    {% set variantEngineCount = variant.engines|length %}
+                    <tr>
+                        <td><a href="{{ path('manage_vehicle_variants_show', {id: variant.id}) }}">{{ variant.name ?: '-' }}</a></td>
+                        <td>{{ variant.monthBegin }}/{{ variant.yearBegin }} — {{ variant.monthEnd ? variant.monthEnd ~ '/' ~ variant.yearEnd : '...' }}</td>
+                        <td>
+                            {% if variantEngineCount > 0 %}
+                                <a href="{{ path('manage_vehicle_variants_show', {id: variant.id}) }}#motorisations">{{ variantEngineCount }}</a>
+                            {% else %}
+                                0
+                            {% endif %}
+                        </td>
+                        <td class="admin-actions">
+                            <a href="{{ path('manage_vehicle_variants_show', {id: variant.id}) }}" class="admin-btn admin-btn--outline"><i class="bi bi-eye"></i></a>
+                            <a href="{{ path('manage_vehicle_variants_edit', {id: variant.id}) }}" class="admin-btn admin-btn--outline"><i class="bi bi-pencil"></i></a>
+                            <form action="{{ path('manage_vehicle_variants_delete', {id: variant.id}) }}" method="post" onsubmit="return confirm('Supprimer cette variante ?');">
+                                <button type="submit" class="admin-btn admin-btn--outline"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="4" class="text-muted">{{ model.isMoto ? 'Modèle Moto — pas de variante.' : 'Aucune variante pour ce modèle.' }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
 
-                <dt class="col-sm-2">Nom alternatif</dt>
-                <dd class="col-sm-10">{{ model.name2 ?: '—' }}</dd>
-
-                <dt class="col-sm-2">Type</dt>
-                <dd class="col-sm-10">{{ model.isMoto ? 'Moto' : 'Auto' }}</dd>
-            </dl>
-        </div>
+        {% if variantsPages > 1 %}
+            <div class="d-flex justify-content-between align-items-center mt-2">
+                <a href="?variants_page={{ max(1, variantsPage - 1) }}#variantes" class="admin-btn admin-btn--outline {{ variantsPage <= 1 ? 'disabled' : '' }}">‹ Précédent</a>
+                <span class="text-muted">Page {{ variantsPage }} / {{ variantsPages }}</span>
+                <a href="?variants_page={{ min(variantsPages, variantsPage + 1) }}#variantes" class="admin-btn admin-btn--outline {{ variantsPage >= variantsPages ? 'disabled' : '' }}">Suivant ›</a>
+            </div>
+        {% endif %}
     </div>
 
-    {# --- Section 2 : Variantes (Auto) ou Motorisations (Moto) --- #}
-    <div class="card">
-        <div class="card-header">
-            {{ model.isMoto ? 'Motorisations' : 'Variantes' }}
-        </div>
-        <div class="card-body p-0">
-            {% if model.isMoto %}
-                <table class="table admin-table mb-0">
-                    <thead>
-                        <tr>
-                            <th>Moteur</th>
-                            <th>CV / kW</th>
-                            <th>Cylindrée</th>
-                            <th>Énergie</th>
-                            <th>Période</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for engine in engines %}
-                            <tr>
-                                <td>{{ engine.label }}</td>
-                                <td>{{ engine.powerCv ?: '-' }} CV / {{ engine.powerKw ?: '-' }} kW</td>
-                                <td>{{ engine.displacementCc ? engine.displacementCc ~ ' cm³' : '-' }}</td>
-                                <td>{{ engine.fuelType ? engine.fuelType.name : '-' }}</td>
-                                <td>{{ engine.periodLabel ?: '-' }}</td>
-                                <td class="text-end">
-                                    <a href="{{ path('manage_vehicle_engines_edit', {id: engine.id}) }}" class="btn btn-sm btn-outline-secondary">Modifier</a>
-                                </td>
-                            </tr>
-                        {% else %}
-                            <tr><td colspan="6" class="text-muted p-3">Aucune motorisation pour ce modèle.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% else %}
-                <table class="table admin-table mb-0">
-                    <thead>
-                        <tr>
-                            <th>Variante</th>
-                            <th>Période</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for variant in variants %}
-                            <tr>
-                                <td><a href="{{ path('manage_vehicle_variants_edit', {id: variant.id}) }}">{{ variant.name ?: '-' }}</a></td>
-                                <td>{{ variant.monthBegin }}/{{ variant.yearBegin }} — {{ variant.monthEnd ? variant.monthEnd ~ '/' ~ variant.yearEnd : '...' }}</td>
-                                <td class="text-end">
-                                    <a href="{{ path('manage_vehicle_variants_edit', {id: variant.id}) }}" class="btn btn-sm btn-outline-secondary">Modifier</a>
-                                </td>
-                            </tr>
-                        {% else %}
-                            <tr><td colspan="3" class="text-muted p-3">Aucune variante pour ce modèle.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% endif %}
-        </div>
+    {# --- Section 3 : Motorisations --- #}
+    <div class="admin-card" id="motorisations">
+        <h6><i class="bi bi-gear"></i> Motorisations du modèle</h6>
+
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>{{ self.sortLink('label', 'Moteur', 'engines', enginesSort, enginesDir, 'motorisations') }}</th>
+                    {% if not model.isMoto %}<th>Variante</th>{% endif %}
+                    <th>{{ self.sortLink('powerCv', 'Puissance CV', 'engines', enginesSort, enginesDir, 'motorisations') }}</th>
+                    <th>{{ self.sortLink('powerKw', 'Puissance kW', 'engines', enginesSort, enginesDir, 'motorisations') }}</th>
+                    <th>{{ self.sortLink('period', 'Période', 'engines', enginesSort, enginesDir, 'motorisations') }}</th>
+                    <th>{{ self.sortLink('fuelType', 'Énergie', 'engines', enginesSort, enginesDir, 'motorisations') }}</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for engine in engines %}
+                    <tr>
+                        <td>{{ engine.label }}</td>
+                        {% if not model.isMoto %}<td>{{ engine.variant ? (engine.variant.name ?: '-') : '-' }}</td>{% endif %}
+                        <td>{{ engine.powerCv ?: '-' }}</td>
+                        <td>{{ engine.powerKw ?: '-' }}</td>
+                        <td>{{ engine.periodLabel ?: '-' }}</td>
+                        <td>{{ engine.fuelType ? engine.fuelType.name : '-' }}</td>
+                        <td class="admin-actions">
+                            <a href="{{ path('manage_vehicle_engines_edit', {id: engine.id}) }}" class="admin-btn admin-btn--outline"><i class="bi bi-pencil"></i></a>
+                            <form action="{{ path('manage_vehicle_engines_delete', {id: engine.id}) }}" method="post" onsubmit="return confirm('Supprimer cette motorisation ?');">
+                                <button type="submit" class="admin-btn admin-btn--outline"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="{{ model.isMoto ? 6 : 7 }}" class="text-muted">Aucune motorisation pour ce modèle.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if enginesPages > 1 %}
+            <div class="d-flex justify-content-between align-items-center mt-2">
+                <a href="?engines_page={{ max(1, enginesPage - 1) }}#motorisations" class="admin-btn admin-btn--outline {{ enginesPage <= 1 ? 'disabled' : '' }}">‹ Précédent</a>
+                <span class="text-muted">Page {{ enginesPage }} / {{ enginesPages }}</span>
+                <a href="?engines_page={{ min(enginesPages, enginesPage + 1) }}#motorisations" class="admin-btn admin-btn--outline {{ enginesPage >= enginesPages ? 'disabled' : '' }}">Suivant ›</a>
+            </div>
+        {% endif %}
     </div>
 {% endblock %}

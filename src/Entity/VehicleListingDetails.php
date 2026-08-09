@@ -25,6 +25,27 @@ class VehicleListingDetails
     #[ORM\Column(nullable: true)]
     private ?int $modelYear = null;
 
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $trimLevel = null; // Finition constructeur
+
+    #[ORM\Column(length: 150, nullable: true)]
+    private ?string $constructorVersion = null; // Version constructeur
+
+    #[ORM\Column(nullable: true)]
+    private ?int $firstRegistrationMonth = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $firstRegistrationYear = null;
+
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $vehicleBodyType = null; // Berline, SUV, Break...
+
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $color = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $powerDin = null; // Puissance DIN en Ch
+
     #[ORM\Column(nullable: true)]
     private ?int $mileage = null;
 
@@ -82,7 +103,83 @@ class VehicleListingDetails
     public function setModelYear(?int $modelYear): static
     {
         $this->modelYear = $modelYear;
+        return $this;
+    }
 
+    public function getTrimLevel(): ?string
+    {
+        return $this->trimLevel;
+    }
+
+    public function setTrimLevel(?string $trimLevel): static
+    {
+        $this->trimLevel = $trimLevel;
+        return $this;
+    }
+
+    public function getConstructorVersion(): ?string
+    {
+        return $this->constructorVersion;
+    }
+
+    public function setConstructorVersion(?string $constructorVersion): static
+    {
+        $this->constructorVersion = $constructorVersion;
+        return $this;
+    }
+
+    public function getFirstRegistrationMonth(): ?int
+    {
+        return $this->firstRegistrationMonth;
+    }
+
+    public function setFirstRegistrationMonth(?int $month): static
+    {
+        $this->firstRegistrationMonth = $month;
+        return $this;
+    }
+
+    public function getFirstRegistrationYear(): ?int
+    {
+        return $this->firstRegistrationYear;
+    }
+
+    public function setFirstRegistrationYear(?int $year): static
+    {
+        $this->firstRegistrationYear = $year;
+        return $this;
+    }
+
+    public function getVehicleBodyType(): ?string
+    {
+        return $this->vehicleBodyType;
+    }
+
+    public function setVehicleBodyType(?string $vehicleBodyType): static
+    {
+        $this->vehicleBodyType = $vehicleBodyType;
+        return $this;
+    }
+
+    public function getColor(): ?string
+    {
+        return $this->color;
+    }
+
+    public function setColor(?string $color): static
+    {
+        $this->color = $color;
+        return $this;
+    }
+
+    public function getPowerDin(): ?int
+    {
+        return $this->powerDin;
+    }
+
+    public function setPowerDin(?int $powerDin): static
+    {
+        $this->powerDin = $powerDin;
         return $this;
     }
 

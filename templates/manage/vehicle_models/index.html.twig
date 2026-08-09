@@ -1,8 +1,8 @@
 {% extends 'manage/base.html.twig' %}
 
-{% block title %}Modèles véhicules{% endblock %}
+{% block title %}{{ selectedBrand ? 'Modèles ' ~ selectedBrand.name : 'Modèles véhicules' }}{% endblock %}
 {% block page_icon %}bi-car-front{% endblock %}
-{% block page_title %}Modèles véhicules{% endblock %}
+{% block page_title %}{{ selectedBrand ? 'Les modèles de la marque ' ~ selectedBrand.name : 'Modèles véhicules' }}{% endblock %}
 
 {% macro sortLink(field, label, currentSort, currentDir) %}
     {% set nextDir = (currentSort == field and currentDir == 'ASC') ? 'DESC' : 'ASC' %}
@@ -19,7 +19,7 @@
 
 {% block body %}
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="h4 mb-0">Modèles véhicules</h1>
+        <h1 class="h4 mb-0">{{ selectedBrand ? 'Les modèles de la marque ' ~ selectedBrand.name : 'Modèles véhicules' }}</h1>
         <a href="{{ path('manage_vehicle_models_new') }}" class="btn btn-primary btn-sm">+ Nouveau modèle</a>
     </div>
 
@@ -50,6 +50,8 @@
         {% endif %}
     </form>
 
+    <p class="text-muted mb-2">{{ rows|length }} modèle{{ rows|length > 1 ? 's' : '' }} au total</p>
+
     <table class="table admin-table">
         <thead>
             <tr>
@@ -58,8 +60,8 @@
                 <th>{{ self.sortLink('name', 'Nom', currentSort, currentDir) }}</th>
                 <th>{{ self.sortLink('name2', 'Nom alternatif', currentSort, currentDir) }}</th>
                 <th>{{ self.sortLink('type', 'Type', currentSort, currentDir) }}</th>
-                <th>{{ self.sortLink('primaryCount', 'Variante/Motorisation', currentSort, currentDir) }}</th>
-                <th>{{ self.sortLink('engineCount', 'Motorisation', currentSort, currentDir) }}</th>
+                <th>{{ self.sortLink('primaryCount', 'Variantes/Motorisations', currentSort, currentDir) }}</th>
+                <th>{{ self.sortLink('engineCount', 'Motorisations', currentSort, currentDir) }}</th>
                 <th></th>
             </tr>
         </thead>
@@ -74,12 +76,24 @@
                             <span class="text-muted">—</span>
                         {% endif %}
                     </td>
-                    <td>{{ model.brand.name }}</td>
+                    <td><a href="{{ path('manage_brands_show', {id: model.brand.id}) }}">{{ model.brand.name }}</a></td>
                     <td><a href="{{ path('manage_vehicle_models_show', {id: model.id}) }}">{{ model.name }}</a></td>
                     <td>{{ model.name2 ?: '—' }}</td>
                     <td>{{ model.isMoto ? 'Moto' : 'Auto' }}</td>
-                    <td>{{ row.primaryCount }}</td>
-                    <td>{{ row.engineCount is not null ? row.engineCount : '—' }}</td>
+                    <td>
+                        {% if row.primaryCount > 0 %}
+                            <a href="{{ path('manage_vehicle_models_show', {id: model.id}) }}#{{ model.isMoto ? 'motorisations' : 'variantes' }}">{{ row.primaryCount }}</a>
+                        {% else %}
+                            0
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if row.engineCount %}
+                            <a href="{{ path('manage_vehicle_models_show', {id: model.id}) }}#motorisations">{{ row.engineCount }}</a>
+                        {% else %}
+                            {{ row.engineCount is not null ? '0' : '—' }}
+                        {% endif %}
+                    </td>
                     <td class="text-end">
                         <a href="{{ path('manage_vehicle_models_show', {id: model.id}) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i> Voir</a>
                         <a href="{{ path('manage_vehicle_models_edit', {id: model.id}) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i> Modifier</a>

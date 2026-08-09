@@ -21,6 +21,10 @@ class Brand
     #[ORM\Column(length: 100, unique: true)]
     private ?string $name = null;
 
+    /** Abréviation courte de la marque (ex: "BMW", "VW"). */
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $sigle = null;
+
     #[ORM\Column(length: 120, unique: true)]
     private ?string $slug = null;
 
@@ -136,6 +140,18 @@ class Brand
     public function hasType(string $type): bool
     {
         return null !== $this->type && in_array($type, $this->type, true);
+    }
+
+    public function getSigle(): ?string
+    {
+        return $this->sigle;
+    }
+
+    public function setSigle(?string $sigle): static
+    {
+        $this->sigle = $sigle;
+
+        return $this;
     }
 
     public function getPays(): ?Pays

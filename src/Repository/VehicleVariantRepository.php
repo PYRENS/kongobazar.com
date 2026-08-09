@@ -36,4 +36,31 @@ class VehicleVariantRepository extends ServiceEntityRepository
             ->getQuery()
             ->getSingleScalarResult();
     }
+
+    public function countByBrand(int $brandId): int
+    {
+        return (int) $this->createQueryBuilder('v')
+            ->select('COUNT(v.id)')
+            ->join('v.model', 'm')
+            ->andWhere('m.brand = :brandId')
+            ->setParameter('brandId', $brandId)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /** @return VehicleVariant[] */
+    public function findFiltered(?string $term = null): array
+    {
+        $qb = $this->createQueryBuilder('v')
+            ->join('v.model', 'm')
+            ->join('m.brand', 'b')
+            ->orderBy('v.id', 'DESC');
+
+        if ($term) {
+            $qb->andWhere('v.name LIKE :term OR m.name LIKE :term OR b.name LIKE :term')
+                ->setParameter('term', '%' . $term . '%');
+        }
+
+        return $qb->getQuery()->getResult();
+    }
 }

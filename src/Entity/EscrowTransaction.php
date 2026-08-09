@@ -33,6 +33,17 @@ class EscrowTransaction
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $providerReference = null;
 
+    /** Code communiqué à l'acheteur, à donner au vendeur après prestation pour débloquer les fonds. */
+    #[ORM\Column(length: 10, nullable: true)]
+    private ?string $releaseCode = null;
+
+    /** Code partagé entre acheteur et prestataire — vérifié en personne pour confirmer qu'ils sont bien la bonne paire liée à cette transaction payée. */
+    #[ORM\Column(length: 10, nullable: true)]
+    private ?string $authenticityCode = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $releaseCodeVerifiedAt = null;
+
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $releasedAt = null;
 
@@ -104,6 +115,42 @@ class EscrowTransaction
     public function setProviderReference(?string $providerReference): static
     {
         $this->providerReference = $providerReference;
+
+        return $this;
+    }
+
+    public function getReleaseCode(): ?string
+    {
+        return $this->releaseCode;
+    }
+
+    public function setReleaseCode(?string $releaseCode): static
+    {
+        $this->releaseCode = $releaseCode;
+
+        return $this;
+    }
+
+    public function getAuthenticityCode(): ?string
+    {
+        return $this->authenticityCode;
+    }
+
+    public function setAuthenticityCode(?string $authenticityCode): static
+    {
+        $this->authenticityCode = $authenticityCode;
+
+        return $this;
+    }
+
+    public function getReleaseCodeVerifiedAt(): ?\DateTimeImmutable
+    {
+        return $this->releaseCodeVerifiedAt;
+    }
+
+    public function setReleaseCodeVerifiedAt(?\DateTimeImmutable $releaseCodeVerifiedAt): static
+    {
+        $this->releaseCodeVerifiedAt = $releaseCodeVerifiedAt;
 
         return $this;
     }

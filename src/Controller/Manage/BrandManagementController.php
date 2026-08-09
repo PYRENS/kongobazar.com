@@ -28,6 +28,7 @@ class BrandManagementController extends AbstractController
 
             return [
                 'brand' => $brand,
+                'isVehicle' => $isVehicle,
                 'count' => $isVehicle
                     ? $vehicleModelRepository->countByBrand($brand->getId())
                     : $productRepository->countByBrand($brand->getId()),
@@ -49,16 +50,100 @@ class BrandManagementController extends AbstractController
     #[Route('/marques/{id}', name: 'manage_brands_show', host: 'manage.kongobazar.com', methods: ['GET'], requirements: ['id' => '\d+'])]
     public function show(
         Brand $brand,
+        Request $request,
         \App\Repository\VehicleModelRepository $vehicleModelRepository,
+        \App\Repository\VehicleVariantRepository $vehicleVariantRepository,
+        \App\Repository\VehicleEngineRepository $vehicleEngineRepository,
         \App\Repository\ProductRepository $productRepository
     ): Response {
-        $isVehicle = $brand->hasType('auto') || $brand->hasType('moto');
+        $isAuto = $brand->hasType('auto');
+        $isMoto = $brand->hasType('moto');
+        $isVehicle = $isAuto || $isMoto;
+
+        $modelRows = [];
+        if ($isVehicle) {
+            $models = $vehicleModelRepository->findByBrand($brand->getId());
+            $modelRows = array_map(function (\App\Entity\VehicleModel $model) use ($vehicleVariantRepository, $vehicleEngineRepository) {
+                if ($model->isMoto()) {
+                    $primaryCount = $vehicleEngineRepository->countByModel($model->getId());
+                    $engineCount = null;
+                } else {
+                    $primaryCount = $vehicleVariantRepository->countByModel($model->getId());
+                    $engineCount = $vehicleEngineRepository->countByModelViaVariants($model->getId());
+                }
+
+                return ['model' => $model, 'primaryCount' => $primaryCount, 'engineCount' => $engineCount];
+            }, $models);
+
+            $sortField = $request->query->get('sort', 'name');
+            $sortDir = $request->query->get('dir', 'ASC');
+            $modelRows = $this->sortModelRows($modelRows, $sortField, $sortDir);
+        }
 
         return $this->render('manage/brands/show.html.twig', [
             'brand' => $brand,
             'isVehicle' => $isVehicle,
-            'vehicleModels' => $isVehicle ? $vehicleModelRepository->findByBrand($brand->getId()) : [],
-            'products' => $isVehicle ? [] : $productRepository->findByBrand($brand->getId()),
+            'isAuto' => $isAuto,
+            'isMoto' => $isMoto,
+            'modelRows' => $modelRows,
+            'currentSort' => $request->query->get('sort', 'name'),
+            'currentDir' => $request->query->get('dir', 'ASC'),
+            'autoModelCount' => $isAuto ? $vehicleModelRepository->countByBrandAndType($brand->getId(), false) : 0,
+            'autoVariantCount' => $isAuto ? $vehicleVariantRepository->countByBrand($brand->getId()) : 0,
+            'autoEngineCount' => $isAuto ? $vehicleEngineRepository->countAutoByBrand($brand->getId()) : 0,
+            'motoModelCount' => $isMoto ? $vehicleModelRepository->countByBrandAndType($brand->getId(), true) : 0,
+            'motoEngineCount' => $isMoto ? $vehicleEngineRepository->countMotoByBrand($brand->getId()) : 0,
+            'productCount' => $isVehicle ? 0 : $productRepository->countByBrand($brand->getId()),
+        ]);
+    }
+
+    private function sortModelRows(array $rows, string $field, string $dir): array
+    {
+        $allowed = ['name', 'name2', 'type', 'primaryCount', 'engineCount'];
+        if (!in_array($field, $allowed, true)) {
+            $field = 'name';
+        }
+        $dirMultiplier = strtoupper($dir) === 'DESC' ? -1 : 1;
+
+        usort($rows, function ($a, $b) use ($field, $dirMultiplier) {
+            $valA = match ($field) {
+                'name2' => $a['model']->getName2() ?? '',
+                'type' => $a['model']->isMoto() ? 'moto' : 'auto',
+                'primaryCount' => $a['primaryCount'],
+                'engineCount' => $a['engineCount'] ?? -1,
+                default => $a['model']->getName(),
+            };
+            $valB = match ($field) {
+                'name2' => $b['model']->getName2() ?? '',
+                'type' => $b['model']->isMoto() ? 'moto' : 'auto',
+                'primaryCount' => $b['primaryCount'],
+                'engineCount' => $b['engineCount'] ?? -1,
+                default => $b['model']->getName(),
+            };
+            return $dirMultiplier * ($valA <=> $valB);
+        });
+
+        return $rows;
+    }
+
+    #[Route('/marques/{id}/produits', name: 'manage_brands_products', host: 'manage.kongobazar.com', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function products(Brand $brand, Request $request, \App\Repository\ProductRepository $productRepository): Response
+    {
+        $status = $request->query->get('status') ?: null;
+        $term = $request->query->get('q') ?: null;
+        $perPage = 20;
+        $page = max(1, (int) $request->query->get('page', 1));
+
+        $total = $productRepository->countFilteredByBrand($brand->getId(), $status, $term);
+
+        return $this->render('manage/brands/products.html.twig', [
+            'brand' => $brand,
+            'products' => $productRepository->findFilteredByBrand($brand->getId(), $status, $term, $page, $perPage),
+            'currentStatus' => $status,
+            'currentTerm' => $term,
+            'page' => $page,
+            'pages' => max(1, (int) ceil($total / $perPage)),
+            'total' => $total,
         ]);
     }
 
@@ -194,6 +279,7 @@ class BrandManagementController extends AbstractController
         $brand->setPays($paysId ? $em->getRepository(\App\Entity\Pays::class)->find($paysId) : null);
 
         $brand->setActive((bool) $request->request->get('active'));
+        $brand->setSigle($request->request->get('sigle') ?: null);
 
         if (null === $brand->getSlug()) {
             $slugger = new AsciiSlugger();

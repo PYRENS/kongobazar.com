@@ -64,6 +64,9 @@ class Order
     #[ORM\OneToMany(mappedBy: 'order', targetEntity: OrderItem::class, orphanRemoval: true, cascade: ['persist'])]
     private Collection $items;
 
+    #[ORM\OneToOne(mappedBy: 'order', targetEntity: EscrowTransaction::class, cascade: ['persist', 'remove'])]
+    private ?EscrowTransaction $escrowTransaction = null;
+
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
@@ -95,6 +98,20 @@ class Order
     public function getSellerProfile(): ?SellerProfile
     {
         return $this->sellerProfile;
+    }
+
+    public function getEscrowTransaction(): ?EscrowTransaction
+    {
+        return $this->escrowTransaction;
+    }
+
+    public function setEscrowTransaction(?EscrowTransaction $escrowTransaction): static
+    {
+        $this->escrowTransaction = $escrowTransaction;
+        if (null !== $escrowTransaction && $escrowTransaction->getOrder() !== $this) {
+            $escrowTransaction->setOrder($this);
+        }
+        return $this;
     }
 
     public function setSellerProfile(?SellerProfile $sellerProfile): static

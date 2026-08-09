@@ -4,45 +4,56 @@
     <h1 class="h4 mb-3">{{ engine ? 'Modifier la motorisation' : 'Nouvelle motorisation' }}</h1>
 
     <form method="post" action="{{ engine ? path('manage_vehicle_engines_update', {id: engine.id}) : path('manage_vehicle_engines_new') }}">
-        <div class="mb-3">
-            <label class="form-label d-block">Type</label>
-            <div class="form-check form-check-inline">
-                <input type="radio" name="vehicle_type" value="auto" class="form-check-input" id="typeAuto" data-vehicle-type-radio
-                    {{ (engine is null or engine.variant) ? 'checked' : '' }}>
-                <label class="form-check-label" for="typeAuto">Auto (Variante requise)</label>
+        {% if presetVariant %}
+            <input type="hidden" name="vehicle_type" value="auto">
+            <input type="hidden" name="variant_id" value="{{ presetVariant.id }}">
+            <div class="mb-3">
+                <label class="form-label">Rattachement</label>
+                <div class="form-control-plaintext border rounded px-3 py-2 bg-light">
+                    {{ presetVariant.model.brand.name }} › {{ presetVariant.model.name }} › {{ presetVariant.name ?: '-' }}
+                </div>
             </div>
-            <div class="form-check form-check-inline">
-                <input type="radio" name="vehicle_type" value="moto" class="form-check-input" id="typeMoto" data-vehicle-type-radio
-                    {{ (engine and engine.model) ? 'checked' : '' }}>
-                <label class="form-check-label" for="typeMoto">Moto (Modèle direct, sans Variante)</label>
+        {% else %}
+            <div class="mb-3">
+                <label class="form-label d-block">Type</label>
+                <div class="form-check form-check-inline">
+                    <input type="radio" name="vehicle_type" value="auto" class="form-check-input" id="typeAuto" data-vehicle-type-radio
+                        {{ (engine is null or engine.variant) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="typeAuto">Auto (Variante requise)</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input type="radio" name="vehicle_type" value="moto" class="form-check-input" id="typeMoto" data-vehicle-type-radio
+                        {{ (engine and engine.model) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="typeMoto">Moto (Modèle direct, sans Variante)</label>
+                </div>
             </div>
-        </div>
 
-        <div class="row">
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Marque</label>
-                <select class="form-select" data-vehicle-brand-select>
-                    <option value="">— Choisir —</option>
-                    {% set currentBrand = engine ? (engine.variant ? engine.variant.model.brand : engine.model.brand) : null %}
-                    {% for brand in brands %}
-                        <option value="{{ brand.id }}" {{ currentBrand and currentBrand.id == brand.id ? 'selected' : '' }}>{{ brand.name }}</option>
-                    {% endfor %}
-                </select>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Marque</label>
+                    <select class="form-select" data-vehicle-brand-select>
+                        <option value="">— Choisir —</option>
+                        {% set currentBrand = engine ? (engine.variant ? engine.variant.model.brand : engine.model.brand) : null %}
+                        {% for brand in brands %}
+                            <option value="{{ brand.id }}" {{ currentBrand and currentBrand.id == brand.id ? 'selected' : '' }}>{{ brand.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Modèle</label>
+                    {% set currentModel = engine ? (engine.variant ? engine.variant.model : engine.model) : null %}
+                    <select name="model_id" class="form-select" data-vehicle-model-select data-preselected="{{ currentModel ? currentModel.id : '' }}" required>
+                        <option value="">— Choisissez d'abord une marque —</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3" data-vehicle-variant-block>
+                    <label class="form-label">Variante</label>
+                    <select name="variant_id" class="form-select" data-vehicle-variant-select data-preselected="{{ engine and engine.variant ? engine.variant.id : '' }}">
+                        <option value="">— Choisissez d'abord un modèle —</option>
+                    </select>
+                </div>
             </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Modèle</label>
-                {% set currentModel = engine ? (engine.variant ? engine.variant.model : engine.model) : null %}
-                <select name="model_id" class="form-select" data-vehicle-model-select data-preselected="{{ currentModel ? currentModel.id : '' }}" required>
-                    <option value="">— Choisissez d'abord une marque —</option>
-                </select>
-            </div>
-            <div class="col-md-4 mb-3" data-vehicle-variant-block>
-                <label class="form-label">Variante</label>
-                <select name="variant_id" class="form-select" data-vehicle-variant-select data-preselected="{{ engine and engine.variant ? engine.variant.id : '' }}">
-                    <option value="">— Choisissez d'abord un modèle —</option>
-                </select>
-            </div>
-        </div>
+        {% endif %}
 
         <div class="mb-3">
             <label class="form-label">Libellé moteur</label>
@@ -52,15 +63,18 @@
         <div class="row">
             <div class="col-md-3 mb-3">
                 <label class="form-label">Puissance CV</label>
-                <input type="number" name="power_cv" class="form-control" value="{{ engine ? engine.powerCv : '' }}">
+                <input type="number" name="power_cv" id="powerCvInput" class="form-control" value="{{ engine ? engine.powerCv : '' }}">
+                <small class="text-muted">La conversion vers kW se calcule automatiquement.</small>
             </div>
             <div class="col-md-3 mb-3">
                 <label class="form-label">Puissance kW</label>
-                <input type="number" name="power_kw" class="form-control" value="{{ engine ? engine.powerKw : '' }}">
+                <input type="number" name="power_kw" id="powerKwInput" class="form-control" value="{{ engine ? engine.powerKw : '' }}">
+                <small class="text-muted">Modifiable manuellement si besoin.</small>
             </div>
             <div class="col-md-3 mb-3">
                 <label class="form-label">Cylindrée (cm³, Moto)</label>
-                <input type="number" name="displacement_cc" class="form-control" value="{{ engine ? engine.displacementCc : '' }}">
+                <input type="number" name="displacement_cc" id="displacementCcInput" class="form-control" value="{{ engine ? engine.displacementCc : '' }}"
+                    {{ (engine is null or engine.variant) ? 'disabled' : '' }}>
             </div>
             <div class="col-md-3 mb-3">
                 <label class="form-label">Énergie</label>
@@ -95,4 +109,34 @@
         <button type="submit" class="btn btn-success">Enregistrer</button>
         <a href="{{ path('manage_vehicle_engines_index') }}" class="btn btn-outline-secondary">Annuler</a>
     </form>
+
+    <script>
+        (function () {
+            const cvInput = document.getElementById('powerCvInput');
+            const kwInput = document.getElementById('powerKwInput');
+            if (!cvInput || !kwInput) return;
+
+            let updating = false;
+
+            cvInput.addEventListener('input', function () {
+                if (updating) return;
+                const cv = parseFloat(cvInput.value);
+                if (!isNaN(cv) && cv > 0) {
+                    updating = true;
+                    kwInput.value = Math.round(cv * 0.7355);
+                    updating = false;
+                }
+            });
+
+            kwInput.addEventListener('input', function () {
+                if (updating) return;
+                const kw = parseFloat(kwInput.value);
+                if (!isNaN(kw) && kw > 0) {
+                    updating = true;
+                    cvInput.value = Math.round(kw * 1.35962);
+                    updating = false;
+                }
+            });
+        })();
+    </script>
 {% endblock %}

@@ -1,0 +1,74 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Caractéristiques — {{ category.name }}{% endblock %}
+{% block page_icon %}bi-sliders{% endblock %}
+{% block page_title %}Caractéristiques de {{ category.name }}{% endblock %}
+
+{% block body %}
+    <nav class="admin-breadcrumb">
+        <a href="{{ path('manage_categories_index') }}"><i class="bi bi-tags"></i> Catégories</a>
+        <i class="bi bi-chevron-right"></i>
+        <a href="{{ path('manage_categories_show', {id: category.id}) }}">{{ category.name }}</a>
+        <i class="bi bi-chevron-right"></i>
+        <span>Caractéristiques</span>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-3 mt-2">
+        <h1 class="h4 mb-0">Caractéristiques de {{ category.name }}</h1>
+        <div>
+            <a href="{{ path('manage_category_attributes_duplicate_form', {categoryId: category.id}) }}" class="admin-btn admin-btn--outline">
+                <i class="bi bi-files"></i> Dupliquer depuis une autre catégorie
+            </a>
+            <a href="{{ path('manage_category_attributes_new', {categoryId: category.id}) }}" class="admin-btn admin-btn--primary">
+                <i class="bi bi-plus-lg"></i> Nouvelle caractéristique
+            </a>
+        </div>
+    </div>
+
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Type</th>
+                <th>Unité</th>
+                <th>Obligatoire</th>
+                <th>Filtrable</th>
+                <th>Sur fiche produit</th>
+                <th>Options</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for attribute in attributes %}
+                <tr>
+                    <td>{{ attribute.name }}</td>
+                    <td>{{ attribute.dataType }}</td>
+                    <td>{{ attribute.unit ?: '—' }}</td>
+                    <td>{{ attribute.nullable ? 'Non' : 'Oui' }}</td>
+                    <td>{{ attribute.filterable ? 'Oui' : 'Non' }}</td>
+                    <td>{{ attribute.showOnCard ? 'Oui' : 'Non' }}</td>
+                    <td>
+                        {% if attribute.dataType == 'select' %}
+                            {{ attribute.options|length }}
+                            {% for option in attribute.options|slice(0, 5) %}
+                                {% if option.colorHex %}
+                                    <span title="{{ option.label }}" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:{{ option.colorHex }};border:1px solid #ccc;margin-left:2px;"></span>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td class="admin-actions">
+                        <a href="{{ path('manage_category_attributes_edit', {id: attribute.id}) }}" class="admin-btn admin-btn--outline"><i class="bi bi-pencil"></i></a>
+                        <form action="{{ path('manage_category_attributes_delete', {id: attribute.id}) }}" method="post" onsubmit="return confirm('Supprimer cette caractéristique ?');">
+                            <button type="submit" class="admin-btn admin-btn--outline"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="8" class="text-muted">Aucune caractéristique pour cette catégorie.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

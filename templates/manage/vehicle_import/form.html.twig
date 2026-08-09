@@ -1,0 +1,260 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Import de motorisations{% endblock %}
+{% block page_icon %}bi-upload{% endblock %}
+{% block page_title %}Import de motorisations (texte brut)ureau{% endblock %}
+
+{% block body %}
+    <div class="mb-3">
+        <label class="form-label">Type</label>
+        <div class="form-check form-check-inline">
+            <input type="radio" name="import_type" value="auto" class="form-check-input" id="importTypeAuto" checked>
+            <label class="form-check-label" for="importTypeAuto">Auto</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input type="radio" name="import_type" value="moto" class="form-check-input" id="importTypeMoto">
+            <label class="form-check-label" for="importTypeMoto">Moto</label>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Texte brut à traiter</label>
+        <textarea id="importTextarea" class="form-control" rows="12" placeholder="Colle ici le texte copié depuis la source (marque, modèle, motorisations...)"></textarea>
+    </div>
+
+    <div class="mb-3">
+        <button type="button" id="verifyBtn" class="btn btn-primary" disabled>Vérifier les données</button>
+        <button type="button" id="saveBtn" class="btn btn-success" disabled>Enregistrer</button>
+    </div>
+
+    <div id="importErrors" class="alert alert-danger" style="display:none;"></div>
+    <div id="importResult"></div>
+
+    <script>
+        (function () {
+            const textarea = document.getElementById('importTextarea');
+            const verifyBtn = document.getElementById('verifyBtn');
+            const saveBtn = document.getElementById('saveBtn');
+            const errorsBox = document.getElementById('importErrors');
+            const resultBox = document.getElementById('importResult');
+
+            let lastResult = null;
+
+            function getType() {
+                return document.querySelector('input[name="import_type"]:checked').value;
+            }
+
+            textarea.addEventListener('input', function () {
+                verifyBtn.disabled = textarea.value.trim() === '';
+                saveBtn.disabled = true;
+            });
+
+            function post(url, data) {
+                const params = new URLSearchParams(data);
+                return fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params,
+                }).then((r) => r.json());
+            }
+
+            function postJson(url, obj) {
+                return fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(obj),
+                }).then((r) => r.json());
+            }
+
+            function analyze() {
+                errorsBox.style.display = 'none';
+                return post('{{ path("manage_vehicle_import_analyze") }}', { text: textarea.value, type: getType() })
+                    .then((result) => {
+                        lastResult = result;
+                        if (result.error) {
+                            errorsBox.textContent = result.error;
+                            errorsBox.style.display = 'block';
+                            resultBox.innerHTML = '';
+                            saveBtn.disabled = true;
+                            return;
+                        }
+                        render(result);
+                    });
+            }
+
+            verifyBtn.addEventListener('click', analyze);
+
+            function isReady(result) {
+                if (!result.brand.found || !result.model.found) return false;
+                if (result.type === 'auto' && !result.variant.found) return false;
+                for (const row of result.rows) {
+                    if (row.fuel.inputName && !row.fuel.found) return false;
+                }
+                return true;
+            }
+
+            function render(result) {
+                saveBtn.disabled = !isReady(result);
+
+                let html = '';
+
+                // --- Marque ---
+                html += '<div class="card mb-2"><div class="card-body">';
+                html += '<strong>Marque :</strong> ' + escapeHtml(result.brand.inputName) + ' ';
+                if (result.brand.found) {
+                    html += '<span class="badge bg-success">trouvée</span>';
+                } else {
+                    html += '<span class="badge bg-warning text-dark">non trouvée</span> ';
+                    html += '<button type="button" class="btn btn-sm btn-outline-primary create-brand-btn">Créer cette marque</button>';
+                }
+                html += '</div></div>';
+
+                // --- Modèle ---
+                html += '<div class="card mb-2"><div class="card-body">';
+                html += '<strong>Modèle :</strong> ' + escapeHtml(result.model.inputName) + ' ';
+                if (!result.brand.found) {
+                    html += '<span class="text-muted">(en attente de la marque)</span>';
+                } else if (result.model.found) {
+                    html += '<span class="badge bg-success">trouvé</span>';
+                } else {
+                    html += '<span class="badge bg-warning text-dark">non trouvé</span> ';
+                    html += '<button type="button" class="btn btn-sm btn-outline-primary create-model-btn">Créer ce modèle</button>';
+                }
+                html += '</div></div>';
+
+                // --- Variante (Auto uniquement) ---
+                if (result.type === 'auto') {
+                    html += '<div class="card mb-2"><div class="card-body">';
+                    html += '<strong>Variante :</strong> ' + escapeHtml(result.variant.inputName || '-') + ' ';
+                    if (!result.model.found) {
+                        html += '<span class="text-muted">(en attente du modèle)</span>';
+                    } else if (result.variant.found) {
+                        html += '<span class="badge bg-success">trouvée</span>';
+                    } else {
+                        html += '<span class="badge bg-warning text-dark">non trouvée</span> ';
+                        html += '<button type="button" class="btn btn-sm btn-outline-primary create-variant-btn">Créer cette variante</button>';
+                    }
+                    html += '</div></div>';
+                }
+
+                // --- Carburants manquants (dédupliqués) ---
+                const missingFuels = [...new Set(result.rows.filter((r) => r.fuel.inputName && !r.fuel.found).map((r) => r.fuel.inputName))];
+                missingFuels.forEach((fuelName) => {
+                    html += '<div class="card mb-2"><div class="card-body">';
+                    html += '<strong>Énergie :</strong> ' + escapeHtml(fuelName) + ' <span class="badge bg-warning text-dark">non trouvée</span> ';
+                    html += '<button type="button" class="btn btn-sm btn-outline-primary create-fuel-btn" data-fuel="' + escapeHtml(fuelName) + '">Créer cette énergie</button>';
+                    html += '</div></div>';
+                });
+
+                // --- Tableau des motorisations ---
+                html += '<table class="table admin-table"><thead><tr>';
+                html += '<th>Moteur</th><th>CV</th><th>kW</th><th>Cylindrée</th><th>Énergie</th><th>Période</th><th>Statut</th>';
+                html += '</tr></thead><tbody>';
+                result.rows.forEach((row) => {
+                    const disabled = row.engineExists ? 'disabled' : '';
+                    const period = row.periodBegin
+                        ? row.periodBegin.month + '.' + row.periodBegin.year + ' - ' + (row.periodEnd ? row.periodEnd.month + '.' + row.periodEnd.year : '...')
+                        : '<span class="text-danger">manquante</span>';
+                    html += '<tr' + (row.engineExists ? ' class="table-secondary"' : '') + '>';
+                    html += '<td><input type="text" class="form-control form-control-sm" value="' + escapeHtml(row.label) + '" ' + disabled + '></td>';
+                    html += '<td><input type="number" class="form-control form-control-sm" value="' + (row.powerCv ?? '') + '" ' + disabled + '></td>';
+                    html += '<td><input type="number" class="form-control form-control-sm" value="' + (row.powerKw ?? '') + '" ' + disabled + '></td>';
+                    html += '<td>' + (row.displacementCc ?? '-') + '</td>';
+                    html += '<td>' + escapeHtml(row.fuel.inputName || '-') + (row.fuel.found ? ' <span class="badge bg-success">ok</span>' : (row.fuel.inputName ? ' <span class="badge bg-warning text-dark">à créer</span>' : '')) + '</td>';
+                    html += '<td>' + period + '</td>';
+                    html += '<td>' + (row.engineExists ? '<span class="badge bg-secondary">existe déjà</span>' : '<span class="badge bg-info text-dark">nouvelle</span>') + '</td>';
+                    html += '</tr>';
+                });
+                html += '</tbody></table>';
+
+                if (result.unrecognizedLines && result.unrecognizedLines.length > 0) {
+                    html += '<div class="alert alert-warning"><strong>Lignes non reconnues (ignorées) :</strong><br>' + result.unrecognizedLines.map(escapeHtml).join('<br>') + '</div>';
+                }
+
+                resultBox.innerHTML = html;
+                attachActions(result);
+            }
+
+            function attachActions(result) {
+                const createBrandBtn = resultBox.querySelector('.create-brand-btn');
+                if (createBrandBtn) {
+                    createBrandBtn.addEventListener('click', function () {
+                        post('{{ path("manage_vehicle_import_create_brand") }}', { name: result.brand.inputName, type: getType() })
+                            .then(() => analyze());
+                    });
+                }
+
+                const createModelBtn = resultBox.querySelector('.create-model-btn');
+                if (createModelBtn) {
+                    createModelBtn.addEventListener('click', function () {
+                        post('{{ path("manage_vehicle_import_create_model") }}', {
+                            brand_id: result.brand.id,
+                            name: result.model.inputName,
+                            type: getType(),
+                        }).then(() => analyze());
+                    });
+                }
+
+                const createVariantBtn = resultBox.querySelector('.create-variant-btn');
+                if (createVariantBtn) {
+                    createVariantBtn.addEventListener('click', function () {
+                        const begin = result.modelPeriodBegin || {};
+                        const end = result.modelPeriodEnd || {};
+                        post('{{ path("manage_vehicle_import_create_variant") }}', {
+                            model_id: result.model.id,
+                            name: result.variant.inputName || '',
+                            month_begin: begin.month || '',
+                            year_begin: begin.year || '',
+                            month_end: end.month || '',
+                            year_end: end.year || '',
+                        }).then(() => analyze());
+                    });
+                }
+
+                resultBox.querySelectorAll('.create-fuel-btn').forEach((btn) => {
+                    btn.addEventListener('click', function () {
+                        post('{{ path("manage_vehicle_import_create_fuel") }}', { name: btn.dataset.fuel })
+                            .then(() => analyze());
+                    });
+                });
+            }
+
+            saveBtn.addEventListener('click', function () {
+                if (!lastResult) return;
+
+                const payload = {
+                    type: lastResult.type,
+                    brandId: lastResult.brand.id,
+                    modelId: lastResult.model.id,
+                    variantId: lastResult.type === 'auto' ? lastResult.variant.id : null,
+                    rows: lastResult.rows.map((row) => ({
+                        label: row.label,
+                        powerCv: row.powerCv,
+                        powerKw: row.powerKw,
+                        displacementCc: row.displacementCc,
+                        fuelId: row.fuel.id,
+                        periodBegin: row.periodBegin,
+                        periodEnd: row.periodEnd,
+                        engineExists: row.engineExists,
+                    })),
+                };
+
+                postJson('{{ path("manage_vehicle_import_save") }}', payload).then((res) => {
+                    if (res.error) {
+                        errorsBox.textContent = res.error;
+                        errorsBox.style.display = 'block';
+                        return;
+                    }
+                    alert(res.created + ' motorisation(s) enregistrée(s).');
+                    analyze();
+                });
+            });
+
+            function escapeHtml(str) {
+                const div = document.createElement('div');
+                div.textContent = str ?? '';
+                return div.innerHTML;
+            }
+        })();
+    </script>
+{% endblock %}

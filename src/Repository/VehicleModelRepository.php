@@ -16,6 +16,23 @@ class VehicleModelRepository extends ServiceEntityRepository
         parent::__construct($registry, VehicleModel::class);
     }
 
+    /** @param bool $moto true = modèles Moto (type='moto'), false = modèles Auto (type IS NULL) */
+    public function findByBrandAndType(int $brandId, bool $moto): array
+    {
+        $qb = $this->createQueryBuilder('m')
+            ->andWhere('m.brand = :brandId')
+            ->setParameter('brandId', $brandId)
+            ->orderBy('m.name', 'ASC');
+
+        if ($moto) {
+            $qb->andWhere("m.type = 'moto'");
+        } else {
+            $qb->andWhere('m.type IS NULL');
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
     /** @return VehicleModel[] */
     public function findByBrand(int $brandId): array
     {
@@ -62,5 +79,22 @@ class VehicleModelRepository extends ServiceEntityRepository
             ->setParameter('brandId', $brandId)
             ->getQuery()
             ->getSingleScalarResult();
+    }
+
+    /** @param bool $moto true = modèles Moto (type='moto'), false = modèles Auto (type IS NULL) */
+    public function countByBrandAndType(int $brandId, bool $moto): int
+    {
+        $qb = $this->createQueryBuilder('m')
+            ->select('COUNT(m.id)')
+            ->andWhere('m.brand = :brandId')
+            ->setParameter('brandId', $brandId);
+
+        if ($moto) {
+            $qb->andWhere("m.type = 'moto'");
+        } else {
+            $qb->andWhere('m.type IS NULL');
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
     }
 }

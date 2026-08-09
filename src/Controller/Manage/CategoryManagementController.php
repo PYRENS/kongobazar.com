@@ -209,14 +209,23 @@ class CategoryManagementController extends AbstractController
     {
         $sortField = $request->query->get('sort', 'position');
         $sortDir = $request->query->get('dir', 'ASC');
+        $searchTerm = $request->query->get('q');
 
         $children = $repository->findChildrenOf($category->getId());
+        if ($searchTerm) {
+            $children = array_values(array_filter(
+                $children,
+                fn (Category $c) => str_contains(mb_strtolower($c->getName()), mb_strtolower($searchTerm))
+            ));
+        }
+
         $childRows = $this->buildRows($children, $repository);
         $childRows = $this->sortRows($childRows, $sortField, $sortDir);
 
         return $this->render('manage/categories/show.html.twig', [
             'category' => $category,
             'childRows' => $childRows,
+            'searchTerm' => $searchTerm,
             'productCount' => $repository->countProductsIn(array_map(fn ($c) => $c->getId(), $category->getDescendantCategories())),
             'currentSort' => $sortField,
             'currentDir' => $sortDir,

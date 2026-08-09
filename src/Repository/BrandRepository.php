@@ -25,16 +25,32 @@ class BrandRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /** @param string $type 'auto' ou 'moto' */
+    public function findByType(string $type): array
+    {
+        $brands = $this->findBy([], ['name' => 'ASC']);
+
+        return array_values(array_filter($brands, fn (\App\Entity\Brand $b) => $b->hasType($type)));
+    }
+
+    /** @return Brand[] */
+    public function searchByName(string $term, int $limit = 15): array
+    {
+        return $this->createQueryBuilder('b')
+            ->andWhere('b.name LIKE :term')
+            ->setParameter('term', '%' . $term . '%')
+            ->orderBy('b.name', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
     /** Marques typées Auto et/ou Moto uniquement (exclut les marques génériques). */
     public function findVehicleBrands(): array
     {
-        return $this->createQueryBuilder('b')
-            ->andWhere('b.type LIKE :auto OR b.type LIKE :moto')
-            ->setParameter('auto', '%"auto"%')
-            ->setParameter('moto', '%"moto"%')
-            ->orderBy('b.name', 'ASC')
-            ->getQuery()
-            ->getResult();
+        $brands = $this->findBy([], ['name' => 'ASC']);
+
+        return array_values(array_filter($brands, fn (\App\Entity\Brand $b) => $b->hasType('auto') || $b->hasType('moto')));
     }
 
     //    /**

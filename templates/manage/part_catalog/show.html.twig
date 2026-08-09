@@ -1,0 +1,219 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}{{ entry.name }}{% endblock %}
+{% block page_icon %}bi-collection{% endblock %}
+{% block page_title %}{{ entry.name }}{% endblock %}
+
+{% block body %}
+    <nav class="admin-breadcrumb">
+        <a href="{{ path('manage_part_catalog_index') }}"><i class="bi bi-collection"></i> Catalogue Pièces</a>
+        <i class="bi bi-chevron-right"></i>
+        <span>{{ entry.name }}</span>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-3 mt-2">
+        <h1 class="h4 mb-0">
+            {{ entry.name }}
+            {% if entry.verified %}<span class="admin-badge admin-badge--active">Vérifiée</span>{% endif %}
+            {% if entry.complete %}<span class="admin-badge admin-badge--active">Complétée</span>{% endif %}
+            {% if entry.status == 'validated' %}
+                <span class="admin-badge admin-badge--active">Validée</span>
+            {% else %}
+                <span class="admin-badge admin-badge--disabled">En attente</span>
+            {% endif %}
+        </h1>
+        <div>
+            <form action="{{ path('manage_part_catalog_delete', {id: entry.id}) }}" method="post" class="d-inline" onsubmit="return confirm('Supprimer cette fiche catalogue ?');">
+                <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer</button>
+            </form>
+        </div>
+    </div>
+
+    <form method="post" action="{{ path('manage_part_catalog_update', {id: entry.id}) }}">
+        <div class="admin-card">
+            <h6><i class="bi bi-info-circle"></i> Informations générales</h6>
+
+            <div class="mb-3">
+                <label class="form-label">Nom</label>
+                <input type="text" name="name" class="form-control" value="{{ entry.name }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Catégorie</label>
+                <div class="category-picker" data-category-picker id="categoryPickerRoot">
+                    <select data-category-level="1" class="form-select">
+                        <option value="">— Choisir —</option>
+                        {% for root in rootCategories %}
+                            <option value="{{ root.id }}">{{ root.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <small class="text-muted d-block mt-1">Sélectionné : <strong id="categorySelectedDisplay">{{ entry.category.name }}</strong></small>
+                <input type="hidden" name="category_id" id="categoryIdInput" value="{{ entry.category.id }}"
+                    data-ancestor-ids="{{ entry.category.ancestors|map(a => a.id)|join(',') }}">
+            </div>
+
+            <div class="mb-3 d-flex align-items-start gap-3">
+                <div>
+                    <label class="form-label">Marque de la pièce</label>
+                    <input type="text" id="partBrandSearchInput" class="form-control" style="max-width:300px;" placeholder="Rechercher une marque..."
+                        value="{{ entry.brand ? entry.brand.name : '' }}" autocomplete="off">
+                    <div id="partBrandSearchResults" class="list-group mt-1" style="max-width:300px;position:relative;z-index:10;"></div>
+                    <input type="hidden" name="brand_id" id="partBrandIdInput" value="{{ entry.brand ? entry.brand.id : '' }}">
+                </div>
+                <div>
+                    <img id="partBrandLogoPreview" src="{{ entry.brand and entry.brand.logoName ? '/media/logos_brands/' ~ entry.brand.logoName : '' }}"
+                        style="max-width:70px;max-height:70px;object-fit:contain;{{ entry.brand and entry.brand.logoName ? '' : 'display:none;' }}">
+                </div>
+            </div>
+
+            <div class="mb-3 p-2" style="background:#f8f9fb;border-radius:6px;">
+                <div class="form-check form-check-inline">
+                    <input type="checkbox" name="is_verified" value="1" class="form-check-input" id="isVerified" {{ entry.verified ? 'checked' : '' }}>
+                    <label class="form-check-label" for="isVerified">Vérifiée</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input type="checkbox" name="is_complete" value="1" class="form-check-input" id="isComplete" {{ entry.complete ? 'checked' : '' }}>
+                    <label class="form-check-label" for="isComplete">Complétée</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input type="checkbox" name="is_validated" value="1" class="form-check-input" id="isValidated" {{ entry.status == 'validated' ? 'checked' : '' }}>
+                    <label class="form-check-label" for="isValidated">Validée</label>
+                </div>
+                <small class="text-muted d-block mt-1">"Validée" ne peut être cochée que si "Vérifiée" et "Complétée" le sont déjà.</small>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">EAN</label>
+                    <input type="text" name="ean" class="form-control" value="{{ entry.ean }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Référence fabricant</label>
+                    <input type="text" name="manufacturer_ref" class="form-control" value="{{ entry.manufacturerRef }}">
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <h6><i class="bi bi-upc"></i> Codes OEM</h6>
+            <textarea name="oem_codes" class="form-control" rows="5" placeholder="OE 38920-RSR-E02 — HONDA&#10;OE 758-D1805 (sans marque)">{% for oem in entry.oemCodes %}{{ oem.code }}{{ oem.brand ? ' — ' ~ oem.brand.name : '' }}
+{% endfor %}</textarea>
+            <small class="text-muted">Un code par ligne, marque optionnelle après un tiret long (—).</small>
+        </div>
+
+        <div class="admin-card">
+            <h6><i class="bi bi-tags"></i> Marque(s) de véhicule compatibles</h6>
+            <select name="compatible_brand_ids[]" class="form-select" multiple size="6">
+                {% for b in vehicleBrands %}
+                    <option value="{{ b.id }}" {{ b.id in entry.brandCompatibilities|map(c => c.brand.id) ? 'selected' : '' }}>{{ b.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="admin-card">
+            {% include 'manage/_partials/_product_fields_attributes.html.twig' with {attributes: attributes, existingAttributeValues: existingAttributeValues, categoryId: entry.category.id} %}
+        </div>
+
+        <div class="mt-3">
+            <button type="submit" class="btn btn-success">Enregistrer</button>
+        </div>
+    </form>
+
+    <div class="admin-card">
+        <h6><i class="bi bi-gear"></i> Motorisations compatibles</h6>
+
+        <input type="hidden" id="partCatalogEntryId" value="{{ entry.id }}">
+
+        <div id="compatAttachedList" class="mb-3">
+            {% for compat in entry.engineCompatibilities %}
+                <span class="badge bg-secondary me-1 mb-1">
+                    {{ compat.vehicleEngine.brandNameCache }} {{ compat.vehicleEngine.modelNameCache }} {{ compat.vehicleEngine.variantNameCache }} {{ compat.vehicleEngine.label }}
+                    <button type="button" class="btn-close btn-close-white btn-sm" style="font-size:8px;" data-detach="{{ compat.id }}"></button>
+                </span>
+            {% endfor %}
+        </div>
+
+        <button type="button" id="toggleCompatBtn" class="btn btn-sm btn-outline-primary mb-3">
+            <i class="bi bi-clipboard-plus"></i> Associer à des motorisations précises
+        </button>
+
+        <div id="compatTextBlock" style="display:none;">
+            <textarea id="compatRawText" class="form-control" rows="10" placeholder="Colle ici le texte brut..."></textarea>
+            <button type="button" id="compatAnalyzeBtn" class="btn btn-sm btn-primary mt-2">Analyser</button>
+            <div id="compatErrors" class="alert alert-danger mt-2" style="display:none;"></div>
+            <div id="compatResult" class="mt-2"></div>
+        </div>
+    </div>
+
+    <div class="admin-card">
+        <h6><i class="bi bi-images"></i> Galerie officielle</h6>
+
+        <form method="post" action="{{ path('manage_part_catalog_gallery_update', {id: entry.id}) }}" enctype="multipart/form-data">
+            <div class="admin-file-upload-group">
+                <div class="admin-upload-thumb">
+                    <span class="admin-upload-thumb-label">&nbsp;</span>
+                    <label class="admin-upload-dropzone" for="catalogImagesInput">
+                        <i class="bi bi-camera"></i>
+                        <span>Upload</span>
+                    </label>
+                </div>
+                <input type="file" name="images[]" id="catalogImagesInput" accept="image/*" multiple class="admin-upload-input-hidden">
+
+                {% for image in entry.images %}
+                    <div class="admin-upload-thumb {{ loop.first ? 'admin-upload-thumb--primary' : '' }}">
+                        <span class="admin-upload-thumb-label">{{ loop.first ? 'Principale' : '#' ~ loop.index }}</span>
+                        <div class="admin-upload-thumb-inner">
+                            <img src="{{ vich_uploader_asset(image, 'imageFile') }}" class="admin-zoomable-thumb" alt="">
+                            <div class="form-check mt-1">
+                                <input type="checkbox" name="remove_image_ids[]" value="{{ image.id }}" class="form-check-input" id="removeCatImg{{ image.id }}">
+                                <label class="form-check-label small" for="removeCatImg{{ image.id }}">Retirer</label>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <small class="text-muted d-block mt-1">L'ordre d'upload détermine l'ordre d'affichage — la première image reste la principale.</small>
+            <button type="submit" class="btn btn-sm btn-primary mt-2">Mettre à jour la galerie</button>
+        </form>
+    </div>
+
+    <div id="imageZoomOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;cursor:zoom-out;">
+        <img id="imageZoomFull" src="" style="max-width:90%;max-height:90%;border-radius:6px;">
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.initPartBrandAutocomplete) window.initPartBrandAutocomplete();
+            if (window.initProductAttributePaste) window.initProductAttributePaste();
+            if (window.initPartCatalogEngineWidget) window.initPartCatalogEngineWidget();
+
+            const verifiedCb = document.getElementById('isVerified');
+            const completeCb = document.getElementById('isComplete');
+            const validatedCb = document.getElementById('isValidated');
+
+            function syncValidatedAvailability() {
+                const canValidate = verifiedCb.checked && completeCb.checked;
+                validatedCb.disabled = !canValidate;
+                if (!canValidate) validatedCb.checked = false;
+            }
+
+            // N'applique la contrainte qu'à partir d'une vraie interaction —
+            // ne touche jamais l'état déjà enregistré au chargement de la page.
+            verifiedCb.addEventListener('change', syncValidatedAvailability);
+            completeCb.addEventListener('change', syncValidatedAvailability);
+
+            const zoomOverlay = document.getElementById('imageZoomOverlay');
+            const zoomFull = document.getElementById('imageZoomFull');
+            document.querySelectorAll('.admin-zoomable-thumb').forEach((img) => {
+                img.addEventListener('click', function () {
+                    zoomFull.src = this.src;
+                    zoomOverlay.style.display = 'flex';
+                });
+            });
+            zoomOverlay.addEventListener('click', function () {
+                this.style.display = 'none';
+            });
+        });
+    </script>
+{% endblock %}

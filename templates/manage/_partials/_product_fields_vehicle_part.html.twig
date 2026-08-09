@@ -1,0 +1,72 @@
+{% set pld = product ? product.partListingDetails : null %}
+{% set compatibleBrandIds = pld ? pld.compatibilities|map(c => c.brand.id) : [] %}
+{% set existingEngineCompats = pld ? pld.engineCompatibilities : [] %}
+
+<div class="admin-card">
+    <h6><i class="bi bi-gear"></i> Détails pièce / accessoire</h6>
+
+    <div class="mb-3 d-flex align-items-start gap-3">
+        <div>
+            <label class="form-label">Marque de la pièce</label>
+            <input type="text" id="partBrandSearchInput" class="form-control" style="max-width:300px;" placeholder="Rechercher une marque..."
+                value="{{ product and product.brand ? product.brand.name : '' }}" autocomplete="off">
+            <div id="partBrandSearchResults" class="list-group mt-1" style="max-width:300px;position:relative;z-index:10;"></div>
+            <input type="hidden" name="brand_id" id="partBrandIdInput" value="{{ product and product.brand ? product.brand.id : '' }}">
+            <small class="text-muted">Le fabricant de la pièce elle-même (ex: GATES), pas la marque du véhicule compatible.</small>
+        </div>
+        <div>
+            <img id="partBrandLogoPreview" src="{{ product and product.brand and product.brand.logoName ? '/media/logos_brands/' ~ product.brand.logoName : '' }}"
+                style="max-width:70px;max-height:70px;object-fit:contain;{{ product and product.brand and product.brand.logoName ? '' : 'display:none;' }}">
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Code(s) OEM</label>
+            <textarea name="oem_codes" class="form-control" rows="4" placeholder="Soit : 7711134567, 9801234580&#10;Soit collé directement : OE 38920-RSR-E02 — HONDA (une ligne par code)">{% if pld and pld.oemCodes %}{% for entry in pld.oemCodes %}{{ entry.code }}{{ entry.brand ? ' — ' ~ entry.brand : '' }}
+{% endfor %}{% endif %}</textarea>
+            <small class="text-muted">Un code par ligne. Marque optionnelle après un tiret long (—) — sinon laisse juste le code seul, ou plusieurs codes séparés par des virgules sur une ligne.</small>
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="form-label">EAN</label>
+            <input type="text" name="ean" class="form-control" value="{{ pld ? pld.ean : '' }}">
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Référence fabricant</label>
+            <input type="text" name="manufacturer_ref" class="form-control" value="{{ pld ? pld.manufacturerRef : '' }}">
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Marque(s) compatible(s)</label>
+        <select name="compatible_brand_ids[]" class="form-select" multiple size="6">
+            {% for brand in brands %}
+                <option value="{{ brand.id }}" {{ brand.id in compatibleBrandIds ? 'selected' : '' }}>{{ brand.name }}</option>
+            {% endfor %}
+        </select>
+        <small class="text-muted">Maintiens Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs marques.</small>
+    </div>
+
+    <div class="mb-3">
+        <button type="button" id="toggleCompatBtn" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-plus-circle"></i> Associer à des motorisations précises
+        </button>
+
+        <div id="compatTextBlock" style="display:none;" class="mt-2">
+            <textarea id="compatRawText" class="form-control" rows="10" placeholder="Colle ici le texte brut (marques/modèles/motorisations)..."></textarea>
+            <button type="button" id="compatAnalyzeBtn" class="btn btn-sm btn-primary mt-2">Analyser</button>
+            <div id="compatErrors" class="alert alert-danger mt-2" style="display:none;"></div>
+            <div id="compatResult" class="mt-2"></div>
+        </div>
+
+        <div id="compatSelectedList" class="mt-2">
+            {% for ec in existingEngineCompats %}
+                <span class="badge bg-secondary me-1 mb-1" data-compat-badge="{{ ec.vehicleEngine.id }}">
+                    {{ ec.vehicleEngine.brandNameCache }} {{ ec.vehicleEngine.modelNameCache }} {{ ec.vehicleEngine.variantNameCache }} {{ ec.vehicleEngine.label }}
+                    <button type="button" class="btn-close btn-close-white btn-sm" style="font-size:8px;" data-remove-compat="{{ ec.vehicleEngine.id }}"></button>
+                    <input type="hidden" name="compatible_engine_ids[]" value="{{ ec.vehicleEngine.id }}">
+                </span>
+            {% endfor %}
+        </div>
+    </div>
+</div>

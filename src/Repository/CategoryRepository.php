@@ -103,6 +103,21 @@ class CategoryRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
+    /** Catégories sans enfants uniquement — les seules où on peut réellement publier un produit. */
+    public function findLeaves(): array
+    {
+        $sub = $this->createQueryBuilder('p2')
+            ->select('IDENTITY(p2.parent)')
+            ->where('p2.parent IS NOT NULL')
+            ->distinct();
+
+        return $this->createQueryBuilder('c')
+            ->andWhere($this->getEntityManager()->createQueryBuilder()->expr()->notIn('c.id', $sub->getDQL()))
+            ->orderBy('c.name', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function searchByName(string $term): array
     {
         return $this->createQueryBuilder('c')

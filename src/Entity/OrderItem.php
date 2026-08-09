@@ -19,8 +19,13 @@ class OrderItem
     private ?Order $order = null;
 
     #[ORM\ManyToOne(targetEntity: ProductVariant::class)]
-    #[ORM\JoinColumn(nullable: false, onDelete: 'RESTRICT')]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'RESTRICT')]
     private ?ProductVariant $variant = null;
+
+    /** Utilisé pour les produits sans variante (Services, Auto-Moto, Immobilier) — exclusif avec $variant. */
+    #[ORM\ManyToOne(targetEntity: Product::class)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'RESTRICT')]
+    private ?Product $product = null;
 
     #[ORM\Column]
     private int $quantity = 1;
@@ -54,6 +59,23 @@ class OrderItem
     {
         $this->variant = $variant;
         return $this;
+    }
+
+    public function getProduct(): ?Product
+    {
+        return $this->product;
+    }
+
+    public function setProduct(?Product $product): static
+    {
+        $this->product = $product;
+        return $this;
+    }
+
+    /** Le produit concerné, qu'il vienne d'une Variante (Mode) ou d'un Product direct (Services, Auto-Moto, Immobilier). */
+    public function resolveProduct(): ?Product
+    {
+        return $this->product ?? $this->variant?->getProduct();
     }
 
     public function getQuantity(): ?int

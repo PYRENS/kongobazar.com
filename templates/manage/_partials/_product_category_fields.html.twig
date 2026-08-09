@@ -1,0 +1,13 @@
+{% if mode == 'vehicle_offer' %}
+    {% include 'manage/_partials/_product_fields_vehicle_offer.html.twig' with {product: product, vehicleType: vehicleType, brands: brands, fuelTypes: fuelTypes, licenseTypes: licenseTypes, motorcycleTypes: motorcycleTypes} %}
+{% elseif mode == 'vehicle_part' %}
+    {% include 'manage/_partials/_product_fields_vehicle_part.html.twig' with {product: product, brands: brands, allBrands: allBrands} %}
+{% elseif mode == 'property' %}
+    {% include 'manage/_partials/_product_fields_property.html.twig' with {product: product, isRental: isRental, rentalPeriods: rentalPeriods|default([])} %}
+{% else %}
+    {% include 'manage/_partials/_product_fields_generic.html.twig' with {product: product} %}
+{% endif %}
+
+{% if mode != 'vehicle_offer' %}
+    {% include 'manage/_partials/_product_fields_attributes.html.twig' with {attributes: attributes, existingAttributeValues: existingAttributeValues, categoryId: category.id} %}
+{% endif %}

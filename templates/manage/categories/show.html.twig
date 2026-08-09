@@ -32,6 +32,7 @@
                 <div class="admin-actions">
                     <a href="{{ path('manage_categories_index', category.parent ? { parent: category.parent.id } : {}) }}" class="admin-btn admin-btn--outline">← Retour</a>
                     <a href="{{ path('manage_categories_edit', { id: category.id }) }}" class="admin-btn admin-btn--outline"><i class="bi bi-pencil"></i> Modifier</a>
+                    <a href="{{ path('manage_category_attributes_index', { categoryId: category.id }) }}" class="admin-btn admin-btn--outline"><i class="bi bi-sliders"></i> Caractéristiques</a>
                     <form action="{{ path('manage_categories_toggle', { id: category.id }) }}" method="post">
                         <button type="submit" class="admin-btn admin-btn--outline">
                             <i class="bi {{ category.active ? 'bi-pause-circle' : 'bi-check-circle' }}"></i>
@@ -56,9 +57,19 @@
 
     <div class="admin-card">
         <h6><i class="bi bi-diagram-3"></i> Sous-catégories</h6>
-        <a href="{{ path('manage_categories_new', { parent: category.id }) }}" class="admin-btn admin-btn--primary" style="margin-bottom:12px;">
-            <i class="bi bi-plus-lg"></i> Ajouter sous {{ category.name }}
-        </a>
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2" style="margin-bottom:12px;">
+            <a href="{{ path('manage_categories_new', { parent: category.id }) }}" class="admin-btn admin-btn--primary">
+                <i class="bi bi-plus-lg"></i> Ajouter sous {{ category.name }}
+            </a>
+
+            <form method="get" class="d-flex align-items-center gap-2">
+                <input type="text" name="q" class="form-control" style="max-width: 280px;" placeholder="Rechercher une sous-catégorie..." value="{{ searchTerm }}">
+                <button type="submit" class="admin-btn admin-btn--outline"><i class="bi bi-search"></i></button>
+                {% if searchTerm %}
+                    <a href="{{ path('manage_categories_show', { id: category.id }) }}" class="admin-btn admin-btn--outline">Réinitialiser</a>
+                {% endif %}
+            </form>
+        </div>
 
     {% macro sortLink(field, label, currentSort, currentDir) %}
         {% set nextDir = (currentSort == field and currentDir == 'ASC') ? 'DESC' : 'ASC' %}
@@ -114,7 +125,11 @@
                             {% else %}<span class="text-muted">—</span>{% endif %}
                         </td>
                         <td class="admin-actions">
+                            <a href="{{ path('manage_categories_show', { id: child.id }) }}" class="admin-btn admin-btn--outline"><i class="bi bi-eye"></i></a>
                             <a href="{{ path('manage_categories_edit', { id: child.id }) }}" class="admin-btn admin-btn--outline"><i class="bi bi-pencil"></i></a>
+                            <form action="{{ path('manage_categories_delete', { id: child.id }) }}" method="post" onsubmit="return confirm('Supprimer {{ child.name }} et toutes ses sous-catégories ?');">
+                                <button type="submit" class="admin-btn admin-btn--outline"><i class="bi bi-trash"></i></button>
+                            </form>
                         </td>
                     </tr>
                 {% else %}

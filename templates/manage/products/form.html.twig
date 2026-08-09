@@ -1,0 +1,393 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}{{ product ? 'Modifier' : 'Nouveau' }} produit{% endblock %}
+{% block page_icon %}bi-box-seam{% endblock %}
+{% block page_title %}{{ product ? 'Modifier' : 'Nouveau' }} produit{% endblock %}
+
+{% block body %}
+    <form method="post" enctype="multipart/form-data" action="{{ product ? path('manage_products_update', {id: product.id}) : path('manage_products_new') }}">
+
+    <div class="admin-form-grid">
+        <div class="admin-card">
+            <h6><i class="bi bi-info-circle"></i> Informations générales</h6>
+
+            <div class="mb-3">
+                <label class="form-label">Titre</label>
+                <input type="text" name="title" class="form-control" value="{{ product ? product.title : '' }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Description</label>
+                <textarea name="description" class="form-control" rows="4">{{ product ? product.description : '' }}</textarea>
+            </div>
+        </div>
+
+        <div class="admin-card">
+            <h6><i class="bi bi-diagram-3"></i> Classification</h6>
+
+            <div class="mb-3">
+                <label class="form-label">Catégorie</label>
+                <div class="category-picker" data-category-picker id="categoryPickerRoot" style="display:flex;flex-direction:column;gap:8px;">
+                    <select data-category-level="1" class="form-select" style="width:100%;max-width:none;">
+                        <option value="">— Choisir —</option>
+                        {% for root in rootCategories %}
+                            <option value="{{ root.id }}">{{ root.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <small class="text-muted d-block mt-1">Sélectionné : <strong id="categorySelectedDisplay">{{ product and product.category ? product.category.name : 'aucune' }}</strong></small>
+                <input type="hidden" name="category_id" id="categoryIdInput"
+                    value="{{ product and product.category ? product.category.id : '' }}"
+                    data-ancestor-ids="{{ product and product.category ? product.category.ancestors|map(a => a.id)|join(',') : '' }}">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Vendeur</label>
+                <input type="text" id="sellerSearchInput" class="form-control" style="max-width:400px;" placeholder="Rechercher par email..."
+                    value="{{ product and product.sellerProfile ? product.sellerProfile.user.email : '' }}" autocomplete="off">
+                <div id="sellerSearchResults" class="list-group mt-1" style="max-width:400px;position:relative;z-index:10;"></div>
+                <input type="hidden" name="seller_profile_id" id="sellerIdInput" value="{{ product and product.sellerProfile ? product.sellerProfile.id : '' }}" required>
+            </div>
+        </div>
+
+        <div class="admin-card" id="categoryFieldsContainer">
+            {# Rempli en AJAX au chargement et à chaque changement de catégorie #}
+        </div>
+    </div>
+
+    <div class="admin-card">
+        <h6><i class="bi bi-tag"></i> Tarification & Statut</h6>
+
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Prix</label>
+                <input type="number" step="0.01" name="base_price" class="form-control" value="{{ product ? product.basePrice : '' }}" required>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Devise</label>
+                <select name="currency" class="form-select">
+                    <option value="USD" {{ product and product.currency == 'USD' ? 'selected' : '' }}>USD</option>
+                    <option value="CDF" {{ product and product.currency == 'CDF' ? 'selected' : '' }}>CDF</option>
+                </select>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Prix barré (optionnel)</label>
+                <input type="number" step="0.01" name="compare_at_price" class="form-control" value="{{ product ? product.compareAtPrice : '' }}">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">État</label>
+                <select name="condition" class="form-select">
+                    <option value="new" {{ product and product.condition == 'new' ? 'selected' : '' }}>Neuf</option>
+                    <option value="used" {{ product and product.condition == 'used' ? 'selected' : '' }}>Occasion</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Quantité</label>
+                <input type="number" name="quantity" class="form-control" min="0" value="{{ product ? product.quantity : 1 }}"
+                    {{ product and product.variants|length > 0 ? 'disabled' : '' }}>
+                {% if product and product.variants|length > 0 %}
+                    <small class="text-muted">Géré par variante ({{ product.effectiveQuantity }} en stock au total).</small>
+                {% endif %}
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Statut</label>
+                <select name="status" class="form-select">
+                    <option value="draft" {{ product and product.status == 'draft' ? 'selected' : '' }}>Brouillon</option>
+                    <option value="active" {{ product and product.status == 'active' ? 'selected' : '' }}>Actif</option>
+                    <option value="suspended" {{ product and product.status == 'suspended' ? 'selected' : '' }}>Suspendu</option>
+                </select>
+            </div>
+            <div class="col-md-3 mb-3 d-flex align-items-end">
+                <div class="form-check">
+                    <input type="checkbox" name="negotiable" value="1" class="form-check-input" id="negotiable" {{ product and product.negotiable ? 'checked' : '' }}>
+                    <label class="form-check-label" for="negotiable">Prix négociable</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-card">
+        <h6><i class="bi bi-images"></i> Images</h6>
+
+        <div class="admin-file-upload-group" id="imageUploadGroup">
+            <div class="admin-upload-thumb">
+                <span class="admin-upload-thumb-label">&nbsp;</span>
+                <label class="admin-upload-dropzone" for="imagesInput">
+                    <i class="bi bi-camera"></i>
+                    <span>Upload</span>
+                </label>
+            </div>
+            <input type="file" name="images[]" id="imagesInput" accept="image/*" multiple class="admin-upload-input-hidden">
+
+            <div id="imagesOrderList" style="display:contents;">
+                {% if product %}
+                    {% for image in product.images %}
+                        <div class="admin-upload-thumb" data-kind="existing" data-existing-id="{{ image.id }}">
+                            <span class="admin-upload-thumb-label order-label drag-handle">
+                                <i class="bi bi-grip-horizontal"></i> #
+                            </span>
+                            <div class="admin-upload-thumb-inner">
+                                <img src="{{ vich_uploader_asset(image, 'imageFile') }}" class="admin-zoomable-thumb" alt="">
+                                <button type="button" class="admin-upload-remove" data-remove-existing="{{ image.id }}"><i class="bi bi-x"></i></button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+
+        <input type="hidden" name="image_order" id="imageOrderInput" value="">
+        <small class="text-muted d-block mt-1">Glisse-dépose par la poignée (▤) pour réordonner — la première image (à gauche) devient l'image principale.</small>
+    </div>
+
+    <div id="imageZoomOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;cursor:zoom-out;">
+        <img id="imageZoomFull" src="" style="max-width:90%;max-height:90%;border-radius:6px;">
+    </div>
+
+    <div class="mt-3">
+        <button type="submit" class="btn btn-success">Enregistrer</button>
+        <a href="{{ path('manage_products_index') }}" class="btn btn-outline-secondary">Annuler</a>
+    </div>
+    </form>
+
+    <script>
+        (function () {
+            const container = document.getElementById('categoryFieldsContainer');
+            const productId = {{ product ? product.id : 'null' }};
+
+            function loadCategoryFields(categoryId) {
+                if (!categoryId) {
+                    container.innerHTML = '';
+                    return;
+                }
+                let url = '/produits/champs-categorie/' + categoryId;
+                if (productId) {
+                    url += '?product=' + productId;
+                }
+                fetch(url)
+                    .then((r) => r.text())
+                    .then((html) => {
+                        container.innerHTML = html;
+                        if (window.initVehicleModelPicker) window.initVehicleModelPicker();
+                        if (window.initVehicleTypeToggle) window.initVehicleTypeToggle();
+                        if (window.initPartCompatibilityWidget) window.initPartCompatibilityWidget();
+                        if (window.initProductAttributePaste) window.initProductAttributePaste();
+                        if (window.initPartBrandAutocomplete) window.initPartBrandAutocomplete();
+                        wireEngineLoading();
+                    });
+            }
+
+            window.onProductCategoryChange = loadCategoryFields;
+
+            function wireEngineLoading() {
+                const engineSelect = document.getElementById('vehicleEngineSelect');
+                if (!engineSelect) return;
+
+                const preselectedEngineId = engineSelect.dataset.preselected || '';
+                const variantSelect = document.querySelector('[data-vehicle-variant-select]');
+                const modelSelect = document.querySelector('[data-vehicle-model-select]');
+
+                function updateFuelDisplay() {
+                    const fuelDisplay = document.getElementById('vehicleFuelDisplay');
+                    if (!fuelDisplay) return;
+                    const selectedOption = engineSelect.options[engineSelect.selectedIndex];
+                    fuelDisplay.value = selectedOption && selectedOption.parentElement.tagName === 'OPTGROUP'
+                        ? selectedOption.parentElement.label
+                        : '';
+                }
+
+                engineSelect.addEventListener('change', updateFuelDisplay);
+
+                function loadEngines(url) {
+                    fetch(url).then((r) => r.json()).then((data) => {
+                        engineSelect.innerHTML = '<option value="">— Choisir —</option>';
+
+                        const groups = {};
+                        data.options.forEach((opt) => {
+                            const key = opt.group || 'Énergie non renseignée';
+                            if (!groups[key]) groups[key] = [];
+                            groups[key].push(opt);
+                        });
+
+                        Object.keys(groups).sort().forEach((groupName) => {
+                            const optgroup = document.createElement('optgroup');
+                            optgroup.label = groupName;
+                            groups[groupName].forEach((opt) => {
+                                const o = document.createElement('option');
+                                o.value = opt.id;
+                                o.textContent = opt.name;
+                                if (String(opt.id) === String(preselectedEngineId)) o.selected = true;
+                                optgroup.appendChild(o);
+                            });
+                            engineSelect.appendChild(optgroup);
+                        });
+                        updateFuelDisplay();
+                    });
+                }
+
+                if (variantSelect) {
+                    variantSelect.addEventListener('change', function () {
+                        if (this.value) loadEngines('{{ path("manage_vehicle_search_engines") }}?variant=' + this.value);
+                    });
+                    if (variantSelect.value) {
+                        loadEngines('{{ path("manage_vehicle_search_engines") }}?variant=' + variantSelect.value);
+                    }
+                } else if (modelSelect) {
+                    modelSelect.addEventListener('change', function () {
+                        if (this.value) loadEngines('{{ path("manage_vehicle_search_engines") }}?model=' + this.value);
+                    });
+                    if (modelSelect.value) {
+                        loadEngines('{{ path("manage_vehicle_search_engines") }}?model=' + modelSelect.value);
+                    }
+                }
+            }
+
+            const initialCategoryId = document.getElementById('categoryIdInput').value;
+            if (initialCategoryId) {
+                loadCategoryFields(initialCategoryId);
+            }
+
+            // --- Images : liste unique réordonnable (existantes + nouvelles) ---
+            const imagesInput = document.getElementById('imagesInput');
+            const imagesOrderList = document.getElementById('imagesOrderList');
+            const imageOrderInput = document.getElementById('imageOrderInput');
+            const zoomOverlay = document.getElementById('imageZoomOverlay');
+            const zoomFull = document.getElementById('imageZoomFull');
+
+            let selectedFiles = [];
+
+            function refreshFileInput() {
+                const dt = new DataTransfer();
+                selectedFiles.forEach((f) => dt.items.add(f));
+                imagesInput.files = dt.files;
+            }
+
+            function refreshOrderLabelsAndTokens() {
+                const blocks = Array.from(imagesOrderList.querySelectorAll('[data-kind]'));
+                const tokens = [];
+
+                blocks.forEach((block, index) => {
+                    block.classList.toggle('admin-upload-thumb--primary', index === 0);
+                    const label = block.querySelector('.order-label');
+                    label.innerHTML = '<i class="bi bi-grip-horizontal"></i> ' + (index === 0 ? 'Principale' : '#' + (index + 1));
+
+                    if (block.dataset.kind === 'existing') {
+                        tokens.push('existing:' + block.dataset.existingId);
+                    } else {
+                        tokens.push('new');
+                    }
+                });
+
+                imageOrderInput.value = tokens.join(',');
+            }
+
+            function createNewThumb(file, fileIndex) {
+                const div = document.createElement('div');
+                div.className = 'admin-upload-thumb';
+                div.dataset.kind = 'new';
+                div.dataset.fileIndex = String(fileIndex);
+                div.innerHTML =
+                    '<span class="admin-upload-thumb-label order-label drag-handle"><i class="bi bi-grip-horizontal"></i> #</span>' +
+                    '<div class="admin-upload-thumb-inner">' +
+                    '<img src="' + URL.createObjectURL(file) + '" class="admin-zoomable-thumb">' +
+                    '<button type="button" class="admin-upload-remove"><i class="bi bi-x"></i></button>' +
+                    '</div>';
+                return div;
+            }
+
+            function syncSelectedFilesFromDom() {
+                const newBlocks = Array.from(imagesOrderList.querySelectorAll('[data-kind="new"]'));
+                const reordered = newBlocks.map((b) => selectedFiles[parseInt(b.dataset.fileIndex, 10)]);
+                selectedFiles = reordered;
+                newBlocks.forEach((b, i) => { b.dataset.fileIndex = String(i); });
+                refreshFileInput();
+            }
+
+            imagesInput.addEventListener('change', function () {
+                const startIndex = selectedFiles.length;
+                selectedFiles = selectedFiles.concat(Array.from(this.files));
+                Array.from(this.files).forEach((file, i) => {
+                    imagesOrderList.appendChild(createNewThumb(file, startIndex + i));
+                });
+                refreshFileInput();
+                refreshOrderLabelsAndTokens();
+            });
+
+            // --- Glisser-déposer par la poignée (souris manuelle, plus fiable que l'API HTML5 native) ---
+            let draggedBlock = null;
+
+            imagesOrderList.addEventListener('mousedown', function (e) {
+                const handle = e.target.closest('.drag-handle');
+                if (!handle) return;
+
+                e.preventDefault();
+                draggedBlock = handle.closest('[data-kind]');
+                draggedBlock.classList.add('is-dragging');
+
+                document.addEventListener('mousemove', onDragMove);
+                document.addEventListener('mouseup', onDragEnd);
+            });
+
+            function onDragMove(e) {
+                if (!draggedBlock) return;
+
+                const siblings = Array.from(imagesOrderList.querySelectorAll('[data-kind]'))
+                    .filter((el) => el !== draggedBlock);
+
+                for (const sibling of siblings) {
+                    const rect = sibling.getBoundingClientRect();
+                    if (e.clientX > rect.left && e.clientX < rect.right && e.clientY > rect.top && e.clientY < rect.bottom) {
+                        const after = e.clientX > rect.left + rect.width / 2;
+                        sibling.parentNode.insertBefore(draggedBlock, after ? sibling.nextSibling : sibling);
+                        break;
+                    }
+                }
+            }
+
+            function onDragEnd() {
+                if (draggedBlock) draggedBlock.classList.remove('is-dragging');
+                draggedBlock = null;
+                document.removeEventListener('mousemove', onDragMove);
+                document.removeEventListener('mouseup', onDragEnd);
+                syncSelectedFilesFromDom();
+                refreshOrderLabelsAndTokens();
+            }
+
+            imagesOrderList.addEventListener('click', function (e) {
+                const block = e.target.closest('[data-kind]');
+                if (!block) return;
+
+                if (e.target.closest('.admin-upload-remove')) {
+                    if (block.dataset.kind === 'existing') {
+                        const hidden = document.createElement('input');
+                        hidden.type = 'hidden';
+                        hidden.name = 'remove_image_ids[]';
+                        hidden.value = block.dataset.existingId;
+                        document.querySelector('form').appendChild(hidden);
+                    } else {
+                        const idx = parseInt(block.dataset.fileIndex, 10);
+                        selectedFiles.splice(idx, 1);
+                    }
+                    block.remove();
+                    syncSelectedFilesFromDom();
+                    refreshOrderLabelsAndTokens();
+                    return;
+                }
+
+                if (e.target.closest('.admin-zoomable-thumb')) {
+                    zoomFull.src = e.target.closest('.admin-zoomable-thumb').src;
+                    zoomOverlay.style.display = 'flex';
+                }
+            });
+
+            zoomOverlay.addEventListener('click', function () {
+                this.style.display = 'none';
+            });
+
+            refreshOrderLabelsAndTokens();
+        })();
+    </script>
+{% endblock %}

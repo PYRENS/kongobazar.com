@@ -1,26 +1,40 @@
 {% extends 'manage/base.html.twig' %}
 
+{% block title %}{{ variant ? 'Modifier la variante' : 'Nouvelle variante' }}{% endblock %}
+{% block page_icon %}bi-diagram-3{% endblock %}
+{% block page_title %}{{ variant ? 'Modifier la variante' : 'Nouvelle variante' }}{% endblock %}
+
 {% block body %}
     <h1 class="h4 mb-3">{{ variant ? 'Modifier la variante' : 'Nouvelle variante' }}</h1>
 
     <form method="post" action="{{ variant ? path('manage_vehicle_variants_update', {id: variant.id}) : path('manage_vehicle_variants_new') }}">
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Marque</label>
-                <select class="form-select" data-vehicle-brand-select>
-                    <option value="">— Choisir —</option>
-                    {% for brand in brands %}
-                        <option value="{{ brand.id }}" {{ variant and variant.model and variant.model.brand.id == brand.id ? 'selected' : '' }}>{{ brand.name }}</option>
-                    {% endfor %}
-                </select>
+        {% if presetModel %}
+            <input type="hidden" name="model_id" value="{{ presetModel.id }}">
+            <div class="mb-3">
+                <label class="form-label">Rattachement</label>
+                <div class="form-control-plaintext border rounded px-3 py-2 bg-light">
+                    {{ presetModel.brand.name }} › {{ presetModel.name }}
+                </div>
             </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Modèle</label>
-                <select name="model_id" class="form-select" data-vehicle-model-select data-preselected="{{ variant and variant.model ? variant.model.id : '' }}" required>
-                    <option value="">— Choisissez d'abord une marque —</option>
-                </select>
+        {% else %}
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Marque</label>
+                    <select class="form-select" data-vehicle-brand-select>
+                        <option value="">— Choisir —</option>
+                        {% for brand in brands %}
+                            <option value="{{ brand.id }}" {{ variant and variant.model and variant.model.brand.id == brand.id ? 'selected' : '' }}>{{ brand.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Modèle</label>
+                    <select name="model_id" class="form-select" data-vehicle-model-select data-preselected="{{ variant and variant.model ? variant.model.id : '' }}" required>
+                        <option value="">— Choisissez d'abord une marque —</option>
+                    </select>
+                </div>
             </div>
-        </div>
+        {% endif %}
 
         <div class="mb-3">
             <label class="form-label">Nom de la variante (optionnel)</label>

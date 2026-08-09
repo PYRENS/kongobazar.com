@@ -37,6 +37,10 @@ class NegotiationThread
     #[ORM\OneToOne(mappedBy: 'thread', targetEntity: PaymentLink::class, cascade: ['persist', 'remove'])]
     private ?PaymentLink $paymentLink = null;
 
+    #[ORM\OneToOne(targetEntity: Order::class)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?Order $order = null;
+
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
@@ -49,6 +53,50 @@ class NegotiationThread
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function getProduct(): ?Product
+    {
+        return $this->product;
+    }
+
+    public function setProduct(?Product $product): static
+    {
+        $this->product = $product;
+        return $this;
+    }
+
+    public function getBuyer(): ?User
+    {
+        return $this->buyer;
+    }
+
+    public function setBuyer(?User $buyer): static
+    {
+        $this->buyer = $buyer;
+        return $this;
+    }
+
+    public function getSeller(): ?User
+    {
+        return $this->seller;
+    }
+
+    public function setSeller(?User $seller): static
+    {
+        $this->seller = $seller;
+        return $this;
+    }
+
+    public function getOrder(): ?Order
+    {
+        return $this->order;
+    }
+
+    public function setOrder(?Order $order): static
+    {
+        $this->order = $order;
+        return $this;
     }
 
     public function getStatus(): ?string

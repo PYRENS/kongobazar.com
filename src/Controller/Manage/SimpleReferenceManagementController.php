@@ -20,16 +20,36 @@ class SimpleReferenceManagementController extends AbstractController
         'periodes-location' => ['class' => RentalPeriod::class, 'label' => 'Périodes de location'],
     ];
 
+    private const ICONS = [
+        'permis' => 'bi-card-checklist',
+        'types-moto' => 'bi-scooter',
+        'periodes-location' => 'bi-calendar-range',
+    ];
+
     #[Route('/referentiel/{type}', name: 'manage_reference_index', host: 'manage.kongobazar.com', methods: ['GET'], requirements: ['type' => 'permis|types-moto|periodes-location'])]
-    public function index(string $type, EntityManagerInterface $em): Response
+    public function index(string $type, Request $request, EntityManagerInterface $em): Response
     {
         $config = self::TYPES[$type];
-        $items = $em->getRepository($config['class'])->findBy([], ['position' => 'ASC']);
+        $searchTerm = $request->query->get('q');
+        $sortField = $request->query->get('sort', 'position');
+        $sortDir = $request->query->get('dir', 'ASC');
+
+        $sortField = in_array($sortField, ['name', 'position'], true) ? $sortField : 'position';
+        $qb = $em->getRepository($config['class'])->createQueryBuilder('i')
+            ->orderBy('i.' . $sortField, strtoupper($sortDir) === 'DESC' ? 'DESC' : 'ASC');
+
+        if ($searchTerm) {
+            $qb->andWhere('i.name LIKE :term')->setParameter('term', '%' . $searchTerm . '%');
+        }
 
         return $this->render('manage/simple_reference/index.html.twig', [
             'type' => $type,
             'label' => $config['label'],
-            'items' => $items,
+            'icon' => self::ICONS[$type],
+            'items' => $qb->getQuery()->getResult(),
+            'searchTerm' => $searchTerm,
+            'currentSort' => $sortField,
+            'currentDir' => $sortDir,
         ]);
     }
 

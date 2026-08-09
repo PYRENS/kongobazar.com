@@ -14,10 +14,17 @@ use Symfony\Component\Routing\Attribute\Route;
 class FuelTypeManagementController extends AbstractController
 {
     #[Route('/energies', name: 'manage_fuel_types_index', host: 'manage.kongobazar.com', methods: ['GET'])]
-    public function index(FuelTypeRepository $repository): Response
+    public function index(Request $request, FuelTypeRepository $repository): Response
     {
+        $searchTerm = $request->query->get('q');
+        $sortField = $request->query->get('sort', 'name');
+        $sortDir = $request->query->get('dir', 'ASC');
+
         return $this->render('manage/fuel_types/index.html.twig', [
-            'fuelTypes' => $repository->findBy([], ['name' => 'ASC']),
+            'fuelTypes' => $repository->findFiltered($searchTerm, $sortField, $sortDir),
+            'searchTerm' => $searchTerm,
+            'currentSort' => $sortField,
+            'currentDir' => $sortDir,
         ]);
     }
 

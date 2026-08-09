@@ -29,6 +29,55 @@ class ProductRepository extends ServiceEntityRepository
     }
 
     /** @return Product[] */
+    public function findFiltered(?string $term, ?int $categoryId, ?string $status, ?string $condition, string $sort, string $dir, int $page, int $perPage): array
+    {
+        $qb = $this->buildFilterQuery($term, $categoryId, $status, $condition);
+
+        $allowedSort = ['title', 'basePrice', 'createdAt', 'salesCount'];
+        if (!in_array($sort, $allowedSort, true)) {
+            $sort = 'createdAt';
+        }
+
+        // leftJoin + addSelect : précharge la 1ère image en une seule requête,
+        // au lieu d'une requête séparée par ligne affichée (N+1).
+        return $qb->leftJoin('p.images', 'img')
+            ->addSelect('img')
+            ->orderBy('p.' . $sort, strtoupper($dir) === 'ASC' ? 'ASC' : 'DESC')
+            ->setFirstResult(($page - 1) * $perPage)
+            ->setMaxResults($perPage)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function countFiltered(?string $term, ?int $categoryId, ?string $status, ?string $condition): int
+    {
+        return (int) $this->buildFilterQuery($term, $categoryId, $status, $condition)
+            ->select('COUNT(p.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    private function buildFilterQuery(?string $term, ?int $categoryId, ?string $status, ?string $condition)
+    {
+        $qb = $this->createQueryBuilder('p');
+
+        if ($term) {
+            $qb->andWhere('p.title LIKE :term OR p.reference LIKE :term')->setParameter('term', '%' . $term . '%');
+        }
+        if ($categoryId) {
+            $qb->andWhere('p.category = :categoryId')->setParameter('categoryId', $categoryId);
+        }
+        if ($status) {
+            $qb->andWhere('p.status = :status')->setParameter('status', $status);
+        }
+        if ($condition) {
+            $qb->andWhere('p.condition = :condition')->setParameter('condition', $condition);
+        }
+
+        return $qb;
+    }
+
+    /** @return Product[] */
     public function findByBrand(int $brandId, int $limit = 100): array
     {
         return $this->createQueryBuilder('p')
@@ -38,6 +87,43 @@ class ProductRepository extends ServiceEntityRepository
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
+    }
+
+    private function buildBrandFilterQuery(int $brandId, ?string $status, ?string $term)
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->andWhere('p.brand = :brandId')
+            ->setParameter('brandId', $brandId);
+
+        if ($status) {
+            $qb->andWhere('p.status = :status')->setParameter('status', $status);
+        }
+
+        if ($term) {
+            $qb->andWhere('p.title LIKE :term OR p.reference LIKE :term')
+                ->setParameter('term', '%' . $term . '%');
+        }
+
+        return $qb;
+    }
+
+    /** @return Product[] */
+    public function findFilteredByBrand(int $brandId, ?string $status, ?string $term, int $page, int $perPage): array
+    {
+        return $this->buildBrandFilterQuery($brandId, $status, $term)
+            ->orderBy('p.createdAt', 'DESC')
+            ->setFirstResult(($page - 1) * $perPage)
+            ->setMaxResults($perPage)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function countFilteredByBrand(int $brandId, ?string $status, ?string $term): int
+    {
+        return (int) $this->buildBrandFilterQuery($brandId, $status, $term)
+            ->select('COUNT(p.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 
     public function findBestSellersInStock(int $limit = 8): array

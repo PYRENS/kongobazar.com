@@ -1,0 +1,124 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Dupliquer des caractéristiques{% endblock %}
+{% block page_icon %}bi-files{% endblock %}
+{% block page_title %}Dupliquer des caractéristiques vers {{ category.name }}{% endblock %}
+
+{% block body %}
+    <form method="post" action="{{ path('manage_category_attributes_duplicate', {categoryId: category.id}) }}">
+
+        <div class="mb-3 p-2" style="background:#eef6fc;border-radius:6px;">
+            <strong>Catégorie source sélectionnée :</strong>
+            <span id="selectedSourceDisplay" class="text-muted">Aucune</span>
+        </div>
+
+        <fieldset class="border rounded p-3 mb-3">
+            <legend class="w-auto fs-6 px-2">1. Sélection simple</legend>
+            <select id="sourceSelectSimple" class="form-select" style="max-width:400px;">
+                <option value="">— Choisir dans la liste complète —</option>
+                {% for cat in allCategories %}
+                    {% if cat.id != category.id %}
+                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </fieldset>
+
+        <fieldset class="border rounded p-3 mb-3">
+            <legend class="w-auto fs-6 px-2">2. Recherche en cascade</legend>
+            <div class="category-picker" data-category-picker data-category-exclude="{{ category.id }}">
+                <select data-category-level="1" id="cascadeRootSelect" class="form-select mb-2">
+                    <option value="">— Choisir —</option>
+                    {% for root in rootCategories %}
+                        {% if root.id != category.id %}
+                            <option value="{{ root.id }}">{{ root.name }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+                <input type="hidden" data-category-final-value>
+            </div>
+            <small class="text-muted d-block mt-1">Chaque niveau choisi devient automatiquement la source sélectionnée.</small>
+        </fieldset>
+
+        <fieldset class="border rounded p-3 mb-3">
+            <legend class="w-auto fs-6 px-2">3. Recherche texte</legend>
+            <input type="text" id="sourceSearchInput" class="form-control" style="max-width:400px;" placeholder="Tape le nom d'une catégorie...">
+            <div id="sourceSearchResults" class="list-group mt-2" style="max-width:400px;"></div>
+        </fieldset>
+
+        <input type="hidden" name="source_id" id="sourceIdInput" value="">
+
+        <div id="checklistContainer">
+            <p class="text-muted">Choisis une catégorie source via l'une des 3 méthodes ci-dessus pour voir ses caractéristiques.</p>
+        </div>
+
+        <button type="submit" class="btn btn-success mt-3" id="submitBtn" disabled>Dupliquer la sélection</button>
+        <a href="{{ path('manage_category_attributes_index', {categoryId: category.id}) }}" class="btn btn-outline-secondary mt-3">Annuler</a>
+    </form>
+
+    <script>
+        (function () {
+            const display = document.getElementById('selectedSourceDisplay');
+            const sourceIdInput = document.getElementById('sourceIdInput');
+            const checklistContainer = document.getElementById('checklistContainer');
+            const submitBtn = document.getElementById('submitBtn');
+
+            function selectSource(id, name) {
+                display.textContent = name;
+                sourceIdInput.value = id;
+                submitBtn.disabled = false;
+
+                fetch('{{ path("manage_category_attributes_duplicate_source", {categoryId: category.id}) }}?source=' + id)
+                    .then((r) => r.text())
+                    .then((html) => { checklistContainer.innerHTML = html; });
+            }
+
+            // Méthode 1 — select simple
+            document.getElementById('sourceSelectSimple').addEventListener('change', function () {
+                if (!this.value) return;
+                selectSource(this.value, this.options[this.selectedIndex].text);
+            });
+
+            // Méthode 2 — cascade (le widget category-picker existant met déjà à jour ses selects successifs ;
+            // on écoute tout changement dans le conteneur pour capter le dernier niveau choisi)
+            document.querySelector('[data-category-picker]').addEventListener('change', function (e) {
+                if (e.target.tagName === 'SELECT' && e.target.value) {
+                    selectSource(e.target.value, e.target.options[e.target.selectedIndex].text);
+                }
+            });
+
+            // Méthode 3 — recherche texte en direct
+            const searchInput = document.getElementById('sourceSearchInput');
+            const searchResults = document.getElementById('sourceSearchResults');
+            let searchTimeout;
+
+            searchInput.addEventListener('input', function () {
+                clearTimeout(searchTimeout);
+                const term = this.value.trim();
+                if (term.length < 2) {
+                    searchResults.innerHTML = '';
+                    return;
+                }
+                searchTimeout = setTimeout(() => {
+                    fetch('{{ path("manage_category_attributes_search_categories") }}?q=' + encodeURIComponent(term))
+                        .then((r) => r.json())
+                        .then((data) => {
+                            searchResults.innerHTML = '';
+                            data.results.forEach((cat) => {
+                                const item = document.createElement('button');
+                                item.type = 'button';
+                                item.className = 'list-group-item list-group-item-action';
+                                item.textContent = cat.name;
+                                item.addEventListener('click', () => {
+                                    selectSource(cat.id, cat.name);
+                                    searchResults.innerHTML = '';
+                                    searchInput.value = cat.name;
+                                });
+                                searchResults.appendChild(item);
+                            });
+                        });
+                }, 300);
+            });
+        })();
+    </script>
+{% endblock %}

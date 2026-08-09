@@ -17,21 +17,116 @@ use Symfony\Component\Routing\Attribute\Route;
 class VehicleVariantManagementController extends AbstractController
 {
     #[Route('/vehicules/variantes', name: 'manage_vehicle_variants_index', host: 'manage.kongobazar.com', methods: ['GET'])]
-    public function index(Request $request, VehicleVariantRepository $repository, VehicleModelRepository $modelRepository): Response
-    {
-        $modelId = $request->query->get('model') ? (int) $request->query->get('model') : null;
+    public function index(
+        Request $request,
+        VehicleVariantRepository $repository,
+        \App\Repository\VehicleEngineRepository $engineRepository
+    ): Response {
+        $searchTerm = $request->query->get('q');
+        $variants = $repository->findFiltered($searchTerm);
+
+        $rows = array_map(fn (\App\Entity\VehicleVariant $variant) => [
+            'variant' => $variant,
+            'engineCount' => $engineRepository->countByVariant($variant->getId()),
+        ], $variants);
+
+        $sortField = $request->query->get('sort', 'id');
+        $sortDir = $request->query->get('dir', 'DESC');
+        $rows = $this->sortRows($rows, $sortField, $sortDir);
 
         return $this->render('manage/vehicle_variants/index.html.twig', [
-            'variants' => $modelId ? $repository->findByModel($modelId) : $repository->findBy([], ['id' => 'DESC']),
+            'rows' => $rows,
+            'searchTerm' => $searchTerm,
+            'currentSort' => $sortField,
+            'currentDir' => $sortDir,
         ]);
     }
 
-    #[Route('/vehicules/variantes/nouveau', name: 'manage_vehicle_variants_new', host: 'manage.kongobazar.com', methods: ['GET'])]
-    public function new(BrandRepository $brandRepository): Response
+    #[Route('/vehicules/variantes/{id}', name: 'manage_vehicle_variants_show', host: 'manage.kongobazar.com', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function show(
+        VehicleVariant $variant,
+        Request $request,
+        \App\Repository\VehicleEngineRepository $engineRepository
+    ): Response {
+        $sortField = $request->query->get('sort', 'label');
+        $sortDir = $request->query->get('dir', 'ASC');
+
+        $engines = $engineRepository->findByVariant($variant->getId());
+        $engines = $this->sortEngines($engines, $sortField, $sortDir);
+
+        return $this->render('manage/vehicle_variants/show.html.twig', [
+            'variant' => $variant,
+            'engines' => $engines,
+            'currentSort' => $sortField,
+            'currentDir' => $sortDir,
+        ]);
+    }
+
+    private function sortRows(array $rows, string $field, string $dir): array
     {
+        $allowed = ['model', 'variant', 'brand', 'engineCount'];
+        if (!in_array($field, $allowed, true)) {
+            $field = 'variant';
+        }
+        $dirMultiplier = strtoupper($dir) === 'DESC' ? -1 : 1;
+
+        usort($rows, function ($a, $b) use ($field, $dirMultiplier) {
+            $valA = match ($field) {
+                'model' => $a['variant']->getModel()->getName(),
+                'brand' => $a['variant']->getModel()->getBrand()->getName(),
+                'engineCount' => $a['engineCount'],
+                default => $a['variant']->getName() ?? '',
+            };
+            $valB = match ($field) {
+                'model' => $b['variant']->getModel()->getName(),
+                'brand' => $b['variant']->getModel()->getBrand()->getName(),
+                'engineCount' => $b['engineCount'],
+                default => $b['variant']->getName() ?? '',
+            };
+            return $dirMultiplier * ($valA <=> $valB);
+        });
+
+        return $rows;
+    }
+
+    private function sortEngines(array $engines, string $field, string $dir): array
+    {
+        $allowed = ['label', 'powerCv', 'powerKw', 'period', 'fuelType'];
+        if (!in_array($field, $allowed, true)) {
+            $field = 'label';
+        }
+        $dirMultiplier = strtoupper($dir) === 'DESC' ? -1 : 1;
+
+        usort($engines, function ($a, $b) use ($field, $dirMultiplier) {
+            $valA = match ($field) {
+                'powerCv' => $a->getPowerCv() ?? -1,
+                'powerKw' => $a->getPowerKw() ?? -1,
+                'period' => $a->getPeriodLabel() ?? '',
+                'fuelType' => $a->getFuelType()?->getName() ?? '',
+                default => $a->getLabel(),
+            };
+            $valB = match ($field) {
+                'powerCv' => $b->getPowerCv() ?? -1,
+                'powerKw' => $b->getPowerKw() ?? -1,
+                'period' => $b->getPeriodLabel() ?? '',
+                'fuelType' => $b->getFuelType()?->getName() ?? '',
+                default => $b->getLabel(),
+            };
+            return $dirMultiplier * ($valA <=> $valB);
+        });
+
+        return $engines;
+    }
+    #[Route('/vehicules/variantes/nouveau', name: 'manage_vehicle_variants_new', host: 'manage.kongobazar.com', methods: ['GET'])]
+    public function new(Request $request, BrandRepository $brandRepository, VehicleModelRepository $modelRepository): Response
+    {
+        $presetModelId = $request->query->get('model') ? (int) $request->query->get('model') : null;
+        $presetModel = $presetModelId ? $modelRepository->find($presetModelId) : null;
+
         return $this->render('manage/vehicle_variants/form.html.twig', [
             'variant' => null,
             'brands' => $brandRepository->findBy([], ['name' => 'ASC']),
+            'presetModel' => $presetModel,
         ]);
     }
 
@@ -53,6 +148,7 @@ class VehicleVariantManagementController extends AbstractController
         return $this->render('manage/vehicle_variants/form.html.twig', [
             'variant' => $variant,
             'brands' => $brandRepository->findBy([], ['name' => 'ASC']),
+            'presetModel' => null,
         ]);
     }
 

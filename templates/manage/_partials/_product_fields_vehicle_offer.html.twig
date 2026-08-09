@@ -1,0 +1,138 @@
+{% set vld = product ? product.vehicleListingDetails : null %}
+{% set engine = vld ? vld.vehicleEngine : null %}
+{% set currentBrand = engine ? (engine.variant ? engine.variant.model.brand : engine.model.brand) : null %}
+{% set currentModel = engine ? (engine.variant ? engine.variant.model : engine.model) : null %}
+{% set currentVariant = engine and engine.variant ? engine.variant : null %}
+
+<div class="admin-card">
+    <h6><i class="bi bi-car-front"></i> Détails véhicule ({{ vehicleType == 'moto' ? 'Moto' : 'Auto' }})</h6>
+
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Marque</label>
+            <select class="form-select" data-vehicle-brand-select>
+                <option value="">— Choisir —</option>
+                {% for brand in brands %}
+                    <option value="{{ brand.id }}" {{ currentBrand and currentBrand.id == brand.id ? 'selected' : '' }}>{{ brand.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Modèle</label>
+            <select name="vehicle_model_id" class="form-select" data-vehicle-model-select data-preselected="{{ currentModel ? currentModel.id : '' }}">
+                <option value="">— Choisissez d'abord une marque —</option>
+            </select>
+        </div>
+        {% if vehicleType != 'moto' %}
+            <div class="col-md-4 mb-3" data-vehicle-variant-block>
+                <label class="form-label">Variante</label>
+                <select name="vehicle_variant_id" class="form-select" data-vehicle-variant-select data-preselected="{{ currentVariant ? currentVariant.id : '' }}">
+                    <option value="">— Choisissez d'abord un modèle —</option>
+                </select>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Motorisation</label>
+        <select name="vehicle_engine_id" id="vehicleEngineSelect" class="form-select" data-preselected="{{ engine ? engine.id : '' }}">
+            <option value="">— Choisissez d'abord {{ vehicleType == 'moto' ? 'un modèle' : 'une variante' }} —</option>
+        </select>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3 mb-3">
+            <label class="form-label">Énergie</label>
+            <input type="text" id="vehicleFuelDisplay" class="form-control" value="{{ engine and engine.fuelType ? engine.fuelType.name : '' }}" disabled>
+        </div>
+        <div class="col-md-3 mb-3">
+            <label class="form-label">Année modèle</label>
+            <input type="number" name="model_year" class="form-control" value="{{ vld ? vld.modelYear : '' }}">
+        </div>
+        <div class="col-md-3 mb-3">
+            <label class="form-label">Kilométrage</label>
+            <input type="number" name="mileage" class="form-control" value="{{ vld ? vld.mileage : '' }}">
+        </div>
+        <div class="col-md-3 mb-3">
+            <label class="form-label">Référence</label>
+            <input type="text" name="reference" class="form-control" value="{{ product ? product.reference : '' }}">
+        </div>
+    </div>
+
+    {% if vehicleType != 'moto' %}
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Type de véhicule</label>
+                <input type="text" name="vehicle_body_type" class="form-control" placeholder="ex: Berline, SUV, Break" value="{{ vld ? vld.vehicleBodyType : '' }}">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Couleur</label>
+                <input type="text" name="color" class="form-control" value="{{ vld ? vld.color : '' }}">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Puissance DIN (Ch)</label>
+                <input type="number" name="power_din" class="form-control" value="{{ vld ? vld.powerDin : '' }}">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">1ʳᵉ mise en circulation (MM/AAAA)</label>
+                <input type="text" name="first_registration" class="form-control" placeholder="ex: 08/2004"
+                    value="{{ vld and vld.firstRegistrationMonth ? (vld.firstRegistrationMonth < 10 ? '0' ~ vld.firstRegistrationMonth : vld.firstRegistrationMonth) ~ '/' ~ vld.firstRegistrationYear : '' }}">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Finition constructeur</label>
+                <input type="text" name="trim_level" class="form-control" placeholder="ex: Luxe Privilège" value="{{ vld ? vld.trimLevel : '' }}">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Version constructeur</label>
+                <input type="text" name="constructor_version" class="form-control" placeholder="ex: Modus 1.4 16v 98ch..." value="{{ vld ? vld.constructorVersion : '' }}">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Nombre de places</label>
+                <input type="number" name="seats" class="form-control" value="{{ vld ? vld.seats : '' }}">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Boîte de vitesse</label>
+                <select name="transmission" class="form-select">
+                    <option value="">— Choisir —</option>
+                    <option value="manual" {{ vld and vld.transmission == 'manual' ? 'selected' : '' }}>Manuelle</option>
+                    <option value="automatic" {{ vld and vld.transmission == 'automatic' ? 'selected' : '' }}>Automatique</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Côté volant</label>
+                <select name="steering_side" class="form-select">
+                    <option value="">— Choisir —</option>
+                    <option value="left" {{ vld and vld.steeringSide == 'left' ? 'selected' : '' }}>Gauche</option>
+                    <option value="right" {{ vld and vld.steeringSide == 'right' ? 'selected' : '' }}>Droite</option>
+                </select>
+            </div>
+        </div>
+    {% else %}
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Permis requis</label>
+                <select name="license_type_id" class="form-select">
+                    <option value="">— Aucun —</option>
+                    {% for lt in licenseTypes %}
+                        <option value="{{ lt.id }}" {{ vld and vld.licenseType and vld.licenseType.id == lt.id ? 'selected' : '' }}>{{ lt.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Type de moto</label>
+                <select name="motorcycle_type_id" class="form-select">
+                    <option value="">— Aucun —</option>
+                    {% for mt in motorcycleTypes %}
+                        <option value="{{ mt.id }}" {{ vld and vld.motorcycleType and vld.motorcycleType.id == mt.id ? 'selected' : '' }}>{{ mt.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    {% endif %}
+</div>

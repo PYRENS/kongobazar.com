@@ -47,6 +47,11 @@
         </div>
 
         <div class="mb-3">
+            <label class="form-label">Sigle (optionnel)</label>
+            <input type="text" name="sigle" class="form-control" value="{{ brand ? brand.sigle : '' }}" maxlength="20" placeholder="ex: BMW, VW">
+        </div>
+
+        <div class="mb-3">
             <label class="form-label d-block">Domaine(s) d'usage</label>
             <div class="form-check form-check-inline">
                 <input type="checkbox" name="type[]" value="auto" class="form-check-input" id="typeAuto"
