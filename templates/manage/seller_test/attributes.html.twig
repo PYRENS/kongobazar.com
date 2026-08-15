@@ -1,0 +1,115 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Test — Caractéristiques vendeur{% endblock %}
+{% block page_icon %}bi-person-gear{% endblock %}
+{% block page_title %}Test — Widget caractéristiques côté vendeur{% endblock %}
+
+{% block body %}
+    <div class="alert alert-info">Page de test admin — simule l'expérience vendeur en attendant l'espace vendeur réel. Choisis un produit existant pour tester.</div>
+
+    <form method="get" class="mb-3 d-flex align-items-center gap-2">
+        <select name="product" class="form-select" style="max-width:400px;" onchange="this.form.submit()">
+            <option value="">— Choisir un produit —</option>
+            {% for p in recentProducts %}
+                <option value="{{ p.id }}" {{ product and product.id == p.id ? 'selected' : '' }}>{{ p.title }} ({{ p.category.name }})</option>
+            {% endfor %}
+        </select>
+    </form>
+
+    {% if product %}
+        <div class="admin-card">
+            <h6>{{ product.title }}</h6>
+            <p class="text-muted mb-0">Catégorie : {{ product.category.name }} — Référence : {{ product.reference ?: '—' }}</p>
+        </div>
+
+        <div class="admin-card">
+            <h6><i class="bi bi-sliders"></i> Caractéristiques</h6>
+
+            <div class="d-flex gap-2 mb-3">
+                <div style="position:relative;flex:1;max-width:350px;">
+                    <input type="text" id="sellerAttrSearchInput" class="form-control" placeholder="Rechercher une caractéristique (ex: long)..." autocomplete="off">
+                    <div id="sellerAttrSearchResults" class="list-group mt-1" style="position:absolute;z-index:20;width:100%;"></div>
+                </div>
+                <button type="button" id="sellerAttrNewBtn" class="btn btn-outline-primary">+ Nouveau</button>
+                <button type="button" id="sellerAttrDuplicateBtn" class="btn btn-outline-primary">Dupliquer depuis un produit</button>
+            </div>
+
+            <div id="sellerAttrNewForm" style="display:none;" class="mb-3 p-2" style="border:1px solid #eee;border-radius:6px;">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label">Nom</label>
+                        <input type="text" id="sellerAttrNewName" class="form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Unité (optionnel)</label>
+                        <input type="text" id="sellerAttrNewUnit" class="form-control" placeholder="ex: cm, kg">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Type</label>
+                        <select id="sellerAttrNewType" class="form-select">
+                            <option value="text">Texte</option>
+                            <option value="number">Nombre</option>
+                            <option value="boolean">Oui/Non</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" id="sellerAttrNewCreateBtn" class="btn btn-success w-100">Créer</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="sellerAttrDuplicateForm" style="display:none;" class="mb-3 p-2" style="border:1px solid #eee;border-radius:6px;">
+                <label class="form-label">Produit source (nom ou référence, même catégorie)</label>
+                <input type="text" id="sellerAttrDupSearchInput" class="form-control" style="max-width:400px;" autocomplete="off">
+                <div id="sellerAttrDupSearchResults" class="list-group mt-1" style="max-width:400px;"></div>
+
+                <div class="form-check mt-2">
+                    <input type="checkbox" id="sellerAttrDupWithValue" class="form-check-input">
+                    <label class="form-check-label" for="sellerAttrDupWithValue">Dupliquer avec les valeurs (sinon, structure seule)</label>
+                </div>
+
+                <div id="sellerAttrDupChecklist" class="mt-2"></div>
+            </div>
+
+            <form method="post" action="{{ path('manage_seller_attr_test_save', {id: product.id}) }}">
+                <div id="sellerAttrFieldsContainer">
+                    {% for attr in attributes %}
+                        {% set existingValue = existingAttributeValues[attr.id] ?? null %}
+                        <div class="mb-2 d-flex align-items-end gap-2" data-attr-row="{{ attr.id }}">
+                            <div class="flex-grow-1">
+                                <label class="form-label">{{ attr.name }}{{ attr.unit ? ' (' ~ attr.unit ~ ')' : '' }}</label>
+                                {% if attr.dataType == 'boolean' %}
+                                    <select name="attr[{{ attr.id }}]" class="form-select seller-attr-field">
+                                        <option value="">—</option>
+                                        <option value="1" {{ existingValue and existingValue.booleanValue == true ? 'selected' : '' }}>Oui</option>
+                                        <option value="0" {{ existingValue and existingValue.booleanValue == false ? 'selected' : '' }}>Non</option>
+                                    </select>
+                                {% elseif attr.dataType == 'select' %}
+                                    <select name="attr[{{ attr.id }}]" class="form-select seller-attr-field">
+                                        <option value="">— Choisir —</option>
+                                        {% for option in attr.options %}
+                                            <option value="{{ option.id }}" {{ existingValue and existingValue.categoryAttributeOption and existingValue.categoryAttributeOption.id == option.id ? 'selected' : '' }}>{{ option.label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                {% else %}
+                                    <input type="{{ attr.dataType == 'number' ? 'number' : 'text' }}" name="attr[{{ attr.id }}]" class="form-control seller-attr-field"
+                                        value="{{ existingValue ? (attr.dataType == 'number' ? existingValue.numberValue : existingValue.textValue) : '' }}">
+                                {% endif %}
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-danger seller-attr-remove"><i class="bi bi-trash"></i></button>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <button type="submit" class="btn btn-success mt-3">Enregistrer les caractéristiques</button>
+            </form>
+        </div>
+    {% endif %}
+
+    <script>
+        window.sellerAttrCategoryId = {{ product ? product.category.id : 'null' }};
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.initSellerAttributeWidget) window.initSellerAttributeWidget();
+        });
+    </script>
+{% endblock %}

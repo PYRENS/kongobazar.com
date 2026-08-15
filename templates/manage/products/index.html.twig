@@ -23,7 +23,7 @@
         <a href="{{ path('manage_products_new') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Nouveau produit</a>
     </div>
 
-    <form method="get" class="mb-3 d-flex align-items-center gap-2 flex-wrap">
+    <form method="get" class="mb-2 d-flex align-items-center gap-2 flex-wrap">
         <input type="text" name="q" class="form-control" style="max-width: 240px;" placeholder="Titre ou référence..." value="{{ searchTerm }}">
 
         <select name="category" class="form-select" style="max-width: 220px;">
@@ -54,6 +54,18 @@
             <a href="{{ path('manage_products_index') }}" class="btn btn-sm btn-outline-secondary">Réinitialiser</a>
         {% endif %}
     </form>
+
+    <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+        <small class="text-muted">Ou par cascade :</small>
+        <div class="category-picker" data-category-picker id="productListCategoryPicker">
+            <select data-category-level="1" class="form-select" style="max-width:220px;">
+                <option value="">— Choisir —</option>
+                {% for root in rootCategories %}
+                    <option value="{{ root.id }}">{{ root.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
 
     <p class="text-muted mb-2">{{ total }} produit{{ total > 1 ? 's' : '' }} au total</p>
 
@@ -106,6 +118,19 @@
             {% endfor %}
         </tbody>
     </table>
+
+    <script>
+        (function () {
+            const picker = document.getElementById('productListCategoryPicker');
+            picker.addEventListener('change', function (e) {
+                if (e.target.tagName !== 'SELECT' || !e.target.value) return;
+                const url = new URL(window.location.href);
+                url.searchParams.set('category', e.target.value);
+                url.searchParams.delete('page');
+                window.location.href = url.toString();
+            });
+        })();
+    </script>
 
     {% if pages > 1 %}
         <div class="d-flex justify-content-between align-items-center mt-2">

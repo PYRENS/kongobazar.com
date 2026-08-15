@@ -84,7 +84,13 @@
                 <a href="{{ path('manage_products_index') }}"><i class="bi bi-box-seam"></i> Produits</a>
             </li>
             <li class="{{ app.request.attributes.get('_route') starts with 'manage_ads' ? 'active' : '' }}">
-                <a href="#"><i class="bi bi-megaphone"></i> Publicités <span class="admin-nav-soon">Bientôt</span></a>
+                <a href="{{ path('manage_ads_index') }}"><i class="bi bi-megaphone"></i> Publicités</a>
+            </li>
+            <li class="{{ app.request.attributes.get('_route') starts with 'manage_ad_zones' ? 'active' : '' }}">
+                <a href="{{ path('manage_ad_zones_index') }}"><i class="bi bi-shuffle"></i> Zones publicitaires</a>
+            </li>
+            <li>
+                <a href="{{ path('manage_seller_attr_test_index') }}"><i class="bi bi-person-gear"></i> Test — Caractéristiques vendeur</a>
             </li>
             <li class="admin-nav-group {{ app.request.attributes.get('_route') starts with 'manage_settings' ? 'open' : '' }}">
                 <button type="button" class="admin-nav-group-toggle">
@@ -146,6 +152,7 @@
     <script src="{{ asset('js/manage/part-compatibility.js') }}"></script>
     <script src="{{ asset('js/manage/product-attribute-paste.js') }}"></script>
     <script src="{{ asset('js/manage/product-attribute-duplicate.js') }}"></script>
+    <script src="{{ asset('js/manage/seller-attribute-widget.js') }}"></script>
     <script src="{{ asset('js/manage/part-brand-autocomplete.js') }}"></script>
     <script src="{{ asset('js/manage/part-catalog-compatibility.js') }}"></script>
     <script>

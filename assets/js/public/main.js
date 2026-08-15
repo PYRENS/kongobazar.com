@@ -93,39 +93,43 @@ function initHeroCarousel() {
     if (!carousel) return;
 
     const slides = carousel.querySelectorAll('.hero-slide');
-    const tracks = carousel.querySelectorAll('.progress-track');
-    if (slides.length === 0 || tracks.length === 0) return;
+    const fill = carousel.querySelector('#heroProgressFill');
+    if (slides.length === 0 || !fill) return;
 
     const SLIDE_DURATION = 5000; // 5 secondes par slide
     let currentIndex = 0;
     let timer = null;
     let isPaused = false;
 
-    function resetFill(track) {
-        const fill = track.querySelector('.progress-fill');
+    function resetFill() {
         fill.classList.remove('filling');
+        fill.style.transitionDuration = '0ms';
         fill.style.width = '0%';
     }
 
-    function playFill(track) {
-        const fill = track.querySelector('.progress-fill');
-        fill.style.transitionDuration = `${SLIDE_DURATION}ms`;
+    function playFill() {
+        // Double requestAnimationFrame : garantit que le navigateur applique bien le width:0%
+        // avant de relancer la transition vers 100%, sinon elle peut être ignorée dans le même frame.
         requestAnimationFrame(() => {
-            fill.classList.add('filling');
-            fill.style.width = '100%';
+            requestAnimationFrame(() => {
+                fill.style.transitionDuration = `${SLIDE_DURATION}ms`;
+                fill.classList.add('filling');
+                fill.style.width = '100%';
+            });
         });
     }
 
     function goToSlide(index) {
         slides[currentIndex].classList.remove('active');
         slides[currentIndex].setAttribute('aria-hidden', 'true');
-        resetFill(tracks[currentIndex]);
 
         currentIndex = index;
 
         slides[currentIndex].classList.add('active');
         slides[currentIndex].setAttribute('aria-hidden', 'false');
-        playFill(tracks[currentIndex]);
+
+        resetFill();
+        playFill();
     }
 
     function next() {
@@ -140,17 +144,9 @@ function initHeroCarousel() {
         }, SLIDE_DURATION);
     }
 
-    tracks.forEach((track) => {
-        track.addEventListener('click', () => {
-            const index = parseInt(track.dataset.index, 10);
-            goToSlide(index);
-            startAutoplay();
-        });
-    });
-
     carousel.addEventListener('mouseenter', () => { isPaused = true; });
     carousel.addEventListener('mouseleave', () => { isPaused = false; });
 
-    playFill(tracks[0]);
+    playFill();
     startAutoplay();
 }

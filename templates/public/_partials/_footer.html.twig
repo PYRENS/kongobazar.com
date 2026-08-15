@@ -55,7 +55,7 @@
                 <div class="footer-mosaic">
                     <div class="footer-mosaic-grid">
                         {% for ad in footerMosaicAds|slice(0, 6) %}
-                            <a href="{{ path('ads_click', { id: ad.id }) }}" class="footer-mosaic-item">
+                            <a {% if ad.targetUrl %}href="{{ path('ads_click', { id: ad.id, zoneKey: 'footer_mosaic' }) }}"{% endif %} class="footer-mosaic-item{{ ad.targetUrl ? ' ad-clickable' : '' }}">
                                 <img src="{{ vich_uploader_asset(ad, 'imageFile') }}" alt="{{ ad.title }}" loading="lazy">
                             </a>
                         {% endfor %}

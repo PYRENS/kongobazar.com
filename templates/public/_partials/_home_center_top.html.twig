@@ -6,7 +6,8 @@
      - centerAdBanner: Advertisement|null (zoneKey homepage_center_banner)
    ========================================================================== #}
 {% if promoStrip is defined and promoStrip %}
-    <a href="{{ path('ads_click', { id: promoStrip.id }) }}" class="home-promo-strip">
+twig
+    <a {% if promoStrip.targetUrl %}href="{{ path('ads_click', { id: promoStrip.id, zoneKey: 'homepage_promo_strip' }) }}"{% endif %} class="home-promo-strip{{ promoStrip.targetUrl ? ' ad-clickable' : '' }}">
         <img src="{{ vich_uploader_asset(promoStrip, 'imageFile') }}" alt="{{ promoStrip.title }}" loading="lazy">
     </a>
 {% endif %}
@@ -60,7 +61,7 @@
 </section>
 
 {% if centerAdBanner is defined and centerAdBanner %}
-    <a href="{{ path('ads_click', { id: centerAdBanner.id }) }}" class="home-center-banner">
+    <a {% if centerAdBanner.targetUrl %}href="{{ path('ads_click', { id: centerAdBanner.id, zoneKey: 'homepage_center_banner' }) }}"{% endif %} class="home-center-banner{{ centerAdBanner.targetUrl ? ' ad-clickable' : '' }}">
         <img src="{{ vich_uploader_asset(centerAdBanner, 'imageFile') }}" alt="{{ centerAdBanner.title }}" loading="lazy">
     </a>
 {% endif %}

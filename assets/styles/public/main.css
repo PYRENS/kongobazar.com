@@ -735,12 +735,15 @@
 }
 .hero-carousel-progress {
     position: absolute;
-    top: 12px;
-    left: 12px;
-    right: 12px;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
     z-index: 10;
     display: flex;
     gap: 6px;
+    padding: 0;
+    margin: 0;
 }
 .progress-track {
     flex: 1;
@@ -768,10 +771,14 @@
     background-size: cover;
     background-position: center;
     opacity: 0;
+    pointer-events: none;
     transition: opacity 0.6s ease;
     display: block;
 }
-.hero-slide.active { opacity: 1; }
+.hero-slide.active {
+    opacity: 1;
+    pointer-events: auto;
+}
 
 .hero-side-ads {
     display: flex;
@@ -1251,4 +1258,22 @@
     .hero-carousel { min-height: 260px; }
     .hero-side-ads { flex-direction: row; }
     .social-float { display: none; }
+}
+
+.ad-clickable {
+    position: relative;
+    display: block;
+    cursor: pointer;
+}
+.ad-clickable::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0);
+    transition: background 0.2s ease;
+    pointer-events: none;
+    border-radius: inherit;
+}
+.ad-clickable:hover::after {
+    background: rgba(0, 0, 0, 0.12);
 }

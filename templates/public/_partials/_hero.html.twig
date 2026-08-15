@@ -51,16 +51,13 @@
     <div class="hero-carousel" id="heroCarousel">
         {% if heroSlides is defined and heroSlides|length > 0 %}
             <div class="hero-carousel-progress">
-                {% for ad in heroSlides %}
-                    <button class="progress-track" type="button" data-index="{{ loop.index0 }}"
-                            aria-label="{{ 'hero.go_to_slide'|trans({'%number%': loop.index}) }}">
-                        <span class="progress-fill"></span>
-                    </button>
-                {% endfor %}
+                <div class="progress-track">
+                    <span class="progress-fill" id="heroProgressFill"></span>
+                </div>
             </div>
             <div class="hero-carousel-slides">
                 {% for ad in heroSlides %}
-                    <a href="{{ path('ads_click', { id: ad.id }) }}"
+                    <a {% if ad.targetUrl %}href="{{ path('ads_click', { id: ad.id, zoneKey: 'homepage_hero_main' }) }}"{% endif %}
                        class="hero-slide{{ loop.first ? ' active' : '' }}"
                        style="background-image:url('{{ vich_uploader_asset(ad, 'imageFile') }}')"
                        aria-hidden="{{ loop.first ? 'false' : 'true' }}">
@@ -72,12 +69,12 @@
 
     <div class="hero-side-ads">
         {% if sideAdTop is defined and sideAdTop %}
-            <a href="{{ path('ads_click', { id: sideAdTop.id }) }}" class="hero-side-ad">
+            <a {% if sideAdTop.targetUrl %}href="{{ path('ads_click', { id: sideAdTop.id, zoneKey: 'homepage_hero_side_top' }) }}"{% endif %} class="hero-side-ad{{ sideAdTop.targetUrl ? ' ad-clickable' : '' }}">
                 <img src="{{ vich_uploader_asset(sideAdTop, 'imageFile') }}" alt="{{ sideAdTop.title }}" loading="lazy">
             </a>
         {% endif %}
         {% if sideAdBottom is defined and sideAdBottom %}
-            <a href="{{ path('ads_click', { id: sideAdBottom.id }) }}" class="hero-side-ad">
+            <a {% if sideAdBottom.targetUrl %}href="{{ path('ads_click', { id: sideAdBottom.id, zoneKey: 'homepage_hero_side_bottom' }) }}"{% endif %} class="hero-side-ad{{ sideAdBottom.targetUrl ? ' ad-clickable' : '' }}">
                 <img src="{{ vich_uploader_asset(sideAdBottom, 'imageFile') }}" alt="{{ sideAdBottom.title }}" loading="lazy">
             </a>
         {% endif %}

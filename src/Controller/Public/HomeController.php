@@ -24,6 +24,7 @@ class HomeController extends AbstractController
         CategoryRepository $categoryRepository,
         ProductRepository $productRepository,
         AdvertisementRepository $advertisementRepository,
+        \App\Service\AdZonePicker $adZonePicker,
         BrandRepository $brandRepository,
         BlogPostRepository $blogPostRepository,
         CustomMenuItemRepository $customMenuItemRepository,
@@ -42,20 +43,21 @@ class HomeController extends AbstractController
 
         // --- Hero ---
         $heroSlides = $advertisementRepository->findActiveByZone('homepage_hero_main', 'public');
-        $sideAdTop = $advertisementRepository->findOneActiveByZone('homepage_hero_side_top', 'public');
-        $sideAdBottom = $advertisementRepository->findOneActiveByZone('homepage_hero_side_bottom', 'public');
+        $adZonePicker->recordImpressions($heroSlides, 'homepage_hero_main');
+        $sideAdTop = $adZonePicker->pick('homepage_hero_side_top', 'public');
+        $sideAdBottom = $adZonePicker->pick('homepage_hero_side_bottom', 'public');
 
         // --- Colonne gauche ---
-        $adSidebarTop = $advertisementRepository->findOneActiveByZone('sidebar_top', 'public');
-        $adSidebarMiddle = $advertisementRepository->findOneActiveByZone('sidebar_middle', 'public');
+        $adSidebarTop = $adZonePicker->pick('sidebar_top', 'public');
+        $adSidebarMiddle = $adZonePicker->pick('sidebar_middle', 'public');
         $bestSellers = $productRepository->findBestSellersInStock(8);
         $newArrivals = $productRepository->findNewArrivals(8);
         $latestPost = $blogPostRepository->findLatestPublished();
 
         // --- Centre : promo + deals ---
-        $promoStrip = $advertisementRepository->findOneActiveByZone('homepage_promo_strip', 'public');
+        $promoStrip = $adZonePicker->pick('homepage_promo_strip', 'public');
         $dealsProducts = $productRepository->findActiveDeals(4);
-        $centerAdBanner = $advertisementRepository->findOneActiveByZone('homepage_center_banner', 'public');
+        $centerAdBanner = $adZonePicker->pick('homepage_center_banner', 'public');
 
         // --- Articles tendances ---
         $trendingTabCategories = $categoryRepository->findFeaturedHomepageTabs();
@@ -98,9 +100,9 @@ class HomeController extends AbstractController
 
         // --- Popular Tags ---
         $featuredBrands = $brandRepository->findFeaturedHomepage();
-        $adLifestyleLeft = $advertisementRepository->findOneActiveByZone('homepage_lifestyle_left', 'public');
-        $adLifestyleCenter = $advertisementRepository->findOneActiveByZone('homepage_lifestyle_center', 'public');
-        $adLifestyleRight = $advertisementRepository->findOneActiveByZone('homepage_lifestyle_right', 'public');
+        $adLifestyleLeft = $adZonePicker->pick('homepage_lifestyle_left', 'public');
+        $adLifestyleCenter = $adZonePicker->pick('homepage_lifestyle_center', 'public');
+        $adLifestyleRight = $adZonePicker->pick('homepage_lifestyle_right', 'public');
 
         // --- Most Viewed ---
         $mostViewedProducts = $productViewLogRepository->findMostVisited(7, 8);
@@ -114,14 +116,16 @@ class HomeController extends AbstractController
         for ($i = 1; $i <= 8; $i++) {
             $footerColumns["footer_col_{$i}"] = $customMenuItemRepository->findByLocationAndSpace("footer_col_{$i}", 'public');
         }
-        $footerSocialAd = $advertisementRepository->findOneActiveByZone('footer_social_banner', 'public');
+        $footerSocialAd = $adZonePicker->pick('footer_social_banner', 'public');
         $footerBrands = $brandRepository->findFeaturedHomepage(); // réutilisé pour le bandeau de mots-clés
         $footerMosaicAds = $advertisementRepository->findActiveByZone('footer_mosaic', 'public'); // plusieurs photos
-        $footerCallUsPhoto = $advertisementRepository->findOneActiveByZone('footer_callus_photo', 'public');
+        $adZonePicker->recordImpressions($footerMosaicAds, 'footer_mosaic');
+        $footerCallUsPhoto = $adZonePicker->pick('footer_callus_photo', 'public');
         $footerBottomLinks = $customMenuItemRepository->findByLocationAndSpace('footer_bottom_links', 'public');
 
         // --- Mega menu (utilisé dans le header, mêmes rootCategories) ---
         $megaMenuAds = $advertisementRepository->findActiveByZone('mega_menu_catalogue', 'public');
+        $adZonePicker->recordImpressions($megaMenuAds, 'mega_menu_catalogue');
 
         return $this->render('public/home.html.twig', [  
             'heroSlides' => $heroSlides,

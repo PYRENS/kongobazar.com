@@ -1,0 +1,116 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Réglage des zones publicitaires{% endblock %}
+{% block page_icon %}bi-shuffle{% endblock %}
+{% block page_title %}Réglage des zones publicitaires{% endblock %}
+
+{% block body %}
+    <div class="d-flex align-items-center gap-2 mb-3">
+        <a href="{{ path('manage_ads_index') }}" class="btn btn-sm btn-outline-secondary">← Retour aux publicités</a>
+
+        <select id="pageGroupFilter" class="form-select" style="max-width:280px;">
+            <option value="">— Toutes les pages —</option>
+            {% for key, label in pageGroups %}
+                <option value="{{ key }}">{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <form method="post" action="{{ path('manage_ad_zones_save') }}">
+        {% for row in rows %}
+            <div class="admin-card zone-row-card" data-page-group="{{ row.pageGroup }}">
+                <h6>
+                    {{ row.zoneKey }}
+                    <small class="text-muted fw-normal">— {{ pageGroups[row.pageGroup] ?? row.pageGroup }}</small>
+                    {% if row.width and row.height %}
+                        <small class="text-muted fw-normal">({{ row.width }}×{{ row.height }})</small>
+                    {% endif %}
+                </h6>
+
+                {% if row.candidates|length == 0 %}
+                    <p class="text-muted mb-0">Aucune publicité active actuellement sur cette zone.</p>
+                {% else %}
+                    <div class="d-flex align-items-center gap-3 flex-wrap zone-controls" data-zone="{{ row.zoneKey }}">
+                        <div class="form-check">
+                            <input type="radio" name="mode_{{ row.zoneKey }}" value="random" class="form-check-input zone-mode-radio" id="mode_random_{{ row.zoneKey }}" {{ row.mode == 'random' ? 'checked' : '' }}>
+                            <label class="form-check-label" for="mode_random_{{ row.zoneKey }}">Aléatoire</label>
+                        </div>
+                        <div class="form-check">
+                            <input type="radio" name="mode_{{ row.zoneKey }}" value="fixed" class="form-check-input zone-mode-radio" id="mode_fixed_{{ row.zoneKey }}" {{ row.mode == 'fixed' ? 'checked' : '' }}>
+                            <label class="form-check-label" for="mode_fixed_{{ row.zoneKey }}">Fixe</label>
+                        </div>
+
+                        <select name="fixed_{{ row.zoneKey }}" class="form-select zone-fixed-select" style="max-width:300px;display:{{ row.mode == 'fixed' ? 'block' : 'none' }};">
+                            <option value="">— Choisir la bannière fixe —</option>
+                            {% for ad in row.candidates %}
+                                <option value="{{ ad.id }}" {{ row.fixedAdvertisementId == ad.id ? 'selected' : '' }}>
+                                    {{ ad.title }} ({{ ad.impressionCount }} affichages, {{ ad.clickCount }} clics)
+                                </option>
+                            {% endfor %}
+                        </select>
+
+                        <button type="submit" class="btn btn-sm btn-success zone-save-btn" style="display:none;"><i class="bi bi-check-lg"></i> Enregistrer</button>
+                    </div>
+
+                    <table class="table table-sm mt-3 mb-0 zone-stats-table">
+                        <thead>
+                            <tr>
+                                <th>Bannière active sur cette zone</th>
+                                <th style="width:120px;">Affichages</th>
+                                <th style="width:100px;">Clics</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ad in row.candidates %}
+                                <tr>
+                                    <td>{{ ad.title }}</td>
+                                    <td>{{ ad.impressionCount }}</td>
+                                    <td>{{ ad.clickCount }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </form>
+
+    <style>
+        .zone-stats-table th:nth-child(2),
+        .zone-stats-table td:nth-child(2) { width: 120px; text-align: right; }
+        .zone-stats-table th:nth-child(3),
+        .zone-stats-table td:nth-child(3) { width: 100px; text-align: right; }
+    </style>
+
+    <script>
+        document.querySelectorAll('.zone-controls').forEach(function (controls) {
+            const radios = controls.querySelectorAll('.zone-mode-radio');
+            const fixedSelect = controls.querySelector('.zone-fixed-select');
+            const saveBtn = controls.querySelector('.zone-save-btn');
+
+            function applyVisibility() {
+                const checked = controls.querySelector('.zone-mode-radio:checked');
+                fixedSelect.style.display = (checked && checked.value === 'fixed') ? 'block' : 'none';
+            }
+
+            radios.forEach(function (radio) {
+                radio.addEventListener('change', function () {
+                    applyVisibility();
+                    saveBtn.style.display = 'inline-block';
+                });
+            });
+
+            fixedSelect.addEventListener('change', function () {
+                saveBtn.style.display = 'inline-block';
+            });
+        });
+
+        const pageGroupFilter = document.getElementById('pageGroupFilter');
+        pageGroupFilter.addEventListener('change', function () {
+            const value = this.value;
+            document.querySelectorAll('.zone-row-card').forEach(function (card) {
+                card.style.display = (!value || card.dataset.pageGroup === value) ? '' : 'none';
+            });
+        });
+    </script>
+{% endblock %}

@@ -71,7 +71,7 @@
             {% endfor %}
 
             {% if blockBanner is defined and blockBanner %}
-                <a href="{{ path('ads_click', { id: blockBanner.id }) }}" class="category-block-banner">
+                <a {% if blockBanner.targetUrl %}href="{{ path('ads_click', { id: blockBanner.id, zoneKey: blockBanner.zoneKey }) }}"{% endif %} class="category-block-banner{{ blockBanner.targetUrl ? ' ad-clickable' : '' }}">
                     <img src="{{ vich_uploader_asset(blockBanner, 'imageFile') }}" alt="{{ blockBanner.title }}" loading="lazy">
                 </a>
             {% endif %}

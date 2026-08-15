@@ -205,27 +205,55 @@ class CategoryManagementController extends AbstractController
     }
 
     #[Route('/categories/{id}', name: 'manage_categories_show', host: 'manage.kongobazar.com', methods: ['GET'])]
-    public function show(Category $category, Request $request, CategoryRepository $repository): Response
+    public function show(Category $category, Request $request, CategoryRepository $repository, \App\Repository\ProductRepository $productRepository): Response
     {
         $sortField = $request->query->get('sort', 'position');
         $sortDir = $request->query->get('dir', 'ASC');
         $searchTerm = $request->query->get('q');
+        $childPerPage = 15;
+        $childPage = max(1, (int) $request->query->get('cpage', 1));
 
-        $children = $repository->findChildrenOf($category->getId());
+        $productCategoryIds = array_merge(
+            [$category->getId()],
+            array_map(fn ($c) => $c->getId(), $category->getDescendantCategories())
+        );
+        $productTerm = $request->query->get('pq') ?: null;
+        $productStatus = $request->query->get('pstatus') ?: null;
+        $productCondition = $request->query->get('pcondition') ?: null;
+        $productPerPage = 15;
+        $productPage = max(1, (int) $request->query->get('ppage', 1));
+
+        $productTotal = $productRepository->countByCategoryScope($productCategoryIds, $productTerm, $productStatus, $productCondition);
+        $products = $productRepository->findByCategoryScope($productCategoryIds, $productTerm, $productStatus, $productCondition, $productPerPage, ($productPage - 1) * $productPerPage);
+
+        $allChildren = $repository->findChildrenOf($category->getId());
         if ($searchTerm) {
-            $children = array_values(array_filter(
-                $children,
+            $allChildren = array_values(array_filter(
+                $allChildren,
                 fn (Category $c) => str_contains(mb_strtolower($c->getName()), mb_strtolower($searchTerm))
             ));
         }
 
-        $childRows = $this->buildRows($children, $repository);
+        $childRows = $this->buildRows($allChildren, $repository);
         $childRows = $this->sortRows($childRows, $sortField, $sortDir);
+
+        $childTotal = count($childRows);
+        $childRows = array_slice($childRows, ($childPage - 1) * $childPerPage, $childPerPage);
 
         return $this->render('manage/categories/show.html.twig', [
             'category' => $category,
             'childRows' => $childRows,
             'searchTerm' => $searchTerm,
+            'childPage' => $childPage,
+            'childPages' => max(1, (int) ceil($childTotal / $childPerPage)),
+            'childTotal' => $childTotal,
+            'products' => $products,
+            'productTotal' => $productTotal,
+            'productPage' => $productPage,
+            'productPages' => max(1, (int) ceil($productTotal / $productPerPage)),
+            'productTerm' => $productTerm,
+            'productStatus' => $productStatus,
+            'productCondition' => $productCondition,
             'productCount' => $repository->countProductsIn(array_map(fn ($c) => $c->getId(), $category->getDescendantCategories())),
             'currentSort' => $sortField,
             'currentDir' => $sortDir,

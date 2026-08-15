@@ -77,12 +77,52 @@ class ProductRepository extends ServiceEntityRepository
         return $qb;
     }
 
+    /** @param int[] $categoryIds */
+    public function findByCategoryScope(array $categoryIds, ?string $term, ?string $status, ?string $condition, int $limit = 15, int $offset = 0): array
+    {
+        $qb = $this->buildScopeQuery($categoryIds, $term, $status, $condition);
+
+        return $qb->orderBy('p.createdAt', 'DESC')
+            ->setFirstResult($offset)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** @param int[] $categoryIds */
+    public function countByCategoryScope(array $categoryIds, ?string $term, ?string $status, ?string $condition): int
+    {
+        return (int) $this->buildScopeQuery($categoryIds, $term, $status, $condition)
+            ->select('COUNT(p.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /** @param int[] $categoryIds */
+    private function buildScopeQuery(array $categoryIds, ?string $term, ?string $status, ?string $condition)
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->andWhere('p.category IN (:categoryIds)')->setParameter('categoryIds', $categoryIds);
+
+        if ($term) {
+            $qb->andWhere('p.title LIKE :term OR p.reference LIKE :term')->setParameter('term', '%' . $term . '%');
+        }
+        if ($status) {
+            $qb->andWhere('p.status = :status')->setParameter('status', $status);
+        }
+        if ($condition) {
+            $qb->andWhere('p.condition = :condition')->setParameter('condition', $condition);
+        }
+
+        return $qb;
+    }
+
     /** @return Product[] */
     public function searchByCategoryAndTerm(int $categoryId, string $term, ?int $excludeId = null, int $limit = 15): array
     {
         $qb = $this->createQueryBuilder('p')
             ->andWhere('p.category = :categoryId')->setParameter('categoryId', $categoryId)
-            ->andWhere('p.title LIKE :term')->setParameter('term', '%' . $term . '%')
+            ->andWhere('p.title LIKE :term OR p.reference LIKE :term')->setParameter('term', '%' . $term . '%')
             ->setMaxResults($limit);
 
         if ($excludeId) {

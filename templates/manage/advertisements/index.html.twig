@@ -1,0 +1,116 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Publicités{% endblock %}
+{% block page_icon %}bi-megaphone{% endblock %}
+{% block page_title %}Publicités{% endblock %}
+
+{% block body %}
+    {% set statusLabels = {
+        'scheduled': 'Programmée',
+        'active': 'Active',
+        'paused': 'En pause',
+        'expired': 'Expirée',
+    } %}
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h4 mb-0">Publicités</h1>
+        <a href="{{ path('manage_ads_new') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Nouvelle publicité</a>
+    </div>
+
+    <form method="get" class="mb-3 d-flex align-items-center gap-2 flex-wrap">
+        <input type="text" name="q" class="form-control" style="max-width: 220px;" placeholder="Titre..." value="{{ searchTerm }}">
+        <select name="zone" class="form-select" style="max-width: 260px;">
+            <option value="">— Toutes zones —</option>
+            {% for key, info in zoneKeys %}
+                <option value="{{ key }}" {{ currentZone == key ? 'selected' : '' }}>{{ info.label }}</option>
+            {% endfor %}
+        </select>
+        <select name="status" class="form-select" style="max-width: 160px;">
+            <option value="">— Tous statuts —</option>
+            <option value="scheduled" {{ currentStatus == 'scheduled' ? 'selected' : '' }}>Programmée</option>
+            <option value="active" {{ currentStatus == 'active' ? 'selected' : '' }}>Active</option>
+            <option value="paused" {{ currentStatus == 'paused' ? 'selected' : '' }}>En pause</option>
+            <option value="expired" {{ currentStatus == 'expired' ? 'selected' : '' }}>Expirée</option>
+        </select>
+        <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-search"></i></button>
+    </form>
+
+    {% macro sortLink(field, label, currentSort, currentDir, currentParams) %}
+        {% set nextDir = (currentSort == field and currentDir == 'ASC') ? 'DESC' : 'ASC' %}
+        {% set params = currentParams|merge({sort: field, dir: nextDir}) %}
+        <a href="?{{ params|url_encode(true) }}" class="admin-sort-link">
+            {{ label }}
+            {% if currentSort == field %}
+                <i class="bi bi-caret-{{ currentDir == 'ASC' ? 'up' : 'down' }}-fill"></i>
+            {% else %}
+                <i class="bi bi-arrow-down-up admin-sort-icon-idle"></i>
+            {% endif %}
+        </a>
+    {% endmacro %}
+    {% import _self as self %}
+
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Image</th>
+                <th>Titre</th>
+                <th>{{ self.sortLink('dimension', 'Dimensions', currentSort, currentDir, app.request.query.all) }}</th>
+                <th>Description</th>
+                <th>{{ self.sortLink('zoneKey', 'Zone', currentSort, currentDir, app.request.query.all) }}</th>
+                <th>{{ self.sortLink('position', 'Position', currentSort, currentDir, app.request.query.all) }}</th>
+                <th>{{ self.sortLink('targetSpace', 'Espace', currentSort, currentDir, app.request.query.all) }}</th>
+                <th>{{ self.sortLink('startAt', 'Période', currentSort, currentDir, app.request.query.all) }}</th>
+                <th>{{ self.sortLink('status', 'Statut', currentSort, currentDir, app.request.query.all) }}</th>
+                <th>{{ self.sortLink('clicks', 'Clics', currentSort, currentDir, app.request.query.all) }}</th>
+                <th>{{ self.sortLink('isPaid', 'Payant', currentSort, currentDir, app.request.query.all) }}</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in adRows %}
+                {% set ad = row.ad %}
+                <tr>
+                    <td>
+                        {% if ad.imageName %}
+                            <img src="{{ vich_uploader_asset(ad, 'imageFile') }}" style="width:60px;height:36px;object-fit:cover;border-radius:4px;">
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ ad.title }}</td>
+                    <td>
+                        {% if row.width and row.height %}
+                            {{ row.width }}×{{ row.height }}
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if ad.description %}
+                            {{ ad.description|length > 60 ? ad.description|slice(0, 60) ~ '…' : ad.description }}
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ zoneKeys[ad.zoneKey].label ?? ad.zoneKey }}</td>
+                    <td>{{ ad.position ?? '—' }}</td>
+                    <td>{{ ad.targetSpace }}</td>
+                    <td>{{ ad.startAt ? ad.startAt|date('d/m/Y') : '—' }} → {{ ad.endAt ? ad.endAt|date('d/m/Y') : 'Sans fin' }}</td>
+                    <td>
+                        <span class="admin-badge admin-badge--{{ ad.status == 'active' ? 'active' : 'disabled' }}">{{ statusLabels[ad.status] ?? ad.status }}</span>
+                    </td>
+                    <td>{{ row.totalClicks }}</td>
+                    <td>{{ ad.isPaid ? (ad.priceAmountUsd ~ ' USD') : 'Non' }}</td>
+                    <td class="admin-actions">
+                        <a href="{{ path('manage_ads_edit', {id: ad.id}) }}" class="admin-btn admin-btn--outline"><i class="bi bi-pencil"></i></a>
+                        <form action="{{ path('manage_ads_delete', {id: ad.id}) }}" method="post" onsubmit="return confirm('Supprimer cette publicité ?');">
+                            <button type="submit" class="admin-btn admin-btn--outline"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="12" class="text-muted">Aucune publicité.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

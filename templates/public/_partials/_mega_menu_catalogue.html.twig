@@ -31,9 +31,8 @@
 
         {% set ads = mega_menu_ads() %}
         {% if ads|length > 0 %}
-            <div class="mega-menu-ads">
                 {% for ad in ads %}
-                    <a href="{{ path('ads_click', { id: ad.id }) }}" class="mega-menu-ad">
+                    <a {% if ad.targetUrl %}href="{{ path('ads_click', { id: ad.id, zoneKey: 'mega_menu_catalogue' }) }}"{% endif %} class="mega-menu-ad{{ ad.targetUrl ? ' ad-clickable' : '' }}">
                         <img src="{{ vich_uploader_asset(ad, 'imageFile') }}" alt="{{ ad.title }}" loading="lazy">
                     </a>
                 {% endfor %}

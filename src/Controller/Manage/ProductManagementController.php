@@ -47,6 +47,7 @@ class ProductManagementController extends AbstractController
         return $this->render('manage/products/index.html.twig', [
             'products' => $repository->findFiltered($term, $categoryId, $status, $condition, $sort, $dir, $page, $perPage),
             'categories' => $categoryRepository->findBy([], ['name' => 'ASC']),
+            'rootCategories' => $categoryRepository->findChildrenOf(null),
             'searchTerm' => $term,
             'currentCategory' => $categoryId,
             'currentStatus' => $status,

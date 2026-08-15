@@ -25,6 +25,12 @@ class Advertisement
     #[ORM\Column(length: 150)]
     private ?string $title = null; // libellé interne, pas forcément affiché
 
+    #[ORM\Column(length: 200, unique: true, nullable: true)]
+    private ?string $slug = null; // dérivé du titre + suffixe unique, utilisé dans l'URL de clic pour un aperçu de lien lisible
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $description = null; // note libre pour l'admin uniquement, jamais affichée publiquement
+
     #[Vich\UploadableField(mapping: 'ad_banners', fileNameProperty: 'imageName')]
     private ?File $imageFile = null;
 
@@ -46,14 +52,21 @@ class Advertisement
     #[ORM\Column]
     private ?\DateTimeImmutable $startAt = null;
 
-    #[ORM\Column]
-    private ?\DateTimeImmutable $endAt = null;
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $endAt = null; // null = pas de date de fin, la pub reste active indéfiniment
 
     #[ORM\Column(length: 20)]
     private ?string $status = 'scheduled'; // scheduled | active | expired | paused
 
     #[ORM\Column]
     private ?int $clickCount = 0;
+
+    #[ORM\Column]
+    private ?int $impressionCount = 0;
+
+    /** @var \Doctrine\Common\Collections\Collection<int, AdvertisementZonePlacement> */
+    #[ORM\OneToMany(targetEntity: AdvertisementZonePlacement::class, mappedBy: 'advertisement', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private \Doctrine\Common\Collections\Collection $zonePlacements;
 
     #[ORM\Column]
     private ?bool $isPaid = false;
@@ -75,6 +88,7 @@ class Advertisement
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
+        $this->zonePlacements = new \Doctrine\Common\Collections\ArrayCollection();
     }
 
     public function getId(): ?int
@@ -101,6 +115,28 @@ class Advertisement
     public function setTitle(string $title): static
     {
         $this->title = $title;
+        return $this;
+    }
+
+    public function getSlug(): ?string
+    {
+        return $this->slug;
+    }
+
+    public function setSlug(string $slug): static
+    {
+        $this->slug = $slug;
+        return $this;
+    }
+
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    public function setDescription(?string $description): static
+    {
+        $this->description = $description;
         return $this;
     }
 
@@ -192,7 +228,7 @@ class Advertisement
         return $this->endAt;
     }
 
-    public function setEndAt(\DateTimeImmutable $endAt): static
+    public function setEndAt(?\DateTimeImmutable $endAt): static
     {
         $this->endAt = $endAt;
 
@@ -223,6 +259,30 @@ class Advertisement
         return $this;
     }
 
+    public function incrementClickCount(): static
+    {
+        $this->clickCount = ($this->clickCount ?? 0) + 1;
+
+        return $this;
+    }
+
+    public function getImpressionCount(): ?int
+    {
+        return $this->impressionCount;
+    }
+
+    public function setImpressionCount(int $impressionCount): static
+    {
+        $this->impressionCount = $impressionCount;
+        return $this;
+    }
+
+    public function incrementImpressionCount(): static
+    {
+        $this->impressionCount = ($this->impressionCount ?? 0) + 1;
+        return $this;
+    }
+
     public function isPaid(): ?bool
     {
         return $this->isPaid;
@@ -250,12 +310,33 @@ class Advertisement
     public function isCurrentlyActive(): bool
     {
         $now = new \DateTimeImmutable();
-        return $this->status === 'active' && $this->startAt <= $now && $this->endAt > $now;
+        return $this->status === 'active' && $this->startAt <= $now && (null === $this->endAt || $this->endAt > $now);
     }
 
     public function getCreatedAt(): ?\DateTimeImmutable
     {
         return $this->createdAt;
+    }
+
+    /** @return \Doctrine\Common\Collections\Collection<int, AdvertisementZonePlacement> */
+    public function getZonePlacements(): \Doctrine\Common\Collections\Collection
+    {
+        return $this->zonePlacements;
+    }
+
+    public function addZonePlacement(AdvertisementZonePlacement $placement): static
+    {
+        if (!$this->zonePlacements->contains($placement)) {
+            $this->zonePlacements->add($placement);
+            $placement->setAdvertisement($this);
+        }
+        return $this;
+    }
+
+    public function removeZonePlacement(AdvertisementZonePlacement $placement): static
+    {
+        $this->zonePlacements->removeElement($placement);
+        return $this;
     }
 
     public function getRelatedCategory(): ?Category

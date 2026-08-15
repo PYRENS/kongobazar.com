@@ -1,0 +1,9 @@
+{% if totalPages > 1 %}
+    <div class="d-flex justify-content-between align-items-center mt-2">
+        {% set prevParams = app.request.query.all|merge({(paramName): max(1, currentPage - 1)}) %}
+        {% set nextParams = app.request.query.all|merge({(paramName): min(totalPages, currentPage + 1)}) %}
+        <a href="?{{ prevParams|url_encode(true) }}" class="admin-btn admin-btn--outline {{ currentPage <= 1 ? 'disabled' : '' }}">‹ Précédent</a>
+        <span class="text-muted">Page {{ currentPage }} / {{ totalPages }}</span>
+        <a href="?{{ nextParams|url_encode(true) }}" class="admin-btn admin-btn--outline {{ currentPage >= totalPages ? 'disabled' : '' }}">Suivant ›</a>
+    </div>
+{% endif %}

@@ -137,5 +137,61 @@
                 {% endfor %}
             </tbody>
         </table>
+
+        {% include 'manage/_partials/_pagination_links.html.twig' with {currentPage: childPage, totalPages: childPages, paramName: 'cpage'} %}
+    </div>
+
+    <div class="admin-card mt-3">
+        <h6><i class="bi bi-box-seam"></i> Produits de cette catégorie ({{ productTotal }})</h6>
+
+        <form method="get" class="mb-3 d-flex align-items-center gap-2 flex-wrap">
+            <input type="text" name="pq" class="form-control" style="max-width: 220px;" placeholder="Titre ou référence..." value="{{ productTerm }}">
+            <select name="pstatus" class="form-select" style="max-width: 160px;">
+                <option value="">— Tous statuts —</option>
+                <option value="active" {{ productStatus == 'active' ? 'selected' : '' }}>Actif</option>
+                <option value="draft" {{ productStatus == 'draft' ? 'selected' : '' }}>Brouillon</option>
+                <option value="sold" {{ productStatus == 'sold' ? 'selected' : '' }}>Vendu</option>
+                <option value="suspended" {{ productStatus == 'suspended' ? 'selected' : '' }}>Suspendu</option>
+            </select>
+            <select name="pcondition" class="form-select" style="max-width: 150px;">
+                <option value="">— Neuf/Occasion —</option>
+                <option value="new" {{ productCondition == 'new' ? 'selected' : '' }}>Neuf</option>
+                <option value="used" {{ productCondition == 'used' ? 'selected' : '' }}>Occasion</option>
+            </select>
+            <button type="submit" class="admin-btn admin-btn--outline"><i class="bi bi-search"></i></button>
+            <a href="{{ path('manage_products_index', {category: category.id}) }}" class="btn btn-sm btn-outline-secondary ms-auto">Voir tout dans Produits →</a>
+        </form>
+
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Titre</th>
+                    <th>Référence</th>
+                    <th>Vendeur</th>
+                    <th>Prix</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                    <tr>
+                        <td>{{ product.title }}</td>
+                        <td>{{ product.reference ?: '—' }}</td>
+                        <td>{{ product.sellerProfile ? product.sellerProfile.user.email : '—' }}</td>
+                        <td>{{ product.basePrice }} {{ product.currency }}</td>
+                        <td>{{ product.status }}</td>
+                        <td class="admin-actions">
+                            <a href="{{ path('manage_products_edit', {id: product.id}) }}" class="admin-btn admin-btn--outline"><i class="bi bi-eye"></i></a>
+                            <a href="{{ path('manage_products_edit', {id: product.id}) }}" class="admin-btn admin-btn--outline"><i class="bi bi-pencil"></i></a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="6" class="text-muted">Aucun produit.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% include 'manage/_partials/_pagination_links.html.twig' with {currentPage: productPage, totalPages: productPages, paramName: 'ppage'} %}
     </div>
 {% endblock %}
