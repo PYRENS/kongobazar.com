@@ -1,0 +1,36 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Réseaux sociaux{% endblock %}
+{% block page_icon %}bi-share{% endblock %}
+{% block page_title %}Réseaux sociaux flottants{% endblock %}
+
+{% block body %}
+<div class="admin-card mb-3">
+    <h5 class="mb-3">Visibilité selon la résolution</h5>
+    <form method="post" action="{{ path('manage_social_links_visibility') }}" class="d-flex gap-4 align-items-center flex-wrap">
+        <div class="form-check">
+            <input type="checkbox" name="show_desktop" value="1" class="form-check-input" id="showDesktop" {{ setting.showOnDesktop ? 'checked' : '' }}>
+            <label class="form-check-label" for="showDesktop">Desktop</label>
+        </div>
+        <div class="form-check">
+            <input type="checkbox" name="show_tablet" value="1" class="form-check-input" id="showTablet" {{ setting.showOnTablet ? 'checked' : '' }}>
+            <label class="form-check-label" for="showTablet">Tablette</label>
+        </div>
+        <div class="form-check">
+            <input type="checkbox" name="show_mobile" value="1" class="form-check-input" id="showMobile" {{ setting.showOnMobile ? 'checked' : '' }}>
+            <label class="form-check-label" for="showMobile">Mobile</label>
+        </div>
+        <button type="submit" class="admin-btn admin-btn--primary">Enregistrer</button>
+    </form>
+</div>
+
+<div class="admin-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Icônes</h5>
+        <a href="{{ path('manage_social_links_new') }}" class="admin-btn admin-btn--primary"><i class="bi bi-plus"></i> Ajouter</a>
+    </div>
+    <div id="socialLinksTable" data-live-table>
+        {% include 'manage/social_links/_table.html.twig' %}
+    </div>
+</div>
+{% endblock %}

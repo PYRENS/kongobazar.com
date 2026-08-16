@@ -10,13 +10,15 @@
 {% set cart = current_cart() %}
 {% set cartSummary = cart_summary() %}
 {# Icônes sociales flottantes, fixes sur le bord gauche #}
-<div class="social-float">
-    <a href="#" class="social-float-item fb" aria-label="Facebook"><i class="icon-facebook bi bi-facebook"></i></a>
-    <a href="#" class="social-float-item tw" aria-label="Twitter"><i class="icon-twitter bi bi-twitter-x"></i></a>
-    <a href="#" class="social-float-item gp" aria-label="Google+"><i class="icon-google bi bi-google"></i></a>
-    <a href="#" class="social-float-item pi" aria-label="Pinterest"><i class="icon-pinterest bi bi-pinterest"></i></a>
-    <a href="#" class="social-float-item ig" aria-label="Instagram"><i class="icon-instagram bi bi-instagram"></i></a>
+{% set socialSetting = social_float_setting() %}
+{% set socialLinks = social_links() %}
+{% if socialLinks|length > 0 %}
+<div class="social-float{{ socialSetting.showOnDesktop ? '' : ' social-float--hide-desktop' }}{{ socialSetting.showOnTablet ? '' : ' social-float--hide-tablet' }}{{ socialSetting.showOnMobile ? '' : ' social-float--hide-mobile' }}">
+    {% for link in socialLinks %}
+        <a href="{{ link.url }}" class="social-float-item" style="background:{{ link.colorHex }};" target="_blank" rel="noopener" aria-label="{{ link.platform }}"><i class="{{ link.iconClass }}"></i></a>
+    {% endfor %}
 </div>
+{% endif %}
 
 <header id="site-header" class="site-header">
     {# --- Barre d'info du haut --- #}

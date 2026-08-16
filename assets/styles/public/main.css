@@ -29,6 +29,9 @@
 /* --------------------------------------------------------------------------
    Conteneur
    -------------------------------------------------------------------------- */
+html, body {
+    overflow-x: hidden;
+}
 .container-kb {
     width: 100%;
     max-width: 1366px;
@@ -47,13 +50,25 @@
 .trends-bar-inner {
     padding-left: 0;
 }
+@media (max-width: 1366px) {
+    .top-bar-inner,
+    .main-header-inner {
+        padding-left: 8px;
+    }
+}
+@media (min-width: 768px) and (max-width: 991px) {
+    .top-bar-inner,
+    .main-header-inner {
+        padding-right: 8px;
+    }
+}
 
 /* --------------------------------------------------------------------------
    Icônes sociales flottantes (gauche)
    -------------------------------------------------------------------------- */
 .social-float {
     position: fixed;
-    top: 140px;
+    top: var(--social-float-top, 140px);
     left: 0;
     z-index: 900;
     display: flex;
@@ -67,11 +82,15 @@
     justify-content: center;
     color: #fff;
 }
-.social-float-item.fb { background: #3b5998; }
-.social-float-item.tw { background: #1da1f2; }
-.social-float-item.gp { background: #dd4b39; }
-.social-float-item.pi { background: #bd081c; }
-.social-float-item.ig { background: #c13584; }
+@media (min-width: 992px) {
+    .social-float--hide-desktop { display: none; }
+}
+@media (min-width: 768px) and (max-width: 991px) {
+    .social-float--hide-tablet { display: none; }
+}
+@media (max-width: 767px) {
+    .social-float--hide-mobile { display: none; }
+}
 
 /* --------------------------------------------------------------------------
    Header — barre d'info du haut
@@ -511,6 +530,7 @@
 .cat-tree--flat .cat-label {
     display: flex;
     align-items: center;
+    gap: 10px;
     padding: 12px 16px;
     font-weight: 600;
     text-decoration: none;
@@ -827,8 +847,7 @@
 
 .rayon-flyout-trigger { position: relative; }
 
-.rayon-label-with-arrow,
-.cat-tree--flat .cat-label {
+.rayon-label-with-arrow {
     justify-content: space-between;
 }
 .rayon-flyout-arrow {
@@ -1318,6 +1337,10 @@
 
 /*------------------------ */
 
+@media (min-width: 992px) {
+    body { padding-left: var(--social-float-width, 0px); }
+}
+
 @media (max-width: 991px) {
     .rayon-flyout { display: none !important; }
     .rayon-flyout-arrow { display: none; }
@@ -1327,7 +1350,10 @@
     .homepage-hero-row { grid-template-columns: 1fr; }
     .hero-carousel { min-height: 260px; }
     .hero-side-ads { flex-direction: row; }
-    .social-float { display: none; }
+    .hero-side-ad {
+        flex: 1;
+        min-width: 0;
+    }
 }
 
 .ad-clickable {
@@ -1346,4 +1372,19 @@
 }
 .ad-clickable:hover::after {
     background: rgba(0, 0, 0, 0.12);
+}
+
+@media (min-width: 992px) and (max-width: 1366px) {
+    .trends-bar-inner {
+        padding-left: 16px;
+    }
+    .rayons-sidebar {
+        margin-left: 16px;
+    }
+    .homepage-hero-row {
+        margin-right: 0;
+    }
+    .cart-trigger {
+        margin-right: 16px;
+    }
 }

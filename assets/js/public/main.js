@@ -2,13 +2,14 @@
    KongoBazar — JS du site public (site-front)
    Vanilla JS uniquement, pas de jQuery (allègement mobile-first).
    Sections : header au scroll, dropdown Site Setting, accordéon catégories,
-   hero carousel (bande de progression type "stories").
+   hero carousel (bande de progression type "stories"), icônes sociales flottantes.
    ========================================================================== */
 document.addEventListener('DOMContentLoaded', () => {
     initHeaderScroll();
     initSiteSettingDropdown();
     initDrillMenu();
     initHeroCarousel();
+    initSocialFloatPosition();
 });
 
 /* --------------------------------------------------------------------------
@@ -164,3 +165,22 @@ function initHeroCarousel() {
     playFill();
     startAutoplay();
 }
+
+/* --------------------------------------------------------------------------
+   Icônes sociales flottantes — position calculée dynamiquement sur la
+   hauteur réelle du header, au lieu d'un top fixe qui déborde dès que
+   le header change de hauteur (bandeau Tendances, etc.).
+   -------------------------------------------------------------------------- */
+function initSocialFloatPosition() {
+    const header = document.getElementById('site-header');
+    if (!header) return;
+
+    function updatePosition() {
+        document.documentElement.style.setProperty('--social-float-top', header.getBoundingClientRect().height + 'px');
+    }
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('load', updatePosition);
+}
+

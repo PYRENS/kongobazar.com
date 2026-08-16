@@ -1,0 +1,37 @@
+<table class="table admin-table">
+    <tbody>
+        {% for link in links %}
+            <tr class="{{ not link.active ? 'text-muted' : '' }}">
+                <td style="width: 50px; text-align:center; font-weight:600;">{{ loop.index }}</td>
+                <td style="width: 60px;">
+                    <form method="post" action="{{ path('manage_social_links_move', { id: link.id, direction: 'up' }) }}" style="display:inline;">
+                        <button type="submit" class="btn btn-sm btn-light"{{ loop.first ? ' disabled' }}><i class="bi bi-arrow-up"></i></button>
+                    </form>
+                    <form method="post" action="{{ path('manage_social_links_move', { id: link.id, direction: 'down' }) }}" style="display:inline;">
+                        <button type="submit" class="btn btn-sm btn-light"{{ loop.last ? ' disabled' }}><i class="bi bi-arrow-down"></i></button>
+                    </form>
+                </td>
+                <td style="width: 40px;">
+                    <span style="display:inline-flex; width:28px; height:28px; align-items:center; justify-content:center; border-radius:4px; background:{{ link.colorHex }}; color:#fff;">
+                        <i class="{{ link.iconClass }}"></i>
+                    </span>
+                </td>
+                <td>{{ link.platform }}</td>
+                <td><a href="{{ link.url }}" target="_blank" class="small text-truncate d-inline-block" style="max-width:250px;">{{ link.url }}</a></td>
+                <td style="width: 120px;">
+                    <form method="post" action="{{ path('manage_social_links_toggle', { id: link.id }) }}">
+                        <button type="submit" class="admin-btn {{ link.active ? 'admin-btn--outline' : 'admin-btn--primary' }}">
+                            {{ link.active ? 'Actif' : 'Inactif' }}
+                        </button>
+                    </form>
+                </td>
+                <td style="width: 200px; white-space: nowrap;">
+                    <a href="{{ path('manage_social_links_edit', { id: link.id }) }}" class="admin-btn admin-btn--outline" style="display:inline-block;">Modifier</a>
+                    <form method="post" action="{{ path('manage_social_links_delete', { id: link.id }) }}" style="display:inline;" onsubmit="return confirm('Supprimer ce réseau social ?');">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Suppr.</button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>

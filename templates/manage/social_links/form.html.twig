@@ -1,0 +1,35 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}{{ link ? 'Modifier' : 'Ajouter' }} un réseau social{% endblock %}
+{% block page_icon %}bi-share{% endblock %}
+{% block page_title %}{{ link ? 'Modifier' : 'Ajouter' }} un réseau social{% endblock %}
+
+{% block body %}
+<div class="admin-card" style="max-width:500px;">
+    <form method="post">
+        <div class="mb-3">
+            <label class="form-label">Nom (ex. Facebook, TikTok, WhatsApp...)</label>
+            <input type="text" name="platform" class="form-control" value="{{ link ? link.platform : '' }}" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Classe d'icône Bootstrap Icons (ex. bi bi-facebook)</label>
+            <input type="text" name="icon_class" class="form-control" value="{{ link ? link.iconClass : 'bi bi-facebook' }}" required>
+            <small class="text-muted">Liste complète : <a href="https://icons.getbootstrap.com" target="_blank">icons.getbootstrap.com</a></small>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Couleur de fond</label>
+            <input type="color" name="color_hex" class="form-control form-control-color" value="{{ link ? link.colorHex : '#3b5998' }}">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Lien</label>
+            <input type="url" name="url" class="form-control" placeholder="https://..." value="{{ link ? link.url : '' }}" required>
+        </div>
+        <div class="mb-3 form-check">
+            <input type="checkbox" name="active" value="1" class="form-check-input" id="linkActive" {{ not link or link.active ? 'checked' : '' }}>
+            <label class="form-check-label" for="linkActive">Actif</label>
+        </div>
+        <button type="submit" class="admin-btn admin-btn--primary">Enregistrer</button>
+        <a href="{{ path('manage_social_links_index') }}" class="admin-btn admin-btn--outline">Annuler</a>
+    </form>
+</div>
+{% endblock %}

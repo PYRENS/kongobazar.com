@@ -8,6 +8,8 @@ use App\Repository\CategoryRepository;
 use App\Repository\CustomMenuItemRepository;
 use App\Service\AdZonePicker;
 use App\Service\MegaMenuResolver;
+use App\Repository\SocialFloatSettingRepository;
+use App\Repository\SocialLinkRepository;
 use App\Service\RayonFlyoutResolver;
 use App\Service\TrendingCategoryResolver;
 use App\Repository\ProductRepository;
@@ -27,6 +29,8 @@ class AppExtension extends AbstractExtension
         private readonly AdZonePicker $adZonePicker,
         private readonly MegaMenuResolver $megaMenuResolver,
         private readonly RayonFlyoutResolver $rayonFlyoutResolver,
+        private readonly SocialLinkRepository $socialLinkRepository,
+        private readonly SocialFloatSettingRepository $socialFloatSettingRepository,
         private readonly AdvertisementRepository $advertisementRepository,
         private readonly CartRepository $cartRepository,
         private readonly Security $security,
@@ -46,6 +50,8 @@ class AppExtension extends AbstractExtension
             new TwigFunction('mega_menu_ads', [$this, 'getMegaMenuAds']),
             new TwigFunction('mega_menu_categories', [$this, 'getMegaMenuCategories']),
             new TwigFunction('rayon_flyout_data', [$this, 'getRayonFlyoutData']),
+            new TwigFunction('social_links', [$this, 'getSocialLinks']),
+            new TwigFunction('social_float_setting', [$this, 'getSocialFloatSetting']),
             new TwigFunction('current_cart', [$this, 'getCurrentCart']),
             new TwigFunction('cart_summary', [$this, 'getCartSummary']),
             new TwigFunction('cart_display_subtotal', [$this, 'getCartDisplaySubtotal']),
@@ -88,6 +94,16 @@ class AppExtension extends AbstractExtension
     public function getRayonFlyoutData(\App\Entity\Category $rayon): array
     {
         return $this->rayonFlyoutResolver->resolve($rayon);
+    }
+
+    public function getSocialLinks(): array
+    {
+        return $this->socialLinkRepository->findActiveOrdered();
+    }
+
+    public function getSocialFloatSetting(): \App\Entity\SocialFloatSetting
+    {
+        return $this->socialFloatSettingRepository->getSingleton();
     }
 
     public function getMegaMenuAds(): array
