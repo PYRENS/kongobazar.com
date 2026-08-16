@@ -31,7 +31,12 @@ class AdvertisementManagementController extends AbstractController
         'footer_social_banner' => ['label' => 'Footer — bannière sociale', 'width' => null, 'height' => null],
         'footer_mosaic' => ['label' => 'Footer — mosaïque photos', 'width' => null, 'height' => null],
         'footer_callus_photo' => ['label' => 'Footer — photo "Appelez-nous"', 'width' => null, 'height' => null],
-        'mega_menu_catalogue' => ['label' => 'Méga-menu du header', 'width' => null, 'height' => null],
+        'mega_menu_catalogue_1' => ['label' => 'Méga-menu — bannière 1', 'width' => 320, 'height' => 180],
+        'mega_menu_catalogue_2' => ['label' => 'Méga-menu — bannière 2', 'width' => 320, 'height' => 180],
+        'mega_menu_catalogue_3' => ['label' => 'Méga-menu — bannière 3', 'width' => 320, 'height' => 180],
+        'mega_menu_catalogue_4' => ['label' => 'Méga-menu — bannière 4', 'width' => 320, 'height' => 180],
+        'rayon_flyout_ad_droite' => ['label' => 'Flyout rayon — position droite (liée à une catégorie précise)', 'width' => 220, 'height' => 400],
+        'rayon_flyout_ad_bas' => ['label' => 'Flyout rayon — position bas (liée à une catégorie précise)', 'width' => 480, 'height' => 120],
     ];
 
     #[Route('/publicites', name: 'manage_ads_index', host: 'manage.kongobazar.com', methods: ['GET'])]
@@ -254,6 +259,7 @@ class AdvertisementManagementController extends AbstractController
         }
         $ad->setTargetSpace($request->request->get('target_space', 'public'));
         $ad->setTargetUrl($request->request->get('target_url') ?: null);
+        $ad->setOpenInNewTab((bool) $request->request->get('open_in_new_tab'));
         $ad->setPosition($request->request->get('position') !== '' ? (int) $request->request->get('position') : null);
         $ad->setStatus($request->request->get('status', 'scheduled'));
 

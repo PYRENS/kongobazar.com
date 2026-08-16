@@ -5,9 +5,9 @@
      - dealsProducts: Product[] avec DiscountCampaign active
      - centerAdBanner: Advertisement|null (zoneKey homepage_center_banner)
    ========================================================================== #}
-{% if promoStrip is defined and promoStrip %}
+{% if promoStrip is defined and promoStrip and promoStrip.imageName %}
 twig
-    <a {% if promoStrip.targetUrl %}href="{{ path('ads_click', { id: promoStrip.id, zoneKey: 'homepage_promo_strip' }) }}"{% endif %} class="home-promo-strip{{ promoStrip.targetUrl ? ' ad-clickable' : '' }}">
+    <a {% if promoStrip.targetUrl %}href="{{ path('ads_click', { id: promoStrip.id, zoneKey: 'homepage_promo_strip' }) }}"{% endif %}{% if promoStrip.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="home-promo-strip{{ promoStrip.targetUrl ? ' ad-clickable' : '' }}">
         <img src="{{ vich_uploader_asset(promoStrip, 'imageFile') }}" alt="{{ promoStrip.title }}" loading="lazy">
     </a>
 {% endif %}
@@ -60,8 +60,8 @@ twig
     </div>
 </section>
 
-{% if centerAdBanner is defined and centerAdBanner %}
-    <a {% if centerAdBanner.targetUrl %}href="{{ path('ads_click', { id: centerAdBanner.id, zoneKey: 'homepage_center_banner' }) }}"{% endif %} class="home-center-banner{{ centerAdBanner.targetUrl ? ' ad-clickable' : '' }}">
+{% if centerAdBanner is defined and centerAdBanner and centerAdBanner.imageName %}
+    <a {% if centerAdBanner.targetUrl %}href="{{ path('ads_click', { id: centerAdBanner.id, zoneKey: 'homepage_center_banner' }) }}"{% endif %}{% if centerAdBanner.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="home-center-banner{{ centerAdBanner.targetUrl ? ' ad-clickable' : '' }}">
         <img src="{{ vich_uploader_asset(centerAdBanner, 'imageFile') }}" alt="{{ centerAdBanner.title }}" loading="lazy">
     </a>
 {% endif %}

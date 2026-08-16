@@ -1,0 +1,81 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Tendances{% endblock %}
+{% block page_icon %}bi-graph-up-arrow{% endblock %}
+{% block page_title %}Tendances{% endblock %}
+
+{% block body %}
+<div class="admin-card">
+    <h5 class="mb-3">Catégories épinglées <small class="text-muted">(affichées en premier, dans cet ordre)</small></h5>
+
+    {% if pinned|length == 0 %}
+        <p class="text-muted">Aucune catégorie épinglée. Le bandeau se remplit automatiquement avec les catégories les plus visitées (7 derniers jours).</p>
+    {% endif %}
+
+    <table class="table admin-table">
+        <tbody>
+            {% for category in pinned %}
+                <tr>
+                    <td style="width: 60px;">
+                        <form method="post" action="{{ path('manage_trending_move', { id: category.id, direction: 'up' }) }}" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-light"{{ loop.first ? ' disabled' }}><i class="bi bi-arrow-up"></i></button>
+                        </form>
+                        <form method="post" action="{{ path('manage_trending_move', { id: category.id, direction: 'down' }) }}" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-light"{{ loop.last ? ' disabled' }}><i class="bi bi-arrow-down"></i></button>
+                        </form>
+                    </td>
+                    <td><i class="bi {{ category.icon|default('bi-tag') }}"></i> {{ category.name }}</td>
+                    <td style="width: 120px;">
+                        <form method="post" action="{{ path('manage_trending_unpin', { id: category.id }) }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Détacher</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <hr class="my-4">
+
+    <h6>Épingler une catégorie</h6>
+    <form method="get" class="mb-3 d-flex gap-2" style="max-width: 400px;">
+        <input type="search" name="q" class="form-control" placeholder="Rechercher une catégorie..." value="{{ searchTerm }}">
+        <button type="submit" class="btn btn-outline-secondary btn-sm"><i class="bi bi-search"></i></button>
+    </form>
+
+    <div class="mb-3">
+        <small class="text-muted d-block mb-2">Ou par cascade — choisissez le niveau le plus profond auquel vous voulez épingler :</small>
+        <form method="post" action="{{ path('manage_trending_pin_cascade') }}" class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="category-picker" data-category-picker id="trendingCategoryPicker">
+                <select data-category-level="1" class="form-select" style="max-width:220px;">
+                    <option value="">— Choisir —</option>
+                    {% for root in rootCategories %}
+                        <option value="{{ root.id }}">{{ root.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <input type="hidden" name="catId" data-category-final-value value="">
+            <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-pin-angle"></i> Épingler cette catégorie</button>
+        </form>
+    </div>
+    {% if searchResults|length > 0 %}
+        <table class="table admin-table">
+            <tbody>
+                {% for category in searchResults %}
+                    {% if not category.trendingPinned %}
+                        <tr>
+                            <td>{{ category.name }}</td>
+                            <td style="width: 120px;">
+                                <form method="post" action="{{ path('manage_trending_pin', { id: category.id }) }}">
+                                    <button type="submit" class="btn btn-sm btn-primary">Épingler</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</div>
+
+{% endblock %}

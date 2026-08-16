@@ -31,6 +31,15 @@
             <li class="{{ app.request.attributes.get('_route') starts with 'manage_categories' ? 'active' : '' }}">
                 <a href="{{ path('manage_categories_index') }}"><i class="bi bi-tags"></i> Catégories</a>
             </li>
+            <li class="{{ app.request.attributes.get('_route') starts with 'manage_trending' ? 'active' : '' }}">
+                <a href="{{ path('manage_trending_index') }}"><i class="bi bi-graph-up-arrow"></i> Tendances</a>
+            </li>
+            <li class="{{ app.request.attributes.get('_route') starts with 'manage_mega_menu' ? 'active' : '' }}">
+                <a href="{{ path('manage_mega_menu_index') }}"><i class="bi bi-grid-3x3-gap"></i> Méga-menu (header)</a>
+            </li>
+            <li class="{{ app.request.attributes.get('_route') starts with 'manage_top_category' ? 'active' : '' }}">
+                <a href="{{ path('manage_top_category_index') }}"><i class="bi bi-star"></i> Top Catégorie</a>
+            </li>
             <li class="{{ app.request.attributes.get('_route') starts with 'manage_brands' ? 'active' : '' }}">
                 <a href="{{ path('manage_brands_index') }}"><i class="bi bi-award"></i> Marques</a>
             </li>
@@ -154,6 +163,7 @@
     <script src="{{ asset('js/manage/product-attribute-duplicate.js') }}"></script>
     <script src="{{ asset('js/manage/seller-attribute-widget.js') }}"></script>
     <script src="{{ asset('js/manage/part-brand-autocomplete.js') }}"></script>
+    <script src="{{ asset('js/manage/ad-category-autocomplete.js') }}"></script>
     <script src="{{ asset('js/manage/part-catalog-compatibility.js') }}"></script>
     <script>
         (function () {

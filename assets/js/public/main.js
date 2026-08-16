@@ -119,14 +119,18 @@ function initHeroCarousel() {
         });
     }
 
+    const dots = carousel.querySelectorAll('.hero-carousel-dot');
+
     function goToSlide(index) {
         slides[currentIndex].classList.remove('active');
         slides[currentIndex].setAttribute('aria-hidden', 'true');
+        if (dots[currentIndex]) dots[currentIndex].classList.remove('active');
 
         currentIndex = index;
 
         slides[currentIndex].classList.add('active');
         slides[currentIndex].setAttribute('aria-hidden', 'false');
+        if (dots[currentIndex]) dots[currentIndex].classList.add('active');
 
         resetFill();
         playFill();
@@ -146,6 +150,16 @@ function initHeroCarousel() {
 
     carousel.addEventListener('mouseenter', () => { isPaused = true; });
     carousel.addEventListener('mouseleave', () => { isPaused = false; });
+
+    dots.forEach((dot) => {
+        dot.addEventListener('click', () => {
+            const index = parseInt(dot.dataset.slideIndex, 10);
+            if (index !== currentIndex) {
+                goToSlide(index);
+                startAutoplay(); // relance le minuteur pour laisser le temps de voir le slide choisi
+            }
+        });
+    });
 
     playFill();
     startAutoplay();

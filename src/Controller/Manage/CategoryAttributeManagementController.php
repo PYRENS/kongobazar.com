@@ -97,7 +97,7 @@ class CategoryAttributeManagementController extends AbstractController
     public function searchCategories(Request $request, CategoryRepository $categoryRepository): Response
     {
         $term = trim((string) $request->query->get('q', ''));
-        $results = mb_strlen($term) >= 2 ? $categoryRepository->searchByName($term) : [];
+        $results = $term === '' || mb_strlen($term) >= 2 ? $categoryRepository->searchByName($term) : [];
 
         return $this->json(['results' => array_map(fn (Category $c) => [
             'id' => $c->getId(),

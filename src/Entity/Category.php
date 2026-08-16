@@ -78,6 +78,33 @@ class Category
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $updatedAt = null;
 
+    #[ORM\Column(options: ['default' => false])]
+    private bool $trendingPinned = false;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $trendingPinnedPosition = null;
+
+    #[ORM\Column(options: ['default' => true])]
+    private bool $megaMenuVisible = true;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $megaMenuPosition = null;
+
+    #[ORM\Column(options: ['default' => false])]
+    private bool $megaMenuChildFeatured = false;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $megaMenuChildPosition = null;
+
+    #[ORM\Column(options: ['default' => false])]
+    private bool $flyoutColumnFeatured = false;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $flyoutColumnPosition = null;
+
+    #[ORM\Column(length: 10, nullable: true)]
+    private ?string $flyoutAdPosition = null;
+
     public function __construct()
     {
         $this->children = new ArrayCollection();
@@ -349,6 +376,105 @@ class Category
     public function getUpdatedAt(): ?\DateTimeImmutable
     {
         return $this->updatedAt;
+    }
+
+    public function isTrendingPinned(): bool
+    {
+        return $this->trendingPinned;
+    }
+
+    public function setTrendingPinned(bool $trendingPinned): static
+    {
+        $this->trendingPinned = $trendingPinned;
+        return $this;
+    }
+
+    public function getTrendingPinnedPosition(): ?int
+    {
+        return $this->trendingPinnedPosition;
+    }
+
+    public function setTrendingPinnedPosition(?int $position): static
+    {
+        $this->trendingPinnedPosition = $position;
+        return $this;
+    }
+
+    public function isMegaMenuVisible(): bool
+    {
+        return $this->megaMenuVisible;
+    }
+
+    public function setMegaMenuVisible(bool $visible): static
+    {
+        $this->megaMenuVisible = $visible;
+        return $this;
+    }
+
+    public function getMegaMenuPosition(): ?int
+    {
+        return $this->megaMenuPosition;
+    }
+
+    public function setMegaMenuPosition(?int $position): static
+    {
+        $this->megaMenuPosition = $position;
+        return $this;
+    }
+
+    public function isMegaMenuChildFeatured(): bool
+    {
+        return $this->megaMenuChildFeatured;
+    }
+
+    public function setMegaMenuChildFeatured(bool $featured): static
+    {
+        $this->megaMenuChildFeatured = $featured;
+        return $this;
+    }
+
+    public function getMegaMenuChildPosition(): ?int
+    {
+        return $this->megaMenuChildPosition;
+    }
+
+    public function setMegaMenuChildPosition(?int $position): static
+    {
+        $this->megaMenuChildPosition = $position;
+        return $this;
+    }
+
+    public function isFlyoutColumnFeatured(): bool
+    {
+        return $this->flyoutColumnFeatured;
+    }
+
+    public function setFlyoutColumnFeatured(bool $featured): static
+    {
+        $this->flyoutColumnFeatured = $featured;
+        return $this;
+    }
+
+    public function getFlyoutColumnPosition(): ?int
+    {
+        return $this->flyoutColumnPosition;
+    }
+
+    public function setFlyoutColumnPosition(?int $position): static
+    {
+        $this->flyoutColumnPosition = $position;
+        return $this;
+    }
+
+    public function getFlyoutAdPosition(): ?string
+    {
+        return $this->flyoutAdPosition;
+    }
+
+    public function setFlyoutAdPosition(?string $position): static
+    {
+        $this->flyoutAdPosition = $position;
+        return $this;
     }
 
 }

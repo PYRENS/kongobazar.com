@@ -10,11 +10,11 @@
 <div class="mega-menu" id="megaMenuCatalogue">
     <div class="container-kb">
         <div class="mega-menu-columns">
-            {% for rayon in root_categories() %}
+            {% for entry in mega_menu_categories() %}
                 <div class="mega-menu-col">
-                    <h6 class="mega-menu-col-title"><i class="bi {{ rayon.icon|default('bi-tag') }}"></i> {{ rayon.name|upper }}</h6>
+                    <h6 class="mega-menu-col-title"><i class="bi {{ entry.rayon.icon|default('bi-tag') }}"></i> {{ entry.rayon.name|upper }}</h6>
                     <ul>
-                        {% for child in rayon.children|slice(0, 5) %}
+                        {% for child in entry.children %}
                             <li>
                                 <a href="{{ path('catalog_category', { slug: child.slug }) }}">
                                     {{ child.name }}
@@ -22,17 +22,18 @@
                             </li>
                         {% endfor %}
                     </ul>
-                    <a href="{{ path('catalog_rayon', { slug: rayon.slug }) }}" class="mega-menu-see-all">
+                    <a href="{{ path('catalog_rayon', { slug: entry.rayon.slug }) }}" class="mega-menu-see-all">
                         {{ 'menu.voir_tout'|trans }}
                     </a>
                 </div>
             {% endfor %}
         </div>
 
-        {% set ads = mega_menu_ads() %}
+        {% set ads = mega_menu_ads()|filter(ad => ad.imageName) %}
         {% if ads|length > 0 %}
+            <div class="mega-menu-ads">
                 {% for ad in ads %}
-                    <a {% if ad.targetUrl %}href="{{ path('ads_click', { id: ad.id, zoneKey: 'mega_menu_catalogue' }) }}"{% endif %} class="mega-menu-ad{{ ad.targetUrl ? ' ad-clickable' : '' }}">
+                    <a {% if ad.targetUrl %}href="{{ path('ads_click', { id: ad.id, zoneKey: ad.zoneKey }) }}"{% endif %}{% if ad.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="mega-menu-ad{{ ad.targetUrl ? ' ad-clickable' : '' }}">
                         <img src="{{ vich_uploader_asset(ad, 'imageFile') }}" alt="{{ ad.title }}" loading="lazy">
                     </a>
                 {% endfor %}

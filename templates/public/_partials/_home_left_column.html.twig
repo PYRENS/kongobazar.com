@@ -9,7 +9,7 @@
 <aside class="home-left-col">
 
     {% if adSidebarTop is defined and adSidebarTop %}
-        <a {% if adSidebarTop.targetUrl %}href="{{ path('ads_click', { id: adSidebarTop.id, zoneKey: 'sidebar_top' }) }}"{% endif %} class="home-ad-slot{{ adSidebarTop.targetUrl ? ' ad-clickable' : '' }}">
+        <a {% if adSidebarTop.targetUrl %}href="{{ path('ads_click', { id: adSidebarTop.id, zoneKey: 'sidebar_top' }) }}"{% endif %}{% if adSidebarTop.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="home-ad-slot{{ adSidebarTop.targetUrl ? ' ad-clickable' : '' }}">
             <img src="{{ vich_uploader_asset(adSidebarTop, 'imageFile') }}" alt="{{ adSidebarTop.title }}" loading="lazy">
         </a>
     {% endif %}
@@ -69,7 +69,7 @@
     </ul>
 
     {% if adSidebarMiddle is defined and adSidebarMiddle %}
-        <a {% if adSidebarMiddle.targetUrl %}href="{{ path('ads_click', { id: adSidebarMiddle.id, zoneKey: 'sidebar_middle' }) }}"{% endif %} class="home-ad-slot{{ adSidebarMiddle.targetUrl ? ' ad-clickable' : '' }}">
+        <a {% if adSidebarMiddle.targetUrl %}href="{{ path('ads_click', { id: adSidebarMiddle.id, zoneKey: 'sidebar_middle' }) }}"{% endif %}{% if adSidebarMiddle.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="home-ad-slot{{ adSidebarMiddle.targetUrl ? ' ad-clickable' : '' }}">
             <img src="{{ vich_uploader_asset(adSidebarMiddle, 'imageFile') }}" alt="{{ adSidebarMiddle.title }}" loading="lazy">
         </a>
     {% endif %}

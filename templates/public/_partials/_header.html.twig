@@ -29,9 +29,14 @@
                         <i class="bi bi-person"></i> {{ 'header.my_account'|trans }} <i class="bi bi-chevron-down"></i>
                     </button>
                     <div class="topbar-dropdown-panel">
-                        <a href="{{ path('account_index') }}"><i class="bi bi-box-arrow-in-right"></i> {{ 'header.login'|trans }}</a>
-                        <a href="{{ path('account_index') }}"><i class="bi bi-bag-check"></i> {{ 'header.order_history'|trans }}</a>
-                        <a href="{{ path('checkout_index') }}"><i class="bi bi-credit-card"></i> {{ 'header.checkout'|trans }}</a>
+                        {% if app.user %}
+                            <a href="{{ path('account_index') }}"><i class="bi bi-person-circle"></i> {{ 'header.my_space'|trans }}</a>
+                            <a href="{{ path('account_index') }}"><i class="bi bi-bag-check"></i> {{ 'header.order_history'|trans }}</a>
+                            <a href="{{ path('public_logout') }}"><i class="bi bi-box-arrow-right"></i> {{ 'header.logout'|trans }}</a>
+                        {% else %}
+                            <a href="{{ path('public_login') }}"><i class="bi bi-box-arrow-in-right"></i> {{ 'header.login'|trans }}</a>
+                            <a href="/register"><i class="bi bi-person-plus"></i> {{ 'header.register'|trans }}</a>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -179,7 +184,7 @@
                 <span class="trends-label">{{ 'home.trends.label'|trans }} <i class="bi bi-chevron-right"></i></span>
                 {% for item in trends %}
                     <a href="{{ path('catalog_category', { slug: item.category.slug }) }}">{{ item.category.name }}</a>
-                    {% if not loop.last %}<i class="bi bi-chevron-right trends-sep"></i>{% endif %}
+                    {% if not loop.last %}<span class="trends-sep">•</span>{% endif %}
                 {% endfor %}
             </div>
         </div>

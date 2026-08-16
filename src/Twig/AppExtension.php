@@ -5,8 +5,11 @@ namespace App\Twig;
 use App\Repository\AdvertisementRepository;
 use App\Repository\CartRepository;
 use App\Repository\CategoryRepository;
-use App\Repository\CategoryViewLogRepository;
 use App\Repository\CustomMenuItemRepository;
+use App\Service\AdZonePicker;
+use App\Service\MegaMenuResolver;
+use App\Service\RayonFlyoutResolver;
+use App\Service\TrendingCategoryResolver;
 use App\Repository\ProductRepository;
 use App\Service\CartService;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -19,8 +22,11 @@ class AppExtension extends AbstractExtension
     public function __construct(
         private readonly RequestStack $requestStack,
         private readonly CategoryRepository $categoryRepository,
-        private readonly CategoryViewLogRepository $categoryViewLogRepository,
         private readonly CustomMenuItemRepository $customMenuItemRepository,
+        private readonly TrendingCategoryResolver $trendingCategoryResolver,
+        private readonly AdZonePicker $adZonePicker,
+        private readonly MegaMenuResolver $megaMenuResolver,
+        private readonly RayonFlyoutResolver $rayonFlyoutResolver,
         private readonly AdvertisementRepository $advertisementRepository,
         private readonly CartRepository $cartRepository,
         private readonly Security $security,
@@ -38,6 +44,8 @@ class AppExtension extends AbstractExtension
             new TwigFunction('trending_categories', [$this, 'getTrendingCategories']),
             new TwigFunction('header_custom_menu', [$this, 'getHeaderCustomMenu']),
             new TwigFunction('mega_menu_ads', [$this, 'getMegaMenuAds']),
+            new TwigFunction('mega_menu_categories', [$this, 'getMegaMenuCategories']),
+            new TwigFunction('rayon_flyout_data', [$this, 'getRayonFlyoutData']),
             new TwigFunction('current_cart', [$this, 'getCurrentCart']),
             new TwigFunction('cart_summary', [$this, 'getCartSummary']),
             new TwigFunction('cart_display_subtotal', [$this, 'getCartDisplaySubtotal']),
@@ -64,7 +72,7 @@ class AppExtension extends AbstractExtension
 
     public function getTrendingCategories(): array
     {
-        return $this->categoryViewLogRepository->findMostVisited(7, 8);
+        return $this->trendingCategoryResolver->resolve();
     }
 
     public function getHeaderCustomMenu(): array
@@ -72,11 +80,25 @@ class AppExtension extends AbstractExtension
         return $this->customMenuItemRepository->findByLocationAndSpace('header_main', 'public');
     }
 
-    public function getMegaMenuAds(): array
+    public function getMegaMenuCategories(): array
     {
-        return $this->advertisementRepository->findActiveByZone('mega_menu_catalogue', 'public');
+        return $this->megaMenuResolver->resolve();
     }
 
+    public function getRayonFlyoutData(\App\Entity\Category $rayon): array
+    {
+        return $this->rayonFlyoutResolver->resolve($rayon);
+    }
+
+    public function getMegaMenuAds(): array
+    {
+        return array_filter([
+            $this->adZonePicker->pick('mega_menu_catalogue_1', 'public'),
+            $this->adZonePicker->pick('mega_menu_catalogue_2', 'public'),
+            $this->adZonePicker->pick('mega_menu_catalogue_3', 'public'),
+            $this->adZonePicker->pick('mega_menu_catalogue_4', 'public'),
+        ]);
+    }
     public function getCartSummary(): array
     {
         return $this->cartService->getSummary($this->cartService->getCurrentCart());

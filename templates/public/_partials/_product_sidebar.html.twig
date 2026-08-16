@@ -15,7 +15,7 @@
 
     {% set sidebarAd = product_sidebar_ad() %}
     {% if sidebarAd %}
-        <a {% if sidebarAd.targetUrl %}href="{{ path('ads_click', { id: sidebarAd.id, zoneKey: sidebarAd.zoneKey }) }}"{% endif %} class="home-ad-slot{{ sidebarAd.targetUrl ? ' ad-clickable' : '' }}">
+        <a {% if sidebarAd.targetUrl %}href="{{ path('ads_click', { id: sidebarAd.id, zoneKey: sidebarAd.zoneKey }) }}"{% endif %}{% if sidebarAd.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="home-ad-slot{{ sidebarAd.targetUrl ? ' ad-clickable' : '' }}">
             <img src="{{ vich_uploader_asset(sidebarAd, 'imageFile') }}" alt="{{ sidebarAd.title }}" loading="lazy">
         </a>
     {% endif %}

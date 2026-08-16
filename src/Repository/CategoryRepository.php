@@ -76,6 +76,71 @@ class CategoryRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    public function findPinnedTrending(): array
+    {
+        return $this->createQueryBuilder('c')
+            ->andWhere('c.trendingPinned = true')
+            ->andWhere('c.active = true')
+            ->orderBy('c.trendingPinnedPosition', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function findMegaMenuRayons(): array
+    {
+        return $this->createQueryBuilder('c')
+            ->andWhere('c.parent IS NULL')
+            ->andWhere('c.active = true')
+            ->andWhere('c.megaMenuVisible = true')
+            ->orderBy('c.megaMenuPosition', 'ASC')
+            ->addOrderBy('c.position', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function findAllRootCategoriesForMegaMenuAdmin(): array
+    {
+        return $this->createQueryBuilder('c')
+            ->andWhere('c.parent IS NULL')
+            ->orderBy('c.megaMenuPosition', 'ASC')
+            ->addOrderBy('c.position', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function findAllRootCategoriesForTopCategoryAdmin(): array
+    {
+        return $this->createQueryBuilder('c')
+            ->andWhere('c.parent IS NULL')
+            ->orderBy('c.topRayon', 'DESC')
+            ->addOrderBy('c.topRayonPosition', 'ASC')
+            ->addOrderBy('c.position', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function findMegaMenuFeaturedChildren(Category $rayon): array
+    {
+        return $this->createQueryBuilder('c')
+            ->andWhere('c.parent = :rayon')
+            ->andWhere('c.megaMenuChildFeatured = true')
+            ->setParameter('rayon', $rayon)
+            ->orderBy('c.megaMenuChildPosition', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function findFlyoutFeaturedColumns(Category $rayon): array
+    {
+        return $this->createQueryBuilder('c')
+            ->andWhere('c.parent = :rayon')
+            ->andWhere('c.flyoutColumnFeatured = true')
+            ->setParameter('rayon', $rayon)
+            ->orderBy('c.flyoutColumnPosition', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function findChildrenOf(?int $parentId, ?int $excludeId = null): array
     {
         $qb = $this->createQueryBuilder('c')->orderBy('c.position', 'ASC');

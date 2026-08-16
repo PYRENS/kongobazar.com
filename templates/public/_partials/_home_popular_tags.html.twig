@@ -22,19 +22,19 @@
 
         <div class="popular-tags-lifestyle">
             {% if adLifestyleLeft is defined and adLifestyleLeft %}
-                <a {% if adLifestyleLeft.targetUrl %}href="{{ path('ads_click', { id: adLifestyleLeft.id, zoneKey: 'homepage_lifestyle_left' }) }}"{% endif %} class="lifestyle-cell lifestyle-cell--side{{ adLifestyleLeft.targetUrl ? ' ad-clickable' : '' }}">
+                <a {% if adLifestyleLeft.targetUrl %}href="{{ path('ads_click', { id: adLifestyleLeft.id, zoneKey: 'homepage_lifestyle_left' }) }}"{% endif %}{% if adLifestyleLeft.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="lifestyle-cell lifestyle-cell--side{{ adLifestyleLeft.targetUrl ? ' ad-clickable' : '' }}">
                     <img src="{{ vich_uploader_asset(adLifestyleLeft, 'imageFile') }}" alt="{{ adLifestyleLeft.title }}" loading="lazy">
                 </a>
             {% endif %}
 
             {% if adLifestyleCenter is defined and adLifestyleCenter %}
-                <a {% if adLifestyleCenter.targetUrl %}href="{{ path('ads_click', { id: adLifestyleCenter.id, zoneKey: 'homepage_lifestyle_center' }) }}"{% endif %} class="lifestyle-cell lifestyle-cell--center{{ adLifestyleCenter.targetUrl ? ' ad-clickable' : '' }}">
+                <a {% if adLifestyleCenter.targetUrl %}href="{{ path('ads_click', { id: adLifestyleCenter.id, zoneKey: 'homepage_lifestyle_center' }) }}"{% endif %}{% if adLifestyleCenter.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="lifestyle-cell lifestyle-cell--center{{ adLifestyleCenter.targetUrl ? ' ad-clickable' : '' }}">
                     <img src="{{ vich_uploader_asset(adLifestyleCenter, 'imageFile') }}" alt="{{ adLifestyleCenter.title }}" loading="lazy">
                 </a>
             {% endif %}
 
             {% if adLifestyleRight is defined and adLifestyleRight %}
-                <a {% if adLifestyleRight.targetUrl %}href="{{ path('ads_click', { id: adLifestyleRight.id, zoneKey: 'homepage_lifestyle_right' }) }}"{% endif %} class="lifestyle-cell lifestyle-cell--side{{ adLifestyleRight.targetUrl ? ' ad-clickable' : '' }}">
+                <a {% if adLifestyleRight.targetUrl %}href="{{ path('ads_click', { id: adLifestyleRight.id, zoneKey: 'homepage_lifestyle_right' }) }}"{% endif %}{% if adLifestyleRight.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="lifestyle-cell lifestyle-cell--side{{ adLifestyleRight.targetUrl ? ' ad-clickable' : '' }}">
                     <img src="{{ vich_uploader_asset(adLifestyleRight, 'imageFile') }}" alt="{{ adLifestyleRight.title }}" loading="lazy">
                 </a>
             {% endif %}

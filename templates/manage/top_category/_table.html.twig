@@ -1,0 +1,44 @@
+<table class="table admin-table">
+    <tbody>
+        {% for rayon in rayons %}
+            <tr class="{{ not rayon.topRayon ? 'text-muted' : '' }}">
+                <td style="width: 50px; text-align:center; font-weight:600;">{{ rayon.topRayon ? loop.index : '—' }}</td>
+                <td style="width: 60px;">
+                    {% if rayon.topRayon %}
+                        <form method="post" action="{{ path('manage_top_category_move', { id: rayon.id, direction: 'up' }) }}" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-light"{{ loop.first ? ' disabled' }}><i class="bi bi-arrow-up"></i></button>
+                        </form>
+                        <form method="post" action="{{ path('manage_top_category_move', { id: rayon.id, direction: 'down' }) }}" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-light"{{ loop.last ? ' disabled' }}><i class="bi bi-arrow-down"></i></button>
+                        </form>
+                    {% endif %}
+                </td>
+                <td>
+                    <i class="bi {{ rayon.icon|default('bi-tag') }}"></i> {{ rayon.name }}
+                </td>
+                <td style="width: 200px;">
+                    <form method="post" action="{{ path('manage_top_category_toggle', { id: rayon.id }) }}">
+                        <button type="submit" class="admin-btn {{ rayon.topRayon ? 'admin-btn--outline' : 'admin-btn--primary' }}">
+                            <i class="bi {{ rayon.topRayon ? 'bi-star-fill' : 'bi-star' }}"></i>
+                            {{ rayon.topRayon ? 'Retirer de Top Rayons' : 'Ajouter à Top Rayons' }}
+                        </button>
+                    </form>
+                </td>
+                <td style="width: 110px;">
+                    {% if rayon.flyoutAdPosition == 'droite' %}
+                        <span class="badge bg-info text-dark"><i class="bi bi-layout-sidebar-inset-reverse"></i> Droite</span>
+                    {% elseif rayon.flyoutAdPosition == 'bas' %}
+                        <span class="badge bg-info text-dark"><i class="bi bi-layout-text-window-reverse"></i> Bas</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Aucune</span>
+                    {% endif %}
+                </td>
+                <td style="width: 160px;">
+                    <a href="{{ path('manage_top_category_flyout', { id: rayon.id }) }}" class="admin-btn admin-btn--outline">
+                        <i class="bi bi-grid-3x3-gap"></i> Méga-menu
+                    </a>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>

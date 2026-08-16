@@ -20,24 +20,32 @@
                     </a>
 
                     {% if rayon.children|length > 0 %}
-                        <div class="rayon-flyout">
-                            <div class="rayon-flyout-columns">
-                                {% for child in rayon.children|slice(0, 4) %}
-                                    <div class="rayon-flyout-col">
-                                        <h6>{{ child.name|upper }}</h6>
-                                        <ul>
-                                            {% for grandchild in child.children|slice(0, 6) %}
-                                                <li><a href="{{ path('catalog_category', { slug: grandchild.slug }) }}">{{ grandchild.name }}</a></li>
-                                            {% else %}
-                                                <li><a href="{{ path('catalog_category', { slug: child.slug }) }}">{{ 'menu.voir_tout'|trans }}</a></li>
-                                            {% endfor %}
-                                        </ul>
-                                    </div>
-                                {% endfor %}
+                        {% set flyoutData = rayon_flyout_data(rayon) %}
+                        <div class="rayon-flyout{{ flyoutData.ad and flyoutData.adPosition == 'bas' ? ' rayon-flyout--ad-bas' : '' }}{{ flyoutData.ad and flyoutData.adPosition == 'droite' ? ' rayon-flyout--ad-droite' : '' }}">
+                            <div class="rayon-flyout-main">
+                                <div class="rayon-flyout-columns">
+                                    {% for child in flyoutData.columns %}
+                                        <div class="rayon-flyout-col">
+                                            <h6>{{ child.name|upper }}</h6>
+                                            <ul>
+                                                {% for grandchild in child.children|slice(0, 6) %}
+                                                    <li><a href="{{ path('catalog_category', { slug: grandchild.slug }) }}">{{ grandchild.name }}</a></li>
+                                                {% else %}
+                                                    <li><a href="{{ path('catalog_category', { slug: child.slug }) }}">{{ 'menu.voir_tout'|trans }}</a></li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <a href="{{ path('catalog_rayon', { slug: rayon.slug }) }}" class="rayon-flyout-see-all">
+                                    {{ 'menu.voir_tout'|trans }} <i class="bi bi-arrow-right"></i>
+                                </a>
                             </div>
-                            <a href="{{ path('catalog_rayon', { slug: rayon.slug }) }}" class="rayon-flyout-see-all">
-                                {{ 'menu.voir_tout'|trans }} <i class="bi bi-arrow-right"></i>
-                            </a>
+                            {% if flyoutData.ad %}
+                                <a {% if flyoutData.ad.targetUrl %}href="{{ path('ads_click', { id: flyoutData.ad.id, zoneKey: flyoutData.ad.zoneKey }) }}"{% endif %}{% if flyoutData.ad.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="rayon-flyout-ad{{ flyoutData.ad.targetUrl ? ' ad-clickable' : '' }}">
+                                    <img src="{{ vich_uploader_asset(flyoutData.ad, 'imageFile') }}" alt="{{ flyoutData.ad.title }}" loading="lazy">
+                                </a>
+                            {% endif %}
                         </div>
                     {% endif %}
                 </li>
@@ -64,17 +72,24 @@
                     </a>
                 {% endfor %}
             </div>
+            {% if heroSlides|length > 1 %}
+                <div class="hero-carousel-dots" id="heroCarouselDots">
+                    {% for ad in heroSlides %}
+                        <button type="button" class="hero-carousel-dot{{ loop.first ? ' active' : '' }}" data-slide-index="{{ loop.index0 }}" aria-label="{{ 'header.hero.slide'|trans({'%number%': loop.index}) }}"></button>
+                    {% endfor %}
+                </div>
+            {% endif %}
         {% endif %}
     </div>
 
     <div class="hero-side-ads">
         {% if sideAdTop is defined and sideAdTop %}
-            <a {% if sideAdTop.targetUrl %}href="{{ path('ads_click', { id: sideAdTop.id, zoneKey: 'homepage_hero_side_top' }) }}"{% endif %} class="hero-side-ad{{ sideAdTop.targetUrl ? ' ad-clickable' : '' }}">
+            <a {% if sideAdTop.targetUrl %}href="{{ path('ads_click', { id: sideAdTop.id, zoneKey: 'homepage_hero_side_top' }) }}"{% endif %}{% if sideAdTop.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="hero-side-ad{{ sideAdTop.targetUrl ? ' ad-clickable' : '' }}">
                 <img src="{{ vich_uploader_asset(sideAdTop, 'imageFile') }}" alt="{{ sideAdTop.title }}" loading="lazy">
             </a>
         {% endif %}
         {% if sideAdBottom is defined and sideAdBottom %}
-            <a {% if sideAdBottom.targetUrl %}href="{{ path('ads_click', { id: sideAdBottom.id, zoneKey: 'homepage_hero_side_bottom' }) }}"{% endif %} class="hero-side-ad{{ sideAdBottom.targetUrl ? ' ad-clickable' : '' }}">
+            <a {% if sideAdBottom.targetUrl %}href="{{ path('ads_click', { id: sideAdBottom.id, zoneKey: 'homepage_hero_side_bottom' }) }}"{% endif %}{% if sideAdBottom.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="hero-side-ad{{ sideAdBottom.targetUrl ? ' ad-clickable' : '' }}">
                 <img src="{{ vich_uploader_asset(sideAdBottom, 'imageFile') }}" alt="{{ sideAdBottom.title }}" loading="lazy">
             </a>
         {% endif %}

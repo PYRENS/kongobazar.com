@@ -1,0 +1,18 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Méga-menu{% endblock %}
+{% block page_icon %}bi-grid-3x3-gap{% endblock %}
+{% block page_title %}Méga-menu — Catalogue{% endblock %}
+
+{% block body %}
+<div class="admin-card">
+    <p class="text-muted mb-3">
+        Coche/décoche pour afficher ou masquer un rayon dans le méga-menu du "Catalogue" (navbar du haut), et utilise les flèches pour changer l'ordre des colonnes.
+        Clique sur un rayon pour choisir ses sous-catégories mises en avant.
+    </p>
+
+    <div id="megaMenuTable" data-live-table>
+        {% include 'manage/mega_menu/_table.html.twig' %}
+    </div>
+</div>
+{% endblock %}

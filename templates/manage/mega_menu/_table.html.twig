@@ -1,0 +1,34 @@
+<table class="table admin-table">
+    <tbody>
+        {% for rayon in rayons %}
+            <tr class="{{ not rayon.megaMenuVisible ? 'text-muted' : '' }}">
+                <td style="width: 50px; text-align:center; font-weight:600;">{{ loop.index }}</td>
+                <td style="width: 60px;">
+                    <form method="post" action="{{ path('manage_mega_menu_move', { id: rayon.id, direction: 'up' }) }}" style="display:inline;">
+                        <button type="submit" class="btn btn-sm btn-light"{{ loop.first ? ' disabled' }}><i class="bi bi-arrow-up"></i></button>
+                    </form>
+                    <form method="post" action="{{ path('manage_mega_menu_move', { id: rayon.id, direction: 'down' }) }}" style="display:inline;">
+                        <button type="submit" class="btn btn-sm btn-light"{{ loop.last ? ' disabled' }}><i class="bi bi-arrow-down"></i></button>
+                    </form>
+                </td>
+                <td>
+                    <i class="bi {{ rayon.icon|default('bi-tag') }}"></i>
+                    <a href="{{ path('manage_mega_menu_children', { id: rayon.id }) }}">{{ rayon.name }}</a>
+                </td>
+                <td style="width: 160px;">
+                    <form method="post" action="{{ path('manage_mega_menu_toggle', { id: rayon.id }) }}">
+                        <button type="submit" class="admin-btn {{ rayon.megaMenuVisible ? 'admin-btn--outline' : 'admin-btn--primary' }}">
+                            <i class="bi {{ rayon.megaMenuVisible ? 'bi-eye-slash' : 'bi-eye' }}"></i>
+                            {{ rayon.megaMenuVisible ? 'Masquer' : 'Afficher' }}
+                        </button>
+                    </form>
+                </td>
+                <td style="width: 200px;">
+                    <a href="{{ path('manage_mega_menu_children', { id: rayon.id }) }}" class="admin-btn admin-btn--outline">
+                        <i class="bi bi-list-check"></i> Sous-catégories
+                    </a>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>

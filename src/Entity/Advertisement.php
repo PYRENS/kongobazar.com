@@ -40,6 +40,9 @@ class Advertisement
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $targetUrl = null; // lien de destination au clic
 
+    #[ORM\Column(options: ['default' => false])]
+    private bool $openInNewTab = false;
+
     #[ORM\Column(length: 20)]
     private ?string $targetSpace = null; // public | pro | store | relay | manage
 
@@ -171,7 +174,17 @@ class Advertisement
     public function setTargetUrl(?string $targetUrl): static
     {
         $this->targetUrl = $targetUrl;
+        return $this;
+    }
 
+    public function isOpenInNewTab(): bool
+    {
+        return $this->openInNewTab;
+    }
+
+    public function setOpenInNewTab(bool $openInNewTab): static
+    {
+        $this->openInNewTab = $openInNewTab;
         return $this;
     }
 

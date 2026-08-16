@@ -59,9 +59,17 @@
                 </div>
             </div>
 
-            <div class="mb-3">
-                <label class="form-label">Lien de destination</label>
-                <input type="url" name="target_url" class="form-control" placeholder="https://..." value="{{ ad ? ad.targetUrl : '' }}">
+            <div class="row mb-3">
+                <div class="col-md-8">
+                    <label class="form-label">Lien de destination</label>
+                    <input type="url" name="target_url" class="form-control" placeholder="https://..." value="{{ ad ? ad.targetUrl : '' }}">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <div class="form-check mb-2">
+                        <input type="checkbox" name="open_in_new_tab" id="openInNewTab" class="form-check-input" value="1" {{ ad and ad.openInNewTab ? 'checked' : '' }}>
+                        <label class="form-check-label" for="openInNewTab">Ouvrir dans une autre fenêtre</label>
+                    </div>
+                </div>
             </div>
 
             <div class="row">
@@ -77,13 +85,14 @@
             </div>
 
             <div class="mb-3">
-                <label class="form-label">Catégorie liée (optionnel — pour la zone "Bannière bas de bloc catégorie")</label>
-                <select name="related_category_id" class="form-select" style="max-width:400px;">
-                    <option value="">— Aucune —</option>
-                    {% for cat in categories %}
-                        <option value="{{ cat.id }}" {{ ad and ad.relatedCategory and ad.relatedCategory.id == cat.id ? 'selected' : '' }}>{{ cat.name }}</option>
-                    {% endfor %}
-                </select>
+                <label class="form-label">Catégorie liée (optionnel — pour les zones liées à une catégorie précise)</label>
+                <div class="position-relative" style="max-width:400px;">
+                    <input type="text" id="adCategorySearchInput" class="form-control" placeholder="Rechercher ou parcourir une catégorie..." autocomplete="off" style="padding-right:64px;" value="{{ ad and ad.relatedCategory ? ad.relatedCategory.name : '' }}">
+                    <button type="button" id="adCategoryClearBtn" class="btn-close" style="position:absolute; right:36px; top:50%; transform:translateY(-50%); {{ ad and ad.relatedCategory ? '' : 'display:none;' }}" aria-label="Effacer"></button>
+                    <button type="button" id="adCategoryToggleBtn" class="btn btn-sm" style="position:absolute; right:2px; top:2px; bottom:2px;"><i class="bi bi-chevron-down"></i></button>
+                    <input type="hidden" name="related_category_id" id="adCategoryIdInput" value="{{ ad and ad.relatedCategory ? ad.relatedCategory.id : '' }}">
+                    <div id="adCategorySearchResults" class="list-group position-absolute w-100" style="z-index:20; max-height:280px; overflow-y:auto; display:none;"></div>
+                </div>
             </div>
 
             <div class="mb-3 form-check">

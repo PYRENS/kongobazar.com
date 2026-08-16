@@ -1,0 +1,18 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Top Catégorie{% endblock %}
+{% block page_icon %}bi-star{% endblock %}
+{% block page_title %}Top Catégorie — sidebar "Les Rayons"{% endblock %}
+
+{% block body %}
+<div class="admin-card">
+    <p class="text-muted mb-3">
+        Coche/décoche pour afficher ou masquer un rayon dans la sidebar "Top Rayons" (page d'accueil), et utilise les flèches pour changer son ordre.
+        Clique sur "Méga-menu" pour configurer le flyout qui s'ouvre au survol de ce rayon.
+    </p>
+
+    <div id="topCategoryTable" data-live-table>
+        {% include 'manage/top_category/_table.html.twig' %}
+    </div>
+</div>
+{% endblock %}

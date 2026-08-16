@@ -85,15 +85,17 @@ class AdvertisementRepository extends ServiceEntityRepository
             ->execute();
     }
 
-    public function findOneActiveByCategory(Category $category, string $targetSpace): ?Advertisement
+    public function findOneActiveByZoneAndCategory(string $zoneKey, Category $category, string $targetSpace): ?Advertisement
     {
         $now = new \DateTimeImmutable();
         return $this->createQueryBuilder('a')
+            ->andWhere('a.zoneKey = :zoneKey')
             ->andWhere('a.relatedCategory = :category')
             ->andWhere('a.targetSpace = :space')
             ->andWhere('a.status = :status')
             ->andWhere('a.startAt <= :now')
             ->andWhere('a.endAt IS NULL OR a.endAt > :now')
+            ->setParameter('zoneKey', $zoneKey)
             ->setParameter('category', $category)
             ->setParameter('space', $targetSpace)
             ->setParameter('status', 'active')

@@ -37,6 +37,16 @@
     padding-left: 16px;
     padding-right: 16px;
 }
+.top-bar-inner,
+.main-header-inner {
+    padding-right: 0;
+}
+.top-bar-inner,
+.main-header-inner,
+.main-nav-inner,
+.trends-bar-inner {
+    padding-left: 0;
+}
 
 /* --------------------------------------------------------------------------
    Icônes sociales flottantes (gauche)
@@ -246,7 +256,7 @@
    Header — navigation principale + mega menu
    -------------------------------------------------------------------------- */
 .main-nav { background: var(--kb-theme-color); }
-.main-nav-inner { display: flex; }
+.main-nav-inner { display: flex; position: relative; }
 .nav-items {
     display: flex;
     list-style: none;
@@ -289,7 +299,7 @@
     background: rgba(0,0,0,0.25);
 }
 
-.has-mega-menu { position: static; }
+.nav-items > li.has-mega-menu { position: static; }
 .mega-menu {
     display: none;
     position: absolute;
@@ -333,7 +343,8 @@
     border-top: 1px solid var(--kb-border);
     padding-top: 20px;
 }
-.mega-menu-ad img { width: 100%; border-radius: 4px; display: block; }
+.mega-menu-ad { flex: 1; max-height: 180px; }
+.mega-menu-ad img { width: 100%; height: 100%; max-height: 180px; object-fit: cover; border-radius: 4px; display: block; }
 
 @media (max-width: 991px) {
     .mega-menu { display: none !important; }
@@ -378,7 +389,8 @@
 }
 .trends-sep {
     color: #ccc;
-    font-size: 11px;
+    font-size: 16px;
+    line-height: 1;
 }
 
 /* --------------------------------------------------------------------------
@@ -723,8 +735,9 @@
     grid-template-columns: 270px 1fr 270px;
     gap: 20px;
     margin-top: 20px;
+    margin-left: -16px;
+    margin-right: -16px;
 }
-
 .hero-carousel {
     position: relative;
     height: 100%;
@@ -772,12 +785,36 @@
     background-position: center;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.6s ease;
+    transition: opacity 1.8s ease-in-out;
     display: block;
 }
 .hero-slide.active {
     opacity: 1;
     pointer-events: auto;
+}
+
+.hero-carousel-dots {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+}
+.hero-carousel-dot {
+    width: 32px;
+    height: 5px;
+    border-radius: 3px;
+    border: none;
+    background: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.3s ease;
+}
+.hero-carousel-dot:hover { background: rgba(255, 255, 255, 0.8); }
+.hero-carousel-dot.active {
+    background: var(--kb-blue);
 }
 
 .hero-side-ads {
@@ -832,6 +869,39 @@
 .rayon-flyout-col li { margin-bottom: 6px; }
 .rayon-flyout-col a { font-size: 13px; color: #666; }
 .rayon-flyout-col a:hover { color: var(--kb-theme-color); }
+
+.rayon-flyout--ad-droite {
+    gap: 20px;
+    max-width: none;
+}
+.rayon-flyout-trigger:hover .rayon-flyout--ad-droite {
+    display: flex;
+}
+.rayon-flyout--ad-droite .rayon-flyout-main {
+    flex-shrink: 0;
+    width: 420px;
+}
+.rayon-flyout--ad-droite .rayon-flyout-ad {
+    width: 220px;
+    height: 400px;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+.rayon-flyout--ad-droite .rayon-flyout-ad img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 4px;
+    display: block;
+}
+
+.rayon-flyout--ad-bas .rayon-flyout-ad {
+    display: block;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--kb-border);
+}
+.rayon-flyout--ad-bas .rayon-flyout-ad img { width: 100%; border-radius: 4px; display: block; }
 
 .rayon-flyout-see-all {
     display: flex;

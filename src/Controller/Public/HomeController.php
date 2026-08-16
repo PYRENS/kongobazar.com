@@ -81,7 +81,7 @@ class HomeController extends AbstractController
                     'new_arrivals' => $productRepository->findByCategorySort($category->getDescendantCategories(), 'new_arrivals', 4),
                     'featured' => $productRepository->findByCategorySort($category->getDescendantCategories(), 'featured', 4),
                 ],
-                'banner' => $advertisementRepository->findOneActiveByCategory($category, 'public'),
+                'banner' => $advertisementRepository->findOneActiveByZoneAndCategory('category_block_banner', $category, 'public'),
             ];
         }
 
@@ -123,11 +123,7 @@ class HomeController extends AbstractController
         $footerCallUsPhoto = $adZonePicker->pick('footer_callus_photo', 'public');
         $footerBottomLinks = $customMenuItemRepository->findByLocationAndSpace('footer_bottom_links', 'public');
 
-        // --- Mega menu (utilisé dans le header, mêmes rootCategories) ---
-        $megaMenuAds = $advertisementRepository->findActiveByZone('mega_menu_catalogue', 'public');
-        $adZonePicker->recordImpressions($megaMenuAds, 'mega_menu_catalogue');
-
-        return $this->render('public/home.html.twig', [  
+        return $this->render('public/home.html.twig', [
             'heroSlides' => $heroSlides,
             'sideAdTop' => $sideAdTop,
             'sideAdBottom' => $sideAdBottom,
