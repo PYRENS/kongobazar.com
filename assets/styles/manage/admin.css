@@ -1,6 +1,6 @@
 :root {
     --admin-sidebar-width: 240px;
-    --admin-primary: #1F4E3D;
+    background: var(--primary);
     --admin-accent: #C9992A;
     --admin-danger: #c0392b;
 }
@@ -18,7 +18,7 @@ body.admin-body {
     left: 0;
     bottom: 0;
     width: var(--admin-sidebar-width);
-    background: var(--admin-sidebar-color, var(--admin-primary));
+    background: var(--primary);
     display: flex;
     flex-direction: column;
     z-index: 10;
@@ -138,7 +138,7 @@ body.admin-body {
     align-items: center;
     gap: 6px;
 }
-.admin-btn--primary { background: var(--admin-primary); color: #fff; }
+.admin-btn--primary { background: var(--primary); color: #fff; }
 .admin-btn--outline { background: #fff; border: 1px solid #ddd; color: #444; }
 .admin-btn--danger { background: #fff; border: 1px solid var(--admin-danger); color: var(--admin-danger); }
 .admin-btn--warning { background: #fff; border: 1px solid #b35c00; color: #b35c00; }
@@ -184,7 +184,7 @@ body.admin-body {
     margin-right: 8px;
 }
 .admin-avatar--initials {
-    background: var(--admin-sidebar-color, var(--admin-primary));
+    background: var(--primary);
     color: #fff;
     font-size: 11px;
     font-weight: 700;
@@ -220,7 +220,7 @@ body.admin-body {
     align-items: center;
     gap: 6px;
 }
-.dashboard-tab.active { background: var(--admin-primary); color: #fff; border-color: var(--admin-primary); }
+.dashboard-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
 .dashboard-panel { display: none; }
 .dashboard-panel.active { display: block; }
 
@@ -331,7 +331,7 @@ body.admin-body {
     color: #777;
 }
 .admin-breadcrumb a { color: #777; text-decoration: none; }
-.admin-breadcrumb a:hover { color: var(--admin-primary); }
+.admin-breadcrumb a:hover { color: var(--primary); }
 
 
 /* --------------------------------------------------------------------------
@@ -615,3 +615,110 @@ body.admin-body {
 @media (max-width: 1100px) {
     .admin-form-grid { grid-template-columns: 1fr; }
 }
+/* ==========================================================================
+   Intégration StackWaveDash — passerelle visuelle
+   Réaccorde les couleurs du template sur le bleu KongoBazar, et habille
+   notre menu existant (.admin-nav) avec le style visuel du template
+   (.sidebar-link) sans avoir à réécrire chaque entrée de menu.
+   ========================================================================== */
+:root {
+    --primary: var(--kb-blue, #2FA8E0);
+    --primary-dark: #1F87BA;
+    --primary-light: #E8F6FD;
+}
+
+.admin-nav { list-style: none; padding: 10px 10px 24px; margin: 0; }
+
+.admin-nav > li { margin-bottom: 2px; }
+.admin-nav > li > a,
+.admin-nav-group-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    color: var(--sidebar-text, #5a6a85);
+    font-size: 13.5px;
+    font-weight: 500;
+    text-decoration: none;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.22s ease;
+}
+.admin-nav > li > a i:first-child,
+.admin-nav-group-toggle i:first-child {
+    font-size: 17px;
+    width: 20px;
+    flex-shrink: 0;
+}
+.admin-nav > li > a:hover,
+.admin-nav-group-toggle:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+.admin-nav > li.active > a {
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    font-weight: 600;
+}
+
+.admin-nav-group.open > .admin-nav-group-toggle {
+    color: var(--primary);
+    font-weight: 600;
+}
+.admin-nav-group-arrow {
+    margin-left: auto;
+    transition: transform 0.25s ease;
+    font-size: 12px;
+}
+.admin-nav-group.open .admin-nav-group-arrow {
+    transform: rotate(180deg);
+}
+
+.admin-nav-submenu {
+    list-style: none;
+    padding: 2px 0 4px 0;
+    margin: 0;
+    display: none;
+}
+.admin-nav-group.open .admin-nav-submenu {
+    display: block;
+}
+.admin-nav-submenu > li > a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px 8px 44px;
+    margin: 0 8px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #8898aa;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+.admin-nav-submenu > li > a:hover {
+    color: var(--primary);
+    background: rgba(47, 168, 224, 0.06);
+}
+.admin-nav-submenu > li.active > a {
+    color: var(--primary);
+    background: rgba(47, 168, 224, 0.11);
+    font-weight: 600;
+}
+
+/* Sidebar mobile (réutilise les classes du template) */
+@media (max-width: 991px) {
+    .app-sidebar { transform: translateX(-100%); transition: transform 0.3s ease; }
+    .app-sidebar.sidebar-open { transform: translateX(0); }
+    .sidebar-overlay.active {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.4);
+        z-index: 1050;
+    }
+}
+.sidebar-overlay { display: none; }
