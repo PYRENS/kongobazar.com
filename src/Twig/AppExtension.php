@@ -31,6 +31,8 @@ class AppExtension extends AbstractExtension
         private readonly RayonFlyoutResolver $rayonFlyoutResolver,
         private readonly SocialLinkRepository $socialLinkRepository,
         private readonly SocialFloatSettingRepository $socialFloatSettingRepository,
+        private readonly \App\Repository\HeroSideAdsSettingRepository $heroSideAdsSettingRepository,
+        private readonly \App\Repository\DiscountCampaignRepository $discountCampaignRepository,
         private readonly AdvertisementRepository $advertisementRepository,
         private readonly CartRepository $cartRepository,
         private readonly Security $security,
@@ -51,6 +53,9 @@ class AppExtension extends AbstractExtension
             new TwigFunction('mega_menu_categories', [$this, 'getMegaMenuCategories']),
             new TwigFunction('rayon_flyout_data', [$this, 'getRayonFlyoutData']),
             new TwigFunction('social_links', [$this, 'getSocialLinks']),
+            new TwigFunction('mobile_top_rayons_ad', [$this, 'getMobileTopRayonsAd']),
+            new TwigFunction('hero_side_ads_hide_below_width', [$this, 'getHeroSideAdsHideBelowWidth']),
+            new TwigFunction('sold_during_campaign', [$this, 'getSoldDuringCampaign']),
             new TwigFunction('social_float_setting', [$this, 'getSocialFloatSetting']),
             new TwigFunction('current_cart', [$this, 'getCurrentCart']),
             new TwigFunction('cart_summary', [$this, 'getCartSummary']),
@@ -101,6 +106,20 @@ class AppExtension extends AbstractExtension
         return $this->socialLinkRepository->findActiveOrdered();
     }
 
+    public function getMobileTopRayonsAd(): ?\App\Entity\Advertisement
+    {
+        return $this->adZonePicker->pick('mobile_top_rayons_offcanvas', 'public');
+    }
+
+    public function getHeroSideAdsHideBelowWidth(): int
+    {
+        return $this->heroSideAdsSettingRepository->getSingleton()->getHideBelowWidth() ?? 0;
+    }
+
+    public function getSoldDuringCampaign(\App\Entity\DiscountCampaign $campaign): int
+    {
+        return $this->discountCampaignRepository->countSoldDuringCampaign($campaign);
+    }
     public function getSocialFloatSetting(): \App\Entity\SocialFloatSetting
     {
         return $this->socialFloatSettingRepository->getSingleton();

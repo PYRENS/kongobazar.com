@@ -45,7 +45,7 @@ class SearchController extends AbstractController
 
         $productResults = array_map(function ($product) use ($storage) {
             $firstImage = $product->getImages()->first() ?: null;
-            $imageUrl = $firstImage ? $storage->resolveUri($firstImage, 'imageFile', 'product_images') : null;
+            $imageUrl = $firstImage ? $storage->resolveUri($firstImage, 'imageFile') : null;
 
             return [
                 'title' => $product->getTitle(),

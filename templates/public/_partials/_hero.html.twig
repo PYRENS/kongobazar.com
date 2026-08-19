@@ -82,7 +82,7 @@
         {% endif %}
     </div>
 
-    <div class="hero-side-ads">
+    <div class="hero-side-ads" data-hide-below-width="{{ hero_side_ads_hide_below_width() }}">
         {% if sideAdTop is defined and sideAdTop %}
             <a {% if sideAdTop.targetUrl %}href="{{ path('ads_click', { id: sideAdTop.id, zoneKey: 'homepage_hero_side_top' }) }}"{% endif %}{% if sideAdTop.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="hero-side-ad{{ sideAdTop.targetUrl ? ' ad-clickable' : '' }}">
                 <img src="{{ vich_uploader_asset(sideAdTop, 'imageFile') }}" alt="{{ sideAdTop.title }}" loading="lazy">

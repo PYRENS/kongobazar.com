@@ -195,21 +195,83 @@
 
 {# --- Header condensé, affiché en JS au scroll (voir main.js) --- #}
 <header id="site-header-condensed" class="site-header-condensed">
-    <div class="container-kb site-header-condensed-inner">
+    <div class="container-kb site-header-condensed-inner condensed-inner--mobile">
         <button class="hamburger-toggle" type="button" data-bs-toggle="offcanvas" data-bs-target="#mainMenuOffcanvas" aria-label="{{ 'menu.open'|trans }}">
             <i class="icon-menu bi bi-list"></i>
         </button>
         <a href="{{ path('public_home') }}" class="logo-small">
             <span class="logo-kongo">Kongo</span><span class="logo-bazar">Bazar</span>
         </a>
-        <form class="search-form-condensed" action="{{ path('catalog_search') }}" method="get">
+
+        <div class="condensed-icons">
+            <button type="button" class="condensed-icon-btn" id="mobileSearchToggle" aria-label="{{ 'header.search_placeholder'|trans }}">
+                <i class="bi bi-search"></i>
+            </button>
+            <a href="{{ app.user ? path('account_index') : path('public_login') }}" class="condensed-icon-btn" aria-label="{{ 'header.my_account'|trans }}">
+                <i class="bi bi-person"></i>
+            </a>
+            <a href="{{ path('wishlist_index') }}" class="condensed-icon-btn" aria-label="{{ 'header.my_wishlist'|trans }}">
+                <i class="bi bi-heart"></i>
+            </a>
+            <button class="condensed-icon-btn condensed-icon-btn--cart" type="button" data-bs-toggle="offcanvas" data-bs-target="#cartOffcanvas" aria-label="{{ 'cart.my_cart'|trans }}">
+                <i class="bi bi-cart3"></i>
+                <strong class="cart-count" data-cart-count>{{ cartSummary.itemCount }}</strong>
+            </button>
+        </div>
+
+        <form class="search-form-condensed" id="mobileSearchOverlay" action="{{ path('catalog_search') }}" method="get">
+            <button type="button" class="mobile-search-close" id="mobileSearchClose" aria-label="{{ 'menu.close'|trans }}"><i class="bi bi-x-lg"></i></button>
             <input type="search" name="q" placeholder="{{ 'header.search_placeholder'|trans }}" autocomplete="off">
+            <button type="submit" class="mobile-search-submit"><i class="bi bi-search"></i></button>
             <div class="search-suggestions" hidden></div>
         </form>
-        <button class="cart-trigger cart-trigger--condensed" type="button" data-bs-toggle="offcanvas" data-bs-target="#cartOffcanvas">
-            <i class="icon-cart bi bi-cart3"></i>
-            <strong class="cart-count" data-cart-count>{{ cartSummary.itemCount }}</strong>
+    </div>
+
+    <div class="container-kb site-header-condensed-inner condensed-inner--desktop">
+        <button class="hamburger-toggle" type="button" data-bs-toggle="offcanvas" data-bs-target="#mainMenuOffcanvas" aria-label="{{ 'menu.open'|trans }}">
+            <i class="icon-menu bi bi-list"></i>
         </button>
+        <a href="{{ path('public_home') }}" class="logo-small">
+            <span class="logo-kongo">Kongo</span><span class="logo-bazar">Bazar</span>
+        </a>
+        <form class="search-form-condensed-desktop" action="{{ path('catalog_search') }}" method="get">
+            <input type="search" name="q" placeholder="{{ 'header.search_placeholder'|trans }}" autocomplete="off">
+            <button type="submit"><i class="bi bi-search"></i></button>
+            <div class="search-suggestions" hidden></div>
+        </form>
+        <div class="condensed-desktop-links">
+            <a href="{{ app.user ? path('account_index') : path('public_login') }}" class="condensed-desktop-link">
+                <i class="bi bi-person"></i> {{ 'header.my_account'|trans }}
+            </a>
+            <div class="topbar-dropdown">
+                <button type="button" class="topbar-dropdown-toggle condensed-desktop-link">
+                    <span class="fi fi-fr"></span> FR <i class="bi bi-chevron-down"></i>
+                </button>
+                <div class="topbar-dropdown-panel"></div>
+            </div>
+            <div class="topbar-dropdown">
+                <button type="button" class="topbar-dropdown-toggle condensed-desktop-link">
+                    USD <i class="bi bi-chevron-down"></i>
+                </button>
+                <div class="topbar-dropdown-panel"></div>
+            </div>
+            <button class="cart-trigger cart-trigger--condensed" type="button" data-bs-toggle="offcanvas" data-bs-target="#cartOffcanvas">
+                <i class="icon-cart bi bi-cart3"></i>
+                <strong class="cart-count" data-cart-count>{{ cartSummary.itemCount }}</strong>
+            </button>
+        </div>
+    </div>
+
+    <button type="button" class="mobile-rayons-bar" data-bs-toggle="offcanvas" data-bs-target="#topRayonsOffcanvas">
+        <i class="bi bi-star"></i> {{ 'menu.top_rayons'|trans }}
+    </button>
+
+    <div class="mobile-trends-bar">
+        {% set trends = trending_categories() %}
+        {% for item in trends %}
+            <a href="{{ path('catalog_category', { slug: item.category.slug }) }}">{{ item.category.name }}</a>
+            {% if not loop.last %}<span class="trends-sep">•</span>{% endif %}
+        {% endfor %}
     </div>
 </header>
 
@@ -222,7 +284,94 @@
         </button>
     </div>
     <div class="offcanvas-body">
+        <div class="offcanvas-lang-currency">
+            {% set languages = [
+                { code: 'fr', abbr: 'FR', label: 'Français', flag: 'fi-fr', enabled: true },
+                { code: 'en', abbr: 'EN', label: 'English', flag: 'fi-gb', enabled: false },
+                { code: 'ln', abbr: 'LN', label: 'Lingala', flag: 'fi-cd', enabled: false },
+                { code: 'kg', abbr: 'KG', label: 'Kikongo', flag: 'fi-cd', enabled: false },
+                { code: 'tsh', abbr: 'TSH', label: 'Tshiluba', flag: 'fi-cd', enabled: false },
+                { code: 'sw', abbr: 'SW', label: 'Kiswahili', flag: 'fi-cd', enabled: false },
+            ] %}
+            {% set currentLang = languages|filter(l => l.code == current_locale())|first %}
+
+            <div class="topbar-dropdown">
+                <button type="button" class="topbar-dropdown-toggle">
+                    <span class="fi {{ currentLang.flag }}"></span> {{ currentLang.abbr }} <i class="bi bi-chevron-down"></i>
+                </button>
+                <div class="topbar-dropdown-panel">
+                    {% for lang in languages %}
+                        {% if lang.enabled %}
+                            <form action="{{ path('set_preferences') }}" method="post" class="setting-mini-form">
+                                <input type="hidden" name="locale" value="{{ lang.code }}">
+                                <button type="submit" class="lang-row{{ lang.code == current_locale() ? ' active' : '' }}">
+                                    <span class="fi {{ lang.flag }}"></span> {{ lang.label }}
+                                    {% if lang.code == current_locale() %}<i class="bi bi-check"></i>{% endif %}
+                                </button>
+                            </form>
+                        {% else %}
+                            <span class="lang-row lang-row--disabled">
+                                <span class="fi {{ lang.flag }}"></span> {{ lang.label }}
+                            </span>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% set currencies = [{ code: 'USD', flag: 'fi-us' }, { code: 'CDF', flag: 'fi-cd' }] %}
+            {% set currentCur = currencies|filter(c => c.code == current_currency())|first %}
+
+            <div class="topbar-dropdown">
+                <button type="button" class="topbar-dropdown-toggle">
+                    <span class="fi {{ currentCur.flag }}"></span> {{ currentCur.code }} <i class="bi bi-chevron-down"></i>
+                </button>
+                <div class="topbar-dropdown-panel">
+                    {% for cur in currencies %}
+                        <form action="{{ path('set_preferences') }}" method="post" class="setting-mini-form">
+                            <input type="hidden" name="currency" value="{{ cur.code }}">
+                            <button type="submit" class="lang-row{{ cur.code == current_currency() ? ' active' : '' }}">
+                                <span class="fi {{ cur.flag }}"></span> {{ cur.code }}
+                                {% if cur.code == current_currency() %}<i class="bi bi-check"></i>{% endif %}
+                            </button>
+                        </form>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
         {{ menu.drillMenu(root_categories()) }}
+    </div>
+</div>
+
+{# --- Tiroir latéral dédié "Top Rayons" (bande bleue mobile), distinct du menu complet --- #}
+<div class="offcanvas offcanvas-start" tabindex="-1" id="topRayonsOffcanvas">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title"><i class="bi bi-star"></i> {{ 'menu.top_rayons'|trans }}</h5>
+        <button type="button" class="btn-close-custom" data-bs-dismiss="offcanvas" aria-label="{{ 'menu.close'|trans }}">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+    <div class="offcanvas-body">
+        <ul class="top-rayons-offcanvas-list">
+            {% for rayon in top_rayons() %}
+                <li>
+                    <a href="{{ path('catalog_rayon', { slug: rayon.slug }) }}">
+                        <i class="bi {{ rayon.icon|default('bi-tag') }}"></i>
+                        {{ rayon.name }}
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+        <a href="{{ path('catalog_index') }}" class="top-rayons-offcanvas-seeall">
+            {{ 'menu.voir_tous_rayons'|trans }} <i class="bi bi-chevron-right"></i>
+        </a>
+
+        {% set topRayonsAd = mobile_top_rayons_ad() %}
+        {% if topRayonsAd and topRayonsAd.imageName %}
+            <a {% if topRayonsAd.targetUrl %}href="{{ path('ads_click', { id: topRayonsAd.id, zoneKey: 'mobile_top_rayons_offcanvas' }) }}"{% endif %}{% if topRayonsAd.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="top-rayons-offcanvas-ad{{ topRayonsAd.targetUrl ? ' ad-clickable' : '' }}">
+                <img src="{{ vich_uploader_asset(topRayonsAd, 'imageFile') }}" alt="{{ topRayonsAd.title }}" loading="lazy">
+            </a>
+        {% endif %}
     </div>
 </div>
 

@@ -40,13 +40,19 @@ class ProductRepository extends ServiceEntityRepository
 
         // leftJoin + addSelect : précharge la 1ère image en une seule requête,
         // au lieu d'une requête séparée par ligne affichée (N+1).
-        return $qb->leftJoin('p.images', 'img')
+        $query = $qb->leftJoin('p.images', 'img')
             ->addSelect('img')
             ->orderBy('p.' . $sort, strtoupper($dir) === 'ASC' ? 'ASC' : 'DESC')
             ->setFirstResult(($page - 1) * $perPage)
             ->setMaxResults($perPage)
-            ->getQuery()
-            ->getResult();
+            ->getQuery();
+
+        // Paginator Doctrine obligatoire ici : avec une jointure "un-vers-plusieurs"
+        // (p.images), setFirstResult/setMaxResults nu limite les LIGNES SQL
+        // (produit × image), pas les produits distincts — un produit avec
+        // plusieurs images peut alors "manger" la place d'un autre produit
+        // sur la page, coupant la liste avant d'avoir atteint le vrai total.
+        return iterator_to_array(new \Doctrine\ORM\Tools\Pagination\Paginator($query, true));
     }
 
     public function countFiltered(?string $term, ?int $categoryId, ?string $status, ?string $condition): int
@@ -310,6 +316,28 @@ class ProductRepository extends ServiceEntityRepository
         }
 
         return $qb->getQuery()->getResult();
+    }
+
+    public function findInStockByCategory(int $categoryId, int $limit = 50): array
+    {
+        return $this->createQueryBuilder('p')
+            ->andWhere('p.category = :categoryId')
+            ->andWhere('p.quantity > 0')
+            ->setParameter('categoryId', $categoryId)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function searchInStockByTerm(string $term, int $limit = 15): array
+    {
+        return $this->createQueryBuilder('p')
+            ->andWhere('p.title LIKE :term')
+            ->andWhere('p.quantity > 0')
+            ->setParameter('term', '%' . $term . '%')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
     }
 
 

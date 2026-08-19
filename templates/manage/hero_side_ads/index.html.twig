@@ -1,0 +1,20 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Pubs latérales du hero{% endblock %}
+{% block page_icon %}bi-columns-gap{% endblock %}
+{% block page_title %}Pubs latérales du hero — visibilité{% endblock %}
+
+{% block body %}
+<div class="admin-card" style="max-width:500px;">
+    <p class="text-muted mb-3">
+        Les 2 bannières à droite du carrousel (page d'accueil) se masquent automatiquement en dessous de la largeur d'écran choisie ici, pour laisser le carrousel occuper toute la place sur mobile.
+    </p>
+    <form method="post">
+        <div class="mb-3">
+            <label class="form-label">Masquer en dessous de (px)</label>
+            <input type="number" name="hide_below_width" class="form-control" style="max-width:200px;" value="{{ setting.hideBelowWidth }}" min="0" placeholder="Laisser vide = jamais masqué">
+        </div>
+        <button type="submit" class="admin-btn admin-btn--primary">Enregistrer</button>
+    </form>
+</div>
+{% endblock %}

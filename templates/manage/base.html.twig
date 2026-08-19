@@ -31,17 +31,38 @@
             <li class="{{ app.request.attributes.get('_route') starts with 'manage_categories' ? 'active' : '' }}">
                 <a href="{{ path('manage_categories_index') }}"><i class="bi bi-tags"></i> Catégories</a>
             </li>
-            <li class="{{ app.request.attributes.get('_route') starts with 'manage_trending' ? 'active' : '' }}">
-                <a href="{{ path('manage_trending_index') }}"><i class="bi bi-graph-up-arrow"></i> Tendances</a>
-            </li>
-            <li class="{{ app.request.attributes.get('_route') starts with 'manage_mega_menu' ? 'active' : '' }}">
-                <a href="{{ path('manage_mega_menu_index') }}"><i class="bi bi-grid-3x3-gap"></i> Méga-menu (header)</a>
-            </li>
-            <li class="{{ app.request.attributes.get('_route') starts with 'manage_top_category' ? 'active' : '' }}">
-                <a href="{{ path('manage_top_category_index') }}"><i class="bi bi-star"></i> Top Catégorie</a>
-            </li>
-            <li class="{{ app.request.attributes.get('_route') starts with 'manage_social_links' ? 'active' : '' }}">
-                <a href="{{ path('manage_social_links_index') }}"><i class="bi bi-share"></i> Réseaux sociaux</a>
+            {% set adsGroupActive = app.request.attributes.get('_route') starts with 'manage_ads' or app.request.attributes.get('_route') starts with 'manage_ad_zones' or app.request.attributes.get('_route') starts with 'manage_trending' or app.request.attributes.get('_route') starts with 'manage_mega_menu' or app.request.attributes.get('_route') starts with 'manage_top_category' or app.request.attributes.get('_route') starts with 'manage_social_links' or app.request.attributes.get('_route') starts with 'manage_hero_side_ads_setting' %}
+
+            <li class="admin-nav-group {{ adsGroupActive ? 'open' : '' }}">
+                <button type="button" class="admin-nav-group-toggle">
+                    <i class="bi bi-megaphone"></i> Pubs / Mise en avant <i class="bi bi-chevron-down admin-nav-group-arrow"></i>
+                </button>
+                <ul class="admin-nav-submenu">
+                    <li class="{{ app.request.attributes.get('_route') starts with 'manage_ads' ? 'active' : '' }}">
+                        <a href="{{ path('manage_ads_index') }}"><i class="bi bi-image"></i> Publicités</a>
+                    </li>
+                    <li class="{{ app.request.attributes.get('_route') starts with 'manage_ad_zones' ? 'active' : '' }}">
+                        <a href="{{ path('manage_ad_zones_index') }}"><i class="bi bi-shuffle"></i> Zones publicitaires</a>
+                    </li>
+                    <li class="{{ app.request.attributes.get('_route') starts with 'manage_trending' ? 'active' : '' }}">
+                        <a href="{{ path('manage_trending_index') }}"><i class="bi bi-graph-up-arrow"></i> Tendances</a>
+                    </li>
+                    <li class="{{ app.request.attributes.get('_route') starts with 'manage_mega_menu' ? 'active' : '' }}">
+                        <a href="{{ path('manage_mega_menu_index') }}"><i class="bi bi-grid-3x3-gap"></i> Méga-menu (header)</a>
+                    </li>
+                    <li class="{{ app.request.attributes.get('_route') starts with 'manage_top_category' ? 'active' : '' }}">
+                        <a href="{{ path('manage_top_category_index') }}"><i class="bi bi-star"></i> Top Catégorie</a>
+                    </li>
+                    <li class="{{ app.request.attributes.get('_route') starts with 'manage_social_links' ? 'active' : '' }}">
+                        <a href="{{ path('manage_social_links_index') }}"><i class="bi bi-share"></i> Réseaux sociaux</a>
+                    </li>
+                    <li class="{{ app.request.attributes.get('_route') starts with 'manage_hero_side_ads_setting' ? 'active' : '' }}">
+                        <a href="{{ path('manage_hero_side_ads_setting') }}"><i class="bi bi-columns-gap"></i> Pubs latérales hero</a>
+                    </li>
+                    <li class="{{ app.request.attributes.get('_route') starts with 'manage_discount_campaigns' ? 'active' : '' }}">
+                        <a href="{{ path('manage_discount_campaigns_index') }}"><i class="bi bi-tag"></i> Remises vendeur</a>
+                    </li>
+                </ul>
             </li>
             <li class="{{ app.request.attributes.get('_route') starts with 'manage_brands' ? 'active' : '' }}">
                 <a href="{{ path('manage_brands_index') }}"><i class="bi bi-award"></i> Marques</a>
@@ -95,11 +116,7 @@
             <li class="{{ app.request.attributes.get('_route') starts with 'manage_products' ? 'active' : '' }}">
                 <a href="{{ path('manage_products_index') }}"><i class="bi bi-box-seam"></i> Produits</a>
             </li>
-            <li class="{{ app.request.attributes.get('_route') starts with 'manage_ads' ? 'active' : '' }}">
-                <a href="{{ path('manage_ads_index') }}"><i class="bi bi-megaphone"></i> Publicités</a>
-            </li>
-            <li class="{{ app.request.attributes.get('_route') starts with 'manage_ad_zones' ? 'active' : '' }}">
-                <a href="{{ path('manage_ad_zones_index') }}"><i class="bi bi-shuffle"></i> Zones publicitaires</a>
+            <li class="{{ app.request.attributes.get('_route') starts with 'manage_ad_zones_UNUSED_PLACEHOLDER' ? 'active' : '' }}" style="display:none">
             </li>
             <li>
                 <a href="{{ path('manage_seller_attr_test_index') }}"><i class="bi bi-person-gear"></i> Test — Caractéristiques vendeur</a>

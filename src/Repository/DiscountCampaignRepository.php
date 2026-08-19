@@ -40,4 +40,70 @@ class DiscountCampaignRepository extends ServiceEntityRepository
     //            ->getOneOrNullResult()
     //        ;
     //    }
+
+    public function countSoldDuringCampaign(\App\Entity\DiscountCampaign $campaign): int
+    {
+        $result = $this->getEntityManager()->createQueryBuilder()
+            ->select('COALESCE(SUM(oi.quantity), 0)')
+            ->from(\App\Entity\OrderItem::class, 'oi')
+            ->join('oi.order', 'o')
+            ->andWhere('oi.product = :product')
+            ->andWhere('o.createdAt >= :start')
+            ->andWhere('o.createdAt <= :end')
+            ->andWhere('o.status NOT IN (:excludedStatuses)')
+            ->setParameter('product', $campaign->getProduct())
+            ->setParameter('start', $campaign->getStartAt())
+            ->setParameter('end', $campaign->getEndAt())
+            ->setParameter('excludedStatuses', ['cancelled', 'refused', 'refunded'])
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return (int) $result;
+    }
+
+    public function findActiveOrScheduledForProduct(\App\Entity\Product $product): ?\App\Entity\DiscountCampaign
+    {
+        return $this->createQueryBuilder('d')
+            ->andWhere('d.product = :product')
+            ->andWhere('d.status IN (:statuses)')
+            ->setParameter('product', $product)
+            ->setParameter('statuses', ['scheduled', 'active'])
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    public function findAllForAdmin(): array
+    {
+        return $this->createQueryBuilder('d')
+            ->orderBy('d.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** Passées de "scheduled" à "active" : la date de début est atteinte, celle de fin pas encore. */
+    public function findScheduledToActivate(): array
+    {
+        $now = new \DateTimeImmutable();
+        return $this->createQueryBuilder('d')
+            ->andWhere('d.status = :status')
+            ->andWhere('d.startAt <= :now')
+            ->andWhere('d.endAt > :now')
+            ->setParameter('status', 'scheduled')
+            ->setParameter('now', $now)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** Passées de "active" à "expired" : la date de fin est dépassée. */
+    public function findActiveToExpire(): array
+    {
+        $now = new \DateTimeImmutable();
+        return $this->createQueryBuilder('d')
+            ->andWhere('d.status = :status')
+            ->andWhere('d.endAt <= :now')
+            ->setParameter('status', 'active')
+            ->setParameter('now', $now)
+            ->getQuery()
+            ->getResult();
+    }
 }

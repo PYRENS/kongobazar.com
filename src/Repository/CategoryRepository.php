@@ -16,6 +16,49 @@ class CategoryRepository extends ServiceEntityRepository
         parent::__construct($registry, Category::class);
     }
 
+    /** Enfants directs d'une catégorie (ou rayons racine si $parentId est null) ayant au moins un produit en stock, directement ou dans leurs descendants. */
+    public function findChildrenWithInStockProducts(?int $parentId): array
+    {
+        // Catégories porteuses d'au moins un produit en stock (typiquement des feuilles)
+        $leafIds = $this->getEntityManager()->createQueryBuilder()
+            ->select('DISTINCT IDENTITY(p.category)')
+            ->from(\App\Entity\Product::class, 'p')
+            ->andWhere('p.quantity > 0')
+            ->getQuery()
+            ->getSingleColumnResult();
+
+        if (empty($leafIds)) {
+            return [];
+        }
+
+        // Remonte les ancêtres de chaque feuille pour marquer tous les niveaux parents comme "ayant du stock"
+        $categoriesWithStock = [];
+        foreach ($this->findBy(['id' => $leafIds]) as $leaf) {
+            $current = $leaf;
+            while ($current) {
+                $categoriesWithStock[$current->getId()] = true;
+                $current = $current->getParent();
+            }
+        }
+
+        if (empty($categoriesWithStock)) {
+            return [];
+        }
+
+        $qb = $this->createQueryBuilder('c')
+            ->andWhere('c.id IN (:ids)')
+            ->setParameter('ids', array_keys($categoriesWithStock))
+            ->orderBy('c.position', 'ASC');
+
+        if ($parentId) {
+            $qb->andWhere('c.parent = :parentId')->setParameter('parentId', $parentId);
+        } else {
+            $qb->andWhere('c.parent IS NULL');
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
     public function findRootCategories(?int $excludeId = null): array
     {
         $qb = $this->createQueryBuilder('c')

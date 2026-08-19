@@ -10,6 +10,10 @@ document.addEventListener('DOMContentLoaded', () => {
     initDrillMenu();
     initHeroCarousel();
     initSocialFloatPosition();
+    initMobileSearchOverlay();
+    initMobileHeaderHeight();
+    initHeroSideAdsVisibility();
+    initMiniCarouselTitleLines();
 });
 
 /* --------------------------------------------------------------------------
@@ -20,12 +24,22 @@ function initHeaderScroll() {
     const backToTop = document.getElementById('back-to-top');
     if (!condensedHeader || !backToTop) return;
 
+    function isMobileLayout() {
+        return window.innerWidth <= 991;
+    }
+
     const SCROLL_THRESHOLD = 200;
     let ticking = false;
 
     function onScroll() {
         const scrollY = window.scrollY;
-        condensedHeader.classList.toggle('visible', scrollY > SCROLL_THRESHOLD);
+        // Sur mobile, le header condensé reste affiché en permanence (géré en CSS) —
+        // seul le bouton retour en haut suit encore le scroll.
+        if (!isMobileLayout()) {
+            condensedHeader.classList.toggle('visible', scrollY > SCROLL_THRESHOLD);
+        } else {
+            condensedHeader.classList.toggle('scrolled', scrollY > SCROLL_THRESHOLD);
+        }
         backToTop.classList.toggle('visible', scrollY > SCROLL_THRESHOLD);
         ticking = false;
     }
@@ -39,6 +53,21 @@ function initHeaderScroll() {
 
     backToTop.addEventListener('click', () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+}
+
+function initMobileSearchOverlay() {
+    const toggle = document.getElementById('mobileSearchToggle');
+    const overlay = document.getElementById('mobileSearchOverlay');
+    const close = document.getElementById('mobileSearchClose');
+    if (!toggle || !overlay || !close) return;
+
+    toggle.addEventListener('click', () => {
+        overlay.classList.add('open');
+        overlay.querySelector('input').focus();
+    });
+    close.addEventListener('click', () => {
+        overlay.classList.remove('open');
     });
 }
 
@@ -184,3 +213,58 @@ function initSocialFloatPosition() {
     window.addEventListener('load', updatePosition);
 }
 
+/* --------------------------------------------------------------------------
+   Pubs latérales du hero — masquées en dessous d'une largeur réglable
+   en admin (/hero-pubs-laterales), lue via un attribut data- sur l'élément.
+   -------------------------------------------------------------------------- */
+function initHeroSideAdsVisibility() {
+    const sideAds = document.querySelector('.hero-side-ads');
+    if (!sideAds) return;
+
+    const threshold = parseInt(sideAds.dataset.hideBelowWidth, 10);
+    if (!threshold) return; // 0 ou vide = jamais masqué
+
+    function update() {
+        sideAds.style.display = window.innerWidth <= threshold ? 'none' : '';
+    }
+
+    update();
+    window.addEventListener('resize', update);
+}
+
+function initMiniCarouselTitleLines() {
+    function update() {
+        document.querySelectorAll('.home-mini-carousel-head').forEach((head) => {
+            const title = head.querySelector('h6');
+            if (!title) return;
+            head.style.setProperty('--title-line-width', title.offsetWidth + 'px');
+        });
+    }
+
+    update();
+    window.addEventListener('resize', update);
+    window.addEventListener('load', update);
+}
+
+
+/* --------------------------------------------------------------------------
+   Hauteur du header mobile condensé — calculée dynamiquement (logo/icônes
+   + bande "Top Rayons" + bandeau Tendances) pour compenser sa position
+   fixed sans chevaucher le contenu de la page, y compris après le repli
+   de Tendances/Top Rayons au scroll.
+   -------------------------------------------------------------------------- */
+function initMobileHeaderHeight() {
+    const condensedHeader = document.getElementById('site-header-condensed');
+    if (!condensedHeader) return;
+
+    function updateHeight() {
+        if (window.innerWidth <= 991) {
+            document.documentElement.style.setProperty('--mobile-header-height', condensedHeader.getBoundingClientRect().height + 'px');
+        }
+    }
+
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    window.addEventListener('load', updateHeight);
+    window.addEventListener('scroll', updateHeight);
+}

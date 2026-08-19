@@ -8,29 +8,37 @@
    ========================================================================== #}
 <aside class="home-left-col">
 
-    {% if adSidebarTop is defined and adSidebarTop %}
+    {% if adSidebarTop is defined and adSidebarTop and adSidebarTop.imageName %}
         <a {% if adSidebarTop.targetUrl %}href="{{ path('ads_click', { id: adSidebarTop.id, zoneKey: 'sidebar_top' }) }}"{% endif %}{% if adSidebarTop.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="home-ad-slot{{ adSidebarTop.targetUrl ? ' ad-clickable' : '' }}">
             <img src="{{ vich_uploader_asset(adSidebarTop, 'imageFile') }}" alt="{{ adSidebarTop.title }}" loading="lazy">
         </a>
     {% endif %}
 
     {# --- Meilleures ventes --- #}
-    <div class="home-mini-carousel" data-mini-carousel data-per-page="1">
+    {% set bestSellerGroups = bestSellers|default([])|batch(3) %}
+    <div class="home-mini-carousel" data-mini-carousel data-per-page="3">
         <div class="home-mini-carousel-head">
             <h6>{{ 'home.best_sellers'|trans }}</h6>
             <div class="home-mini-carousel-dots">
-                <button type="button" class="dot active" data-page="0"></button>
-                <button type="button" class="dot" data-page="1"></button>
+                {% for group in bestSellerGroups %}
+                    <button type="button" class="dot{{ loop.first ? ' active' : '' }}" data-page="{{ loop.index0 }}"></button>
+                {% endfor %}
             </div>
         </div>
         <div class="home-mini-carousel-track">
-            {% for product in bestSellers|default([]) %}
-                <div class="home-mini-product">
-                    <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="home-mini-product-img">
-                        <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
-                    </a>
-                    <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="home-mini-product-title">{{ product.title }}</a>
-                    <span class="home-mini-product-price">{{ product.basePrice }} {{ product.currency }}</span>
+            {% for group in bestSellerGroups %}
+                <div class="home-mini-carousel-page">
+                    {% for product in group %}
+                        <div class="home-mini-product">
+                            <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="home-mini-product-img">
+                                <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
+                            </a>
+                            <div class="home-mini-product-info">
+                                <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="home-mini-product-title">{{ product.title }}</a>
+                                <span class="home-mini-product-price">{{ product.basePrice }} {{ product.currency }}</span>
+                            </div>
+                        </div>
+                    {% endfor %}
                 </div>
             {% endfor %}
         </div>
@@ -68,7 +76,7 @@
         </li>
     </ul>
 
-    {% if adSidebarMiddle is defined and adSidebarMiddle %}
+    {% if adSidebarMiddle is defined and adSidebarMiddle and adSidebarMiddle.imageName %}
         <a {% if adSidebarMiddle.targetUrl %}href="{{ path('ads_click', { id: adSidebarMiddle.id, zoneKey: 'sidebar_middle' }) }}"{% endif %}{% if adSidebarMiddle.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="home-ad-slot{{ adSidebarMiddle.targetUrl ? ' ad-clickable' : '' }}">
             <img src="{{ vich_uploader_asset(adSidebarMiddle, 'imageFile') }}" alt="{{ adSidebarMiddle.title }}" loading="lazy">
         </a>
@@ -91,22 +99,30 @@
     {% endif %}
 
     {# --- Nouveaux articles --- #}
-    <div class="home-mini-carousel" data-mini-carousel data-per-page="1">
+    {% set newArrivalGroups = newArrivals|default([])|batch(3) %}
+    <div class="home-mini-carousel" data-mini-carousel data-per-page="3">
         <div class="home-mini-carousel-head">
             <h6>{{ 'home.new_arrivals_short'|trans }}</h6>
             <div class="home-mini-carousel-dots">
-                <button type="button" class="dot active" data-page="0"></button>
-                <button type="button" class="dot" data-page="1"></button>
+                {% for group in newArrivalGroups %}
+                    <button type="button" class="dot{{ loop.first ? ' active' : '' }}" data-page="{{ loop.index0 }}"></button>
+                {% endfor %}
             </div>
         </div>
         <div class="home-mini-carousel-track">
-            {% for product in newArrivals|default([]) %}
-                <div class="home-mini-product">
-                    <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="home-mini-product-img">
-                        <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
-                    </a>
-                    <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="home-mini-product-title">{{ product.title }}</a>
-                    <span class="home-mini-product-price">{{ product.basePrice }} {{ product.currency }}</span>
+            {% for group in newArrivalGroups %}
+                <div class="home-mini-carousel-page">
+                    {% for product in group %}
+                        <div class="home-mini-product">
+                            <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="home-mini-product-img">
+                                <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
+                            </a>
+                            <div class="home-mini-product-info">
+                                <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="home-mini-product-title">{{ product.title }}</a>
+                                <span class="home-mini-product-price">{{ product.basePrice }} {{ product.currency }}</span>
+                            </div>
+                        </div>
+                    {% endfor %}
                 </div>
             {% endfor %}
         </div>

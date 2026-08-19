@@ -1,0 +1,44 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Modifier la remise{% endblock %}
+{% block page_icon %}bi-tag{% endblock %}
+{% block page_title %}Modifier la remise — {{ campaign.product.title }}{% endblock %}
+
+{% block body %}
+<div class="admin-card" style="max-width:500px;">
+    <form method="post">
+        <div class="mb-3">
+            <label class="form-label">Produit</label>
+            <input type="text" class="form-control" value="{{ campaign.product.title }}" disabled>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Prix normal actuel</label>
+            <input type="text" class="form-control" value="{{ campaign.product.basePrice }} {{ campaign.product.currency }}" disabled>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Prix remisé</label>
+            <input type="number" step="0.01" name="discounted_price" class="form-control" value="{{ campaign.discountedPrice }}" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Début de la remise</label>
+            <input type="datetime-local" name="start_at" class="form-control" value="{{ campaign.startAt|date('Y-m-d\\TH:i') }}" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Fin de la remise</label>
+            <input type="datetime-local" name="end_at" class="form-control" value="{{ campaign.endAt|date('Y-m-d\\TH:i') }}" required>
+        </div>
+        <button type="submit" class="admin-btn admin-btn--primary">Enregistrer</button>
+        <a href="{{ path('manage_discount_campaigns_index') }}" class="admin-btn admin-btn--outline">Annuler</a>
+    </form>
+</div>
+
+<script>
+    const startInput = document.querySelector('[name="start_at"]');
+    const endInput = document.querySelector('[name="end_at"]');
+    endInput.min = startInput.value;
+    startInput.addEventListener('change', () => {
+        endInput.min = startInput.value;
+    });
+</script>
+
+{% endblock %}

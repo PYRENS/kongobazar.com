@@ -37,6 +37,7 @@ class AdvertisementManagementController extends AbstractController
         'mega_menu_catalogue_4' => ['label' => 'Méga-menu — bannière 4', 'width' => 320, 'height' => 180],
         'rayon_flyout_ad_droite' => ['label' => 'Flyout rayon — position droite (liée à une catégorie précise)', 'width' => 220, 'height' => 400],
         'rayon_flyout_ad_bas' => ['label' => 'Flyout rayon — position bas (liée à une catégorie précise)', 'width' => 480, 'height' => 120],
+        'mobile_top_rayons_offcanvas' => ['label' => 'Tiroir "Top Rayons" mobile', 'width' => 335, 'height' => 100],
     ];
 
     #[Route('/publicites', name: 'manage_ads_index', host: 'manage.kongobazar.com', methods: ['GET'])]
@@ -265,10 +266,18 @@ class AdvertisementManagementController extends AbstractController
 
         $startAt = $request->request->get('start_at');
         $endAt = $request->request->get('end_at');
-        if ($startAt) {
-            $ad->setStartAt(new \DateTimeImmutable($startAt));
+
+        $startAtDate = $startAt ? new \DateTimeImmutable($startAt) : null;
+        $endAtDate = $endAt ? new \DateTimeImmutable($endAt) : null;
+
+        if ($startAtDate && $endAtDate && $endAtDate <= $startAtDate) {
+            throw new \InvalidArgumentException('La date de fin doit être postérieure à la date de début.');
         }
-        $ad->setEndAt($endAt ? new \DateTimeImmutable($endAt) : null);
+
+        if ($startAtDate) {
+            $ad->setStartAt($startAtDate);
+        }
+        $ad->setEndAt($endAtDate);
 
         $ad->setIsPaid((bool) $request->request->get('is_paid'));
         $priceAmount = $request->request->get('price_amount_usd');

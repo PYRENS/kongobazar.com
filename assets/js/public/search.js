@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initSearchAutocomplete() {
-    document.querySelectorAll('.search-form, .search-form-condensed').forEach((form) => {
+    document.querySelectorAll('.search-form, .search-form-condensed, .search-form-condensed-desktop').forEach((form) => {
         const input = form.querySelector('input[name="q"]');
         const box = form.querySelector('.search-suggestions');
         if (!input || !box) return;

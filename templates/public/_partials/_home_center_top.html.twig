@@ -1,16 +1,9 @@
 {# ==========================================================================
-   Haut de la colonne centrale : petite bannière promo + Deals + bannière pub
+   Haut de la colonne centrale : Deals + bannière pub
    Contexte attendu :
-     - promoStrip   : Advertisement|null (zoneKey homepage_promo_strip)
      - dealsProducts: Product[] avec DiscountCampaign active
      - centerAdBanner: Advertisement|null (zoneKey homepage_center_banner)
    ========================================================================== #}
-{% if promoStrip is defined and promoStrip and promoStrip.imageName %}
-twig
-    <a {% if promoStrip.targetUrl %}href="{{ path('ads_click', { id: promoStrip.id, zoneKey: 'homepage_promo_strip' }) }}"{% endif %}{% if promoStrip.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="home-promo-strip{{ promoStrip.targetUrl ? ' ad-clickable' : '' }}">
-        <img src="{{ vich_uploader_asset(promoStrip, 'imageFile') }}" alt="{{ promoStrip.title }}" loading="lazy">
-    </a>
-{% endif %}
 
 <section class="home-deals" data-mini-carousel data-per-page="2">
     <div class="home-deals-head">

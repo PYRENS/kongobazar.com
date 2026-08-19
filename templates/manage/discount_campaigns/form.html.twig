@@ -1,0 +1,148 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Nouvelle remise{% endblock %}
+{% block page_icon %}bi-tag{% endblock %}
+{% block page_title %}Nouvelle remise vendeur{% endblock %}
+
+{% block body %}
+<div class="admin-card" style="max-width:500px;">
+    <form method="post">
+        <div class="mb-3 position-relative">
+            <label class="form-label">Produit — recherche par texte</label>
+            <input type="text" id="discountProductSearchInput" class="form-control" placeholder="Rechercher un produit..." autocomplete="off">
+            <div id="discountProductSearchResults" class="list-group position-absolute w-100" style="z-index:20; max-height:280px; overflow-y:auto; display:none;"></div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Ou parcourir par catégorie (uniquement celles avec du stock)</label>
+            <div id="discountCategoryCascade" class="d-flex flex-wrap gap-2"></div>
+            <select id="discountProductByCategorySelect" class="form-select mt-2" style="display:none;">
+                <option value="">— Choisir un produit —</option>
+            </select>
+        </div>
+
+        <input type="hidden" name="product_id" id="discountProductIdInput">
+        <div id="discountSelectedProduct" class="alert alert-info" style="display:none;"></div>
+        <div class="mb-3">
+            <label class="form-label">Prix remisé</label>
+            <input type="number" step="0.01" name="discounted_price" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Début de la remise</label>
+            <input type="datetime-local" name="start_at" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Fin de la remise</label>
+            <input type="datetime-local" name="end_at" class="form-control" required>
+        </div>
+        <button type="submit" class="admin-btn admin-btn--primary">Créer la remise</button>
+        <a href="{{ path('manage_discount_campaigns_index') }}" class="admin-btn admin-btn--outline">Annuler</a>
+    </form>
+</div>
+
+<script>
+(function () {
+    const input = document.getElementById('discountProductSearchInput');
+    const results = document.getElementById('discountProductSearchResults');
+    const hiddenInput = document.getElementById('discountProductIdInput');
+    let timeout;
+
+    input.addEventListener('input', function () {
+        clearTimeout(timeout);
+        hiddenInput.value = '';
+        const term = this.value.trim();
+        if (term.length < 2) { results.style.display = 'none'; return; }
+        timeout = setTimeout(() => {
+            fetch('{{ path('manage_discount_campaigns_product_search') }}?q=' + encodeURIComponent(term))
+                .then((r) => r.json())
+                .then((data) => {
+                    results.innerHTML = '';
+                    data.results.forEach((p) => {
+                        const item = document.createElement('button');
+                        item.type = 'button';
+                        item.className = 'list-group-item list-group-item-action';
+                        item.textContent = p.name;
+                        item.addEventListener('click', () => {
+                            input.value = p.name;
+                            hiddenInput.value = p.id;
+                            results.style.display = 'none';
+                            document.getElementById('discountSelectedProduct').textContent = 'Produit sélectionné : ' + p.name;
+                            document.getElementById('discountSelectedProduct').style.display = 'block';
+                        });
+                        results.appendChild(item);
+                    });
+                    results.style.display = data.results.length ? 'block' : 'none';
+                });
+        }, 300);
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!input.contains(e.target) && !results.contains(e.target)) results.style.display = 'none';
+    });
+})();
+
+    // --- Cascade catégorie → produits en stock ---
+    const cascadeContainer = document.getElementById('discountCategoryCascade');
+    const productByCatSelect = document.getElementById('discountProductByCategorySelect');
+    const selectedProductBox = document.getElementById('discountSelectedProduct');
+
+    function loadCategoryLevel(parentId, container) {
+        fetch('{{ path('manage_discount_campaigns_categories_in_stock') }}?parent_id=' + (parentId || ''))
+            .then((r) => r.json())
+            .then((data) => {
+                if (data.results.length === 0) return;
+                const select = document.createElement('select');
+                select.className = 'form-select';
+                select.style.maxWidth = '220px';
+                select.innerHTML = '<option value="">— Choisir —</option>' +
+                    data.results.map((c) => `<option value="${c.id}" data-has-children="${c.hasChildren}">${c.name}</option>`).join('');
+                select.addEventListener('change', function () {
+                    // Retire tout ce qui suit ce niveau (nouvelle branche choisie)
+                    let next = select.nextElementSibling;
+                    while (next && next !== productByCatSelect.parentElement) {
+                        const toRemove = next;
+                        next = next.nextElementSibling;
+                        toRemove.remove();
+                    }
+                    productByCatSelect.style.display = 'none';
+
+                    if (!this.value) return;
+                    const opt = this.options[this.selectedIndex];
+                    if (opt.dataset.hasChildren === 'true') {
+                        loadCategoryLevel(this.value, cascadeContainer);
+                    } else {
+                        loadProductsForCategory(this.value);
+                    }
+                });
+                container.appendChild(select);
+            });
+    }
+
+    function loadProductsForCategory(categoryId) {
+        fetch('{{ path('manage_discount_campaigns_products_by_category') }}?category_id=' + categoryId)
+            .then((r) => r.json())
+            .then((data) => {
+                productByCatSelect.innerHTML = '<option value="">— Choisir un produit —</option>' +
+                    data.results.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
+                productByCatSelect.style.display = 'block';
+            });
+    }
+
+    productByCatSelect.addEventListener('change', function () {
+        if (!this.value) return;
+        const label = this.options[this.selectedIndex].textContent;
+        document.getElementById('discountProductIdInput').value = this.value;
+        selectedProductBox.textContent = 'Produit sélectionné : ' + label;
+        selectedProductBox.style.display = 'block';
+    });
+
+    const startInput = document.querySelector('[name="start_at"]');
+    const endInput = document.querySelector('[name="end_at"]');
+    startInput.addEventListener('change', () => {
+        endInput.min = startInput.value;
+    });
+
+    loadCategoryLevel(null, cascadeContainer);
+
+</script>
+{% endblock %}
