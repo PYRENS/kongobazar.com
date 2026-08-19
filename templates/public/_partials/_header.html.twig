@@ -243,17 +243,57 @@
             <a href="{{ app.user ? path('account_index') : path('public_login') }}" class="condensed-desktop-link">
                 <i class="bi bi-person"></i> {{ 'header.my_account'|trans }}
             </a>
+            {% set languages = [
+                { code: 'fr', abbr: 'FR', label: 'Français', flag: 'fi-fr', enabled: true },
+                { code: 'en', abbr: 'EN', label: 'English', flag: 'fi-gb', enabled: false },
+                { code: 'ln', abbr: 'LN', label: 'Lingala', flag: 'fi-cd', enabled: false },
+                { code: 'kg', abbr: 'KG', label: 'Kikongo', flag: 'fi-cd', enabled: false },
+                { code: 'tsh', abbr: 'TSH', label: 'Tshiluba', flag: 'fi-cd', enabled: false },
+                { code: 'sw', abbr: 'SW', label: 'Kiswahili', flag: 'fi-cd', enabled: false },
+            ] %}
+            {% set currentLang = languages|filter(l => l.code == current_locale())|first %}
+
             <div class="topbar-dropdown">
                 <button type="button" class="topbar-dropdown-toggle condensed-desktop-link">
-                    <span class="fi fi-fr"></span> FR <i class="bi bi-chevron-down"></i>
+                    <span class="fi {{ currentLang.flag }}"></span> {{ currentLang.abbr }} <i class="bi bi-chevron-down"></i>
                 </button>
-                <div class="topbar-dropdown-panel"></div>
+                <div class="topbar-dropdown-panel">
+                    {% for lang in languages %}
+                        {% if lang.enabled %}
+                            <form action="{{ path('set_preferences') }}" method="post" class="setting-mini-form">
+                                <input type="hidden" name="locale" value="{{ lang.code }}">
+                                <button type="submit" class="lang-row{{ lang.code == current_locale() ? ' active' : '' }}">
+                                    <span class="fi {{ lang.flag }}"></span> {{ lang.label }}
+                                    {% if lang.code == current_locale() %}<i class="bi bi-check"></i>{% endif %}
+                                </button>
+                            </form>
+                        {% else %}
+                            <span class="lang-row lang-row--disabled">
+                                <span class="fi {{ lang.flag }}"></span> {{ lang.label }}
+                            </span>
+                        {% endif %}
+                    {% endfor %}
+                </div>
             </div>
+
+            {% set currencies = [{ code: 'USD', flag: 'fi-us' }, { code: 'CDF', flag: 'fi-cd' }] %}
+            {% set currentCur = currencies|filter(c => c.code == current_currency())|first %}
+
             <div class="topbar-dropdown">
                 <button type="button" class="topbar-dropdown-toggle condensed-desktop-link">
-                    USD <i class="bi bi-chevron-down"></i>
+                    <span class="fi {{ currentCur.flag }}"></span> {{ currentCur.code }} <i class="bi bi-chevron-down"></i>
                 </button>
-                <div class="topbar-dropdown-panel"></div>
+                <div class="topbar-dropdown-panel">
+                    {% for cur in currencies %}
+                        <form action="{{ path('set_preferences') }}" method="post" class="setting-mini-form">
+                            <input type="hidden" name="currency" value="{{ cur.code }}">
+                            <button type="submit" class="lang-row{{ cur.code == current_currency() ? ' active' : '' }}">
+                                <span class="fi {{ cur.flag }}"></span> {{ cur.code }}
+                                {% if cur.code == current_currency() %}<i class="bi bi-check"></i>{% endif %}
+                            </button>
+                        </form>
+                    {% endfor %}
+                </div>
             </div>
             <button class="cart-trigger cart-trigger--condensed" type="button" data-bs-toggle="offcanvas" data-bs-target="#cartOffcanvas">
                 <i class="icon-cart bi bi-cart3"></i>
