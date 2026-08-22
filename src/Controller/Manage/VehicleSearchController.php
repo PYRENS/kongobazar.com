@@ -106,7 +106,7 @@ class VehicleSearchController extends AbstractController
     }
 
     #[Route('/vehicules/recherche/motorisations', name: 'manage_vehicle_search_engines', host: 'manage.kongobazar.com', methods: ['GET'])]
-    public function engines(Request $request, VehicleEngineRepository $engineRepository): JsonResponse
+    public function engines(Request $request, VehicleEngineRepository $engineRepository, \App\Repository\PartEngineCompatibilityRepository $partEngineCompatibilityRepository): JsonResponse
     {
         $modelId = $request->query->get('model') ? (int) $request->query->get('model') : null;
         $variantId = $request->query->get('variant') ? (int) $request->query->get('variant') : null;
@@ -119,16 +119,22 @@ class VehicleSearchController extends AbstractController
             $engines = [];
         }
 
-        $rows = array_map(fn (\App\Entity\VehicleEngine $e) => [
-            'id' => $e->getId(),
-            'label' => $e->getLabel(),
-            'powerCv' => $e->getPowerCv(),
-            'powerKw' => $e->getPowerKw(),
-            'fuelType' => $e->getFuelType()?->getName(),
-            'period' => $e->getPeriodLabel(),
-            'editUrl' => $this->generateUrl('manage_vehicle_engines_edit', ['id' => $e->getId()]),
-            'deleteUrl' => $this->generateUrl('manage_vehicle_engines_delete', ['id' => $e->getId()]),
-        ], $engines);
+        $rows = array_map(function (\App\Entity\VehicleEngine $e) use ($partEngineCompatibilityRepository) {
+            $partsCount = $partEngineCompatibilityRepository->countActiveProductsByEngine($e->getId());
+
+            return [
+                'id' => $e->getId(),
+                'label' => $e->getLabel(),
+                'powerCv' => $e->getPowerCv(),
+                'powerKw' => $e->getPowerKw(),
+                'fuelType' => $e->getFuelType()?->getName(),
+                'period' => $e->getPeriodLabel(),
+                'partsCount' => $partsCount,
+                'partsUrl' => $partsCount > 0 ? $this->generateUrl('manage_vehicle_engine_parts', ['id' => $e->getId()]) : null,
+                'editUrl' => $this->generateUrl('manage_vehicle_engines_edit', ['id' => $e->getId()]),
+                'deleteUrl' => $this->generateUrl('manage_vehicle_engines_delete', ['id' => $e->getId()]),
+            ];
+        }, $engines);
 
         $sortField = $request->query->get('sort');
         $sortDir = $request->query->get('dir', 'ASC');

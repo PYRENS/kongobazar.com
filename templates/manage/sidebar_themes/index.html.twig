@@ -1,0 +1,113 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Thèmes sidebar{% endblock %}
+{% block page_icon %}bi-palette2{% endblock %}
+{% block page_title %}Thèmes de la barre latérale{% endblock %}
+
+{% macro sortLink(field, label, currentSort, currentDir) %}
+    {% set nextDir = (currentSort == field and currentDir == 'ASC') ? 'DESC' : 'ASC' %}
+    <a href="?sort={{ field }}&dir={{ nextDir }}" class="admin-sort-link">
+        {{ label }}
+        {% if currentSort == field %}
+            <i class="bi bi-caret-{{ currentDir == 'ASC' ? 'up' : 'down' }}-fill"></i>
+        {% else %}
+            <i class="bi bi-arrow-down-up admin-sort-icon-idle"></i>
+        {% endif %}
+    </a>
+{% endmacro %}
+{% import _self as self %}
+
+{% block body %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <p class="text-muted mb-0">Chaque thème regroupe 7 couleurs cohérentes (fond, texte, survol, actif, icônes) appliquées à la sidebar admin.</p>
+        <a href="{{ path('manage_sidebar_themes_new') }}" class="admin-btn admin-btn--primary"><i class="bi bi-plus"></i> Nouveau thème</a>
+    </div>
+
+    <input type="text" id="themeSearchInput" class="form-control mb-3" style="max-width: 320px;" placeholder="Rechercher un thème par nom..." value="{{ searchTerm }}">
+
+    <div id="themeGallery" class="d-flex flex-wrap gap-3 mb-4">
+        {% for row in rows %}
+            {% set theme = row.theme %}
+            <div class="admin-card theme-gallery-card" data-theme-name="{{ theme.name|lower }}" style="width: 240px;">
+                <div class="theme-preview" style="--tp-bg:{{ theme.bgColor }};--tp-text:{{ theme.textColor }};--tp-hover-bg:{{ theme.hoverBgColor }};--tp-hover-text:{{ theme.hoverTextColor }};--tp-active-bg:{{ theme.activeBgColor }};--tp-active-text:{{ theme.activeTextColor }};--tp-icon:{{ theme.iconColor }};">
+                    <div class="theme-preview-row">
+                        <span class="theme-preview-icon"><i class="bi bi-calendar3"></i></span> Calendrier
+                    </div>
+                    <div class="theme-preview-row theme-preview-row--hover">
+                        <span class="theme-preview-icon"><i class="bi bi-kanban"></i></span> Kanban
+                    </div>
+                    <div class="theme-preview-row theme-preview-row--active">
+                        <span class="theme-preview-icon"><i class="bi bi-person-lines-fill"></i></span> Contact
+                    </div>
+                    <div class="theme-preview-row theme-preview-row--child">
+                        <span class="theme-preview-dot"></span> Contact Table
+                    </div>
+                </div>
+                <h6 class="mt-2 mb-0">{{ theme.name }}</h6>
+                <p class="text-muted small mb-2">{{ row.usageCount }} admin{{ row.usageCount != 1 ? 's' : '' }} l'utilise{{ row.usageCount != 1 ? 'nt' : '' }}</p>
+                <div class="d-flex gap-2 flex-wrap">
+                    <form method="post" action="{{ path('manage_sidebar_themes_choose', {id: theme.id}) }}">
+                        <button type="submit" class="admin-btn admin-btn--primary btn-sm">Utiliser</button>
+                    </form>
+                    <a href="{{ path('manage_sidebar_themes_edit', {id: theme.id}) }}" class="admin-btn admin-btn--outline btn-sm">Modifier</a>
+                    <form method="post" action="{{ path('manage_sidebar_themes_delete', {id: theme.id}) }}" onsubmit="return confirm('Supprimer le thème {{ theme.name }} ?{{ row.usageCount > 0 ? ' ' ~ row.usageCount ~ ' admin(s) repasseront au thème par défaut.' : '' }}');">
+                        <button type="submit" class="admin-btn admin-btn--outline btn-sm"><i class="bi bi-trash"></i></button>
+                    </form>
+                </div>
+            </div>
+        {% else %}
+            <p class="text-muted">Aucun thème pour le moment.</p>
+        {% endfor %}
+    </div>
+
+    <div class="admin-card">
+        <table class="table admin-table" id="themeTable">
+            <thead>
+                <tr>
+                    <th>{{ self.sortLink('name', 'Nom', currentSort, currentDir) }}</th>
+                    <th>Fond</th>
+                    <th>Survol</th>
+                    <th>Actif</th>
+                    <th>{{ self.sortLink('usageCount', 'Utilisé par', currentSort, currentDir) }}</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                    {% set theme = row.theme %}
+                    <tr data-theme-name="{{ theme.name|lower }}">
+                        <td>{{ theme.name }}</td>
+                        <td><span class="theme-swatch" style="background:{{ theme.bgColor }};border-color:{{ theme.textColor }};"></span></td>
+                        <td><span class="theme-swatch" style="background:{{ theme.hoverBgColor }};border-color:{{ theme.hoverTextColor }};"></span></td>
+                        <td><span class="theme-swatch" style="background:{{ theme.activeBgColor }};border-color:{{ theme.activeTextColor }};"></span></td>
+                        <td>{{ row.usageCount }}</td>
+                        <td style="white-space:nowrap;">
+                            <a href="{{ path('manage_sidebar_themes_edit', {id: theme.id}) }}" class="admin-btn admin-btn--outline">Modifier</a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="6" class="text-muted">Aucun thème.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        (function () {
+            const input = document.getElementById('themeSearchInput');
+            const cards = document.querySelectorAll('#themeGallery .theme-gallery-card');
+            const rows = document.querySelectorAll('#themeTable tbody tr[data-theme-name]');
+            if (!input) return;
+
+            input.addEventListener('input', function () {
+                const term = this.value.trim().toLowerCase();
+                cards.forEach((card) => {
+                    card.style.display = card.dataset.themeName.includes(term) ? '' : 'none';
+                });
+                rows.forEach((row) => {
+                    row.style.display = row.dataset.themeName.includes(term) ? '' : 'none';
+                });
+            });
+        })();
+    </script>
+{% endblock %}

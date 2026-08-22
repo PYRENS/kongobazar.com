@@ -18,44 +18,194 @@
 {% import _self as self %}
 
 {% block body %}
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="h4 mb-0">Énergies (carburants)</h1>
-        <a href="{{ path('manage_fuel_types_new') }}" class="btn btn-primary btn-sm">+ Ajouter</a>
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-blue h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-blue"><i class="bi bi-fuel-pump-fill"></i></div>
+                <div class="ctb-stat-val">{{ stats.total }}</div>
+                <div class="ctb-stat-label">Énergies au total</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-green h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-green"><i class="bi bi-check-circle-fill"></i></div>
+                <div class="ctb-stat-val">{{ stats.active }}</div>
+                <div class="ctb-stat-label">Actives</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-purple h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-purple"><i class="bi bi-gear-fill"></i></div>
+                <div class="ctb-stat-val">{{ stats.totalEngines }}</div>
+                <div class="ctb-stat-label">Motorisations reliées</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-orange h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-orange"><i class="bi bi-list-ul"></i></div>
+                <div class="ctb-stat-val">{{ total }}</div>
+                <div class="ctb-stat-label">Résultats filtrés</div>
+            </div>
+        </div>
     </div>
 
-    <form method="get" class="mb-3 d-flex align-items-center gap-2">
-        <input type="text" name="q" class="form-control" style="max-width: 300px;" placeholder="Rechercher une énergie..." value="{{ searchTerm }}">
-        <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-search"></i></button>
-        {% if searchTerm %}
-            <a href="{{ path('manage_fuel_types_index') }}" class="btn btn-sm btn-outline-secondary">Réinitialiser</a>
-        {% endif %}
-    </form>
+    {% if breakdown|length > 0 %}
+        <div class="row g-3 mb-3">
+            <div class="col-xl-5">
+                <div class="sw-card h-100">
+                    <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-pie-chart me-2"></i>Répartition des motorisations par énergie</h6></div>
+                    <div class="card-body">
+                        <div class="chart-box" style="height:280px;"><canvas id="fuelBreakdownChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-7">
+                <div class="sw-card h-100">
+                    <div class="card-header"><h6 class="mb-0 fw-bold">Détail</h6></div>
+                    <div class="card-body p-0">
+                        <table class="table ctb-table mb-0">
+                            <thead><tr><th>Énergie</th><th>Motorisations</th><th>Part</th></tr></thead>
+                            <tbody>
+                                {% for row in breakdown %}
+                                    <tr>
+                                        <td class="ctb-contact-name">{{ row.name }}</td>
+                                        <td>{{ row.total }}</td>
+                                        <td>{{ stats.totalEngines > 0 ? (row.total / stats.totalEngines * 100)|round(1) : 0 }}%</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 
-    <table class="table admin-table">
-        <thead>
-            <tr>
-                <th>{{ self.sortLink('name', 'Nom', currentSort, currentDir) }}</th>
-                <th>Description</th>
-                <th>{{ self.sortLink('active', 'Actif', currentSort, currentDir) }}</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for fuelType in fuelTypes %}
-                <tr>
-                    <td>{{ fuelType.name }}</td>
-                    <td>{{ fuelType.description ?: '—' }}</td>
-                    <td>{{ fuelType.active ? 'Oui' : 'Non' }}</td>
-                    <td class="text-end">
-                        <a href="{{ path('manage_fuel_types_edit', {id: fuelType.id}) }}" class="btn btn-sm btn-outline-secondary">Modifier</a>
-                        <form action="{{ path('manage_fuel_types_delete', {id: fuelType.id}) }}" method="post" class="d-inline" onsubmit="return confirm('Supprimer cette énergie ?');">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer</button>
-                        </form>
-                    </td>
-                </tr>
-            {% else %}
-                <tr><td colspan="4" class="text-muted">Aucune énergie pour l'instant.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="row g-3 mb-3">
+        <div class="col-12">
+            <div class="sw-card">
+                <div class="card-body py-3">
+                    <form method="get" class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <div class="ctb-search-wrap">
+                            <i class="bi bi-search ctb-search-icon"></i>
+                            <input type="text" name="q" id="fuelSearchInput" class="ctb-search-input" style="width:260px;" placeholder="Rechercher une énergie..." value="{{ searchTerm }}" autocomplete="off">
+                            <div class="header-search-results" id="fuelSuggestions"></div>
+                        </div>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <select name="perPage" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
+                                {% for n in [10, 20, 50, 100] %}
+                                    <option value="{{ n }}" {{ perPage == n ? 'selected' : '' }}>{{ n }} / page</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search me-1"></i>Rechercher</button>
+                            {% if searchTerm %}<a href="{{ path('manage_fuel_types_index') }}" class="btn btn-outline-secondary btn-sm">Réinitialiser</a>{% endif %}
+                            <a href="{{ path('manage_fuel_types_new') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Ajouter</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sw-card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table ctb-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>{{ self.sortLink('name', 'Nom', currentSort, currentDir) }}</th>
+                            <th>Description</th>
+                            <th>{{ self.sortLink('engineCount', 'Motorisations', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('active', 'Actif', currentSort, currentDir) }}</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in rows %}
+                            {% set fuelType = row.fuelType %}
+                            <tr>
+                                <td class="ctb-contact-name">{{ fuelType.name }}</td>
+                                <td>{{ fuelType.description ?: '—' }}</td>
+                                <td>
+                                    {% if row.engineCount > 0 %}
+                                        <a href="{{ path('manage_vehicle_engines_index', {q: fuelType.name}) }}">{{ row.engineCount }}</a>
+                                    {% else %}0{% endif %}
+                                </td>
+                                <td><span class="ctb-status-badge {{ fuelType.active ? 'ctb-status-active' : 'ctb-status-inactive' }}">{{ fuelType.active ? 'Actif' : 'Inactif' }}</span></td>
+                                <td>
+                                    <div class="ctb-act-row">
+                                        <a href="{{ path('manage_fuel_types_edit', {id: fuelType.id}) }}" class="ctb-act-btn" title="Modifier"><i class="bi bi-pencil"></i></a>
+                                        <form action="{{ path('manage_fuel_types_delete', {id: fuelType.id}) }}" method="post" onsubmit="return confirm('Supprimer cette énergie ?');">
+                                            <button type="submit" class="ctb-act-btn ctb-act-danger" title="Supprimer"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="5" class="text-muted text-center py-4">Aucune énergie pour l'instant.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="ctb-table-footer">
+                <span class="ctb-footer-info">{{ total }} énergie{{ total != 1 ? 's' : '' }} au total — page {{ page }} / {{ pages }}</span>
+                {% if pages > 1 %}
+                    <div class="ctb-pagination">
+                        <a href="{{ path('manage_fuel_types_index', app.request.query.all|merge({page: max(1, page - 1)})) }}" class="ctb-page-btn {{ page <= 1 ? 'disabled' : '' }}"><i class="bi bi-chevron-left"></i></a>
+                        {% for p in max(1, page - 2)..min(pages, page + 2) %}
+                            <a href="{{ path('manage_fuel_types_index', app.request.query.all|merge({page: p})) }}" class="ctb-page-btn {{ p == page ? 'ctb-page-active' : '' }}">{{ p }}</a>
+                        {% endfor %}
+                        <a href="{{ path('manage_fuel_types_index', app.request.query.all|merge({page: min(pages, page + 1)})) }}" class="ctb-page-btn {{ page >= pages ? 'disabled' : '' }}"><i class="bi bi-chevron-right"></i></a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script>
+        const allFuelTypeNames = {{ allFuelTypeNames|json_encode|raw }};
+        const fuelSearchInput = document.getElementById('fuelSearchInput');
+        const fuelSuggestions = document.getElementById('fuelSuggestions');
+
+        function renderFuelSuggestions(term) {
+            fuelSuggestions.innerHTML = '';
+            if (!term) { fuelSuggestions.classList.remove('active'); return; }
+            const matches = allFuelTypeNames.filter((n) => n.toLowerCase().includes(term.toLowerCase())).slice(0, 8);
+            if (matches.length === 0) { fuelSuggestions.classList.remove('active'); return; }
+            matches.forEach((name) => {
+                const item = document.createElement('div');
+                item.className = 'header-search-result-item';
+                item.innerHTML = '<i class="bi bi-fuel-pump"></i><span>' + name + '</span>';
+                item.addEventListener('click', () => {
+                    fuelSearchInput.value = name;
+                    fuelSuggestions.classList.remove('active');
+                    fuelSearchInput.closest('form').submit();
+                });
+                fuelSuggestions.appendChild(item);
+            });
+            fuelSuggestions.classList.add('active');
+        }
+
+        fuelSearchInput.addEventListener('input', () => renderFuelSuggestions(fuelSearchInput.value.trim()));
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.ctb-search-wrap')) fuelSuggestions.classList.remove('active');
+        });
+
+        {% if breakdown|length > 0 %}
+            new Chart(document.getElementById('fuelBreakdownChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: [{% for row in breakdown %}'{{ row.name }}',{% endfor %}],
+                    datasets: [{
+                        data: [{% for row in breakdown %}{{ row.total }},{% endfor %}],
+                        backgroundColor: ['#5D87FF', '#13DEB9', '#FFAE1F', '#7460EE', '#FA896B', '#49BEFF', '#FF6B9D', '#8BC34A'],
+                    }],
+                },
+                options: { maintainAspectRatio: false },
+            });
+        {% endif %}
+    </script>
 {% endblock %}

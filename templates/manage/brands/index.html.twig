@@ -18,81 +18,198 @@
 {% import _self as self %}
 
 {% block body %}
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="h4 mb-0">Marques</h1>
-        <a href="{{ path('manage_brands_new') }}" class="btn btn-primary btn-sm">+ Nouvelle marque</a>
+    <div class="row g-3 mb-4" id="brandsPageTop">
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-blue h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-blue"><i class="bi bi-award-fill"></i></div>
+                <div class="ctb-stat-val">{{ stats.total }}</div>
+                <div class="ctb-stat-label">Marques au total</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-green h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-green"><i class="bi bi-check-circle-fill"></i></div>
+                <div class="ctb-stat-val">{{ stats.active }}</div>
+                <div class="ctb-stat-label">Actives</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-purple h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-purple"><i class="bi bi-patch-check-fill"></i></div>
+                <div class="ctb-stat-val">{{ stats.verified }}</div>
+                <div class="ctb-stat-label">Vérifiées</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-orange h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-orange"><i class="bi bi-car-front-fill"></i></div>
+                <div class="ctb-stat-val">{{ stats.vehicle }}</div>
+                <div class="ctb-stat-label">Auto/Moto</div>
+            </div>
+        </div>
     </div>
 
-    <table class="table admin-table">
-        <thead>
-            <tr>
-                <th>Logo</th>
-                <th>{{ self.sortLink('name', 'Nom', currentSort, currentDir) }}</th>
-                <th>Sigle</th>
-                <th>{{ self.sortLink('pays', 'Pays', currentSort, currentDir) }}</th>
-                <th>{{ self.sortLink('type', 'Type', currentSort, currentDir) }}</th>
-                <th>{{ self.sortLink('verified', 'Vérifiée', currentSort, currentDir) }}</th>
-                <th>{{ self.sortLink('count', 'Nb.', currentSort, currentDir) }}</th>
-                <th>Actif</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in rows %}
-                {% set brand = row.brand %}
-                <tr>
-                    <td>
-                        {% if brand.logoName %}
-                            <img src="{{ vich_uploader_asset(brand, 'logoFile') }}" alt="" style="width:32px;height:32px;object-fit:contain;">
+    <div class="row g-3 mb-3">
+        <div class="col-12">
+            <div class="sw-card">
+                <div class="card-body py-3">
+                    <form method="get" class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <div class="ctb-search-wrap">
+                            <i class="bi bi-search ctb-search-icon"></i>
+                            <input type="text" name="q" id="brandSearchInput" class="ctb-search-input" style="width:280px;" placeholder="Rechercher une marque par nom..." value="{{ searchTerm }}" autocomplete="off">
+                            <div class="header-search-results" id="brandSearchResults"></div>
+                        </div>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <select name="perPage" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
+                                {% for n in [10, 20, 50, 100] %}
+                                    <option value="{{ n }}" {{ perPage == n ? 'selected' : '' }}>{{ n }} / page</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search me-1"></i>Rechercher</button>
+                            {% if searchTerm %}<a href="{{ path('manage_brands_index') }}" class="btn btn-outline-secondary btn-sm">Réinitialiser</a>{% endif %}
+                            <a href="{{ path('manage_brands_new') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Nouvelle marque</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sw-card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table ctb-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Logo</th>
+                            <th>{{ self.sortLink('name', 'Nom', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('sigle', 'Sigle', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('pays', 'Pays', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('type', 'Type', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('verified', 'Vérifiée', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('productCount', 'Produits', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('modelCount', 'Modèles', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('active', 'Statut', currentSort, currentDir) }}</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in rows %}
+                            {% set brand = row.brand %}
+                            <tr>
+                                <td>
+                                    {% if brand.logoName %}
+                                        <img src="{{ vich_uploader_asset(brand, 'logoFile') }}" alt="" style="width:36px;height:36px;object-fit:contain;">
+                                    {% else %}
+                                        <div class="ctb-avatar ctb-av-blue" style="border-radius:8px;"><i class="bi bi-award"></i></div>
+                                    {% endif %}
+                                </td>
+                                <td class="ctb-contact-name"><a href="{{ path('manage_brands_show', {id: brand.id}) }}">{{ brand.name }}</a></td>
+                                <td>{{ brand.sigle ?: '—' }}</td>
+                                <td>
+                                    {% if brand.pays %}
+                                        <span class="fi fi-{{ brand.pays.iso2|lower }}"></span> {{ brand.pays.name }}
+                                    {% else %}—{% endif %}
+                                </td>
+                                <td>{{ brand.type ? brand.type|join(', ') : '—' }}</td>
+                                <td>
+                                    {% if brand.verified %}
+                                        <span class="ctb-status-badge ctb-status-active"><i class="bi bi-patch-check"></i> Vérifiée</span>
+                                    {% else %}<span class="text-muted">Non</span>{% endif %}
+                                </td>
+                                <td>
+                                    {% if row.productCount > 0 %}
+                                        <a href="{{ path('manage_brands_products', {id: brand.id}) }}">{{ row.productCount }}</a>
+                                    {% else %}0{% endif %}
+                                </td>
+                                <td>
+                                    {% if row.isVehicle %}
+                                        {% if row.modelCount > 0 %}
+                                            <a href="{{ path('manage_vehicle_models_index', {brand: brand.id}) }}">{{ row.modelCount }}</a>
+                                        {% else %}0{% endif %}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <form action="{{ path('manage_brands_toggle', {id: brand.id}) }}" method="post">
+                                        <button type="submit" class="ctb-status-badge {{ brand.active ? 'ctb-status-active' : 'ctb-status-inactive' }}" style="border:none;cursor:pointer;">
+                                            {{ brand.active ? 'Actif' : 'Inactif' }}
+                                        </button>
+                                    </form>
+                                </td>
+                                <td>
+                                    <div class="ctb-act-row">
+                                        <a href="{{ path('manage_brands_show', {id: brand.id}) }}" class="ctb-act-btn" title="Voir"><i class="bi bi-eye"></i></a>
+                                        <a href="{{ path('manage_brands_edit', {id: brand.id}) }}" class="ctb-act-btn" title="Modifier"><i class="bi bi-pencil"></i></a>
+                                        <form action="{{ path('manage_brands_toggle', {id: brand.id}) }}" method="post">
+                                            <button type="submit" class="ctb-act-btn {{ brand.active ? 'ctb-act-danger' : '' }}" title="{{ brand.active ? 'Désactiver' : 'Activer' }}">
+                                                <i class="bi {{ brand.active ? 'bi-pause-circle' : 'bi-check-circle' }}"></i>
+                                            </button>
+                                        </form>
+                                        <form action="{{ path('manage_brands_delete', {id: brand.id}) }}" method="post" onsubmit="return confirm('Supprimer cette marque ?');">
+                                            <button type="submit" class="ctb-act-btn ctb-act-danger" title="Supprimer"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
                         {% else %}
-                            <span class="text-muted">—</span>
-                        {% endif %}
-                    </td>
-                    <td><a href="{{ path('manage_brands_show', {id: brand.id}) }}">{{ brand.name }}</a></td>
-                    <td>{{ brand.sigle ?: '—' }}</td>
-                    <td>
-                        {% if brand.pays %}
-                            <span class="fi fi-{{ brand.pays.iso2|lower }}"></span> {{ brand.pays.name }}
-                        {% else %}
-                            —
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if brand.type %}
-                            {{ brand.type|join(', ') }}
-                        {% else %}
-                            <span class="text-muted">—</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ brand.verified ? 'Oui' : 'Non' }}</td>
-                    <td>
-                        {% if row.count > 0 %}
-                            {% if row.isVehicle %}
-                                <a href="{{ path('manage_vehicle_models_index', {brand: brand.id}) }}">{{ row.count }} {{ row.countLabel }}</a>
-                            {% else %}
-                                <a href="{{ path('manage_brands_products', {id: brand.id}) }}">{{ row.count }} {{ row.countLabel }}</a>
-                            {% endif %}
-                        {% else %}
-                            0 {{ row.countLabel }}
-                        {% endif %}
-                    </td>
-                    <td>
-                        <form action="{{ path('manage_brands_toggle', {id: brand.id}) }}" method="post" class="d-inline">
-                            <button type="submit" class="btn btn-sm {{ brand.active ? 'btn-success' : 'btn-outline-secondary' }}">
-                                {{ brand.active ? 'Actif' : 'Inactif' }}
-                            </button>
-                        </form>
-                    </td>
-                    <td class="text-end">
-                        <a href="{{ path('manage_brands_edit', {id: brand.id}) }}" class="btn btn-sm btn-outline-secondary">Modifier</a>
-                        <form action="{{ path('manage_brands_delete', {id: brand.id}) }}" method="post" class="d-inline" onsubmit="return confirm('Supprimer cette marque ?');">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Supprimer</button>
-                        </form>
-                    </td>
-                </tr>
-            {% else %}
-                <tr><td colspan="8" class="text-muted">Aucune marque pour l'instant.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                            <tr><td colspan="10" class="text-muted text-center py-4">Aucune marque ne correspond à ces critères.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="ctb-table-footer">
+                <span class="ctb-footer-info">{{ total }} marque{{ total != 1 ? 's' : '' }} au total — page {{ page }} / {{ pages }}</span>
+                {% if pages > 1 %}
+                    <div class="ctb-pagination">
+                        <a href="{{ path('manage_brands_index', app.request.query.all|merge({page: max(1, page - 1)})) }}" class="ctb-page-btn {{ page <= 1 ? 'disabled' : '' }}"><i class="bi bi-chevron-left"></i></a>
+                        {% for p in max(1, page - 2)..min(pages, page + 2) %}
+                            <a href="{{ path('manage_brands_index', app.request.query.all|merge({page: p})) }}" class="ctb-page-btn {{ p == page ? 'ctb-page-active' : '' }}">{{ p }}</a>
+                        {% endfor %}
+                        <a href="{{ path('manage_brands_index', app.request.query.all|merge({page: min(pages, page + 1)})) }}" class="ctb-page-btn {{ page >= pages ? 'disabled' : '' }}"><i class="bi bi-chevron-right"></i></a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        const brandNames = {{ allBrandNames|json_encode|raw }};
+        const brandInput = document.getElementById('brandSearchInput');
+        const brandResults = document.getElementById('brandSearchResults');
+
+        function renderBrandSuggestions(term) {
+            brandResults.innerHTML = '';
+            if (!term) {
+                brandResults.classList.remove('active');
+                return;
+            }
+            const matches = brandNames.filter((name) => name.toLowerCase().includes(term.toLowerCase())).slice(0, 8);
+            if (matches.length === 0) {
+                brandResults.innerHTML = '<div class="header-search-no-results">Aucune marque trouvée.</div>';
+                brandResults.classList.add('active');
+                return;
+            }
+            matches.forEach((name) => {
+                const item = document.createElement('div');
+                item.className = 'header-search-result-item';
+                item.innerHTML = '<i class="bi bi-award"></i><span>' + name + '</span>';
+                item.addEventListener('click', () => {
+                    brandInput.value = name;
+                    brandResults.classList.remove('active');
+                    brandInput.closest('form').submit();
+                });
+                brandResults.appendChild(item);
+            });
+            brandResults.classList.add('active');
+        }
+
+        brandInput.addEventListener('input', () => renderBrandSuggestions(brandInput.value.trim()));
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.ctb-search-wrap')) brandResults.classList.remove('active');
+        });
+    </script>
 {% endblock %}

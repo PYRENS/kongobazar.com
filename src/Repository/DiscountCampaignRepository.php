@@ -16,6 +16,16 @@ class DiscountCampaignRepository extends ServiceEntityRepository
         parent::__construct($registry, DiscountCampaign::class);
     }
 
+    public function countByStatus(string $status): int
+    {
+        return (int) $this->createQueryBuilder('c')
+            ->select('COUNT(c.id)')
+            ->andWhere('c.status = :status')
+            ->setParameter('status', $status)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     //    /**
     //     * @return DiscountCampaign[] Returns an array of DiscountCampaign objects
     //     */

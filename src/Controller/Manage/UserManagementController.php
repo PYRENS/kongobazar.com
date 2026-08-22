@@ -6,6 +6,7 @@ use App\Entity\Notification;
 use App\Entity\User;
 use App\Repository\AdministrativeUnitRepository;
 use App\Repository\LoginHistoryRepository;
+use App\Repository\OrderRepository;
 use App\Repository\ProductRepository;
 use App\Repository\ReviewRepository;
 use App\Repository\SellerProfileRepository;
@@ -25,6 +26,8 @@ class UserManagementController extends AbstractController
         UserRepository $userRepository,
         SellerProfileRepository $sellerProfileRepository,
         ReviewRepository $reviewRepository,
+        ProductRepository $productRepository,
+        OrderRepository $orderRepository,
         \App\Repository\AdministrativeUnitRepository $administrativeUnitRepository,
     ): Response {
         $term = $request->query->get('q');
@@ -36,8 +39,23 @@ class UserManagementController extends AbstractController
 
         $users = $userRepository->search($term, $sortField, $sortDir);
 
-        $rows = array_map(function (User $user) use ($sellerProfileRepository, $reviewRepository) {
-            $profile = $sellerProfileRepository->findOneByUser($user);
+        // Association user -> profil vendeur (peut être null pour un simple particulier)
+        $profilesByUserId = [];
+        foreach ($users as $u) {
+            $profilesByUserId[$u->getId()] = $sellerProfileRepository->findOneByUser($u);
+        }
+        $sellerProfileIds = array_values(array_filter(array_map(
+            fn ($p) => $p?->getId(),
+            $profilesByUserId
+        )));
+        $soldByProfile = $productRepository->countGroupedBySellerProfileIds($sellerProfileIds, 'sold');
+        $activeByProfile = $productRepository->countGroupedBySellerProfileIds($sellerProfileIds, 'active');
+
+        $userIds = array_map(fn (User $u) => $u->getId(), $users);
+        $ordersByUser = $orderRepository->countGroupedByBuyerIds($userIds);
+
+        $rows = array_map(function (User $user) use ($sellerProfileRepository, $reviewRepository, $profilesByUserId, $soldByProfile, $activeByProfile, $ordersByUser) {
+            $profile = $profilesByUserId[$user->getId()];
             $unit = $user->getAdministrativeUnit();
 
             return [
@@ -46,6 +64,10 @@ class UserManagementController extends AbstractController
                 'rating' => $profile ? $reviewRepository->getAverageRatingForSeller($profile) : null,
                 'localisation' => $unit ? implode('/', $unit->getLocalisationParts(false)) : null,
                 'unitId' => $unit?->getId(),
+                'sellerProfileId' => $profile?->getId(),
+                'productsSold' => $profile ? ($soldByProfile[$profile->getId()] ?? 0) : 0,
+                'productsActive' => $profile ? ($activeByProfile[$profile->getId()] ?? 0) : 0,
+                'ordersCount' => $ordersByUser[$user->getId()] ?? 0,
             ];
         }, $users);
 
@@ -65,6 +87,20 @@ class UserManagementController extends AbstractController
             }
         }
 
+        $rows = array_values($rows);
+        $computedSortFields = ['localisation', 'typeLabel', 'rating', 'ordersCount', 'productsSold', 'productsActive'];
+        if (in_array($sortField, $computedSortFields, true)) {
+            $multiplier = strtoupper($sortDir) === 'DESC' ? -1 : 1;
+            usort($rows, function ($a, $b) use ($sortField, $multiplier) {
+                $valA = $a[$sortField] ?? '';
+                $valB = $b[$sortField] ?? '';
+                return $multiplier * ($valA <=> $valB);
+            });
+        }
+
+        $signupsLastMonth = $userRepository->countByMonth(1);
+        $newThisMonth = $signupsLastMonth ? (int) end($signupsLastMonth)['total'] : 0;
+
         return $this->render('manage/users/index.html.twig', [
             'rows' => array_values($rows),
             'currentTerm' => $term,
@@ -74,6 +110,9 @@ class UserManagementController extends AbstractController
             'currentMinRating' => $filterMinRating,
             'currentUnit' => $filterUnitId,
             'provinces' => $administrativeUnitRepository->findActiveRootUnits(),
+            'totalUsersCount' => $userRepository->countAll(),
+            'activeSellersCount' => $sellerProfileRepository->countByStatus('active'),
+            'newThisMonth' => $newThisMonth,
         ]);
     }
 
@@ -82,6 +121,8 @@ class UserManagementController extends AbstractController
         User $user,
         SellerProfileRepository $sellerProfileRepository,
         LoginHistoryRepository $loginHistoryRepository,
+        OrderRepository $orderRepository,
+        ProductRepository $productRepository,
         \App\Repository\AdministrativeUnitRepository $administrativeUnitRepository,
     ): Response {
         $sellerProfile = $sellerProfileRepository->findOneByUser($user);
@@ -90,6 +131,16 @@ class UserManagementController extends AbstractController
             ? implode('/', $user->getAdministrativeUnit()->getLocalisationParts(true))
             : null;
 
+        $ordersByUser = $orderRepository->countGroupedByBuyerIds([$user->getId()]);
+        $productsSold = 0;
+        $productsActive = 0;
+        if ($sellerProfile) {
+            $soldMap = $productRepository->countGroupedBySellerProfileIds([$sellerProfile->getId()], 'sold');
+            $activeMap = $productRepository->countGroupedBySellerProfileIds([$sellerProfile->getId()], 'active');
+            $productsSold = $soldMap[$sellerProfile->getId()] ?? 0;
+            $productsActive = $activeMap[$sellerProfile->getId()] ?? 0;
+        }
+
         return $this->render('manage/users/show.html.twig', [
             'targetUser' => $user,
             'sellerProfile' => $sellerProfile,
@@ -97,6 +148,9 @@ class UserManagementController extends AbstractController
             'localisation' => $localisation,
             'loginHistory' => $loginHistoryRepository->findBy(['user' => $user], ['loggedInAt' => 'DESC'], 10),
             'root_categories_geo' => $administrativeUnitRepository->findActiveRootUnits(),
+            'ordersCount' => $ordersByUser[$user->getId()] ?? 0,
+            'productsSold' => $productsSold,
+            'productsActive' => $productsActive,
         ]);
     }
 

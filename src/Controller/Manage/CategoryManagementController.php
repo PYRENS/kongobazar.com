@@ -31,6 +31,8 @@ class CategoryManagementController extends AbstractController
                 'rows' => $rows, 'parent' => null, 'breadcrumb' => [],
                 'searchTerm' => $searchTerm, 'isSearchMode' => true,
                 'currentSort' => $sortField, 'currentDir' => $sortDir,
+                'totalCategoriesCount' => $repository->countAll(),
+                'rootCategoriesCount' => count($repository->findRootCategories()),
             ]);
         }
 
@@ -52,6 +54,8 @@ class CategoryManagementController extends AbstractController
             'rows' => $rows, 'parent' => $parent, 'breadcrumb' => $breadcrumb,
             'searchTerm' => null, 'isSearchMode' => false,
             'currentSort' => $sortField, 'currentDir' => $sortDir,
+            'totalCategoriesCount' => $repository->countAll(),
+            'rootCategoriesCount' => count($repository->findRootCategories()),
         ]);
     }
 
@@ -165,6 +169,8 @@ class CategoryManagementController extends AbstractController
         $category->setIcon($request->request->get('icon') ?: null);
         $category->setThemeColor($request->request->get('theme_color') ?: null);
         $category->setPosition((int) $request->request->get('position', 0));
+        $category->setRequiresModel((bool) $request->request->get('requires_model'));
+        $category->setAuthenticityRelevant((bool) $request->request->get('authenticity_relevant'));
 
         $imageFile = $request->files->get('image');
         if ($imageFile) {
@@ -191,9 +197,14 @@ class CategoryManagementController extends AbstractController
         $status = $request->query->get('status');
         $sort = $request->query->get('sort', 'newest');
         $term = $request->query->get('q');
+        $page = max(1, (int) $request->query->get('page', 1));
+        $perPage = in_array((int) $request->query->get('perPage', 20), [10, 20, 50, 100], true)
+            ? (int) $request->query->get('perPage', 20)
+            : 20;
 
         $categoryIds = array_map(fn ($c) => $c->getId(), $category->getDescendantCategories());
-        $products = $productRepository->findByCategoryAdmin($categoryIds, $status, $sort, $term);
+        $products = $productRepository->findByCategoryAdmin($categoryIds, $status, $sort, $term, $page, $perPage);
+        $total = $productRepository->countByCategoryAdmin($categoryIds, $status, $term);
 
         return $this->render('manage/categories/products.html.twig', [
             'category' => $category,
@@ -201,7 +212,23 @@ class CategoryManagementController extends AbstractController
             'currentStatus' => $status,
             'currentSort' => $sort,
             'currentTerm' => $term,
+            'page' => $page,
+            'perPage' => $perPage,
+            'pages' => max(1, (int) ceil($total / $perPage)),
+            'total' => $total,
+            'stats' => $productRepository->getCategoryAdminStats($categoryIds),
         ]);
+    }
+    #[Route('/categories/produits/{id}/bloquer', name: 'manage_categories_product_toggle_block', host: 'manage.kongobazar.com', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function toggleProductBlock(\App\Entity\Product $product, Request $request, EntityManagerInterface $em): RedirectResponse
+    {
+        $product->setStatus($product->getStatus() === 'suspended' ? 'active' : 'suspended');
+        $em->flush();
+
+        $this->addFlash('success', $product->getTitle() . ' — statut mis à jour : ' . ($product->getStatus() === 'suspended' ? 'bloqué' : 'actif'));
+
+        $referer = $request->headers->get('referer');
+        return $referer ? $this->redirect($referer) : $this->redirectToRoute('manage_categories_index');
     }
 
     #[Route('/categories/{id}', name: 'manage_categories_show', host: 'manage.kongobazar.com', methods: ['GET'])]
@@ -210,7 +237,9 @@ class CategoryManagementController extends AbstractController
         $sortField = $request->query->get('sort', 'position');
         $sortDir = $request->query->get('dir', 'ASC');
         $searchTerm = $request->query->get('q');
-        $childPerPage = 15;
+        $allowedPerPage = [10, 20, 50, 100];
+        $childPerPage = in_array((int) $request->query->get('cperpage', 20), $allowedPerPage, true)
+            ? (int) $request->query->get('cperpage', 20) : 20;
         $childPage = max(1, (int) $request->query->get('cpage', 1));
 
         $productCategoryIds = array_merge(
@@ -220,7 +249,8 @@ class CategoryManagementController extends AbstractController
         $productTerm = $request->query->get('pq') ?: null;
         $productStatus = $request->query->get('pstatus') ?: null;
         $productCondition = $request->query->get('pcondition') ?: null;
-        $productPerPage = 15;
+        $productPerPage = in_array((int) $request->query->get('pperpage', 20), $allowedPerPage, true)
+            ? (int) $request->query->get('pperpage', 20) : 20;
         $productPage = max(1, (int) $request->query->get('ppage', 1));
 
         $productTotal = $productRepository->countByCategoryScope($productCategoryIds, $productTerm, $productStatus, $productCondition);
@@ -247,10 +277,12 @@ class CategoryManagementController extends AbstractController
             'childPage' => $childPage,
             'childPages' => max(1, (int) ceil($childTotal / $childPerPage)),
             'childTotal' => $childTotal,
+            'childPerPage' => $childPerPage,
             'products' => $products,
             'productTotal' => $productTotal,
             'productPage' => $productPage,
             'productPages' => max(1, (int) ceil($productTotal / $productPerPage)),
+            'productPerPage' => $productPerPage,
             'productTerm' => $productTerm,
             'productStatus' => $productStatus,
             'productCondition' => $productCondition,

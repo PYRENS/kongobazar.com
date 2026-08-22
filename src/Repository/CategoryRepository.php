@@ -16,6 +16,46 @@ class CategoryRepository extends ServiceEntityRepository
         parent::__construct($registry, Category::class);
     }
 
+    public function countAll(): int
+    {
+        return (int) $this->createQueryBuilder('c')
+            ->select('COUNT(c.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /** @return array<int, bool> [categoryId => requiresModel] pour toutes les catégories */
+    public function findAllRequiresModelMap(): array
+    {
+        $rows = $this->createQueryBuilder('c')
+            ->select('c.id, c.requiresModel')
+            ->getQuery()
+            ->getArrayResult();
+
+        $map = [];
+        foreach ($rows as $row) {
+            $map[$row['id']] = (bool) $row['requiresModel'];
+        }
+
+        return $map;
+    }
+
+    /** @return array<int, bool> [categoryId => authenticityRelevant] pour toutes les catégories */
+    public function findAllAuthenticityRelevantMap(): array
+    {
+        $rows = $this->createQueryBuilder('c')
+            ->select('c.id, c.authenticityRelevant')
+            ->getQuery()
+            ->getArrayResult();
+
+        $map = [];
+        foreach ($rows as $row) {
+            $map[$row['id']] = (bool) $row['authenticityRelevant'];
+        }
+
+        return $map;
+    }
+
     /** Enfants directs d'une catégorie (ou rayons racine si $parentId est null) ayant au moins un produit en stock, directement ou dans leurs descendants. */
     public function findChildrenWithInStockProducts(?int $parentId): array
     {

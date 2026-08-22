@@ -5,18 +5,51 @@
 {% block page_title %}Message à {{ targetUser.email }}{% endblock %}
 
 {% block body %}
-    <div class="admin-card" style="max-width:600px;">
-        <form method="post">
-            <div class="mb-3">
-                <label class="form-label">Sujet</label>
-                <input type="text" name="subject" class="form-control" required>
+    {% set avatarColors = ['ctb-av-blue', 'ctb-av-green', 'ctb-av-purple', 'ctb-av-orange', 'ctb-av-pink'] %}
+
+    <div class="row g-3">
+        <div class="col-xl-8">
+            <div class="sw-card">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-envelope me-2"></i>Nouveau message</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="row g-3">
+                        <div class="col-12">
+                            <label class="acc-form-label">Sujet</label>
+                            <input type="text" name="subject" class="acc-form-input" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="acc-form-label">Message</label>
+                            <textarea name="body" class="acc-form-textarea" rows="8" required></textarea>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-send me-2"></i>Envoyer</button>
+                            <a href="{{ path('manage_users_show', { id: targetUser.id }) }}" class="btn btn-outline-secondary ms-2">Annuler</a>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <div class="mb-3">
-                <label class="form-label">Message</label>
-                <textarea name="body" class="form-control" rows="6" required></textarea>
+        </div>
+
+        <div class="col-xl-4">
+            <div class="sw-card">
+                <div class="card-header"><h6 class="mb-0 fw-bold">Destinataire</h6></div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        {% if targetUser.avatarName %}
+                            <img src="{{ vich_uploader_asset(targetUser, 'avatarFile') }}" class="ctb-avatar" style="object-fit:cover;" alt="">
+                        {% else %}
+                            <div class="ctb-avatar {{ avatarColors[targetUser.id % 5] }}">{{ targetUser.initials }}</div>
+                        {% endif %}
+                        <div>
+                            <div class="ctb-contact-name">{{ targetUser.getFullName()|default(targetUser.email) }}</div>
+                            <div class="ctb-contact-role">{{ targetUser.email }}</div>
+                        </div>
+                    </div>
+                    <p class="text-muted fs-13 mb-0">Le message sera mis en file d'envoi et notifié à l'utilisateur (canal email).</p>
+                </div>
             </div>
-            <button type="submit" class="admin-btn admin-btn--primary">Envoyer</button>
-            <a href="{{ path('manage_users_index') }}" class="admin-btn admin-btn--outline">Annuler</a>
-        </form>
+        </div>
     </div>
 {% endblock %}

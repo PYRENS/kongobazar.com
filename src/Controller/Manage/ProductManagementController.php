@@ -31,31 +31,36 @@ use Symfony\Component\String\Slugger\AsciiSlugger;
 class ProductManagementController extends AbstractController
 {
     #[Route('/produits', name: 'manage_products_index', host: 'manage.kongobazar.com', methods: ['GET'])]
-    public function index(Request $request, ProductRepository $repository, CategoryRepository $categoryRepository): Response
+    public function index(Request $request, ProductRepository $repository, CategoryRepository $categoryRepository, SellerProfileRepository $sellerProfileRepository): Response
     {
         $term = $request->query->get('q') ?: null;
         $categoryId = $request->query->get('category') ? (int) $request->query->get('category') : null;
         $status = $request->query->get('status') ?: null;
         $condition = $request->query->get('condition') ?: null;
+        $sellerProfileId = $request->query->get('sellerProfile') ? (int) $request->query->get('sellerProfile') : null;
         $sort = $request->query->get('sort', 'createdAt');
         $dir = $request->query->get('dir', 'DESC');
         $page = max(1, (int) $request->query->get('page', 1));
-        $perPage = 20;
+        $perPage = in_array((int) $request->query->get('perPage', 20), [10, 20, 50, 100], true)
+            ? (int) $request->query->get('perPage', 20) : 20;
 
-        $total = $repository->countFiltered($term, $categoryId, $status, $condition);
+        $total = $repository->countFiltered($term, $categoryId, $status, $condition, $sellerProfileId);
 
         return $this->render('manage/products/index.html.twig', [
-            'products' => $repository->findFiltered($term, $categoryId, $status, $condition, $sort, $dir, $page, $perPage),
+            'products' => $repository->findFiltered($term, $categoryId, $status, $condition, $sort, $dir, $page, $perPage, $sellerProfileId),
             'categories' => $categoryRepository->findBy([], ['name' => 'ASC']),
             'rootCategories' => $categoryRepository->findChildrenOf(null),
             'searchTerm' => $term,
             'currentCategory' => $categoryId,
             'currentStatus' => $status,
             'currentCondition' => $condition,
+            'currentSellerProfile' => $sellerProfileId,
+            'currentSellerName' => $sellerProfileId ? ($sellerProfileRepository->find($sellerProfileId)?->getDisplayName()) : null,
             'currentSort' => $sort,
             'currentDir' => $dir,
             'page' => $page,
             'pages' => max(1, (int) ceil($total / $perPage)),
+            'perPage' => $perPage,
             'total' => $total,
         ]);
     }
@@ -66,6 +71,8 @@ class ProductManagementController extends AbstractController
         return $this->render('manage/products/form.html.twig', [
             'product' => null,
             'rootCategories' => $categoryRepository->findChildrenOf(null),
+            'categoryRequiresModelMap' => $categoryRepository->findAllRequiresModelMap(),
+            'categoryAuthenticityMap' => $categoryRepository->findAllAuthenticityRelevantMap(),
         ]);
     }
 
@@ -91,12 +98,19 @@ class ProductManagementController extends AbstractController
         return $this->redirectToRoute('manage_products_index');
     }
 
+    #[Route('/produits/{id}', name: 'manage_products_show', host: 'manage.kongobazar.com', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function show(Product $product): Response
+    {
+        return $this->render('manage/products/show.html.twig', ['product' => $product]);
+    }
+
     #[Route('/produits/{id}/modifier', name: 'manage_products_edit', host: 'manage.kongobazar.com', methods: ['GET'], requirements: ['id' => '\d+'])]
     public function edit(Product $product, CategoryRepository $categoryRepository): Response
     {
         return $this->render('manage/products/form.html.twig', [
             'product' => $product,
             'rootCategories' => $categoryRepository->findChildrenOf(null),
+            'categoryRequiresModelMap' => $categoryRepository->findAllRequiresModelMap(),
         ]);
     }
 
@@ -140,6 +154,10 @@ class ProductManagementController extends AbstractController
         $product->setTitle($title);
         $product->setDescription($request->request->get('description') ?: null);
         $product->setReference($request->request->get('reference') ?: null);
+        $product->setEan($request->request->get('ean') ?: null);
+        $product->setModel($request->request->get('model') ?: null);
+        $product->setAuthenticityStatus($request->request->get('authenticity_status') ?: null);
+        $product->setEan($request->request->get('ean') ?: null);
 
         $categoryId = (int) $request->request->get('category_id');
         $product->setCategory($em->getRepository(Category::class)->find($categoryId));

@@ -21,7 +21,12 @@ class BrandManagementController extends AbstractController
         \App\Repository\VehicleModelRepository $vehicleModelRepository,
         \App\Repository\ProductRepository $productRepository
     ): Response {
-        $brands = $repository->findBy([], ['name' => 'ASC']);
+        $allBrands = $repository->findBy([], ['name' => 'ASC']);
+
+        $term = $request->query->get('q') ?: null;
+        $brands = $term
+            ? array_values(array_filter($allBrands, fn (\App\Entity\Brand $b) => str_contains(mb_strtolower($b->getName()), mb_strtolower($term))))
+            : $allBrands;
 
         $rows = array_map(function (\App\Entity\Brand $brand) use ($vehicleModelRepository, $productRepository) {
             $isVehicle = $brand->hasType('auto') || $brand->hasType('moto');
@@ -29,10 +34,8 @@ class BrandManagementController extends AbstractController
             return [
                 'brand' => $brand,
                 'isVehicle' => $isVehicle,
-                'count' => $isVehicle
-                    ? $vehicleModelRepository->countByBrand($brand->getId())
-                    : $productRepository->countByBrand($brand->getId()),
-                'countLabel' => $isVehicle ? 'modèle(s)' : 'produit(s)',
+                'productCount' => $productRepository->countByBrand($brand->getId()),
+                'modelCount' => $isVehicle ? $vehicleModelRepository->countByBrand($brand->getId()) : null,
             ];
         }, $brands);
 
@@ -40,10 +43,30 @@ class BrandManagementController extends AbstractController
         $sortDir = $request->query->get('dir', 'ASC');
         $rows = $this->sortRows($rows, $sortField, $sortDir);
 
+        $total = count($rows);
+        $perPage = in_array((int) $request->query->get('perPage', 20), [10, 20, 50, 100], true)
+            ? (int) $request->query->get('perPage', 20) : 20;
+        $page = max(1, (int) $request->query->get('page', 1));
+        $rows = array_slice($rows, ($page - 1) * $perPage, $perPage);
+
+        $stats = [
+            'total' => count($allBrands),
+            'active' => count(array_filter($allBrands, fn (\App\Entity\Brand $b) => $b->isActive())),
+            'verified' => count(array_filter($allBrands, fn (\App\Entity\Brand $b) => $b->isVerified())),
+            'vehicle' => count(array_filter($allBrands, fn (\App\Entity\Brand $b) => $b->hasType('auto') || $b->hasType('moto'))),
+        ];
+
         return $this->render('manage/brands/index.html.twig', [
             'rows' => $rows,
             'currentSort' => $sortField,
             'currentDir' => $sortDir,
+            'searchTerm' => $term,
+            'page' => $page,
+            'pages' => max(1, (int) ceil($total / $perPage)),
+            'perPage' => $perPage,
+            'total' => $total,
+            'stats' => $stats,
+            'allBrandNames' => array_map(fn (\App\Entity\Brand $b) => $b->getName(), $allBrands),
         ]);
     }
 
@@ -131,35 +154,48 @@ class BrandManagementController extends AbstractController
     {
         $status = $request->query->get('status') ?: null;
         $term = $request->query->get('q') ?: null;
-        $perPage = 20;
+        $sort = $request->query->get('sort', 'createdAt');
+        $dir = $request->query->get('dir', 'DESC');
+        $perPage = in_array((int) $request->query->get('perPage', 20), [10, 20, 50, 100], true)
+            ? (int) $request->query->get('perPage', 20) : 20;
         $page = max(1, (int) $request->query->get('page', 1));
 
         $total = $productRepository->countFilteredByBrand($brand->getId(), $status, $term);
+        $allTitles = array_map(
+            fn (\App\Entity\Product $p) => $p->getTitle(),
+            $productRepository->findFilteredByBrand($brand->getId(), null, null, 1, 1000)
+        );
 
         return $this->render('manage/brands/products.html.twig', [
             'brand' => $brand,
-            'products' => $productRepository->findFilteredByBrand($brand->getId(), $status, $term, $page, $perPage),
+            'products' => $productRepository->findFilteredByBrand($brand->getId(), $status, $term, $page, $perPage, $sort, $dir),
             'currentStatus' => $status,
             'currentTerm' => $term,
+            'currentSort' => $sort,
+            'currentDir' => $dir,
             'page' => $page,
             'pages' => max(1, (int) ceil($total / $perPage)),
+            'perPage' => $perPage,
             'total' => $total,
+            'allProductTitles' => $allTitles,
         ]);
     }
 
     #[Route('/marques/{id}/basculer', name: 'manage_brands_toggle', host: 'manage.kongobazar.com', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function toggle(Brand $brand, EntityManagerInterface $em): RedirectResponse
+    public function toggle(Brand $brand, Request $request, EntityManagerInterface $em): RedirectResponse
     {
         $brand->setActive(!$brand->isActive());
         $em->flush();
 
         $this->addFlash('success', $brand->getName() . ($brand->isActive() ? ' activée.' : ' désactivée.'));
-        return $this->redirectToRoute('manage_brands_index');
+
+        $referer = $request->headers->get('referer');
+        return $referer ? $this->redirect($referer) : $this->redirectToRoute('manage_brands_index');
     }
 
     private function sortRows(array $rows, string $field, string $dir): array
     {
-        $allowed = ['name', 'pays', 'type', 'verified', 'count'];
+        $allowed = ['name', 'sigle', 'pays', 'type', 'verified', 'productCount', 'modelCount', 'active'];
         if (!in_array($field, $allowed, true)) {
             $field = 'name';
         }
@@ -167,17 +203,23 @@ class BrandManagementController extends AbstractController
 
         usort($rows, function ($a, $b) use ($field, $dirMultiplier) {
             $valA = match ($field) {
+                'sigle' => $a['brand']->getSigle() ?? '',
                 'pays' => $a['brand']->getPays()?->getName() ?? '',
                 'type' => $a['brand']->getType() ? implode(',', $a['brand']->getType()) : '',
                 'verified' => (int) $a['brand']->isVerified(),
-                'count' => $a['count'],
+                'productCount' => $a['productCount'],
+                'modelCount' => $a['modelCount'] ?? -1,
+                'active' => (int) $a['brand']->isActive(),
                 default => $a['brand']->getName(),
             };
             $valB = match ($field) {
+                'sigle' => $b['brand']->getSigle() ?? '',
                 'pays' => $b['brand']->getPays()?->getName() ?? '',
                 'type' => $b['brand']->getType() ? implode(',', $b['brand']->getType()) : '',
                 'verified' => (int) $b['brand']->isVerified(),
-                'count' => $b['count'],
+                'productCount' => $b['productCount'],
+                'modelCount' => $b['modelCount'] ?? -1,
+                'active' => (int) $b['brand']->isActive(),
                 default => $b['brand']->getName(),
             };
             return $dirMultiplier * ($valA <=> $valB);

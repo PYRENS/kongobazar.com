@@ -5,31 +5,74 @@
 {% block page_title %}Catégories{% endblock %}
 
 {% block body %}
-    <form method="get" class="admin-search-bar">
-        <input type="text" name="q" placeholder="Rechercher une catégorie par nom..." value="{{ searchTerm }}">
-        <button type="submit" class="admin-btn admin-btn--primary"><i class="bi bi-search"></i> Rechercher</button>
-        {% if isSearchMode %}
-            <a href="{{ path('manage_categories_index') }}" class="admin-btn admin-btn--outline"><i class="bi bi-x-circle"></i> Effacer</a>
-        {% endif %}
-    </form>
-
-    {% if not isSearchMode %}
-        <nav class="admin-breadcrumb">
-            <a href="{{ path('manage_categories_index') }}"><i class="bi bi-house"></i> Racine</a>
-            {% for cat in breadcrumb %}
-                <i class="bi bi-chevron-right"></i>
-                <a href="{{ path('manage_categories_index', { parent: cat.id }) }}">{{ cat.name }}</a>
-            {% endfor %}
-        </nav>
-
-        <div class="admin-actions" style="margin:16px 0;">
-            <a href="{{ path('manage_categories_new', parent ? { parent: parent.id } : {}) }}" class="admin-btn admin-btn--primary">
-                <i class="bi bi-plus-lg"></i> Ajouter {{ parent ? 'sous ' ~ parent.name : 'une catégorie' }}
-            </a>
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-blue h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-blue"><i class="bi bi-diagram-3-fill"></i></div>
+                <div class="ctb-stat-val">{{ totalCategoriesCount }}</div>
+                <div class="ctb-stat-label">Catégories au total</div>
+            </div>
         </div>
-    {% else %}
-        <p class="text-muted">{{ rows|length }} résultat(s) pour "{{ searchTerm }}"</p>
-    {% endif %}
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-green h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-green"><i class="bi bi-flag-fill"></i></div>
+                <div class="ctb-stat-val">{{ rootCategoriesCount }}</div>
+                <div class="ctb-stat-label">Rayons racine</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-purple h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-purple"><i class="bi bi-box-seam"></i></div>
+                <div class="ctb-stat-val">{{ totalCategoriesCount - rootCategoriesCount }}</div>
+                <div class="ctb-stat-label">Sous-catégories</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-orange h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-orange"><i class="bi bi-list-ul"></i></div>
+                <div class="ctb-stat-val">{{ rows|length }}</div>
+                <div class="ctb-stat-label">{{ isSearchMode ? 'Résultats de recherche' : 'À ce niveau' }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-12">
+            <div class="sw-card">
+                <div class="card-body py-3">
+                    <form method="get" class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <div class="ctb-search-wrap">
+                            <i class="bi bi-search ctb-search-icon"></i>
+                            <input type="text" name="q" class="ctb-search-input" style="width:320px;" placeholder="Rechercher une catégorie par nom..." value="{{ searchTerm }}">
+                        </div>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search me-1"></i>Rechercher</button>
+                            {% if isSearchMode %}
+                                <a href="{{ path('manage_categories_index') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-x-circle me-1"></i>Effacer</a>
+                            {% endif %}
+                            {% if not isSearchMode %}
+                                <a href="{{ path('manage_categories_new', parent ? { parent: parent.id } : {}) }}" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-plus-lg me-1"></i>Ajouter {{ parent ? 'sous ' ~ parent.name : 'une catégorie' }}
+                                </a>
+                            {% endif %}
+                        </div>
+                    </form>
+
+                    {% if not isSearchMode %}
+                        <nav class="admin-breadcrumb mt-3">
+                            <a href="{{ path('manage_categories_index') }}"><i class="bi bi-house"></i> Racine</a>
+                            {% for cat in breadcrumb %}
+                                <i class="bi bi-chevron-right"></i>
+                                <a href="{{ path('manage_categories_index', { parent: cat.id }) }}">{{ cat.name }}</a>
+                            {% endfor %}
+                        </nav>
+                    {% else %}
+                        <p class="text-muted mt-3 mb-0">{{ rows|length }} résultat(s) pour "{{ searchTerm }}"</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
 
     {% macro sortLink(field, label, currentSort, currentDir) %}
         {% set nextDir = (currentSort == field and currentDir == 'ASC') ? 'DESC' : 'ASC' %}
@@ -44,61 +87,90 @@
     {% endmacro %}
     {% import _self as self %}
 
-    <table class="admin-table">
-        <thead>
-            <tr>
-                <th>Image</th>
-                <th>Icône</th>
-                <th>{{ self.sortLink('name', 'Nom', currentSort, currentDir) }}</th>
-                {% if isSearchMode %}<th>Chemin</th>{% endif %}
-                <th>{{ self.sortLink('childrenCount', 'Sous-catégories', currentSort, currentDir) }}</th>
-                <th>{{ self.sortLink('productCount', 'Produits', currentSort, currentDir) }}</th>
-                <th>Couleur</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in rows %}
-                {% set cat = row.category %}
-                <tr>
-                    <td>
-                        {% if cat.imageName %}
-                            <img src="{{ vich_uploader_asset(cat, 'imageFile') }}" style="width:40px;height:40px;border-radius:4px;object-fit:cover;">
-                        {% else %}
-                            <span class="text-muted">N/A</span>
-                        {% endif %}
-                    </td>
-                    <td><i class="bi {{ cat.icon|default('bi-tag') }}" style="font-size:18px;"></i></td>
-                    <td><a href="{{ path('manage_categories_show', { id: cat.id }) }}">{{ cat.name }}</a></td>
-                    {% if isSearchMode %}<td class="text-muted" style="font-size:12px;">{{ cat.getFullPath() }}</td>{% endif %}
-                    <td>
-                        {% if row.childrenCount > 0 %}
-                            <a href="{{ path('manage_categories_index', { parent: cat.id }) }}">{{ row.childrenCount }} <i class="bi bi-box-arrow-in-right"></i></a>
-                        {% else %}<span class="text-muted">0</span>{% endif %}
-                    </td>
-                    <td>
-                        {% if row.productCount > 0 %}
-                            <a href="{{ path('manage_categories_products', { id: cat.id }) }}">{{ row.productCount }}</a>
-                        {% else %}0{% endif %}
-                    </td>
-                    <td>
-                        {% if cat.themeColor %}
-                            <span style="display:inline-block;width:20px;height:20px;border-radius:4px;background:{{ cat.themeColor }};border:1px solid #ddd;vertical-align:middle;"></span>
-                        {% else %}
-                            <span class="text-muted">—</span>
-                        {% endif %}
-                    </td>
-                    <td class="admin-actions">
-                        <a href="{{ path('manage_categories_edit', { id: cat.id }) }}" class="admin-btn admin-btn--outline"><i class="bi bi-pencil"></i></a>
-                        <form action="{{ path('manage_categories_delete', { id: cat.id }) }}" method="post"
-                              onsubmit="return confirm('Supprimer {{ cat.name }} et toutes ses sous-catégories ? Irréversible.');">
-                            <button type="submit" class="admin-btn admin-btn--danger"><i class="bi bi-trash"></i></button>
-                        </form>
-                    </td>
-                </tr>
-            {% else %}
-                <tr><td colspan="8" class="text-muted">Aucune catégorie à ce niveau.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="sw-card">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table ctb-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Icône</th>
+                                    <th>Image</th>
+                                    <th>{{ self.sortLink('name', 'Nom', currentSort, currentDir) }}</th>
+                                    {% if isSearchMode %}<th>Chemin</th>{% endif %}
+                                    <th>{{ self.sortLink('childrenCount', 'Sous-catégories', currentSort, currentDir) }}</th>
+                                    <th>{{ self.sortLink('productCount', 'Produits', currentSort, currentDir) }}</th>
+                                    <th>Modèle</th>
+                                    <th>Authenticité</th>
+                                    <th>Couleur</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in rows %}
+                                    {% set cat = row.category %}
+                                    <tr>
+                                        <td>
+                                            <div class="ctb-avatar ctb-av-blue" style="border-radius:8px;"><i class="bi {{ cat.icon|default('bi-tag') }}"></i></div>
+                                        </td>
+                                        <td>
+                                            {% if cat.imageName %}
+                                                <img src="{{ vich_uploader_asset(cat, 'imageFile') }}" style="width:38px;height:38px;border-radius:8px;object-fit:cover;">
+                                            {% else %}
+                                                <span class="text-muted">N/A</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="ctb-contact-name"><a href="{{ path('manage_categories_show', { id: cat.id }) }}">{{ cat.name }}</a></td>
+                                        {% if isSearchMode %}<td class="text-muted" style="font-size:12px;">{{ cat.getFullPath() }}</td>{% endif %}
+                                        <td>
+                                            {% if row.childrenCount > 0 %}
+                                                <a href="{{ path('manage_categories_index', { parent: cat.id }) }}">{{ row.childrenCount }} <i class="bi bi-box-arrow-in-right"></i></a>
+                                            {% else %}<span class="text-muted">0</span>{% endif %}
+                                        </td>
+                                        <td>
+                                            {% if row.productCount > 0 %}
+                                                <a href="{{ path('manage_categories_products', { id: cat.id }) }}">{{ row.productCount }}</a>
+                                            {% else %}0{% endif %}
+                                        </td>
+                                        <td>
+                                            {% if cat.requiresModel %}
+                                                <span class="ctb-status-badge ctb-status-active"><i class="bi bi-check-circle"></i> Oui</span>
+                                            {% else %}<span class="text-muted">Non</span>{% endif %}
+                                        </td>
+                                        <td>
+                                            {% if cat.authenticityRelevant %}
+                                                <span class="ctb-status-badge ctb-status-active"><i class="bi bi-check-circle"></i> Oui</span>
+                                            {% else %}<span class="text-muted">Non</span>{% endif %}
+                                        </td>
+                                        <td>
+                                            {% if cat.themeColor %}
+                                                <span style="display:inline-block;width:22px;height:22px;border-radius:6px;background:{{ cat.themeColor }};border:1px solid var(--border-color);vertical-align:middle;"></span>
+                                            {% else %}
+                                                <span class="text-muted">—</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="ctb-act-row">
+                                                <a href="{{ path('manage_categories_edit', { id: cat.id }) }}" class="ctb-act-btn" title="Modifier"><i class="bi bi-pencil"></i></a>
+                                                <form action="{{ path('manage_categories_delete', { id: cat.id }) }}" method="post"
+                                                      onsubmit="return confirm('Supprimer {{ cat.name }} et toutes ses sous-catégories ? Irréversible.');">
+                                                    <button type="submit" class="ctb-act-btn ctb-act-danger" title="Supprimer"><i class="bi bi-trash"></i></button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% else %}
+                                    <tr><td colspan="10" class="text-muted text-center py-4">Aucune catégorie à ce niveau.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="ctb-table-footer">
+                        <span class="ctb-footer-info">{{ rows|length }} catégorie{{ rows|length != 1 ? 's' : '' }} affichée{{ rows|length != 1 ? 's' : '' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

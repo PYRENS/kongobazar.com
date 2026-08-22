@@ -5,46 +5,188 @@
 {% block page_title %}Produits de "{{ category.name }}"{% endblock %}
 
 {% block body %}
-    <a href="{{ path('manage_categories_index', category.parent ? { parent: category.parent.id } : {}) }}" class="admin-btn admin-btn--outline" style="margin-bottom:16px;">
-        ← Retour aux catégories
-    </a>
+    {% set statusLabels = {
+        'active': 'Actif',
+        'draft': 'Brouillon',
+        'suspended': 'Bloqué',
+        'coming_soon': 'Bientôt disponible',
+        'archived': 'Archivé',
+        'sold': 'Vendu',
+    } %}
+    {% set statusBadgeMap = {
+        'active': 'ctb-status-active',
+        'draft': 'ctb-status-inactive',
+        'suspended': 'ctb-status-banned',
+        'coming_soon': 'ctb-status-pending',
+        'archived': 'ctb-status-inactive',
+        'sold': 'ctb-status-pending',
+    } %}
 
-    <form method="get" class="admin-filter-bar">
-        <input type="text" name="q" placeholder="Rechercher un produit..." value="{{ currentTerm }}">
-        <select name="status" onchange="this.form.submit()">
-            <option value="">Tous statuts</option>
-            {% for s in ['active', 'draft', 'suspended', 'coming_soon', 'archived'] %}
-                <option value="{{ s }}" {{ currentStatus == s ? 'selected' : '' }}>{{ s }}</option>
-            {% endfor %}
-        </select>
-        <select name="sort" onchange="this.form.submit()">
-            <option value="newest" {{ currentSort == 'newest' ? 'selected' : '' }}>Plus récent</option>
-            <option value="price_asc" {{ currentSort == 'price_asc' ? 'selected' : '' }}>Prix croissant</option>
-            <option value="price_desc" {{ currentSort == 'price_desc' ? 'selected' : '' }}>Prix décroissant</option>
-        </select>
-        <button type="submit" class="admin-btn admin-btn--primary"><i class="bi bi-search"></i></button>
-    </form>
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-blue h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-blue"><i class="bi bi-box-seam"></i></div>
+                <div class="ctb-stat-val">{{ stats.total }}</div>
+                <div class="ctb-stat-label">Produits au total</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-green h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-green"><i class="bi bi-check-circle-fill"></i></div>
+                <div class="ctb-stat-val">{{ stats.activeCount }}</div>
+                <div class="ctb-stat-label">Actifs</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-orange h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-orange"><i class="bi bi-slash-circle"></i></div>
+                <div class="ctb-stat-val">{{ stats.blockedCount }}</div>
+                <div class="ctb-stat-label">Bloqués</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-purple h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-purple"><i class="bi bi-graph-up-arrow"></i></div>
+                <div class="ctb-stat-val">{{ stats.totalSold }}</div>
+                <div class="ctb-stat-label">Unités vendues</div>
+            </div>
+        </div>
+    </div>
 
-    <table class="admin-table">
-        <thead>
-            <tr><th>Produit</th><th>Vendeur</th><th>Prix</th><th>Statut</th><th>Stock</th></tr>
-        </thead>
-        <tbody>
-            {% for product in products %}
-                <tr>
-                    <td>{{ product.title }}</td>
-                    <td>{{ product.sellerProfile ? product.sellerProfile.displayName : '—' }}</td>
-                    <td>{{ product.basePrice }} {{ product.currency }}</td>
-                    <td><span class="admin-badge admin-badge--active">{{ product.status }}</span></td>
-                    <td>
-                        {% set totalStock = 0 %}
-                        {% for variant in product.variants %}{% set totalStock = totalStock + variant.quantity %}{% endfor %}
-                        {{ totalStock }}
-                    </td>
-                </tr>
-            {% else %}
-                <tr><td colspan="5" class="text-muted">Aucun produit ne correspond à ces critères.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="row g-3 mb-3">
+        <div class="col-12">
+            <div class="sw-card">
+                <div class="card-body py-3">
+                    <a href="{{ path('manage_categories_index', category.parent ? { parent: category.parent.id } : {}) }}" class="btn btn-outline-secondary btn-sm mb-3">
+                        <i class="bi bi-arrow-left me-1"></i>Retour aux catégories
+                    </a>
+
+                    <form method="get" class="d-flex align-items-center flex-wrap gap-3">
+                        <div class="ctb-search-wrap">
+                            <i class="bi bi-search ctb-search-icon"></i>
+                            <input type="text" name="q" class="ctb-search-input" style="width:280px;" placeholder="Rechercher un produit..." value="{{ currentTerm }}">
+                        </div>
+                        <select name="status" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
+                            <option value="">Tous statuts</option>
+                            {% for s in ['active', 'draft', 'suspended', 'coming_soon', 'archived'] %}
+                                <option value="{{ s }}" {{ currentStatus == s ? 'selected' : '' }}>{{ statusLabels[s] }}</option>
+                            {% endfor %}
+                        </select>
+                        <select name="sort" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
+                            <option value="newest" {{ currentSort == 'newest' ? 'selected' : '' }}>Plus récent</option>
+                            <option value="price_asc" {{ currentSort == 'price_asc' ? 'selected' : '' }}>Prix croissant</option>
+                            <option value="price_desc" {{ currentSort == 'price_desc' ? 'selected' : '' }}>Prix décroissant</option>
+                        </select>
+                        <select name="perPage" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
+                            {% for n in [10, 20, 50, 100] %}
+                                <option value="{{ n }}" {{ perPage == n ? 'selected' : '' }}>{{ n }} / page</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search me-1"></i>Rechercher</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-12">
+            <div class="sw-card">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table ctb-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Image</th>
+                                    <th>Produit</th>
+                                    <th>Réf. KongoBazar</th>
+                                    <th>Réf. fabricant</th>
+                                    <th>EAN</th>
+                                    <th>Vendeur</th>
+                                    <th>Localisation</th>
+                                    <th>Prix</th>
+                                    <th>Authenticité</th>
+                                    <th>Statut</th>
+                                    <th>Stock</th>
+                                    <th>Vendu</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in products %}
+                                    {% set firstImage = product.images|first %}
+                                    {% set sellerUnit = product.sellerProfile and product.sellerProfile.user ? product.sellerProfile.user.administrativeUnit : null %}
+                                    <tr>
+                                        <td>
+                                            {% if firstImage %}
+                                                <img src="{{ vich_uploader_asset(firstImage, 'imageFile') }}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;">
+                                            {% else %}
+                                                <div class="ctb-avatar ctb-av-blue" style="border-radius:8px;"><i class="bi bi-box-seam"></i></div>
+                                            {% endif %}
+                                        </td>
+                                        <td class="ctb-contact-name" title="{{ product.title }}">{{ product.title|length > 50 ? product.title|slice(0, 50) ~ '…' : product.title }}</td>
+                                        <td class="text-muted" style="font-size:12px;">{{ product.kongobazarReference }}</td>
+                                        <td class="text-muted" style="font-size:12px;">{{ product.reference|default('—') }}</td>
+                                        <td class="text-muted" style="font-size:12px;">{{ product.ean|default('—') }}</td>
+                                        <td>
+                                            {% if product.sellerProfile %}
+                                                <a href="{{ path('manage_users_show', { id: product.sellerProfile.user.id }) }}">{{ product.sellerProfile.displayName }}</a>
+                                            {% else %}—{% endif %}
+                                        </td>
+                                        <td>{{ sellerUnit ? sellerUnit.getLocalisationParts(false)|join('/') : '—' }}</td>
+                                        <td>{{ product.basePrice }} {{ product.currency }}</td>
+                                        <td>
+                                            {% if product.authenticityStatus == 'original' %}
+                                                <span class="ctb-status-badge ctb-status-active"><i class="bi bi-patch-check"></i> Original</span>
+                                            {% elseif product.authenticityStatus == 'replica' %}
+                                                <span class="ctb-status-badge ctb-status-pending"><i class="bi bi-info-circle"></i> Réplique</span>
+                                            {% else %}<span class="text-muted">—</span>{% endif %}
+                                        </td>
+                                        <td><span class="ctb-status-badge {{ statusBadgeMap[product.status]|default('ctb-status-inactive') }}">{{ statusLabels[product.status]|default(product.status) }}</span></td>
+                                        <td>
+                                            {% set totalStock = 0 %}
+                                            {% for variant in product.variants %}{% set totalStock = totalStock + variant.quantity %}{% endfor %}
+                                            {{ totalStock }}
+                                        </td>
+                                        <td>{{ product.salesCount }}</td>
+                                        <td>
+                                            <div class="ctb-act-row">
+                                                <a href="{{ path('manage_products_show', { id: product.id }) }}" class="ctb-act-btn" title="Voir détails (Dashboard)"><i class="bi bi-eye"></i></a>
+                                                <a href="{{ path('catalog_product', { slug: product.slug }) }}" target="_blank" class="ctb-act-btn" title="Voir sur le site"><i class="bi bi-box-arrow-up-right"></i></a>
+                                                <a href="{{ path('manage_products_edit', { id: product.id }) }}" class="ctb-act-btn" title="Modifier"><i class="bi bi-pencil"></i></a>
+                                                <form action="{{ path('manage_categories_product_toggle_block', { id: product.id }) }}" method="post">
+                                                    <button type="submit" class="ctb-act-btn {{ product.status == 'suspended' ? '' : 'ctb-act-danger' }}" title="{{ product.status == 'suspended' ? 'Débloquer' : 'Bloquer' }}">
+                                                        <i class="bi {{ product.status == 'suspended' ? 'bi-check-circle' : 'bi-slash-circle' }}"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% else %}
+                                    <tr><td colspan="12" class="text-muted text-center py-4">Aucun produit ne correspond à ces critères.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="ctb-table-footer">
+                        <span class="ctb-footer-info">{{ total }} produit{{ total != 1 ? 's' : '' }} au total — page {{ page }} / {{ pages }}</span>
+                        {% if pages > 1 %}
+                            <div class="ctb-pagination">
+                                <a href="?page={{ max(1, page - 1) }}&q={{ currentTerm }}&status={{ currentStatus }}&sort={{ currentSort }}&perPage={{ perPage }}"
+                                   class="ctb-page-btn {{ page <= 1 ? 'disabled' : '' }}"><i class="bi bi-chevron-left"></i></a>
+
+                                {% for p in max(1, page - 2)..min(pages, page + 2) %}
+                                    <a href="?page={{ p }}&q={{ currentTerm }}&status={{ currentStatus }}&sort={{ currentSort }}&perPage={{ perPage }}"
+                                       class="ctb-page-btn {{ p == page ? 'ctb-page-active' : '' }}">{{ p }}</a>
+                                {% endfor %}
+
+                                <a href="?page={{ min(pages, page + 1) }}&q={{ currentTerm }}&status={{ currentStatus }}&sort={{ currentSort }}&perPage={{ perPage }}"
+                                   class="ctb-page-btn {{ page >= pages ? 'disabled' : '' }}"><i class="bi bi-chevron-right"></i></a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

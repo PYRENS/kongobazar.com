@@ -50,6 +50,7 @@ function fetchAndAppendLevel(parentId, picker, finalInput, level) {
 
             const newSelect = document.createElement('select');
             newSelect.dataset.geoLevel = String(level);
+            newSelect.className = picker.querySelector('select[data-geo-level="1"]').className;
             newSelect.innerHTML = `<option value="">${data.results[0].typeLabel || '...'}</option>`;
             data.results.forEach((u) => {
                 const opt = document.createElement('option');

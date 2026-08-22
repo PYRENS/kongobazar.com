@@ -17,15 +17,21 @@ use Symfony\Component\Routing\Attribute\Route;
 class NegotiationEscrowManagementController extends AbstractController
 {
     #[Route('/negociations', name: 'manage_negotiations_index', host: 'manage.kongobazar.com', methods: ['GET'])]
-    public function index(NegotiationThreadRepository $repository): Response
+    public function index(Request $request, NegotiationThreadRepository $repository): Response
     {
+        $buyerId = $request->query->get('buyer') ? (int) $request->query->get('buyer') : null;
+
         // Uniquement les négociations où un lien de paiement a été généré
         $threads = array_filter(
             $repository->findBy([], ['id' => 'DESC']),
             fn (NegotiationThread $t) => null !== $t->getPaymentLink()
+                && (!$buyerId || $t->getBuyer()?->getId() === $buyerId)
         );
 
-        return $this->render('manage/negotiations/index.html.twig', ['threads' => $threads]);
+        return $this->render('manage/negotiations/index.html.twig', [
+            'threads' => $threads,
+            'currentBuyerId' => $buyerId,
+        ]);
     }
 
     #[Route('/negociations/{id}/marquer-paye', name: 'manage_negotiations_mark_paid', host: 'manage.kongobazar.com', methods: ['POST'], requirements: ['id' => '\d+'])]

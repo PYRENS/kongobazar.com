@@ -18,59 +18,121 @@
 {% import _self as self %}
 
 {% block body %}
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="h4 mb-0">Motorisations</h1>
-        <a href="{{ path('manage_vehicle_engines_new') }}" class="btn btn-primary btn-sm">+ Nouvelle motorisation</a>
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-blue h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-blue"><i class="bi bi-gear-fill"></i></div>
+                <div class="ctb-stat-val">{{ stats.total }}</div>
+                <div class="ctb-stat-label">Motorisations au total</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-green h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-green"><i class="bi bi-car-front"></i></div>
+                <div class="ctb-stat-val">{{ stats.auto }}</div>
+                <div class="ctb-stat-label">Auto</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-orange h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-orange"><i class="bi bi-scooter"></i></div>
+                <div class="ctb-stat-val">{{ stats.moto }}</div>
+                <div class="ctb-stat-label">Moto</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-purple h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-purple"><i class="bi bi-list-ul"></i></div>
+                <div class="ctb-stat-val">{{ stats.filtered }}</div>
+                <div class="ctb-stat-label">Résultats filtrés</div>
+            </div>
+        </div>
     </div>
 
-    <form method="get" class="mb-3 d-flex align-items-center gap-2">
-        <input type="text" name="q" class="form-control" style="max-width: 300px;" placeholder="Rechercher (marque, modèle, variante, moteur)..." value="{{ searchTerm }}">
-        <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-search"></i></button>
-        {% if searchTerm %}
-            <a href="{{ path('manage_vehicle_engines_index') }}" class="btn btn-sm btn-outline-secondary">Réinitialiser</a>
-        {% endif %}
-    </form>
+    <div class="row g-3 mb-3">
+        <div class="col-12">
+            <div class="sw-card">
+                <div class="card-body py-3">
+                    <form method="get" class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <div class="ctb-search-wrap">
+                            <i class="bi bi-search ctb-search-icon"></i>
+                            <input type="text" name="q" class="ctb-search-input" style="width:300px;" placeholder="Rechercher (marque, modèle, variante, moteur)..." value="{{ searchTerm }}">
+                        </div>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <select name="perPage" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
+                                {% for n in [10, 20, 50, 100] %}
+                                    <option value="{{ n }}" {{ perPage == n ? 'selected' : '' }}>{{ n }} / page</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search me-1"></i>Rechercher</button>
+                            {% if searchTerm %}<a href="{{ path('manage_vehicle_engines_index') }}" class="btn btn-outline-secondary btn-sm">Réinitialiser</a>{% endif %}
+                            <a href="{{ path('manage_vehicle_engines_new') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Nouvelle motorisation</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <p class="text-muted mb-2">{{ engines|length }} motorisation{{ engines|length > 1 ? 's' : '' }} au total</p>
-
-    <table class="table admin-table">
-        <thead>
-            <tr>
-                <th>Logo</th>
-                <th>{{ self.sortLink('brand', 'Marque / Modèle / Variante', currentSort, currentDir) }}</th>
-                <th>{{ self.sortLink('label', 'Moteur', currentSort, currentDir) }}</th>
-                <th>{{ self.sortLink('power', 'CV / kW', currentSort, currentDir) }}</th>
-                <th>{{ self.sortLink('fuelType', 'Énergie', currentSort, currentDir) }}</th>
-                <th>{{ self.sortLink('period', 'Période', currentSort, currentDir) }}</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for engine in engines %}
-                {% set brand = engine.variant ? engine.variant.model.brand : (engine.model ? engine.model.brand : null) %}
-                <tr>
-                    <td>
-                        {% if brand and brand.logoName %}
-                            <img src="{{ vich_uploader_asset(brand, 'logoFile') }}" alt="" style="width:28px;height:28px;object-fit:contain;">
+    <div class="sw-card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table ctb-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Logo</th>
+                            <th>{{ self.sortLink('brand', 'Marque / Modèle / Variante', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('label', 'Moteur', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('fuelType', 'Énergie', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('power', 'CV / kW', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('period', 'Période', currentSort, currentDir) }}</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for engine in engines %}
+                            {% set brand = engine.variant ? engine.variant.model.brand : (engine.model ? engine.model.brand : null) %}
+                            {% set fuelName = engine.fuelType ? engine.fuelType.name : '' %}
+                            <tr>
+                                <td>
+                                    {% if brand and brand.logoName %}
+                                        <img src="{{ vich_uploader_asset(brand, 'logoFile') }}" alt="" style="width:28px;height:28px;object-fit:contain;">
+                                    {% else %}<span class="text-muted">—</span>{% endif %}
+                                </td>
+                                <td>{{ engine.brandNameCache }} {{ engine.modelNameCache }} {{ engine.variantNameCache }}</td>
+                                <td class="ctb-contact-name">{{ engine.label }}</td>
+                                <td title="{{ fuelName }}">
+                                    {% if fuelName %}{{ fuelName|length > 30 ? fuelName|slice(0, 30) ~ '…' : fuelName }}{% else %}-{% endif %}
+                                </td>
+                                <td>{{ engine.powerCv ?: '-' }} CV / {{ engine.powerCv ? (engine.powerCv * 0.7355)|round : '-' }} kW</td>
+                                <td>{{ engine.periodLabel ?: '-' }}</td>
+                                <td>
+                                    <div class="ctb-act-row">
+                                        <a href="{{ path('manage_vehicle_engines_edit', {id: engine.id}) }}" class="ctb-act-btn" title="Modifier"><i class="bi bi-pencil"></i></a>
+                                        <form action="{{ path('manage_vehicle_engines_delete', {id: engine.id}) }}" method="post" onsubmit="return confirm('Supprimer cette motorisation ?');">
+                                            <button type="submit" class="ctb-act-btn ctb-act-danger" title="Supprimer"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
                         {% else %}
-                            <span class="text-muted">—</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ engine.brandNameCache }} {{ engine.modelNameCache }} {{ engine.variantNameCache }}</td>
-                    <td>{{ engine.label }}</td>
-                    <td>{{ engine.powerCv ?: '-' }} CV / {{ engine.powerKw ?: '-' }} kW</td>
-                    <td>{{ engine.fuelType ? engine.fuelType.name : '-' }}</td>
-                    <td>{{ engine.periodLabel ?: '-' }}</td>
-                    <td class="text-end">
-                        <a href="{{ path('manage_vehicle_engines_edit', {id: engine.id}) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
-                        <form action="{{ path('manage_vehicle_engines_delete', {id: engine.id}) }}" method="post" class="d-inline" onsubmit="return confirm('Supprimer cette motorisation ?');">
-                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-                        </form>
-                    </td>
-                </tr>
-            {% else %}
-                <tr><td colspan="7" class="text-muted">Aucune motorisation pour l'instant.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                            <tr><td colspan="7" class="text-muted text-center py-4">Aucune motorisation pour l'instant.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="ctb-table-footer">
+                <span class="ctb-footer-info">{{ total }} motorisation{{ total != 1 ? 's' : '' }} au total — page {{ page }} / {{ pages }}</span>
+                {% if pages > 1 %}
+                    <div class="ctb-pagination">
+                        <a href="{{ path('manage_vehicle_engines_index', app.request.query.all|merge({page: max(1, page - 1)})) }}" class="ctb-page-btn {{ page <= 1 ? 'disabled' : '' }}"><i class="bi bi-chevron-left"></i></a>
+                        {% for p in max(1, page - 2)..min(pages, page + 2) %}
+                            <a href="{{ path('manage_vehicle_engines_index', app.request.query.all|merge({page: p})) }}" class="ctb-page-btn {{ p == page ? 'ctb-page-active' : '' }}">{{ p }}</a>
+                        {% endfor %}
+                        <a href="{{ path('manage_vehicle_engines_index', app.request.query.all|merge({page: min(pages, page + 1)})) }}" class="ctb-page-btn {{ page >= pages ? 'disabled' : '' }}"><i class="bi bi-chevron-right"></i></a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 {% endblock %}

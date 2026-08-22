@@ -16,6 +16,24 @@ class AdministrativeUnitRepository extends ServiceEntityRepository
         parent::__construct($registry, AdministrativeUnit::class);
     }
 
+    public function countAll(): int
+    {
+        return (int) $this->createQueryBuilder('a')
+            ->select('COUNT(a.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function countByActive(bool $active): int
+    {
+        return (int) $this->createQueryBuilder('a')
+            ->select('COUNT(a.id)')
+            ->andWhere('a.active = :active')
+            ->setParameter('active', $active)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     public function findRootUnits(): array
     {
         return $this->createQueryBuilder('a')

@@ -53,6 +53,16 @@ class Product
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $reference = null;
 
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $ean = null;
+
+    #[ORM\Column(length: 150, nullable: true)]
+    private ?string $model = null;
+
+    // Déclaration du vendeur, pas une certification KongoBazar. Valeurs : 'original' | 'replica' | null (non précisé).
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $authenticityStatus = null;
+
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
     private ?string $basePrice = null;
 
@@ -248,6 +258,51 @@ class Product
         $this->reference = $reference;
 
         return $this;
+    }
+
+    public function getEan(): ?string
+    {
+        return $this->ean;
+    }
+
+    public function setEan(?string $ean): static
+    {
+        $this->ean = $ean;
+
+        return $this;
+    }
+
+    public function getModel(): ?string
+    {
+        return $this->model;
+    }
+
+    public function setModel(?string $model): static
+    {
+        $this->model = $model;
+
+        return $this;
+    }
+
+    public function getAuthenticityStatus(): ?string
+    {
+        return $this->authenticityStatus;
+    }
+
+    public function setAuthenticityStatus(?string $authenticityStatus): static
+    {
+        $this->authenticityStatus = in_array($authenticityStatus, ['original', 'replica'], true) ? $authenticityStatus : null;
+
+        return $this;
+    }
+
+    /**
+     * Référence interne KongoBazar — dérivée de l'ID, jamais stockée en base.
+     * Format : KBZ-000042 (6 chiffres minimum, s'élargit automatiquement au-delà, rien n'est tronqué).
+     */
+    public function getKongobazarReference(): ?string
+    {
+        return $this->id ? sprintf('KBZ-%06d', $this->id) : null;
     }
 
     public function getBasePrice(): ?string

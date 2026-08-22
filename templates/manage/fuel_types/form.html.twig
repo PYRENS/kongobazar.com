@@ -1,24 +1,31 @@
 {% extends 'manage/base.html.twig' %}
 
+{% block title %}{{ fuelType ? 'Modifier l\'énergie' : 'Nouvelle énergie' }}{% endblock %}
+{% block page_icon %}bi-fuel-pump{% endblock %}
+{% block page_title %}{{ fuelType ? 'Modifier « ' ~ fuelType.name ~ ' »' : 'Nouvelle énergie' }}{% endblock %}
+
 {% block body %}
-    <h1 class="h4 mb-3">{{ fuelType ? 'Modifier l\'énergie' : 'Nouvelle énergie' }}</h1>
+    <div class="sw-card" style="max-width:560px;">
+        <div class="card-header"><h6 class="mb-0 fw-bold">{{ fuelType ? 'Modifier l\'énergie' : 'Nouvelle énergie' }}</h6></div>
+        <div class="card-body">
+            <form method="post" action="{{ fuelType ? path('manage_fuel_types_update', {id: fuelType.id}) : path('manage_fuel_types_new') }}">
+                <div class="mb-3">
+                    <label class="acc-form-label">Nom</label>
+                    <input type="text" name="name" class="acc-form-input" value="{{ fuelType ? fuelType.name : '' }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="acc-form-label">Description</label>
+                    <textarea name="description" class="acc-form-textarea" rows="3">{{ fuelType ? fuelType.description : '' }}</textarea>
+                </div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" name="active" value="1" class="form-check-input" id="active"
+                        {{ fuelType is null or fuelType.active ? 'checked' : '' }}>
+                    <label class="form-check-label" for="active">Actif</label>
+                </div>
 
-    <form method="post" action="{{ fuelType ? path('manage_fuel_types_update', {id: fuelType.id}) : path('manage_fuel_types_new') }}">
-        <div class="mb-3">
-            <label class="form-label">Nom</label>
-            <input type="text" name="name" class="form-control" value="{{ fuelType ? fuelType.name : '' }}" required>
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check2 me-2"></i>Enregistrer</button>
+                <a href="{{ path('manage_fuel_types_index') }}" class="btn btn-outline-secondary ms-2">Annuler</a>
+            </form>
         </div>
-        <div class="mb-3">
-            <label class="form-label">Description</label>
-            <textarea name="description" class="form-control" rows="3">{{ fuelType ? fuelType.description : '' }}</textarea>
-        </div>
-        <div class="mb-3 form-check">
-            <input type="checkbox" name="active" value="1" class="form-check-input" id="active"
-                {{ fuelType is null or fuelType.active ? 'checked' : '' }}>
-            <label class="form-check-label" for="active">Actif</label>
-        </div>
-
-        <button type="submit" class="btn btn-success">Enregistrer</button>
-        <a href="{{ path('manage_fuel_types_index') }}" class="btn btn-outline-secondary">Annuler</a>
-    </form>
+    </div>
 {% endblock %}

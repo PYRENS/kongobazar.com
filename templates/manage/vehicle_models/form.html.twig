@@ -2,37 +2,40 @@
 
 {% block title %}{{ model ? 'Modifier le modèle' : 'Nouveau modèle' }}{% endblock %}
 {% block page_icon %}bi-car-front{% endblock %}
-{% block page_title %}{{ model ? 'Modifier le modèle' : 'Nouveau modèle' }}{% endblock %}
+{% block page_title %}{{ model ? 'Modifier « ' ~ model.name ~ ' »' : 'Nouveau modèle' }}{% endblock %}
 
 {% block body %}
-    <h1 class="h4 mb-3">{{ model ? 'Modifier le modèle' : 'Nouveau modèle' }}</h1>
+    <div class="sw-card" style="max-width:560px;">
+        <div class="card-header"><h6 class="mb-0 fw-bold">{{ model ? 'Modifier le modèle' : 'Nouveau modèle' }}</h6></div>
+        <div class="card-body">
+            <form method="post" action="{{ model ? path('manage_vehicle_models_update', {id: model.id}) : path('manage_vehicle_models_new') }}">
+                <div class="mb-3">
+                    <label class="acc-form-label">Marque</label>
+                    <select name="brand_id" class="acc-form-select" required>
+                        <option value="">— Choisir —</option>
+                        {% for brand in brands %}
+                            <option value="{{ brand.id }}" {{ model and model.brand and model.brand.id == brand.id ? 'selected' : '' }}>{{ brand.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="acc-form-label">Nom</label>
+                    <input type="text" name="name" class="acc-form-input" value="{{ model ? model.name : '' }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="acc-form-label">Nom alternatif (optionnel)</label>
+                    <input type="text" name="name2" class="acc-form-input" value="{{ model ? model.name2 : '' }}">
+                </div>
 
-    <form method="post" action="{{ model ? path('manage_vehicle_models_update', {id: model.id}) : path('manage_vehicle_models_new') }}">
-        <div class="mb-3">
-            <label class="form-label">Marque</label>
-            <select name="brand_id" class="form-select" required>
-                <option value="">— Choisir —</option>
-                {% for brand in brands %}
-                    <option value="{{ brand.id }}" {{ model and model.brand and model.brand.id == brand.id ? 'selected' : '' }}>{{ brand.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Nom</label>
-            <input type="text" name="name" class="form-control" value="{{ model ? model.name : '' }}" required>
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Nom alternatif (optionnel)</label>
-            <input type="text" name="name2" class="form-control" value="{{ model ? model.name2 : '' }}">
-        </div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" name="is_moto" value="1" class="form-check-input" id="isMoto"
+                        {{ model and model.isMoto ? 'checked' : '' }}>
+                    <label class="form-check-label" for="isMoto">Modèle Moto (décoché = Auto)</label>
+                </div>
 
-        <div class="mb-3 form-check">
-            <input type="checkbox" name="is_moto" value="1" class="form-check-input" id="isMoto"
-                {{ model and model.isMoto ? 'checked' : '' }}>
-            <label class="form-check-label" for="isMoto">Modèle Moto (décoché = Auto)</label>
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check2 me-2"></i>Enregistrer</button>
+                <a href="{{ path('manage_vehicle_models_index') }}" class="btn btn-outline-secondary ms-2">Annuler</a>
+            </form>
         </div>
-
-        <button type="submit" class="btn btn-success">Enregistrer</button>
-        <a href="{{ path('manage_vehicle_models_index') }}" class="btn btn-outline-secondary">Annuler</a>
-    </form>
+    </div>
 {% endblock %}

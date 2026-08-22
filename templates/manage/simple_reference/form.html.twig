@@ -1,19 +1,26 @@
 {% extends 'manage/base.html.twig' %}
 
+{% block title %}{{ item ? 'Modifier' : 'Ajouter' }} — {{ label }}{% endblock %}
+{% block page_icon %}{{ icon|default('bi-list') }}{% endblock %}
+{% block page_title %}{{ item ? 'Modifier « ' ~ item.name ~ ' »' : 'Ajouter — ' ~ label }}{% endblock %}
+
 {% block body %}
-    <h1 class="h4 mb-3">{{ item ? 'Modifier' : 'Ajouter' }} — {{ label }}</h1>
+    <div class="sw-card" style="max-width:560px;">
+        <div class="card-header"><h6 class="mb-0 fw-bold">{{ item ? 'Modifier' : 'Ajouter' }} — {{ label }}</h6></div>
+        <div class="card-body">
+            <form method="post" action="{{ item ? path('manage_reference_update', {type: type, id: item.id}) : path('manage_reference_new', {type: type}) }}">
+                <div class="mb-3">
+                    <label class="acc-form-label">Nom</label>
+                    <input type="text" name="name" class="acc-form-input" value="{{ item ? item.name : '' }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="acc-form-label">Position (ordre d'affichage)</label>
+                    <input type="number" name="position" class="acc-form-input" value="{{ item ? item.position : 0 }}">
+                </div>
 
-    <form method="post" action="{{ item ? path('manage_reference_update', {type: type, id: item.id}) : path('manage_reference_new', {type: type}) }}">
-        <div class="mb-3">
-            <label class="form-label">Nom</label>
-            <input type="text" name="name" class="form-control" value="{{ item ? item.name : '' }}" required>
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check2 me-2"></i>Enregistrer</button>
+                <a href="{{ path('manage_reference_index', {type: type}) }}" class="btn btn-outline-secondary ms-2">Annuler</a>
+            </form>
         </div>
-        <div class="mb-3">
-            <label class="form-label">Position (ordre d'affichage)</label>
-            <input type="number" name="position" class="form-control" value="{{ item ? item.position : 0 }}">
-        </div>
-
-        <button type="submit" class="btn btn-success">Enregistrer</button>
-        <a href="{{ path('manage_reference_index', {type: type}) }}" class="btn btn-outline-secondary">Annuler</a>
-    </form>
+    </div>
 {% endblock %}

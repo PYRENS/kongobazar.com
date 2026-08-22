@@ -20,6 +20,33 @@
                 <label class="form-label">Description</label>
                 <textarea name="description" class="form-control" rows="4">{{ product ? product.description : '' }}</textarea>
             </div>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Réf. fabricant</label>
+                    <input type="text" name="reference" class="form-control" value="{{ product ? product.reference : '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">EAN</label>
+                    <input type="text" name="ean" class="form-control" value="{{ product ? product.ean : '' }}" placeholder="Code-barres, optionnel">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Référence KongoBazar</label>
+                    <input type="text" class="form-control" value="{{ product ? product.kongobazarReference : 'Générée après création' }}" disabled>
+                </div>
+                <div class="col-md-4 mb-3" id="modelFieldWrap" style="display:none;">
+                    <label class="form-label">Modèle</label>
+                    <input type="text" name="model" id="modelInput" class="form-control" value="{{ product ? product.model : '' }}" placeholder="ex: iPhone 15 Pro, Galaxy S24">
+                </div>
+                <div class="col-md-4 mb-3" id="authenticityFieldWrap" style="display:none;">
+                    <label class="form-label">Authenticité (déclaration du vendeur)</label>
+                    <select name="authenticity_status" class="form-select">
+                        <option value="" {{ product and not product.authenticityStatus ? 'selected' : '' }}>Non précisé</option>
+                        <option value="original" {{ product and product.authenticityStatus == 'original' ? 'selected' : '' }}>Original garanti par le vendeur</option>
+                        <option value="replica" {{ product and product.authenticityStatus == 'replica' ? 'selected' : '' }}>Réplique / inspiré assumé</option>
+                    </select>
+                    <small class="text-muted d-block">Déclaration du vendeur — KongoBazar ne certifie pas l'authenticité.</small>
+                </div>
+            </div>
         </div>
 
         <div class="admin-card">
@@ -250,6 +277,22 @@
             if (initialCategoryId) {
                 loadCategoryFields(initialCategoryId);
             }
+
+            // --- Champs "Modèle" et "Authenticité" : visibles seulement si la catégorie sélectionnée l'exige ---
+            const categoryRequiresModelMap = {{ categoryRequiresModelMap|json_encode|raw }};
+            const categoryAuthenticityMap = {{ categoryAuthenticityMap|json_encode|raw }};
+            const modelFieldWrap = document.getElementById('modelFieldWrap');
+            const authenticityFieldWrap = document.getElementById('authenticityFieldWrap');
+            const categoryIdInputEl = document.getElementById('categoryIdInput');
+
+            function toggleConditionalCategoryFields() {
+                const catId = categoryIdInputEl.value;
+                modelFieldWrap.style.display = (catId && categoryRequiresModelMap[catId]) ? '' : 'none';
+                authenticityFieldWrap.style.display = (catId && categoryAuthenticityMap[catId]) ? '' : 'none';
+            }
+
+            document.getElementById('categoryPickerRoot').addEventListener('change', toggleConditionalCategoryFields);
+            toggleConditionalCategoryFields();
 
             // --- Images : liste unique réordonnable (existantes + nouvelles) ---
             const imagesInput = document.getElementById('imagesInput');

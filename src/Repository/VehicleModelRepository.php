@@ -16,6 +16,22 @@ class VehicleModelRepository extends ServiceEntityRepository
         parent::__construct($registry, VehicleModel::class);
     }
 
+    public function countAll(): int
+    {
+        return (int) $this->createQueryBuilder('m')
+            ->select('COUNT(m.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function countByType(bool $moto): int
+    {
+        $qb = $this->createQueryBuilder('m')->select('COUNT(m.id)');
+        $moto ? $qb->andWhere("m.type = 'moto'") : $qb->andWhere("m.type IS NULL OR m.type != 'moto'");
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
     /** @param bool $moto true = modèles Moto (type='moto'), false = modèles Auto (type IS NULL) */
     public function findByBrandAndType(int $brandId, bool $moto): array
     {

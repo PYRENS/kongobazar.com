@@ -5,193 +5,261 @@
 {% block page_title %}{{ category.name }}{% endblock %}
 
 {% block body %}
-    <div class="admin-card">
-        <div class="admin-info-illustration-row">
-            <div class="admin-info-col">
-                <h6><i class="bi bi-info-circle"></i> Informations de la catégorie</h6>
-                <table class="admin-table" style="box-shadow:none;margin-bottom:16px;">
-                    <tr><td><strong>Nom</strong></td><td>{{ category.name }}</td></tr>
-                    <tr><td><strong>Icône</strong></td><td><i class="bi {{ category.icon|default('bi-tag') }}"></i> {{ category.icon|default('—') }}</td></tr>
-                    <tr>
-                        <td><strong>Couleur</strong></td>
-                        <td>
-                            {% if category.themeColor %}
-                                <span style="display:inline-block;width:16px;height:16px;border-radius:3px;background:{{ category.themeColor }};border:1px solid #ddd;vertical-align:middle;margin-right:6px;"></span>{{ category.themeColor }}
-                            {% else %}—{% endif %}
-                        </td>
-                    </tr>
-                    <tr><td><strong>Position</strong></td><td>{{ category.position }}</td></tr>
-                    <tr><td><strong>Rattachée à</strong></td><td>{{ category.parent ? category.parent.name : 'Aucune (rayon racine)' }}</td></tr>
-                    <tr><td><strong>Produits (avec sous-catégories)</strong></td><td>{{ productCount }}</td></tr>
-                    <tr>
-                        <td><strong>Statut</strong></td>
-                        <td><span class="admin-badge admin-badge--{{ category.active ? 'active' : 'disabled' }}">{{ category.active ? 'Active' : 'Désactivée' }}</span></td>
-                    </tr>
-                </table>
+    {% set statusLabels = { 'active': 'Actif', 'draft': 'Brouillon', 'suspended': 'Bloqué', 'coming_soon': 'Bientôt disponible', 'archived': 'Archivé', 'sold': 'Vendu' } %}
+    {% set statusBadgeMap = { 'active': 'ctb-status-active', 'draft': 'ctb-status-inactive', 'suspended': 'ctb-status-banned', 'coming_soon': 'ctb-status-pending', 'archived': 'ctb-status-inactive', 'sold': 'ctb-status-pending' } %}
 
-                <div class="admin-actions">
-                    <a href="{{ path('manage_categories_index', category.parent ? { parent: category.parent.id } : {}) }}" class="admin-btn admin-btn--outline">← Retour</a>
-                    <a href="{{ path('manage_categories_edit', { id: category.id }) }}" class="admin-btn admin-btn--outline"><i class="bi bi-pencil"></i> Modifier</a>
-                    <a href="{{ path('manage_category_attributes_index', { categoryId: category.id }) }}" class="admin-btn admin-btn--outline"><i class="bi bi-sliders"></i> Caractéristiques</a>
-                    <form action="{{ path('manage_categories_toggle', { id: category.id }) }}" method="post">
-                        <button type="submit" class="admin-btn admin-btn--outline">
-                            <i class="bi {{ category.active ? 'bi-pause-circle' : 'bi-check-circle' }}"></i>
-                            {{ category.active ? 'Désactiver' : 'Activer' }}
-                        </button>
-                    </form>
+    <div class="row g-3 mb-3">
+        <div class="col-xl-8">
+            <div class="sw-card h-100">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-info-circle me-2"></i>Informations de la catégorie</h6>
+                    <span class="ctb-status-badge {{ category.active ? 'ctb-status-active' : 'ctb-status-inactive' }}">{{ category.active ? 'Active' : 'Désactivée' }}</span>
+                </div>
+                <div class="card-body">
+                    <table class="table mb-3">
+                        <tr><td class="text-muted" style="width:220px;">Nom</td><td class="fw-bold">{{ category.name }}</td></tr>
+                        <tr><td class="text-muted">Icône</td><td><i class="bi {{ category.icon|default('bi-tag') }}"></i> {{ category.icon|default('—') }}</td></tr>
+                        <tr>
+                            <td class="text-muted">Couleur</td>
+                            <td>
+                                {% if category.themeColor %}
+                                    <span style="display:inline-block;width:18px;height:18px;border-radius:5px;background:{{ category.themeColor }};border:1px solid var(--border-color);vertical-align:middle;margin-right:6px;"></span>{{ category.themeColor }}
+                                {% else %}—{% endif %}
+                            </td>
+                        </tr>
+                        <tr><td class="text-muted">Position</td><td>{{ category.position }}</td></tr>
+                        <tr>
+                            <td class="text-muted">Nécessite un modèle</td>
+                            <td>
+                                {% if category.requiresModel %}
+                                    <span class="ctb-status-badge ctb-status-active"><i class="bi bi-check-circle"></i> Oui</span>
+                                {% else %}Non{% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Authenticité pertinente</td>
+                            <td>
+                                {% if category.authenticityRelevant %}
+                                    <span class="ctb-status-badge ctb-status-active"><i class="bi bi-check-circle"></i> Oui</span>
+                                {% else %}Non{% endif %}
+                            </td>
+                        </tr>
+                        <tr><td class="text-muted">Rattachée à</td><td>{{ category.parent ? category.parent.name : 'Aucune (rayon racine)' }}</td></tr>
+                        <tr><td class="text-muted">Produits (avec sous-catégories)</td><td class="fw-bold">{{ productCount }}</td></tr>
+                    </table>
+
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="{{ path('manage_categories_index', category.parent ? { parent: category.parent.id } : {}) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Retour</a>
+                        <a href="{{ path('manage_categories_edit', { id: category.id }) }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil me-1"></i>Modifier</a>
+                        <a href="{{ path('manage_category_attributes_index', { categoryId: category.id }) }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-sliders me-1"></i>Caractéristiques</a>
+                        <form action="{{ path('manage_categories_toggle', { id: category.id }) }}" method="post">
+                            <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi {{ category.active ? 'bi-pause-circle' : 'bi-check-circle' }} me-1"></i>
+                                {{ category.active ? 'Désactiver' : 'Activer' }}
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
-
-            <div class="admin-illustration-col">
-                <span class="admin-illustration-label">Illustration</span>
-                {% if category.imageName %}
-                    <img src="{{ vich_uploader_asset(category, 'imageFile') }}" class="admin-illustration-preview">
-                {% else %}
-                    <div class="admin-illustration-empty">
-                        <i class="bi bi-image"></i>
-                    </div>
-                {% endif %}
+        </div>
+        <div class="col-xl-4">
+            <div class="sw-card h-100">
+                <div class="card-header"><h6 class="mb-0 fw-bold">Illustration</h6></div>
+                <div class="card-body d-flex align-items-center justify-content-center" style="min-height:200px;">
+                    {% if category.imageName %}
+                        <img src="{{ vich_uploader_asset(category, 'imageFile') }}" style="max-width:100%;max-height:220px;border-radius:10px;object-fit:cover;">
+                    {% else %}
+                        <div class="text-muted text-center">
+                            <i class="bi bi-image" style="font-size:48px;"></i>
+                            <p class="mt-2 mb-0">Aucune image</p>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
-
-    <div class="admin-card">
-        <h6><i class="bi bi-diagram-3"></i> Sous-catégories</h6>
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2" style="margin-bottom:12px;">
-            <a href="{{ path('manage_categories_new', { parent: category.id }) }}" class="admin-btn admin-btn--primary">
-                <i class="bi bi-plus-lg"></i> Ajouter sous {{ category.name }}
-            </a>
-
-            <form method="get" class="d-flex align-items-center gap-2">
-                <input type="text" name="q" class="form-control" style="max-width: 280px;" placeholder="Rechercher une sous-catégorie..." value="{{ searchTerm }}">
-                <button type="submit" class="admin-btn admin-btn--outline"><i class="bi bi-search"></i></button>
-                {% if searchTerm %}
-                    <a href="{{ path('manage_categories_show', { id: category.id }) }}" class="admin-btn admin-btn--outline">Réinitialiser</a>
-                {% endif %}
-            </form>
-        </div>
 
     {% macro sortLink(field, label, currentSort, currentDir) %}
         {% set nextDir = (currentSort == field and currentDir == 'ASC') ? 'DESC' : 'ASC' %}
         <a href="?sort={{ field }}&dir={{ nextDir }}" class="admin-sort-link">
             {{ label }}
-            {% if currentSort == field %}
-                <i class="bi bi-caret-{{ currentDir == 'ASC' ? 'up' : 'down' }}-fill"></i>
-            {% else %}
-                <i class="bi bi-arrow-down-up admin-sort-icon-idle"></i>
-            {% endif %}
+            {% if currentSort == field %}<i class="bi bi-caret-{{ currentDir == 'ASC' ? 'up' : 'down' }}-fill"></i>{% else %}<i class="bi bi-arrow-down-up admin-sort-icon-idle"></i>{% endif %}
         </a>
     {% endmacro %}
-        {% import _self as self %}
+    {% import _self as self %}
 
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>Image</th>
-                    <th>Icône</th>
-                    <th>{{ self.sortLink('name', 'Nom', currentSort, currentDir) }}</th>
-                    <th>{{ self.sortLink('childrenCount', 'Sous-catégories', currentSort, currentDir) }}</th>
-                    <th>{{ self.sortLink('productCount', 'Produits', currentSort, currentDir) }}</th>
-                    <th>Couleur</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in childRows %}
-                    {% set child = row.category %}
-                    <tr>
-                        <td>
-                            {% if child.imageName %}
-                                <img src="{{ vich_uploader_asset(child, 'imageFile') }}" style="width:40px;height:40px;border-radius:4px;object-fit:cover;">
-                            {% else %}
-                                <span class="text-muted">N/A</span>
-                            {% endif %}
-                        </td>
-                        <td><i class="bi {{ child.icon|default('bi-tag') }}" style="font-size:18px;"></i></td>
-                        <td><a href="{{ path('manage_categories_show', { id: child.id }) }}">{{ child.name }}</a></td>
-                        <td>
-                            {% if row.childrenCount > 0 %}
-                                <a href="{{ path('manage_categories_index', { parent: child.id }) }}">{{ row.childrenCount }} <i class="bi bi-box-arrow-in-right"></i></a>
-                            {% else %}<span class="text-muted">0</span>{% endif %}
-                        </td>
-                        <td>
-                            {% if row.productCount > 0 %}
-                                <a href="{{ path('manage_categories_products', { id: child.id }) }}">{{ row.productCount }}</a>
-                            {% else %}0{% endif %}
-                        </td>
-                        <td>
-                            {% if child.themeColor %}
-                                <span style="display:inline-block;width:20px;height:20px;border-radius:4px;background:{{ child.themeColor }};border:1px solid #ddd;vertical-align:middle;"></span>
-                            {% else %}<span class="text-muted">—</span>{% endif %}
-                        </td>
-                        <td class="admin-actions">
-                            <a href="{{ path('manage_categories_show', { id: child.id }) }}" class="admin-btn admin-btn--outline"><i class="bi bi-eye"></i></a>
-                            <a href="{{ path('manage_categories_edit', { id: child.id }) }}" class="admin-btn admin-btn--outline"><i class="bi bi-pencil"></i></a>
-                            <form action="{{ path('manage_categories_delete', { id: child.id }) }}" method="post" onsubmit="return confirm('Supprimer {{ child.name }} et toutes ses sous-catégories ?');">
-                                <button type="submit" class="admin-btn admin-btn--outline"><i class="bi bi-trash"></i></button>
-                            </form>
-                        </td>
-                    </tr>
-                {% else %}
-                    <tr><td colspan="7" class="text-muted">Aucune sous-catégorie.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="sw-card mb-3">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <h6 class="mb-0 fw-bold"><i class="bi bi-diagram-3 me-2"></i>Sous-catégories ({{ childTotal }})</h6>
+            <a href="{{ path('manage_categories_new', { parent: category.id }) }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Ajouter sous {{ category.name }}</a>
+        </div>
+        <div class="card-body">
+            <form method="get" class="d-flex align-items-center flex-wrap gap-3 mb-3">
+                <div class="ctb-search-wrap">
+                    <i class="bi bi-search ctb-search-icon"></i>
+                    <input type="text" name="q" class="ctb-search-input" style="width:260px;" placeholder="Rechercher une sous-catégorie..." value="{{ searchTerm }}">
+                </div>
+                <select name="cperpage" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
+                    {% for n in [10, 20, 50, 100] %}
+                        <option value="{{ n }}" {{ childPerPage == n ? 'selected' : '' }}>{{ n }} / page</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search me-1"></i>Rechercher</button>
+                {% if searchTerm %}<a href="{{ path('manage_categories_show', { id: category.id }) }}" class="btn btn-outline-secondary btn-sm">Réinitialiser</a>{% endif %}
+            </form>
 
-        {% include 'manage/_partials/_pagination_links.html.twig' with {currentPage: childPage, totalPages: childPages, paramName: 'cpage'} %}
+            <div class="table-responsive">
+                <table class="table ctb-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Icône</th>
+                            <th>{{ self.sortLink('name', 'Nom', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('childrenCount', 'Sous-catégories', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('productCount', 'Produits', currentSort, currentDir) }}</th>
+                            <th>Couleur</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in childRows %}
+                            {% set child = row.category %}
+                            <tr>
+                                <td>
+                                    {% if child.imageName %}
+                                        <img src="{{ vich_uploader_asset(child, 'imageFile') }}" style="width:40px;height:40px;border-radius:8px;object-fit:cover;">
+                                    {% else %}<span class="text-muted">N/A</span>{% endif %}
+                                </td>
+                                <td><div class="ctb-avatar ctb-av-blue" style="border-radius:8px;"><i class="bi {{ child.icon|default('bi-tag') }}"></i></div></td>
+                                <td class="ctb-contact-name"><a href="{{ path('manage_categories_show', { id: child.id }) }}">{{ child.name }}</a></td>
+                                <td>
+                                    {% if row.childrenCount > 0 %}
+                                        <a href="{{ path('manage_categories_index', { parent: child.id }) }}">{{ row.childrenCount }} <i class="bi bi-box-arrow-in-right"></i></a>
+                                    {% else %}<span class="text-muted">0</span>{% endif %}
+                                </td>
+                                <td>
+                                    {% if row.productCount > 0 %}
+                                        <a href="{{ path('manage_categories_products', { id: child.id }) }}">{{ row.productCount }}</a>
+                                    {% else %}0{% endif %}
+                                </td>
+                                <td>
+                                    {% if child.themeColor %}
+                                        <span style="display:inline-block;width:20px;height:20px;border-radius:5px;background:{{ child.themeColor }};border:1px solid var(--border-color);"></span>
+                                    {% else %}<span class="text-muted">—</span>{% endif %}
+                                </td>
+                                <td>
+                                    <div class="ctb-act-row">
+                                        <a href="{{ path('manage_categories_show', { id: child.id }) }}" class="ctb-act-btn" title="Voir"><i class="bi bi-eye"></i></a>
+                                        <a href="{{ path('manage_categories_edit', { id: child.id }) }}" class="ctb-act-btn" title="Modifier"><i class="bi bi-pencil"></i></a>
+                                        <form action="{{ path('manage_categories_delete', { id: child.id }) }}" method="post" onsubmit="return confirm('Supprimer {{ child.name }} et toutes ses sous-catégories ?');">
+                                            <button type="submit" class="ctb-act-btn ctb-act-danger" title="Supprimer"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="7" class="text-muted text-center py-4">Aucune sous-catégorie.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% include 'manage/_partials/_pagination_links.html.twig' with {currentPage: childPage, totalPages: childPages, paramName: 'cpage'} %}
+        </div>
     </div>
 
-    <div class="admin-card mt-3">
-        <h6><i class="bi bi-box-seam"></i> Produits de cette catégorie ({{ productTotal }})</h6>
+    <div class="sw-card">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <h6 class="mb-0 fw-bold"><i class="bi bi-box-seam me-2"></i>Produits de cette catégorie ({{ productTotal }})</h6>
+            <a href="{{ path('manage_products_index', {category: category.id}) }}" class="btn btn-outline-secondary btn-sm">Voir tout dans Produits →</a>
+        </div>
+        <div class="card-body">
+            <form method="get" class="d-flex align-items-center flex-wrap gap-3 mb-3">
+                <div class="ctb-search-wrap">
+                    <i class="bi bi-search ctb-search-icon"></i>
+                    <input type="text" name="pq" class="ctb-search-input" style="width:220px;" placeholder="Titre ou référence..." value="{{ productTerm }}">
+                </div>
+                <select name="pstatus" class="form-select form-select-sm" style="width:auto;">
+                    <option value="">Tous statuts</option>
+                    {% for s in ['active', 'draft', 'suspended', 'sold'] %}
+                        <option value="{{ s }}" {{ productStatus == s ? 'selected' : '' }}>{{ statusLabels[s] }}</option>
+                    {% endfor %}
+                </select>
+                <select name="pcondition" class="form-select form-select-sm" style="width:auto;">
+                    <option value="">Neuf/Occasion</option>
+                    <option value="new" {{ productCondition == 'new' ? 'selected' : '' }}>Neuf</option>
+                    <option value="used" {{ productCondition == 'used' ? 'selected' : '' }}>Occasion</option>
+                </select>
+                <select name="pperpage" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
+                    {% for n in [10, 20, 50, 100] %}
+                        <option value="{{ n }}" {{ productPerPage == n ? 'selected' : '' }}>{{ n }} / page</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search me-1"></i>Rechercher</button>
+            </form>
 
-        <form method="get" class="mb-3 d-flex align-items-center gap-2 flex-wrap">
-            <input type="text" name="pq" class="form-control" style="max-width: 220px;" placeholder="Titre ou référence..." value="{{ productTerm }}">
-            <select name="pstatus" class="form-select" style="max-width: 160px;">
-                <option value="">— Tous statuts —</option>
-                <option value="active" {{ productStatus == 'active' ? 'selected' : '' }}>Actif</option>
-                <option value="draft" {{ productStatus == 'draft' ? 'selected' : '' }}>Brouillon</option>
-                <option value="sold" {{ productStatus == 'sold' ? 'selected' : '' }}>Vendu</option>
-                <option value="suspended" {{ productStatus == 'suspended' ? 'selected' : '' }}>Suspendu</option>
-            </select>
-            <select name="pcondition" class="form-select" style="max-width: 150px;">
-                <option value="">— Neuf/Occasion —</option>
-                <option value="new" {{ productCondition == 'new' ? 'selected' : '' }}>Neuf</option>
-                <option value="used" {{ productCondition == 'used' ? 'selected' : '' }}>Occasion</option>
-            </select>
-            <button type="submit" class="admin-btn admin-btn--outline"><i class="bi bi-search"></i></button>
-            <a href="{{ path('manage_products_index', {category: category.id}) }}" class="btn btn-sm btn-outline-secondary ms-auto">Voir tout dans Produits →</a>
-        </form>
-
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>Titre</th>
-                    <th>Référence</th>
-                    <th>Vendeur</th>
-                    <th>Prix</th>
-                    <th>Statut</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for product in products %}
-                    <tr>
-                        <td>{{ product.title }}</td>
-                        <td>{{ product.reference ?: '—' }}</td>
-                        <td>{{ product.sellerProfile ? product.sellerProfile.user.email : '—' }}</td>
-                        <td>{{ product.basePrice }} {{ product.currency }}</td>
-                        <td>{{ product.status }}</td>
-                        <td class="admin-actions">
-                            <a href="{{ path('manage_products_edit', {id: product.id}) }}" class="admin-btn admin-btn--outline"><i class="bi bi-eye"></i></a>
-                            <a href="{{ path('manage_products_edit', {id: product.id}) }}" class="admin-btn admin-btn--outline"><i class="bi bi-pencil"></i></a>
-                        </td>
-                    </tr>
-                {% else %}
-                    <tr><td colspan="6" class="text-muted">Aucun produit.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        {% include 'manage/_partials/_pagination_links.html.twig' with {currentPage: productPage, totalPages: productPages, paramName: 'ppage'} %}
+            <div class="table-responsive">
+                <table class="table ctb-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Produit</th>
+                            <th>Réf. KongoBazar</th>
+                            <th>Réf. fabricant</th>
+                            <th>EAN</th>
+                            <th>Vendeur</th>
+                            <th>Localisation</th>
+                            <th>Prix</th>
+                            <th>Statut</th>
+                            <th>Stock</th>
+                            <th>Vendu</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                            {% set firstImage = product.images|first %}
+                            {% set sellerUnit = product.sellerProfile and product.sellerProfile.user ? product.sellerProfile.user.administrativeUnit : null %}
+                            <tr>
+                                <td>
+                                    {% if firstImage %}
+                                        <img src="{{ vich_uploader_asset(firstImage, 'imageFile') }}" style="width:44px;height:44px;border-radius:8px;object-fit:cover;">
+                                    {% else %}
+                                        <div class="ctb-avatar ctb-av-blue" style="border-radius:8px;"><i class="bi bi-box-seam"></i></div>
+                                    {% endif %}
+                                </td>
+                                <td class="ctb-contact-name" title="{{ product.title }}">{{ product.title|length > 50 ? product.title|slice(0, 50) ~ '…' : product.title }}</td>
+                                <td class="text-muted" style="font-size:12px;">{{ product.kongobazarReference }}</td>
+                                <td class="text-muted" style="font-size:12px;">{{ product.reference|default('—') }}</td>
+                                <td class="text-muted" style="font-size:12px;">{{ product.ean|default('—') }}</td>
+                                <td>
+                                    {% if product.sellerProfile %}
+                                        <a href="{{ path('manage_users_show', { id: product.sellerProfile.user.id }) }}">{{ product.sellerProfile.displayName }}</a>
+                                    {% else %}—{% endif %}
+                                </td>
+                                <td>{{ sellerUnit ? sellerUnit.getLocalisationParts(false)|join('/') : '—' }}</td>
+                                <td>{{ product.basePrice }} {{ product.currency }}</td>
+                                <td><span class="ctb-status-badge {{ statusBadgeMap[product.status]|default('ctb-status-inactive') }}">{{ statusLabels[product.status]|default(product.status) }}</span></td>
+                                <td>
+                                    {% set totalStock = 0 %}
+                                    {% for variant in product.variants %}{% set totalStock = totalStock + variant.quantity %}{% endfor %}
+                                    {{ totalStock }}
+                                </td>
+                                <td>{{ product.salesCount }}</td>
+                                <td>
+                                    <div class="ctb-act-row">
+                                        <a href="{{ path('manage_products_show', { id: product.id }) }}" class="ctb-act-btn" title="Voir détails (Dashboard)"><i class="bi bi-eye"></i></a>
+                                        <a href="{{ path('catalog_product', { slug: product.slug }) }}" target="_blank" class="ctb-act-btn" title="Voir sur le site"><i class="bi bi-box-arrow-up-right"></i></a>
+                                        <a href="{{ path('manage_products_edit', {id: product.id}) }}" class="ctb-act-btn" title="Modifier"><i class="bi bi-pencil"></i></a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="12" class="text-muted text-center py-4">Aucun produit.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% include 'manage/_partials/_pagination_links.html.twig' with {currentPage: productPage, totalPages: productPages, paramName: 'ppage'} %}
+        </div>
     </div>
 {% endblock %}

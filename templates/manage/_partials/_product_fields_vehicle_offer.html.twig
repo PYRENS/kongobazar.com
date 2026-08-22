@@ -54,8 +54,12 @@
             <input type="number" name="mileage" class="form-control" value="{{ vld ? vld.mileage : '' }}">
         </div>
         <div class="col-md-3 mb-3">
-            <label class="form-label">Référence</label>
+            <label class="form-label">Réf. fabricant</label>
             <input type="text" name="reference" class="form-control" value="{{ product ? product.reference : '' }}">
+        </div>
+        <div class="col-md-3 mb-3">
+            <label class="form-label">EAN</label>
+            <input type="text" name="ean" class="form-control" value="{{ product ? product.ean : '' }}" placeholder="Code-barres, optionnel">
         </div>
     </div>
 

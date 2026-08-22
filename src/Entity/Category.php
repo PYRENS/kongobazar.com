@@ -81,6 +81,12 @@ class Category
     #[ORM\Column(options: ['default' => false])]
     private bool $trendingPinned = false;
 
+    #[ORM\Column(options: ['default' => false])]
+    private bool $requiresModel = false;
+
+    #[ORM\Column(options: ['default' => false])]
+    private bool $authenticityRelevant = false;
+
     #[ORM\Column(nullable: true)]
     private ?int $trendingPinnedPosition = null;
 
@@ -386,6 +392,28 @@ class Category
     public function setTrendingPinned(bool $trendingPinned): static
     {
         $this->trendingPinned = $trendingPinned;
+        return $this;
+    }
+
+    public function isRequiresModel(): bool
+    {
+        return $this->requiresModel;
+    }
+
+    public function setRequiresModel(bool $requiresModel): static
+    {
+        $this->requiresModel = $requiresModel;
+        return $this;
+    }
+
+    public function isAuthenticityRelevant(): bool
+    {
+        return $this->authenticityRelevant;
+    }
+
+    public function setAuthenticityRelevant(bool $authenticityRelevant): static
+    {
+        $this->authenticityRelevant = $authenticityRelevant;
         return $this;
     }
 

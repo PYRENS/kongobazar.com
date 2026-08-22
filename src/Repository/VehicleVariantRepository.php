@@ -16,6 +16,14 @@ class VehicleVariantRepository extends ServiceEntityRepository
         parent::__construct($registry, VehicleVariant::class);
     }
 
+    public function countAll(): int
+    {
+        return (int) $this->createQueryBuilder('v')
+            ->select('COUNT(v.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     /** @return VehicleVariant[] */
     public function findByModel(int $modelId): array
     {

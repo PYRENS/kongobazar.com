@@ -1,0 +1,343 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}{{ product.title }}{% endblock %}
+{% block page_icon %}bi-box-seam{% endblock %}
+{% block page_title %}Détail produit : {{ product.title }}{% endblock %}
+
+{% block body %}
+    {% set statusLabels = { 'active': 'Actif', 'draft': 'Brouillon', 'suspended': 'Bloqué', 'coming_soon': 'Bientôt disponible', 'archived': 'Archivé', 'sold': 'Vendu' } %}
+    {% set statusBadgeMap = { 'active': 'ctb-status-active', 'draft': 'ctb-status-inactive', 'suspended': 'ctb-status-banned', 'coming_soon': 'ctb-status-pending', 'archived': 'ctb-status-inactive', 'sold': 'ctb-status-pending' } %}
+    {% set vld = product.vehicleListingDetails %}
+    {% set pld = product.partListingDetails %}
+
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <a href="{{ path('manage_products_index') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Retour à la liste</a>
+        <div class="d-flex gap-2">
+            <a href="{{ path('catalog_product', { slug: product.slug }) }}" target="_blank" class="btn btn-outline-primary btn-sm"><i class="bi bi-box-arrow-up-right me-1"></i>Voir sur le site</a>
+            <a href="{{ path('manage_products_edit', { id: product.id }) }}" class="btn btn-primary btn-sm"><i class="bi bi-pencil me-1"></i>Modifier</a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-xl-5">
+            <div class="sw-card h-100">
+                <div class="card-header"><h6 class="mb-0 fw-bold">Images</h6></div>
+                <div class="card-body">
+                    {% if product.images|length > 0 %}
+                        <div class="row g-2">
+                            {% for img in product.images %}
+                                <div class="col-4">
+                                    <img src="{{ vich_uploader_asset(img, 'imageFile') }}" class="product-gallery-thumb" data-index="{{ loop.index0 }}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;cursor:zoom-in;">
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-muted text-center py-4">
+                            <i class="bi bi-image" style="font-size:40px;"></i>
+                            <p class="mb-0 mt-2">Aucune image</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-7">
+            <div class="sw-card h-100">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h6 class="mb-0 fw-bold">{{ product.title }}</h6>
+                    <span class="ctb-status-badge {{ statusBadgeMap[product.status]|default('ctb-status-inactive') }}">{{ statusLabels[product.status]|default(product.status) }}</span>
+                </div>
+                <div class="card-body">
+                    <table class="table mb-0">
+                        <tr><td class="text-muted" style="width:220px;">Réf. KongoBazar</td><td class="fw-bold">{{ product.kongobazarReference }}</td></tr>
+                        <tr><td class="text-muted">Réf. fabricant</td><td>{{ product.reference|default('—') }}</td></tr>
+                        <tr><td class="text-muted">EAN</td><td>{{ product.ean|default('—') }}</td></tr>
+                        <tr><td class="text-muted">Catégorie</td><td>{{ product.category ? product.category.name : '—' }}</td></tr>
+                        <tr><td class="text-muted">Marque</td><td>{{ product.brand ? product.brand.name : '—' }}</td></tr>
+                        <tr>
+                            <td class="text-muted">Vendeur</td>
+                            <td>
+                                {% if product.sellerProfile %}
+                                    <a href="{{ path('manage_users_show', { id: product.sellerProfile.user.id }) }}">{{ product.sellerProfile.displayName }}</a>
+                                {% else %}—{% endif %}
+                            </td>
+                        </tr>
+                        <tr><td class="text-muted">État</td><td>{{ product.condition == 'used' ? 'Occasion' : 'Neuf' }}</td></tr>
+                        <tr>
+                            <td class="text-muted">Authenticité</td>
+                            <td>
+                                {% if product.authenticityStatus == 'original' %}
+                                    <span class="ctb-status-badge ctb-status-active"><i class="bi bi-patch-check"></i> Original (déclaration vendeur)</span>
+                                {% elseif product.authenticityStatus == 'replica' %}
+                                    <span class="ctb-status-badge ctb-status-pending"><i class="bi bi-info-circle"></i> Réplique (déclaration vendeur)</span>
+                                {% else %}<span class="text-muted">Non précisé</span>{% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Prix</td>
+                            <td>
+                                <span class="fw-bold">{{ product.basePrice }} {{ product.currency }}</span>
+                                {% if product.compareAtPrice and product.compareAtPrice > product.basePrice %}
+                                    <span class="text-muted text-decoration-line-through ms-2">{{ product.compareAtPrice }} {{ product.currency }}</span>
+                                {% endif %}
+                                {% if product.negotiable %}<span class="ctb-status-badge ctb-status-pending ms-2">Négociable</span>{% endif %}
+                            </td>
+                        </tr>
+                        <tr><td class="text-muted">Stock disponible</td><td>{{ product.effectiveQuantity }}</td></tr>
+                        <tr><td class="text-muted">Ventes réalisées</td><td>{{ product.salesCount }}</td></tr>
+                        <tr><td class="text-muted">Créé le</td><td>{{ product.createdAt ? product.createdAt|date('d/m/Y H:i') : '—' }}</td></tr>
+                        <tr><td class="text-muted">Mis à jour le</td><td>{{ product.updatedAt ? product.updatedAt|date('d/m/Y H:i') : '—' }}</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if vld %}
+        {% set engine = vld.vehicleEngine %}
+        <div class="row g-3 mb-3">
+            <div class="col-xl-7">
+                <div class="sw-card h-100">
+                    <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-car-front me-2"></i>Caractéristiques du véhicule</h6></div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6"><i class="bi bi-award text-muted me-2"></i>Marque : <strong>{{ engine ? engine.brandNameCache : '—' }}</strong></div>
+                            <div class="col-md-6"><i class="bi bi-car-front-fill text-muted me-2"></i>Modèle : <strong>{{ engine ? engine.modelNameCache : '—' }}</strong></div>
+                            <div class="col-md-6"><i class="bi bi-diagram-3 text-muted me-2"></i>Variante : <strong>{{ engine and engine.variantNameCache ? engine.variantNameCache : '—' }}</strong></div>
+                            <div class="col-md-6"><i class="bi bi-gear text-muted me-2"></i>Motorisation : <strong>{{ engine ? engine.label : '—' }}</strong></div>
+
+                            <div class="col-md-6"><i class="bi bi-palette text-muted me-2"></i>Couleur : <strong>{{ vld.color|default('—') }}</strong></div>
+                            <div class="col-md-6"><i class="bi bi-diagram-3-fill text-muted me-2"></i>Boîte de vitesse : <strong>{{ vld.transmission|default('—') }}</strong></div>
+                            <div class="col-md-6"><i class="bi bi-speedometer2 text-muted me-2"></i>Kilométrage : <strong>{{ vld.mileage ? vld.mileage ~ ' km' : '—' }}</strong></div>
+                            <div class="col-md-6"><i class="bi bi-calendar3 text-muted me-2"></i>Année : <strong>{{ vld.modelYear|default('—') }}</strong></div>
+
+                            <div class="col-md-6"><i class="bi bi-fuel-pump text-muted me-2"></i>Carburant : <strong>{{ engine and engine.fuelType ? engine.fuelType.name : '—' }}</strong></div>
+                            <div class="col-md-6"><i class="bi bi-lightning-charge text-muted me-2"></i>Puissance : <strong>{{ vld.powerDin ? vld.powerDin ~ ' ch' : '—' }}</strong></div>
+                            <div class="col-md-6"><i class="bi bi-people text-muted me-2"></i>Places : <strong>{{ vld.seats|default('—') }}</strong></div>
+                            <div class="col-md-6"><i class="bi bi-signpost-split text-muted me-2"></i>Carrosserie : <strong>{{ vld.vehicleBodyType|default('—') }}</strong></div>
+
+                            <div class="col-md-6"><i class="bi bi-steering-wheel text-muted me-2"></i>Conduite : <strong>{{ vld.steeringSide|default('—') }}</strong></div>
+                            {% if vld.licenseType %}<div class="col-md-6"><i class="bi bi-card-checklist text-muted me-2"></i>Permis requis : <strong>{{ vld.licenseType.name }}</strong></div>{% endif %}
+                            {% if vld.motorcycleType %}<div class="col-md-6"><i class="bi bi-scooter text-muted me-2"></i>Type de moto : <strong>{{ vld.motorcycleType.name }}</strong></div>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-5">
+                <div class="sw-card h-100">
+                    <div class="card-header"><h6 class="mb-0 fw-bold">Description</h6></div>
+                    <div class="card-body">
+                        {% if product.description %}
+                            <p class="mb-0" style="white-space:pre-line;">{{ product.description }}</p>
+                        {% else %}
+                            <p class="text-muted mb-0">Aucune description.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if pld %}
+        <div class="sw-card mb-3">
+            <div class="card-header"><i class="bi bi-gear-wide-connected me-2"></i><h6 class="mb-0 fw-bold d-inline">Caractéristiques de la pièce</h6></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3 col-6"><i class="bi bi-upc text-muted me-2"></i>EAN : <strong>{{ pld.ean|default('—') }}</strong></div>
+                    <div class="col-md-3 col-6"><i class="bi bi-tag text-muted me-2"></i>Réf. fabricant : <strong>{{ pld.manufacturerRef|default('—') }}</strong></div>
+                    {% if pld.partCatalogEntry %}
+                        <div class="col-md-3 col-6"><i class="bi bi-box text-muted me-2"></i>Pièce catalogue : <strong>{{ pld.partCatalogEntry.name }}</strong></div>
+                        <div class="col-md-3 col-6"><i class="bi bi-diagram-3 text-muted me-2"></i>Catégorie pièce : <strong>{{ pld.partCatalogEntry.category ? pld.partCatalogEntry.category.name : '—' }}</strong></div>
+                    {% endif %}
+                    {% if pld.oemCodes|length > 0 %}
+                        <div class="col-12">
+                            <i class="bi bi-hash text-muted me-2"></i>Codes OEM :
+                            <strong>
+                                {% for oem in pld.oemCodes %}
+                                    {{ oem.code }}{{ oem.brand ? ' (' ~ oem.brand ~ ')' : '' }}{{ not loop.last ? ', ' : '' }}
+                                {% endfor %}
+                            </strong>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% if pld.engineCompatibilities|length > 0 %}
+            {% set grouped = {} %}
+            {% set brandLogos = {} %}
+            {% for ec in pld.engineCompatibilities %}
+                {% set eng = ec.vehicleEngine %}
+                {% if eng %}
+                    {% set brandKey = eng.brandNameCache|default('Autre') %}
+                    {% set modelKey = eng.modelNameCache|default('—') %}
+                    {% set variantKey = eng.variantNameCache|default('Standard') %}
+                    {% set grouped = grouped|merge({ (brandKey): (grouped[brandKey]|default({}))|merge({ (modelKey): (grouped[brandKey][modelKey]|default({}))|merge({ (variantKey): (grouped[brandKey][modelKey][variantKey]|default([]))|merge([eng]) }) }) }) %}
+                    {% set engBrand = eng.variant ? eng.variant.model.brand : eng.model.brand %}
+                    {% if engBrand and engBrand.logoName and brandLogos[brandKey] is not defined %}
+                        {% set brandLogos = brandLogos|merge({ (brandKey): engBrand }) %}
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+
+            <div class="sw-card mb-3">
+                <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-check2-circle me-2"></i>Véhicules compatibles</h6></div>
+                <div class="card-body p-0">
+                    <div class="accordion" id="compatAccordion">
+                        {% for brandName, models in grouped %}
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#brand-{{ loop.index }}">
+                                        {% if brandLogos[brandName] is defined %}
+                                            <img src="{{ vich_uploader_asset(brandLogos[brandName], 'logoFile') }}" style="width:22px;height:22px;object-fit:contain;margin-right:10px;">
+                                        {% else %}
+                                            <i class="bi bi-car-front me-2"></i>
+                                        {% endif %}
+                                        <strong>{{ brandName }}</strong>
+                                    </button>
+                                </h2>
+                                <div id="brand-{{ loop.index }}" class="accordion-collapse collapse" data-bs-parent="#compatAccordion">
+                                    <div class="accordion-body p-0">
+                                        <div class="accordion" id="model-accordion-{{ loop.index }}">
+                                            {% for modelName, variants in models %}
+                                                <div class="accordion-item">
+                                                    <h2 class="accordion-header">
+                                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#model-{{ loop.parent.loop.index }}-{{ loop.index }}">
+                                                            {{ modelName }}
+                                                        </button>
+                                                    </h2>
+                                                    <div id="model-{{ loop.parent.loop.index }}-{{ loop.index }}" class="accordion-collapse collapse">
+                                                        <div class="accordion-body">
+                                                            {% for variantName, engines in variants %}
+                                                                <div class="mb-2">
+                                                                    <div class="fw-bold text-muted" style="font-size:12px;"><i class="bi bi-diagram-3 me-1"></i>{{ variantName }}</div>
+                                                                    <ul class="mb-0 ps-4" style="font-size:13px;">
+                                                                        {% for eng in engines %}
+                                                                            <li>{{ eng.label }} <span class="text-muted">({{ eng.periodLabel }})</span></li>
+                                                                        {% endfor %}
+                                                                    </ul>
+                                                                </div>
+                                                            {% endfor %}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% endif %}
+
+    {% if product.description and not vld %}
+        <div class="sw-card mb-3">
+            <div class="card-header"><h6 class="mb-0 fw-bold">Description</h6></div>
+            <div class="card-body">
+                <p class="mb-0" style="white-space:pre-line;">{{ product.description }}</p>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if product.variants|length > 0 %}
+        <div class="sw-card mb-3">
+            <div class="card-header"><h6 class="mb-0 fw-bold">Variantes ({{ product.variants|length }})</h6></div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table ctb-table mb-0">
+                        <thead>
+                            <tr><th>Image</th><th>Couleur</th><th>Taille</th><th>SKU</th><th>Stock</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for variant in product.variants %}
+                                <tr>
+                                    <td>
+                                        {% if variant.imageName %}
+                                            <img src="{{ vich_uploader_asset(variant, 'imageFile') }}" style="width:36px;height:36px;border-radius:6px;object-fit:cover;">
+                                        {% else %}<span class="text-muted">—</span>{% endif %}
+                                    </td>
+                                    <td>{{ variant.color ? variant.color.name : '—' }}</td>
+                                    <td>{{ variant.size ? variant.size.name : '—' }}</td>
+                                    <td class="text-muted" style="font-size:12px;">{{ variant.sku|default('—') }}</td>
+                                    <td>{{ variant.quantity }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if product.activeDiscountCampaign %}
+        <div class="sw-card">
+            <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-lightning-charge me-2"></i>Vente Flash en cours</h6></div>
+            <div class="card-body">
+                <p class="mb-0">
+                    -{{ product.activeDiscountPercent }}% jusqu'au {{ product.activeDiscountEndAt|date('d/m/Y') }}
+                    — prix actuel : <strong>{{ product.currentDiscountedPrice }} {{ product.currency }}</strong>
+                </p>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if product.images|length > 0 %}
+        <div class="custom-modal-overlay" id="galleryOverlay">
+            <div class="custom-modal-box" style="max-width:900px;background:#0d0d0d;">
+                <div class="custom-modal-header" style="border-bottom:1px solid rgba(255,255,255,0.1);">
+                    <span class="text-white" id="galleryCounter"></span>
+                    <button type="button" class="btn-close btn-close-white" id="closeGallery"></button>
+                </div>
+                <div class="custom-modal-body d-flex align-items-center justify-content-center" style="min-height:60vh;position:relative;">
+                    <button type="button" id="galleryPrev" class="btn btn-outline-light position-absolute" style="left:10px;"><i class="bi bi-chevron-left"></i></button>
+                    <img id="galleryImage" src="" style="max-width:100%;max-height:70vh;object-fit:contain;">
+                    <button type="button" id="galleryNext" class="btn btn-outline-light position-absolute" style="right:10px;"><i class="bi bi-chevron-right"></i></button>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block javascripts %}
+    {% if product.images|length > 0 %}
+        <script>
+            const galleryImages = [
+                {% for img in product.images %}"{{ vich_uploader_asset(img, 'imageFile') }}",{% endfor %}
+            ];
+            let galleryIndex = 0;
+
+            const galleryOverlay = document.getElementById('galleryOverlay');
+            const galleryImage = document.getElementById('galleryImage');
+            const galleryCounter = document.getElementById('galleryCounter');
+            document.body.appendChild(galleryOverlay);
+
+            function showGalleryImage(i) {
+                galleryIndex = (i + galleryImages.length) % galleryImages.length;
+                galleryImage.src = galleryImages[galleryIndex];
+                galleryCounter.textContent = (galleryIndex + 1) + ' / ' + galleryImages.length;
+            }
+
+            document.querySelectorAll('.product-gallery-thumb').forEach(function (thumb) {
+                thumb.addEventListener('click', function () {
+                    showGalleryImage(parseInt(this.dataset.index, 10));
+                    galleryOverlay.classList.add('active');
+                });
+            });
+
+            document.getElementById('galleryPrev').addEventListener('click', () => showGalleryImage(galleryIndex - 1));
+            document.getElementById('galleryNext').addEventListener('click', () => showGalleryImage(galleryIndex + 1));
+            galleryOverlay.addEventListener('click', (e) => {
+                if (e.target === galleryOverlay || e.target.closest('#closeGallery')) galleryOverlay.classList.remove('active');
+            });
+            document.addEventListener('keydown', (e) => {
+                if (!galleryOverlay.classList.contains('active')) return;
+                if (e.key === 'Escape') galleryOverlay.classList.remove('active');
+                if (e.key === 'ArrowLeft') showGalleryImage(galleryIndex - 1);
+                if (e.key === 'ArrowRight') showGalleryImage(galleryIndex + 1);
+            });
+        </script>
+    {% endif %}
+{% endblock %}

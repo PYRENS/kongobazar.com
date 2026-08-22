@@ -28,22 +28,131 @@ class ProductRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
-    /** @return Product[] */
-    public function findFiltered(?string $term, ?int $categoryId, ?string $status, ?string $condition, string $sort, string $dir, int $page, int $perPage): array
+    /**
+     * @return Product[] Produits (pièces) compatibles avec une motorisation, filtrés/triés/paginés.
+     */
+    public function findCompatibleWithEngine(int $engineId, ?string $term, ?int $categoryId, ?int $brandId, ?string $condition, string $sort, string $dir, int $page, int $perPage, ?array $locationUnitIds = null): array
     {
-        $qb = $this->buildFilterQuery($term, $categoryId, $status, $condition);
+        $qb = $this->buildCompatibleWithEngineQuery($engineId, $term, $categoryId, $brandId, $condition, $locationUnitIds);
+        $dirSql = strtoupper($dir) === 'ASC' ? 'ASC' : 'DESC';
 
-        $allowedSort = ['title', 'basePrice', 'createdAt', 'salesCount'];
-        if (!in_array($sort, $allowedSort, true)) {
-            $sort = 'createdAt';
+        match ($sort) {
+            'basePrice' => $qb->orderBy('p.basePrice', $dirSql),
+            'salesCount' => $qb->orderBy('p.salesCount', $dirSql),
+            'title' => $qb->orderBy('p.title', $dirSql),
+            default => $qb->orderBy('p.createdAt', 'DESC'),
+        };
+
+        return $qb->setFirstResult(($page - 1) * $perPage)
+            ->setMaxResults($perPage)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function countCompatibleWithEngine(int $engineId, ?string $term, ?int $categoryId, ?int $brandId, ?string $condition, ?array $locationUnitIds = null): int
+    {
+        return (int) $this->buildCompatibleWithEngineQuery($engineId, $term, $categoryId, $brandId, $condition, $locationUnitIds)
+            ->select('COUNT(DISTINCT p.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /** @return string[] Titres de toutes les pièces compatibles (non paginé), pour l'autocomplétion. */
+    public function findCompatibleWithEngineTitles(int $engineId): array
+    {
+        $rows = $this->buildCompatibleWithEngineQuery($engineId, null, null, null, null)
+            ->select('DISTINCT p.title')
+            ->getQuery()
+            ->getArrayResult();
+
+        return array_column($rows, 'title');
+    }
+
+    private function buildCompatibleWithEngineQuery(int $engineId, ?string $term, ?int $categoryId, ?int $brandId, ?string $condition, ?array $locationUnitIds = null)
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->join('p.partListingDetails', 'pld')
+            ->join('pld.engineCompatibilities', 'pec')
+            ->andWhere('pec.vehicleEngine = :engineId')
+            ->andWhere('p.status = :status')
+            ->setParameter('engineId', $engineId)
+            ->setParameter('status', 'active');
+
+        if ($term) {
+            $qb->andWhere('p.title LIKE :term')->setParameter('term', '%' . $term . '%');
         }
+        if ($categoryId) {
+            $qb->andWhere('p.category = :categoryId')->setParameter('categoryId', $categoryId);
+        }
+        if ($brandId) {
+            $qb->andWhere('p.brand = :brandId')->setParameter('brandId', $brandId);
+        }
+        if ($condition) {
+            $qb->andWhere('p.condition = :condition')->setParameter('condition', $condition);
+        }
+        if ($locationUnitIds) {
+            $qb->join('p.sellerProfile', 'sp')
+                ->join('sp.user', 'sellerUser')
+                ->andWhere('sellerUser.administrativeUnit IN (:locationUnits)')
+                ->setParameter('locationUnits', $locationUnitIds);
+        }
+
+        return $qb;
+    }
+
+    /**
+     * @return array<int, array{id: int, name: string, total: int}> Nombre de pièces compatibles par catégorie
+     *         (facette — calculée sans le filtre catégorie lui-même, pour permettre le changement de catégorie).
+     */
+    public function getCategoryFacetsForEngine(int $engineId, ?string $term, ?int $brandId, ?string $condition, ?array $locationUnitIds = null): array
+    {
+        $qb = $this->buildCompatibleWithEngineQuery($engineId, $term, null, $brandId, $condition, $locationUnitIds)
+            ->join('p.category', 'facetCat')
+            ->select('facetCat.id as id, facetCat.name as name, COUNT(DISTINCT p.id) as total')
+            ->groupBy('facetCat.id')
+            ->orderBy('facetCat.name', 'ASC');
+
+        $rows = $qb->getQuery()->getResult();
+
+        return array_map(fn ($r) => ['id' => (int) $r['id'], 'name' => $r['name'], 'total' => (int) $r['total']], $rows);
+    }
+
+    /** @return Product[] */
+    public function findFiltered(?string $term, ?int $categoryId, ?string $status, ?string $condition, string $sort, string $dir, int $page, int $perPage, ?int $sellerProfileId = null): array
+    {
+        $qb = $this->buildFilterQuery($term, $categoryId, $status, $condition, $sellerProfileId);
+        $dirSql = strtoupper($dir) === 'ASC' ? 'ASC' : 'DESC';
 
         // leftJoin + addSelect : précharge la 1ère image en une seule requête,
         // au lieu d'une requête séparée par ligne affichée (N+1).
-        $query = $qb->leftJoin('p.images', 'img')
-            ->addSelect('img')
-            ->orderBy('p.' . $sort, strtoupper($dir) === 'ASC' ? 'ASC' : 'DESC')
-            ->setFirstResult(($page - 1) * $perPage)
+        $qb->leftJoin('p.images', 'img')->addSelect('img');
+
+        switch ($sort) {
+            case 'kongobazarReference':
+                $qb->orderBy('p.id', $dirSql);
+                break;
+            case 'category':
+                $qb->leftJoin('p.category', 'sortCat')->orderBy('sortCat.name', $dirSql);
+                break;
+            case 'brand':
+                $qb->leftJoin('p.brand', 'sortBrand')->orderBy('sortBrand.name', $dirSql);
+                break;
+            case 'seller':
+                $qb->leftJoin('p.sellerProfile', 'sortSp')->leftJoin('sortSp.user', 'sortUser')->orderBy('sortUser.email', $dirSql);
+                break;
+            case 'basePrice':
+            case 'title':
+            case 'createdAt':
+            case 'salesCount':
+            case 'status':
+            case 'condition':
+                $qb->orderBy('p.' . $sort, $dirSql);
+                break;
+            default:
+                $qb->orderBy('p.createdAt', 'DESC');
+        }
+
+        $query = $qb->setFirstResult(($page - 1) * $perPage)
             ->setMaxResults($perPage)
             ->getQuery();
 
@@ -55,15 +164,43 @@ class ProductRepository extends ServiceEntityRepository
         return iterator_to_array(new \Doctrine\ORM\Tools\Pagination\Paginator($query, true));
     }
 
-    public function countFiltered(?string $term, ?int $categoryId, ?string $status, ?string $condition): int
+    public function countFiltered(?string $term, ?int $categoryId, ?string $status, ?string $condition, ?int $sellerProfileId = null): int
     {
-        return (int) $this->buildFilterQuery($term, $categoryId, $status, $condition)
+        return (int) $this->buildFilterQuery($term, $categoryId, $status, $condition, $sellerProfileId)
             ->select('COUNT(p.id)')
             ->getQuery()
             ->getSingleScalarResult();
     }
 
-    private function buildFilterQuery(?string $term, ?int $categoryId, ?string $status, ?string $condition)
+    /**
+     * @param int[] $sellerProfileIds
+     * @return array<int, int> [sellerProfileId => nombre de produits] pour un statut donné
+     */
+    public function countGroupedBySellerProfileIds(array $sellerProfileIds, string $status): array
+    {
+        if (empty($sellerProfileIds)) {
+            return [];
+        }
+
+        $result = $this->createQueryBuilder('p')
+            ->select('IDENTITY(p.sellerProfile) as spId, COUNT(p.id) as total')
+            ->andWhere('p.sellerProfile IN (:ids)')
+            ->andWhere('p.status = :status')
+            ->setParameter('ids', $sellerProfileIds)
+            ->setParameter('status', $status)
+            ->groupBy('p.sellerProfile')
+            ->getQuery()
+            ->getResult();
+
+        $map = [];
+        foreach ($result as $row) {
+            $map[(int) $row['spId']] = (int) $row['total'];
+        }
+
+        return $map;
+    }
+
+    private function buildFilterQuery(?string $term, ?int $categoryId, ?string $status, ?string $condition, ?int $sellerProfileId = null)
     {
         $qb = $this->createQueryBuilder('p');
 
@@ -78,6 +215,9 @@ class ProductRepository extends ServiceEntityRepository
         }
         if ($condition) {
             $qb->andWhere('p.condition = :condition')->setParameter('condition', $condition);
+        }
+        if ($sellerProfileId) {
+            $qb->andWhere('p.sellerProfile = :sellerProfileId')->setParameter('sellerProfileId', $sellerProfileId);
         }
 
         return $qb;
@@ -169,11 +309,40 @@ class ProductRepository extends ServiceEntityRepository
     }
 
     /** @return Product[] */
-    public function findFilteredByBrand(int $brandId, ?string $status, ?string $term, int $page, int $perPage): array
+    public function findFilteredByBrand(int $brandId, ?string $status, ?string $term, int $page, int $perPage, string $sort = 'createdAt', string $dir = 'DESC'): array
     {
-        return $this->buildBrandFilterQuery($brandId, $status, $term)
-            ->orderBy('p.createdAt', 'DESC')
-            ->setFirstResult(($page - 1) * $perPage)
+        $qb = $this->buildBrandFilterQuery($brandId, $status, $term);
+        $dirSql = strtoupper($dir) === 'ASC' ? 'ASC' : 'DESC';
+
+        switch ($sort) {
+            case 'kongobazarReference':
+                $qb->orderBy('p.id', $dirSql);
+                break;
+            case 'category':
+                $qb->leftJoin('p.category', 'sortCat')->orderBy('sortCat.name', $dirSql);
+                break;
+            case 'seller':
+                $qb->leftJoin('p.sellerProfile', 'sortSp')->leftJoin('sortSp.user', 'sortUser')->orderBy('sortUser.email', $dirSql);
+                break;
+            case 'stock':
+                $qb->leftJoin('p.variants', 'sortVar')
+                    ->addSelect('COALESCE(SUM(sortVar.quantity), 0) as HIDDEN stockSum')
+                    ->groupBy('p.id')
+                    ->orderBy('stockSum', $dirSql);
+                break;
+            case 'title':
+            case 'basePrice':
+            case 'condition':
+            case 'status':
+            case 'salesCount':
+            case 'createdAt':
+                $qb->orderBy('p.' . $sort, $dirSql);
+                break;
+            default:
+                $qb->orderBy('p.createdAt', 'DESC');
+        }
+
+        return $qb->setFirstResult(($page - 1) * $perPage)
             ->setMaxResults($perPage)
             ->getQuery()
             ->getResult();
@@ -413,7 +582,52 @@ class ProductRepository extends ServiceEntityRepository
         return (int) $qb->getQuery()->getSingleScalarResult();
     }
 
-    public function findByCategoryAdmin(array $categoryIds, ?string $status, string $sort, ?string $term): array
+    public function findByCategoryAdmin(array $categoryIds, ?string $status, string $sort, ?string $term, int $page = 1, int $perPage = 20): array
+    {
+        $qb = $this->buildCategoryAdminQuery($categoryIds, $status, $term);
+
+        match ($sort) {
+            'price_asc' => $qb->orderBy('p.basePrice', 'ASC'),
+            'price_desc' => $qb->orderBy('p.basePrice', 'DESC'),
+            default => $qb->orderBy('p.createdAt', 'DESC'),
+        };
+
+        return $qb->setFirstResult(($page - 1) * $perPage)
+            ->setMaxResults($perPage)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function countByCategoryAdmin(array $categoryIds, ?string $status, ?string $term): int
+    {
+        return (int) $this->buildCategoryAdminQuery($categoryIds, $status, $term)
+            ->select('COUNT(p.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /** Statistiques globales de la catégorie, indépendantes des filtres actifs. */
+    public function getCategoryAdminStats(array $categoryIds): array
+    {
+        $result = $this->createQueryBuilder('p')
+            ->select('COUNT(p.id) as total')
+            ->addSelect('SUM(CASE WHEN p.status = \'active\' THEN 1 ELSE 0 END) as activeCount')
+            ->addSelect('SUM(CASE WHEN p.status = \'suspended\' THEN 1 ELSE 0 END) as blockedCount')
+            ->addSelect('SUM(p.salesCount) as totalSold')
+            ->andWhere('p.category IN (:ids)')
+            ->setParameter('ids', $categoryIds)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        return [
+            'total' => (int) ($result['total'] ?? 0),
+            'activeCount' => (int) ($result['activeCount'] ?? 0),
+            'blockedCount' => (int) ($result['blockedCount'] ?? 0),
+            'totalSold' => (int) ($result['totalSold'] ?? 0),
+        ];
+    }
+
+    private function buildCategoryAdminQuery(array $categoryIds, ?string $status, ?string $term)
     {
         $qb = $this->createQueryBuilder('p')
             ->andWhere('p.category IN (:ids)')
@@ -426,13 +640,7 @@ class ProductRepository extends ServiceEntityRepository
             $qb->andWhere('p.title LIKE :term')->setParameter('term', '%' . $term . '%');
         }
 
-        match ($sort) {
-            'price_asc' => $qb->orderBy('p.basePrice', 'ASC'),
-            'price_desc' => $qb->orderBy('p.basePrice', 'DESC'),
-            default => $qb->orderBy('p.createdAt', 'DESC'),
-        };
-
-        return $qb->setMaxResults(100)->getQuery()->getResult();
+        return $qb;
     }
 
 

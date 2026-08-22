@@ -69,8 +69,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 7, nullable: true)]
     private ?string $adminSidebarColor = null;
 
-    #[ORM\Column(options: ['default' => false])]
-    private bool $adminDarkMode = false;
+    #[ORM\ManyToOne(targetEntity: AdminSidebarTheme::class)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?AdminSidebarTheme $adminSidebarTheme = null;
 
     #[Vich\UploadableField(mapping: 'product_images', fileNameProperty: 'avatarName')]
     private ?File $avatarFile = null;
@@ -260,14 +261,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function isAdminDarkMode(): bool
+    public function getAdminSidebarTheme(): ?AdminSidebarTheme
     {
-        return $this->adminDarkMode;
+        return $this->adminSidebarTheme;
     }
 
-    public function setAdminDarkMode(bool $darkMode): static
+    public function setAdminSidebarTheme(?AdminSidebarTheme $theme): static
     {
-        $this->adminDarkMode = $darkMode;
+        $this->adminSidebarTheme = $theme;
         return $this;
     }
 

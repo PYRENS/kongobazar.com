@@ -52,7 +52,7 @@ body.admin-body {
     font-size: 14px;
 }
 .admin-nav li a:hover { background: rgba(255,255,255,0.08); color: #fff; }
-.admin-nav li.active a { background: rgba(255,255,255,0.12); color: #fff; border-left: 3px solid var(--admin-accent); }
+.admin-nav li.active a { background: rgba(255,255,255,0.12); color: #fff; }
 .admin-nav-soon {
     margin-left: auto;
     font-size: 9px;
@@ -184,10 +184,16 @@ body.admin-body {
     margin-right: 8px;
 }
 .admin-avatar--initials {
-    background: var(--primary);
-    color: #fff;
+    background: var(--sidebar-bg, var(--primary));
+    color: var(--primary);
     font-size: 11px;
     font-weight: 700;
+    border: 1px solid var(--primary);
+}
+.user-avatar-btn .admin-avatar {
+    width: 34px;
+    height: 34px;
+    margin-right: 0;
 }
 
 /* --------------------------------------------------------------------------
@@ -256,7 +262,7 @@ body.admin-body {
     padding: 10px 20px 10px 44px;
     font-size: 13px;
 }
-.admin-nav-submenu li.active a { color: #fff; border-left: 3px solid var(--admin-accent); padding-left: 41px; }
+.admin-nav-submenu li.active a { color: #fff; padding-left: 41px; }
 
 /* --------------------------------------------------------------------------
    Raccourci mode nuit
@@ -419,17 +425,22 @@ body.admin-body {
     display: block;
     font-size: 11px;
     line-height: 14px;
-    min-height: 14px;
+    height: 14px;
     color: #999;
+    white-space: nowrap;
+    overflow: hidden;
 }
 .admin-upload-thumb-inner {
     position: relative;
     width: 110px;
     height: 110px;
+    flex-shrink: 0;
 }
 .admin-upload-thumb-inner img {
-    width: 100%;
-    height: 100%;
+    display: block;
+    width: 110px !important;
+    height: 110px !important;
+    max-width: 110px;
     object-fit: cover;
     border-radius: 10px;
     border: 1px solid #eee;
@@ -459,6 +470,66 @@ body.admin-body {
     color: #fff;
 }
 .admin-upload-thumb-inner img { cursor: zoom-in; }
+.custom-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 3000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.custom-modal-overlay.active { display: flex; }
+.custom-modal-box {
+    background: #fff;
+    border-radius: 12px;
+    max-width: 720px;
+    width: 100%;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+}
+.custom-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color, #eee);
+    flex-shrink: 0;
+}
+.custom-modal-body {
+    padding: 20px;
+    overflow-y: auto;
+}
+
+/* Bascule liste pour le catalogue de pièces compatibles (moteur > pièces) */
+.parts-list-mode .part-card-col { width: 100%; max-width: 100%; flex: 0 0 100%; }
+.parts-list-mode .part-card { flex-direction: row; }
+.parts-list-mode .part-card-image { width: 110px; height: 110px !important; border-radius: 10px 0 0 10px !important; }
+.parts-list-mode .part-card-body { flex: 1; }
+
+.icon-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+    gap: 8px;
+}
+.icon-picker-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 4px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+.icon-picker-item i { font-size: 20px; color: var(--body-text); }
+.icon-picker-item:hover { background: var(--primary-light, #eef2ff); border-color: var(--primary); }
+.icon-picker-item span { font-size: 9px; color: var(--muted); text-align: center; word-break: break-word; line-height: 1.2; }
+
 .admin-upload-set-primary {
     display: block;
     font-size: 11px;
@@ -492,7 +563,7 @@ body.admin-body {
     gap: 8px;
     align-items: flex-start;
 }
-.admin-card .category-picker select {
+.category-picker select {
     width: auto;
     min-width: 180px;
     max-width: 260px;
@@ -625,8 +696,15 @@ body.admin-body {
     --primary: var(--kb-blue, #2FA8E0);
     --primary-dark: #1F87BA;
     --primary-light: #E8F6FD;
+    /* Valeurs par défaut (thème "Indigo Clair") tant qu'aucun thème
+       n'est explicitement choisi par l'admin — voir AdminSidebarTheme. */
+    --sidebar-hover-bg: #F1F3FB;
+    --sidebar-hover-text: #344767;
+    --sidebar-active-bg: #4F6EF7;
+    --sidebar-active-text: #FFFFFF;
+    --sidebar-icon: #7C8DB5;
+    --sidebar-heading-color: #344767;
 }
-
 .admin-nav { list-style: none; padding: 10px 10px 24px; margin: 0; }
 
 .admin-nav > li { margin-bottom: 2px; }
@@ -653,20 +731,31 @@ body.admin-body {
     font-size: 17px;
     width: 20px;
     flex-shrink: 0;
+    color: var(--sidebar-icon);
+    transition: color 0.15s ease;
 }
 .admin-nav > li > a:hover,
 .admin-nav-group-toggle:hover {
-    background: rgba(255, 255, 255, 0.12);
-    color: #fff;
+    background: var(--sidebar-hover-bg);
+    color: var(--sidebar-hover-text);
+}
+.admin-nav > li > a:hover i:first-child,
+.admin-nav-group-toggle:hover i:first-child {
+    color: var(--sidebar-hover-text);
 }
 .admin-nav > li.active > a {
-    background: rgba(255, 255, 255, 0.18);
-    color: #fff;
+    background: var(--sidebar-active-bg);
+    color: var(--sidebar-active-text);
     font-weight: 600;
+    border-left: 3px solid var(--sidebar-active-bg);
+    padding-left: 9px;
+}
+.admin-nav > li.active > a i:first-child {
+    color: var(--sidebar-active-text);
 }
 
 .admin-nav-group.open > .admin-nav-group-toggle {
-    color: var(--primary);
+    color: var(--sidebar-active-bg);
     font-weight: 600;
 }
 .admin-nav-group-arrow {
@@ -701,12 +790,14 @@ body.admin-body {
 }
 .admin-nav-submenu > li > a:hover {
     color: var(--primary);
-    background: rgba(47, 168, 224, 0.06);
+    background: color-mix(in srgb, var(--primary) 8%, transparent);
 }
 .admin-nav-submenu > li.active > a {
     color: var(--primary);
-    background: rgba(47, 168, 224, 0.11);
+    background: color-mix(in srgb, var(--primary) 14%, transparent);
     font-weight: 600;
+    border-left: 3px solid var(--primary);
+    padding-left: 38px;
 }
 
 /* Sidebar mobile (réutilise les classes du template) */
@@ -720,5 +811,172 @@ body.admin-body {
         background: rgba(0,0,0,0.4);
         z-index: 1050;
     }
+}
+
+/* ==========================================================================
+   Aperçu mini-sidebar pour un AdminSidebarTheme (galerie + formulaire).
+   Chaque instance reçoit ses 7 couleurs via les variables --tp-* posées
+   en inline style sur .theme-preview ; la teinte "enfant ouvert" est
+   dérivée automatiquement de --tp-active-bg via color-mix(), pas besoin
+   d'un 8ᵉ champ en base.
+   ========================================================================== */
+.theme-preview {
+    background: var(--tp-bg);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+    padding: 10px;
+    width: 100%;
+}
+.theme-preview-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 8px;
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--tp-text);
+    margin-bottom: 3px;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+.theme-preview-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--tp-icon) 18%, transparent);
+    color: var(--tp-icon);
+    font-size: 11px;
+    flex-shrink: 0;
+}
+.theme-preview-row--hover {
+    background: var(--tp-hover-bg);
+    color: var(--tp-hover-text);
+}
+.theme-preview-row--hover .theme-preview-icon {
+    color: var(--tp-hover-text);
+    background: color-mix(in srgb, var(--tp-hover-text) 18%, transparent);
+}
+.theme-preview-row--active {
+    background: var(--tp-active-bg);
+    color: var(--tp-active-text);
+    font-weight: 600;
+    border-left: 3px solid var(--tp-active-bg);
+}
+.theme-preview-row--active .theme-preview-icon {
+    color: var(--tp-active-text);
+    background: color-mix(in srgb, var(--tp-active-text) 22%, transparent);
+}
+.theme-preview-row--child {
+    padding-left: 26px;
+    background: color-mix(in srgb, var(--tp-active-bg) 14%, var(--tp-bg));
+    color: var(--tp-active-bg);
+    font-weight: 600;
+    font-size: 11.5px;
+}
+.theme-preview-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--tp-active-bg);
+    flex-shrink: 0;
+}
+
+/* Petite pastille de couleur dans le tableau des thèmes */
+.theme-swatch {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    border: 2px solid;
+}
+
+/* Vignette cliquable sur /parametres pour choisir un thème */
+.theme-vignette {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    padding: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, transform 0.1s ease;
+}
+.theme-vignette:hover {
+    transform: translateY(-2px);
+}
+.theme-vignette--selected {
+    border-color: var(--primary);
+}
+.theme-vignette-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    width: 90px;
+    padding: 6px;
+    border-radius: 8px;
+    background: var(--tp-bg);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+.theme-vignette-row {
+    height: 10px;
+    border-radius: 3px;
+}
+.theme-vignette-label {
+    font-size: 12px;
+    color: var(--heading-color, #1e2a3a);
+    font-weight: 500;
+}
+
+/* Conteneur du sélecteur géographique en cascade (province > ville > commune...) */
+.geo-picker {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.geo-picker select {
+    width: 100%;
+}
+
+/* Résultats de la recherche dans le menu admin (header-search) */
+.header-search-results {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    width: 100%;
+    min-width: 280px;
+    background: #fff;
+    border: 1px solid var(--sidebar-border, #eef0f7);
+    border-radius: 10px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+    max-height: 320px;
+    overflow-y: auto;
+    z-index: 1100;
+    padding: 6px;
+}
+.header-search-results.active { display: block; }
+.header-search-result-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--heading-color, #1e2a3a);
+    font-size: 13px;
+}
+.header-search-result-item:hover {
+    background: var(--primary-light, #eef2ff);
+    color: var(--primary);
+}
+.header-search-result-item i { font-size: 14px; width: 18px; text-align: center; }
+.header-search-no-results {
+    padding: 10px;
+    font-size: 12.5px;
+    color: var(--muted, #8592a6);
 }
 .sidebar-overlay { display: none; }

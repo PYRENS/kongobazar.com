@@ -34,6 +34,9 @@ class GeoManagementController extends AbstractController
                 'isSearchMode' => true,
                 'currentSort' => $sortField,
                 'currentDir' => $sortDir,
+                'totalUnitsCount' => $repository->countAll(),
+                'activeUnitsCount' => $repository->countByActive(true),
+                'rootUnitsCount' => count($repository->findRootUnits()),
             ]);
         }
 
@@ -59,20 +62,33 @@ class GeoManagementController extends AbstractController
             'isSearchMode' => false,
             'currentSort' => $sortField,
             'currentDir' => $sortDir,
+            'totalUnitsCount' => $repository->countAll(),
+            'activeUnitsCount' => $repository->countByActive(true),
+            'rootUnitsCount' => count($repository->findRootUnits()),
         ]);
     }
 
     private function sortRows(array $rows, string $field, string $dir): array
     {
-        $allowed = ['name', 'countParticulier', 'countPro', 'countStore', 'countRelay'];
+        $allowed = ['name', 'typeLabel', 'active', 'childrenCount', 'countParticulier', 'countPro', 'countStore', 'countRelay'];
         if (!in_array($field, $allowed, true)) {
             $field = 'name';
         }
         $dir = strtoupper($dir) === 'DESC' ? -1 : 1;
 
         usort($rows, function ($a, $b) use ($field, $dir) {
-            $valA = $field === 'name' ? $a['unit']->getName() : $a[$field];
-            $valB = $field === 'name' ? $b['unit']->getName() : $b[$field];
+            $valA = match ($field) {
+                'name' => $a['unit']->getName(),
+                'typeLabel' => $a['unit']->getTypeLabel() ?? '',
+                'active' => $a['unit']->isActive() ? 1 : 0,
+                default => $a[$field],
+            };
+            $valB = match ($field) {
+                'name' => $b['unit']->getName(),
+                'typeLabel' => $b['unit']->getTypeLabel() ?? '',
+                'active' => $b['unit']->isActive() ? 1 : 0,
+                default => $b[$field],
+            };
             return $dir * ($valA <=> $valB);
         });
 

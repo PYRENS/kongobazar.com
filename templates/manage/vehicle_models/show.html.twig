@@ -1,8 +1,8 @@
 {% extends 'manage/base.html.twig' %}
 
-{% block title %}{{ model.name }} — Modèle{% endblock %}
+{% block title %}Modèle : {{ model.name }} - (Marque {{ model.brand.name }}){% endblock %}
 {% block page_icon %}bi-car-front{% endblock %}
-{% block page_title %}{{ model.brand.name }} {{ model.name }}{% endblock %}
+{% block page_title %}Modèle : {{ model.name }} - (Marque {{ model.brand.name }}){% endblock %}
 
 {% macro sortLink(field, label, param, currentSort, currentDir, anchor) %}
     {% set nextDir = (currentSort == field and currentDir == 'ASC') ? 'DESC' : 'ASC' %}
@@ -18,7 +18,7 @@
 {% import _self as self %}
 
 {% block body %}
-    <nav class="admin-breadcrumb">
+    <nav class="admin-breadcrumb mb-3">
         <a href="{{ path('manage_brands_index') }}"><i class="bi bi-award"></i> Marques</a>
         <i class="bi bi-chevron-right"></i>
         <a href="{{ path('manage_brands_show', {id: model.brand.id}) }}">{{ model.brand.name }}</a>
@@ -26,160 +26,243 @@
         <span>{{ model.name }}</span>
     </nav>
 
-    <div class="admin-card" style="margin-top:12px;">
-        <div class="admin-info-illustration-row">
-            <div class="admin-info-col">
-                <h6><i class="bi bi-info-circle"></i> Informations du modèle</h6>
-                <table class="admin-table" style="box-shadow:none;margin-bottom:16px;">
-                    <tr><td><strong>Marque</strong></td><td><a href="{{ path('manage_brands_show', {id: model.brand.id}) }}">{{ model.brand.name }}</a></td></tr>
-                    <tr><td><strong>Nom</strong></td><td>{{ model.name }}</td></tr>
-                    <tr><td><strong>Nom alternatif</strong></td><td>{{ model.name2 ?: '—' }}</td></tr>
-                    <tr><td><strong>Type</strong></td><td>{{ model.isMoto ? 'Moto' : 'Auto' }}</td></tr>
-                    {% if not model.isMoto %}
-                        <tr>
-                            <td><strong>Variantes</strong></td>
-                            <td>
-                                {% if variantsTotal > 0 %}
-                                    <a href="#variantes">{{ variantsTotal }}</a>
-                                {% else %}
-                                    0
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% endif %}
-                    <tr>
-                        <td><strong>Motorisations</strong></td>
-                        <td>
-                            {% if enginesTotal > 0 %}
-                                <a href="#motorisations">{{ enginesTotal }}</a>
-                            {% else %}
-                                0
-                            {% endif %}
-                        </td>
-                    </tr>
-                </table>
-
-                <div class="admin-actions">
-                    <a href="{{ path('manage_vehicle_models_index') }}" class="admin-btn admin-btn--outline">← Retour</a>
-                    <a href="{{ path('manage_vehicle_models_edit', {id: model.id}) }}" class="admin-btn admin-btn--outline"><i class="bi bi-pencil"></i> Modifier</a>
+    {# --- Stats juste après le titre --- #}
+    <div class="row g-3 mb-3">
+        {% if not model.isMoto %}
+            <div class="col-xl-4 col-md-6">
+                <div class="sw-card ctb-stat ctb-stat-green h-100">
+                    <div class="ctb-stat-icon ctb-stat-icon-green"><i class="bi bi-diagram-3"></i></div>
+                    <div class="ctb-stat-val">{% if variantsTotal > 0 %}<a href="#variantes">{{ variantsTotal }}</a>{% else %}0{% endif %}</div>
+                    <div class="ctb-stat-label">Variantes</div>
                 </div>
             </div>
+        {% endif %}
+        <div class="col-xl-4 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-purple h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-purple"><i class="bi bi-gear"></i></div>
+                <div class="ctb-stat-val">{% if enginesTotal > 0 %}<a href="#motorisations">{{ enginesTotal }}</a>{% else %}0{% endif %}</div>
+                <div class="ctb-stat-label">Motorisations</div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-orange h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-orange"><i class="bi {{ model.isMoto ? 'bi-scooter' : 'bi-car-front' }}"></i></div>
+                <div class="ctb-stat-val" style="font-size:18px;">{{ model.isMoto ? 'Moto' : 'Auto' }}</div>
+                <div class="ctb-stat-label">Type</div>
+            </div>
+        </div>
+    </div>
 
-            <div class="admin-illustration-col">
-                <span class="admin-illustration-label">Marque</span>
-                <a href="{{ path('manage_brands_show', {id: model.brand.id}) }}">
-                    {% if model.brand.logoName %}
-                        <img src="{{ vich_uploader_asset(model.brand, 'logoFile') }}" class="admin-illustration-preview admin-illustration-preview--logo">
-                    {% else %}
-                        <div class="admin-illustration-empty">
-                            <i class="bi bi-award"></i>
-                        </div>
-                    {% endif %}
-                </a>
+    {# --- Section 1 : Informations --- #}
+    <div class="row g-3 mb-3">
+        <div class="col-xl-8">
+            <div class="sw-card h-100">
+                <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-info-circle me-2"></i>Informations du modèle</h6></div>
+                <div class="card-body">
+                    <table class="table mb-3">
+                        <tr><td class="text-muted" style="width:220px;">Marque</td><td><a href="{{ path('manage_brands_show', {id: model.brand.id}) }}">{{ model.brand.name }}</a></td></tr>
+                        <tr><td class="text-muted">Nom</td><td class="fw-bold">{{ model.name }}</td></tr>
+                        <tr><td class="text-muted">Nom alternatif</td><td>{{ model.name2 ?: '—' }}</td></tr>
+                        <tr><td class="text-muted">Type</td><td>{{ model.isMoto ? 'Moto' : 'Auto' }}</td></tr>
+                    </table>
+
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="{{ path('manage_vehicle_models_index') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Retour</a>
+                        <a href="{{ path('manage_vehicle_models_edit', {id: model.id}) }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil me-1"></i>Modifier</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4">
+            <div class="sw-card h-100">
+                <div class="card-header"><h6 class="mb-0 fw-bold">Marque</h6></div>
+                <div class="card-body d-flex align-items-center justify-content-center" style="min-height:200px;">
+                    <a href="{{ path('manage_brands_show', {id: model.brand.id}) }}">
+                        {% if model.brand.logoName %}
+                            <img src="{{ vich_uploader_asset(model.brand, 'logoFile') }}" style="max-width:100%;max-height:180px;object-fit:contain;">
+                        {% else %}
+                            <div class="text-muted text-center">
+                                <i class="bi bi-award" style="font-size:48px;"></i>
+                                <p class="mt-2 mb-0">Aucun logo</p>
+                            </div>
+                        {% endif %}
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 
     {# --- Section 2 : Variantes --- #}
-    <div class="admin-card" id="variantes">
-        <h6><i class="bi bi-diagram-3"></i> Variantes du modèle</h6>
-        {% if not model.isMoto %}
-        {% if not model.isMoto %}
-            <a href="{{ path('manage_vehicle_variants_new', {model: model.id}) }}" class="admin-btn admin-btn--primary" style="margin-bottom:12px;">
-                <i class="bi bi-plus-lg"></i> Ajouter une variante
-            </a>
-        {% endif %}
-        {% endif %}
-
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>{{ self.sortLink('name', 'Variante', 'variants', variantsSort, variantsDir, 'variantes') }}</th>
-                    <th>{{ self.sortLink('yearBegin', 'Période', 'variants', variantsSort, variantsDir, 'variantes') }}</th>
-                    <th>{{ self.sortLink('engineCount', 'Motorisations', 'variants', variantsSort, variantsDir, 'variantes') }}</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for variant in variants %}
-                    {% set variantEngineCount = variant.engines|length %}
-                    <tr>
-                        <td><a href="{{ path('manage_vehicle_variants_show', {id: variant.id}) }}">{{ variant.name ?: '-' }}</a></td>
-                        <td>{{ variant.monthBegin }}/{{ variant.yearBegin }} — {{ variant.monthEnd ? variant.monthEnd ~ '/' ~ variant.yearEnd : '...' }}</td>
-                        <td>
-                            {% if variantEngineCount > 0 %}
-                                <a href="{{ path('manage_vehicle_variants_show', {id: variant.id}) }}#motorisations">{{ variantEngineCount }}</a>
-                            {% else %}
-                                0
-                            {% endif %}
-                        </td>
-                        <td class="admin-actions">
-                            <a href="{{ path('manage_vehicle_variants_show', {id: variant.id}) }}" class="admin-btn admin-btn--outline"><i class="bi bi-eye"></i></a>
-                            <a href="{{ path('manage_vehicle_variants_edit', {id: variant.id}) }}" class="admin-btn admin-btn--outline"><i class="bi bi-pencil"></i></a>
-                            <form action="{{ path('manage_vehicle_variants_delete', {id: variant.id}) }}" method="post" onsubmit="return confirm('Supprimer cette variante ?');">
-                                <button type="submit" class="admin-btn admin-btn--outline"><i class="bi bi-trash"></i></button>
-                            </form>
-                        </td>
-                    </tr>
-                {% else %}
-                    <tr><td colspan="4" class="text-muted">{{ model.isMoto ? 'Modèle Moto — pas de variante.' : 'Aucune variante pour ce modèle.' }}</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        {% if variantsPages > 1 %}
-            <div class="d-flex justify-content-between align-items-center mt-2">
-                <a href="?variants_page={{ max(1, variantsPage - 1) }}#variantes" class="admin-btn admin-btn--outline {{ variantsPage <= 1 ? 'disabled' : '' }}">‹ Précédent</a>
-                <span class="text-muted">Page {{ variantsPage }} / {{ variantsPages }}</span>
-                <a href="?variants_page={{ min(variantsPages, variantsPage + 1) }}#variantes" class="admin-btn admin-btn--outline {{ variantsPage >= variantsPages ? 'disabled' : '' }}">Suivant ›</a>
+    <div class="sw-card mb-3" id="variantsSection">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <h6 class="mb-0 fw-bold"><i class="bi bi-diagram-3 me-2"></i>Variantes du modèle</h6>
+            {% if not model.isMoto %}
+                <a href="{{ path('manage_vehicle_variants_new', {model: model.id}) }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Ajouter une variante</a>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <div class="d-flex align-items-center flex-wrap gap-3 mb-3">
+                <div class="ctb-search-wrap" style="width:260px;">
+                    <i class="bi bi-search ctb-search-icon"></i>
+                    <input type="text" id="variantSearchInput" class="ctb-search-input" placeholder="Rechercher une variante..." value="{{ variantsTerm }}" autocomplete="off">
+                    <div class="header-search-results" id="variantSuggestions"></div>
+                </div>
+                <select id="variantPerPage" class="form-select form-select-sm" style="width:auto;">
+                    {% for n in [10, 20, 50, 100] %}
+                        <option value="{{ n }}" {{ variantsPerPage == n ? 'selected' : '' }}>{{ n }} / page</option>
+                    {% endfor %}
+                </select>
             </div>
-        {% endif %}
+            <div id="variantsTableWrap">
+                {% include 'manage/vehicle_models/_variants_table.html.twig' %}
+            </div>
+        </div>
     </div>
 
     {# --- Section 3 : Motorisations --- #}
-    <div class="admin-card" id="motorisations">
-        <h6><i class="bi bi-gear"></i> Motorisations du modèle</h6>
-
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>{{ self.sortLink('label', 'Moteur', 'engines', enginesSort, enginesDir, 'motorisations') }}</th>
-                    {% if not model.isMoto %}<th>Variante</th>{% endif %}
-                    <th>{{ self.sortLink('powerCv', 'Puissance CV', 'engines', enginesSort, enginesDir, 'motorisations') }}</th>
-                    <th>{{ self.sortLink('powerKw', 'Puissance kW', 'engines', enginesSort, enginesDir, 'motorisations') }}</th>
-                    <th>{{ self.sortLink('period', 'Période', 'engines', enginesSort, enginesDir, 'motorisations') }}</th>
-                    <th>{{ self.sortLink('fuelType', 'Énergie', 'engines', enginesSort, enginesDir, 'motorisations') }}</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for engine in engines %}
-                    <tr>
-                        <td>{{ engine.label }}</td>
-                        {% if not model.isMoto %}<td>{{ engine.variant ? (engine.variant.name ?: '-') : '-' }}</td>{% endif %}
-                        <td>{{ engine.powerCv ?: '-' }}</td>
-                        <td>{{ engine.powerKw ?: '-' }}</td>
-                        <td>{{ engine.periodLabel ?: '-' }}</td>
-                        <td>{{ engine.fuelType ? engine.fuelType.name : '-' }}</td>
-                        <td class="admin-actions">
-                            <a href="{{ path('manage_vehicle_engines_edit', {id: engine.id}) }}" class="admin-btn admin-btn--outline"><i class="bi bi-pencil"></i></a>
-                            <form action="{{ path('manage_vehicle_engines_delete', {id: engine.id}) }}" method="post" onsubmit="return confirm('Supprimer cette motorisation ?');">
-                                <button type="submit" class="admin-btn admin-btn--outline"><i class="bi bi-trash"></i></button>
-                            </form>
-                        </td>
-                    </tr>
-                {% else %}
-                    <tr><td colspan="{{ model.isMoto ? 6 : 7 }}" class="text-muted">Aucune motorisation pour ce modèle.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        {% if enginesPages > 1 %}
-            <div class="d-flex justify-content-between align-items-center mt-2">
-                <a href="?engines_page={{ max(1, enginesPage - 1) }}#motorisations" class="admin-btn admin-btn--outline {{ enginesPage <= 1 ? 'disabled' : '' }}">‹ Précédent</a>
-                <span class="text-muted">Page {{ enginesPage }} / {{ enginesPages }}</span>
-                <a href="?engines_page={{ min(enginesPages, enginesPage + 1) }}#motorisations" class="admin-btn admin-btn--outline {{ enginesPage >= enginesPages ? 'disabled' : '' }}">Suivant ›</a>
+    <div class="sw-card" id="enginesSection">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-gear me-2"></i>Motorisations du modèle</h6></div>
+        <div class="card-body">
+            <div class="d-flex align-items-center flex-wrap gap-3 mb-3">
+                <div class="ctb-search-wrap" style="width:260px;">
+                    <i class="bi bi-search ctb-search-icon"></i>
+                    <input type="text" id="engineSearchInput" class="ctb-search-input" placeholder="Rechercher une motorisation..." value="{{ enginesTerm }}" autocomplete="off">
+                    <div class="header-search-results" id="engineSuggestions"></div>
+                </div>
+                <select id="enginePerPage" class="form-select form-select-sm" style="width:auto;">
+                    {% for n in [10, 20, 50, 100] %}
+                        <option value="{{ n }}" {{ enginesPerPage == n ? 'selected' : '' }}>{{ n }} / page</option>
+                    {% endfor %}
+                </select>
             </div>
-        {% endif %}
+            <div id="enginesTableWrap">
+                {% include 'manage/vehicle_models/_engines_table.html.twig' %}
+            </div>
+        </div>
     </div>
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        const allVariantNames = {{ allVariantNames|json_encode|raw }};
+        const allEngineLabels = {{ allEngineLabels|json_encode|raw }};
+
+        function setupAjaxSection(config) {
+            let state = { q: config.initialTerm, sort: config.initialSort, dir: config.initialDir, page: 1, perPage: config.initialPerPage };
+            const wrap = document.getElementById(config.wrapId);
+            const searchInput = document.getElementById(config.searchInputId);
+            const suggestions = document.getElementById(config.suggestionsId);
+            const perPageSelect = document.getElementById(config.perPageId);
+            let debounceTimer;
+
+            function load() {
+                const params = new URLSearchParams();
+                params.set(config.prefix + '_q', state.q);
+                params.set(config.prefix + '_sort', state.sort);
+                params.set(config.prefix + '_dir', state.dir);
+                params.set(config.prefix + '_page', state.page);
+                params.set(config.prefix + '_perpage', state.perPage);
+                fetch(config.fragmentUrl + '?' + params.toString())
+                    .then((r) => r.text())
+                    .then((html) => {
+                        wrap.innerHTML = html;
+                        bindWrapEvents();
+                    });
+            }
+
+            function bindWrapEvents() {
+                wrap.querySelectorAll('.js-ajax-sort').forEach((el) => {
+                    el.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        state.sort = this.dataset.sort;
+                        state.dir = this.dataset.dir;
+                        state.page = 1;
+                        load();
+                    });
+                });
+                wrap.querySelectorAll('.js-ajax-page').forEach((el) => {
+                    el.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        if (this.classList.contains('disabled')) return;
+                        state.page = parseInt(this.dataset.page, 10);
+                        load();
+                    });
+                });
+            }
+
+            function renderSuggestions(term) {
+                suggestions.innerHTML = '';
+                if (!term) { suggestions.classList.remove('active'); return; }
+                const matches = config.allNames.filter((n) => n.label.toLowerCase().includes(term.toLowerCase())).slice(0, 8);
+                if (matches.length === 0) { suggestions.classList.remove('active'); return; }
+                matches.forEach((entry) => {
+                    const item = document.createElement('div');
+                    item.className = 'header-search-result-item';
+                    item.innerHTML = '<i class="bi bi-search"></i><span>' + entry.label + '</span>';
+                    item.addEventListener('click', () => {
+                        searchInput.value = entry.value;
+                        suggestions.classList.remove('active');
+                        state.q = entry.value;
+                        state.page = 1;
+                        load();
+                    });
+                    suggestions.appendChild(item);
+                });
+                suggestions.classList.add('active');
+            }
+
+            searchInput.addEventListener('input', function () {
+                clearTimeout(debounceTimer);
+                const term = this.value.trim();
+                renderSuggestions(term);
+                debounceTimer = setTimeout(() => {
+                    state.q = term;
+                    state.page = 1;
+                    load();
+                }, 300);
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#' + config.searchInputId) && !e.target.closest('#' + config.suggestionsId)) {
+                    suggestions.classList.remove('active');
+                }
+            });
+
+            perPageSelect.addEventListener('change', function () {
+                state.perPage = parseInt(this.value, 10);
+                state.page = 1;
+                load();
+            });
+
+            bindWrapEvents();
+        }
+
+        setupAjaxSection({
+            wrapId: 'variantsTableWrap',
+            searchInputId: 'variantSearchInput',
+            suggestionsId: 'variantSuggestions',
+            perPageId: 'variantPerPage',
+            fragmentUrl: '{{ path('manage_vehicle_models_variants_fragment', {id: model.id}) }}',
+            prefix: 'variants',
+            allNames: allVariantNames,
+            initialTerm: '{{ variantsTerm|e('js') }}',
+            initialSort: '{{ variantsSort }}',
+            initialDir: '{{ variantsDir }}',
+            initialPerPage: {{ variantsPerPage }},
+        });
+
+        setupAjaxSection({
+            wrapId: 'enginesTableWrap',
+            searchInputId: 'engineSearchInput',
+            suggestionsId: 'engineSuggestions',
+            perPageId: 'enginePerPage',
+            fragmentUrl: '{{ path('manage_vehicle_models_engines_fragment', {id: model.id}) }}',
+            prefix: 'engines',
+            allNames: allEngineLabels,
+            initialTerm: '{{ enginesTerm|e('js') }}',
+            initialSort: '{{ enginesSort }}',
+            initialDir: '{{ enginesDir }}',
+            initialPerPage: {{ enginesPerPage }},
+        });
+    </script>
 {% endblock %}

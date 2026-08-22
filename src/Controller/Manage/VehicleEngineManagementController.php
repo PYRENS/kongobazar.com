@@ -29,11 +29,27 @@ class VehicleEngineManagementController extends AbstractController
         $sortDir = $request->query->get('dir', 'ASC');
         $engines = $this->sortEngineList($engines, $sortField, $sortDir);
 
+        $total = count($engines);
+        $perPage = in_array((int) $request->query->get('perPage', 20), [10, 20, 50, 100], true)
+            ? (int) $request->query->get('perPage', 20) : 20;
+        $page = max(1, (int) $request->query->get('page', 1));
+        $engines = array_slice($engines, ($page - 1) * $perPage, $perPage);
+
         return $this->render('manage/vehicle_engines/index.html.twig', [
             'engines' => $engines,
             'searchTerm' => $searchTerm,
             'currentSort' => $sortField,
             'currentDir' => $sortDir,
+            'page' => $page,
+            'pages' => max(1, (int) ceil($total / $perPage)),
+            'perPage' => $perPage,
+            'total' => $total,
+            'stats' => [
+                'total' => $repository->countAll(),
+                'auto' => $repository->countAutoAll(),
+                'moto' => $repository->countMotoAll(),
+                'filtered' => $total,
+            ],
         ]);
     }
 
@@ -133,6 +149,73 @@ class VehicleEngineManagementController extends AbstractController
 
         $this->addFlash('success', 'Motorisation supprimée.');
         return $this->redirectToRoute('manage_vehicle_engines_index');
+    }
+
+    #[Route('/vehicules/motorisations/{id}/pieces', name: 'manage_vehicle_engine_parts', host: 'manage.kongobazar.com', methods: ['GET'])]
+    public function parts(
+        VehicleEngine $engine,
+        Request $request,
+        \App\Repository\ProductRepository $productRepository,
+        \App\Repository\CategoryRepository $categoryRepository,
+        \App\Repository\AdministrativeUnitRepository $administrativeUnitRepository,
+        BrandRepository $brandRepository,
+    ): Response {
+        $term = $request->query->get('q') ?: null;
+        $categoryId = $request->query->get('category') ? (int) $request->query->get('category') : null;
+        $brandId = $request->query->get('brand') ? (int) $request->query->get('brand') : null;
+        $condition = $request->query->get('condition') ?: null;
+        $sort = $request->query->get('sort', 'createdAt');
+        $dir = $request->query->get('dir', 'DESC');
+        $perPage = in_array((int) $request->query->get('perPage', 20), [10, 20, 50, 100], true)
+            ? (int) $request->query->get('perPage', 20) : 20;
+        $page = max(1, (int) $request->query->get('page', 1));
+
+        // Localisation : le vendeur/produit peut être situé à n'importe quel niveau
+        // (province seule, ou jusqu'à la commune) — on filtre sur l'unité choisie + tous ses descendants.
+        $locationUnitId = $request->query->get('location') ? (int) $request->query->get('location') : null;
+        $locationUnitIds = null;
+        $locationUnit = null;
+        if ($locationUnitId) {
+            $locationUnit = $administrativeUnitRepository->find($locationUnitId);
+            if ($locationUnit) {
+                $locationUnitIds = array_merge(
+                    [$locationUnit->getId()],
+                    array_map(fn ($u) => $u->getId(), $locationUnit->getDescendantUnits())
+                );
+            }
+        }
+
+        $total = $productRepository->countCompatibleWithEngine($engine->getId(), $term, $categoryId, $brandId, $condition, $locationUnitIds);
+        $products = $productRepository->findCompatibleWithEngine($engine->getId(), $term, $categoryId, $brandId, $condition, $sort, $dir, $page, $perPage, $locationUnitIds);
+        $categoryFacets = $productRepository->getCategoryFacetsForEngine($engine->getId(), $term, $brandId, $condition, $locationUnitIds);
+
+        $grouped = [];
+        foreach ($products as $product) {
+            $catName = $product->getCategory() ? $product->getCategory()->getName() : 'Sans catégorie';
+            $grouped[$catName][] = $product;
+        }
+
+        return $this->render('manage/vehicle_engines/parts.html.twig', [
+            'engine' => $engine,
+            'grouped' => $grouped,
+            'total' => $total,
+            'page' => $page,
+            'pages' => max(1, (int) ceil($total / $perPage)),
+            'perPage' => $perPage,
+            'currentTerm' => $term,
+            'currentCategory' => $categoryId,
+            'currentBrand' => $brandId,
+            'currentCondition' => $condition,
+            'currentSort' => $sort,
+            'currentDir' => $dir,
+            'currentLocationId' => $locationUnitId,
+            'currentLocationUnit' => $locationUnit,
+            'categories' => $categoryRepository->findBy([], ['name' => 'ASC']),
+            'categoryFacets' => $categoryFacets,
+            'brands' => $brandRepository->findBy([], ['name' => 'ASC']),
+            'provinces' => $administrativeUnitRepository->findActiveRootUnits(),
+            'allTitles' => $productRepository->findCompatibleWithEngineTitles($engine->getId()),
+        ]);
     }
 
     /** @return string|null Message d'erreur si validation XOR échoue, sinon null. */

@@ -13,8 +13,9 @@
     <link rel="stylesheet" href="{{ asset('styles/manage/admin.css') }}">
     {% block stylesheets %}{% endblock %}
 </head>
-<body class="{{ app.user and app.user.adminDarkMode ? 'admin-dark' : '' }}"
-      {% if app.user and app.user.adminSidebarColor %}style="--primary: {{ app.user.adminSidebarColor }}; --sidebar-bg: {{ app.user.adminSidebarColor }};"{% endif %}>
+{% set sbTheme = app.user and app.user.adminSidebarTheme ? app.user.adminSidebarTheme : null %}
+<body class=""
+      {% if sbTheme %}style="--sidebar-bg:{{ sbTheme.bgColor }};--sidebar-text:{{ sbTheme.textColor }};--sidebar-hover-bg:{{ sbTheme.hoverBgColor }};--sidebar-hover-text:{{ sbTheme.hoverTextColor }};--sidebar-active-bg:{{ sbTheme.activeBgColor }};--sidebar-active-text:{{ sbTheme.activeTextColor }};--sidebar-icon:{{ sbTheme.iconColor }};--sidebar-heading-color:{{ sbTheme.hoverTextColor }};--primary:{{ sbTheme.activeBgColor }};"{% endif %}>
 
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
@@ -25,7 +26,13 @@
                 <i class="bi bi-list"></i>
             </button>
         </div>
-        <div class="header-search"></div>
+        <div class="header-search">
+            <div class="search-wrap">
+                <i class="bi bi-search"></i>
+                <input type="text" id="adminNavSearchInput" placeholder="Rechercher dans le menu..." autocomplete="off">
+            </div>
+            <div class="header-search-results" id="adminNavSearchResults"></div>
+        </div>
         <div class="header-right">
             <button class="hdr-icon-btn" id="darkModeQuickToggle" title="Mode nuit" aria-label="Basculer le mode nuit">
                 <i class="bi bi-moon-stars"></i>
@@ -61,21 +68,21 @@
     </a>
     <div class="sidebar-inner">
         <nav class="sidebar-nav">
-            <ul class="admin-nav">
+<ul class="admin-nav">
                 <li class="{{ app.request.attributes.get('_route') == 'manage_dashboard' ? 'active' : '' }}">
-                    <a href="{{ path('manage_dashboard') }}"><i class="bi bi-speedometer2"></i> Tableau de bord</a>
+                    <a href="{{ path('manage_dashboard') }}"><i class="bi bi-speedometer2"></i> <span class="hide-menu">Tableau de bord</span></a>
                 </li>
                 <li class="{{ app.request.attributes.get('_route') starts with 'manage_users' ? 'active' : '' }}">
-                    <a href="{{ path('manage_users_index') }}"><i class="bi bi-people"></i> Utilisateurs</a>
+                    <a href="{{ path('manage_users_index') }}"><i class="bi bi-people"></i> <span class="hide-menu">Utilisateurs</span></a>
                 </li>
                 <li class="{{ app.request.attributes.get('_route') starts with 'manage_geo' ? 'active' : '' }}">
-                    <a href="{{ path('manage_geo_index') }}"><i class="bi bi-geo-alt"></i> Entités admin.</a>
+                    <a href="{{ path('manage_geo_index') }}"><i class="bi bi-geo-alt"></i> <span class="hide-menu">Entités admin.</span></a>
                 </li>
                 <li class="{{ app.request.attributes.get('_route') starts with 'manage_categories' ? 'active' : '' }}">
-                    <a href="{{ path('manage_categories_index') }}"><i class="bi bi-tags"></i> Catégories</a>
+                    <a href="{{ path('manage_categories_index') }}"><i class="bi bi-tags"></i> <span class="hide-menu">Catégories</span></a>
                 </li>
                 <li class="{{ app.request.attributes.get('_route') starts with 'manage_brands' ? 'active' : '' }}">
-                    <a href="{{ path('manage_brands_index') }}"><i class="bi bi-award"></i> Marques</a>
+                    <a href="{{ path('manage_brands_index') }}"><i class="bi bi-award"></i> <span class="hide-menu">Marques</span></a>
                 </li>
                 {% set autoMotoRoutes = ['manage_vehicle_models', 'manage_vehicle_variants', 'manage_vehicle_engines', 'manage_fuel_types', 'manage_vehicle_import'] %}
                 {% set autoMotoRefTypes = ['permis', 'types-moto'] %}
@@ -87,90 +94,90 @@
 
                 <li class="admin-nav-group {{ autoMotoActive ? 'open' : '' }}">
                     <button type="button" class="admin-nav-group-toggle">
-                        <i class="bi bi-car-front"></i> Auto-Moto <i class="bi bi-chevron-down admin-nav-group-arrow"></i>
+                        <i class="bi bi-car-front"></i> <span class="hide-menu">Auto-Moto</span> <i class="bi bi-chevron-down admin-nav-group-arrow"></i>
                     </button>
                     <ul class="admin-nav-submenu">
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_vehicle_models' ? 'active' : '' }}">
-                            <a href="{{ path('manage_vehicle_models_index') }}"><i class="bi bi-car-front"></i> Modèles véhicules</a>
+                            <a href="{{ path('manage_vehicle_models_index') }}"><i class="bi bi-car-front"></i> <span class="hide-menu">Modèles véhicules</span></a>
                         </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_vehicle_variants' ? 'active' : '' }}">
-                            <a href="{{ path('manage_vehicle_variants_index') }}"><i class="bi bi-diagram-3"></i> Variantes véhicules</a>
+                            <a href="{{ path('manage_vehicle_variants_index') }}"><i class="bi bi-diagram-3"></i> <span class="hide-menu">Variantes véhicules</span></a>
                         </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_vehicle_engines' ? 'active' : '' }}">
-                            <a href="{{ path('manage_vehicle_engines_index') }}"><i class="bi bi-gear"></i> Motorisations</a>
+                            <a href="{{ path('manage_vehicle_engines_index') }}"><i class="bi bi-gear"></i> <span class="hide-menu">Motorisations</span></a>
                         </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_fuel_types' ? 'active' : '' }}">
-                            <a href="{{ path('manage_fuel_types_index') }}"><i class="bi bi-fuel-pump"></i> Énergies</a>
+                            <a href="{{ path('manage_fuel_types_index') }}"><i class="bi bi-fuel-pump"></i> <span class="hide-menu">Énergies</span></a>
                         </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_reference' and app.request.get('type') == 'permis' ? 'active' : '' }}">
-                            <a href="{{ path('manage_reference_index', {type: 'permis'}) }}"><i class="bi bi-card-checklist"></i> Permis requis</a>
+                            <a href="{{ path('manage_reference_index', {type: 'permis'}) }}"><i class="bi bi-card-checklist"></i> <span class="hide-menu">Permis requis</span></a>
                         </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_reference' and app.request.get('type') == 'types-moto' ? 'active' : '' }}">
-                            <a href="{{ path('manage_reference_index', {type: 'types-moto'}) }}"><i class="bi bi-scooter"></i> Types de moto</a>
+                            <a href="{{ path('manage_reference_index', {type: 'types-moto'}) }}"><i class="bi bi-scooter"></i> <span class="hide-menu">Types de moto</span></a>
                         </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_vehicle_import' ? 'active' : '' }}">
-                            <a href="{{ path('manage_vehicle_import') }}"><i class="bi bi-upload"></i> Import motorisations</a>
+                            <a href="{{ path('manage_vehicle_import') }}"><i class="bi bi-upload"></i> <span class="hide-menu">Import motorisations</span></a>
                         </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_vehicle_search' ? 'active' : '' }}">
-                            <a href="{{ path('manage_vehicle_search') }}"><i class="bi bi-search"></i> Recherche</a>
+                            <a href="{{ path('manage_vehicle_search') }}"><i class="bi bi-search"></i> <span class="hide-menu">Recherche</span></a>
                         </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_part_catalog' ? 'active' : '' }}">
-                            <a href="{{ path('manage_part_catalog_index') }}"><i class="bi bi-collection"></i> Catalogue Pièces</a>
+                            <a href="{{ path('manage_part_catalog_index') }}"><i class="bi bi-collection"></i> <span class="hide-menu">Catalogue Pièces</span></a>
                         </li>
                     </ul>
                 </li>
 
                 <li class="{{ app.request.attributes.get('_route') starts with 'manage_reference' and app.request.get('type') == 'periodes-location' ? 'active' : '' }}">
-                    <a href="{{ path('manage_reference_index', {type: 'periodes-location'}) }}"><i class="bi bi-calendar-range"></i> Périodes de location</a>
+                    <a href="{{ path('manage_reference_index', {type: 'periodes-location'}) }}"><i class="bi bi-calendar-range"></i> <span class="hide-menu">Périodes de location</span></a>
                 </li>
                 <li class="{{ app.request.attributes.get('_route') starts with 'manage_products' ? 'active' : '' }}">
-                    <a href="{{ path('manage_products_index') }}"><i class="bi bi-box-seam"></i> Produits</a>
+                    <a href="{{ path('manage_products_index') }}"><i class="bi bi-box-seam"></i> <span class="hide-menu">Produits</span></a>
                 </li>
 
                 {% set adsGroupActive = app.request.attributes.get('_route') starts with 'manage_ads' or app.request.attributes.get('_route') starts with 'manage_ad_zones' or app.request.attributes.get('_route') starts with 'manage_trending' or app.request.attributes.get('_route') starts with 'manage_mega_menu' or app.request.attributes.get('_route') starts with 'manage_top_category' or app.request.attributes.get('_route') starts with 'manage_social_links' or app.request.attributes.get('_route') starts with 'manage_hero_side_ads_setting' or app.request.attributes.get('_route') starts with 'manage_discount_campaigns' %}
 
                 <li class="admin-nav-group {{ adsGroupActive ? 'open' : '' }}">
                     <button type="button" class="admin-nav-group-toggle">
-                        <i class="bi bi-megaphone"></i> Pubs / Mise en avant <i class="bi bi-chevron-down admin-nav-group-arrow"></i>
+                        <i class="bi bi-megaphone"></i> <span class="hide-menu">Pubs / Mise en avant</span> <i class="bi bi-chevron-down admin-nav-group-arrow"></i>
                     </button>
                     <ul class="admin-nav-submenu">
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_ads' ? 'active' : '' }}">
-                            <a href="{{ path('manage_ads_index') }}"><i class="bi bi-image"></i> Publicités</a>
+                            <a href="{{ path('manage_ads_index') }}"><i class="bi bi-image"></i> <span class="hide-menu">Publicités</span></a>
                         </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_ad_zones' ? 'active' : '' }}">
-                            <a href="{{ path('manage_ad_zones_index') }}"><i class="bi bi-shuffle"></i> Zones publicitaires</a>
+                            <a href="{{ path('manage_ad_zones_index') }}"><i class="bi bi-shuffle"></i> <span class="hide-menu">Zones publicitaires</span></a>
                         </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_trending' ? 'active' : '' }}">
-                            <a href="{{ path('manage_trending_index') }}"><i class="bi bi-graph-up-arrow"></i> Tendances</a>
+                            <a href="{{ path('manage_trending_index') }}"><i class="bi bi-graph-up-arrow"></i> <span class="hide-menu">Tendances</span></a>
                         </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_mega_menu' ? 'active' : '' }}">
-                            <a href="{{ path('manage_mega_menu_index') }}"><i class="bi bi-grid-3x3-gap"></i> Méga-menu (header)</a>
+                            <a href="{{ path('manage_mega_menu_index') }}"><i class="bi bi-grid-3x3-gap"></i> <span class="hide-menu">Méga-menu (header)</span></a>
                         </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_top_category' ? 'active' : '' }}">
-                            <a href="{{ path('manage_top_category_index') }}"><i class="bi bi-star"></i> Top Catégorie</a>
+                            <a href="{{ path('manage_top_category_index') }}"><i class="bi bi-star"></i> <span class="hide-menu">Top Catégorie</span></a>
                         </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_social_links' ? 'active' : '' }}">
-                            <a href="{{ path('manage_social_links_index') }}"><i class="bi bi-share"></i> Réseaux sociaux</a>
+                            <a href="{{ path('manage_social_links_index') }}"><i class="bi bi-share"></i> <span class="hide-menu">Réseaux sociaux</span></a>
                         </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_hero_side_ads_setting' ? 'active' : '' }}">
-                            <a href="{{ path('manage_hero_side_ads_setting') }}"><i class="bi bi-columns-gap"></i> Pubs latérales hero</a>
+                            <a href="{{ path('manage_hero_side_ads_setting') }}"><i class="bi bi-columns-gap"></i> <span class="hide-menu">Pubs latérales hero</span></a>
                         </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_discount_campaigns' ? 'active' : '' }}">
-                            <a href="{{ path('manage_discount_campaigns_index') }}"><i class="bi bi-tag"></i> Ventes Flash</a>
+                            <a href="{{ path('manage_discount_campaigns_index') }}"><i class="bi bi-tag"></i> <span class="hide-menu">Ventes Flash</span></a>
                         </li>
                     </ul>
                 </li>
 
                 <li>
-                    <a href="{{ path('manage_seller_attr_test_index') }}"><i class="bi bi-person-gear"></i> Test — Caractéristiques vendeur</a>
+                    <a href="{{ path('manage_seller_attr_test_index') }}"><i class="bi bi-person-gear"></i> <span class="hide-menu">Test — Caractéristiques vendeur</span></a>
                 </li>
-                <li class="admin-nav-group {{ app.request.attributes.get('_route') starts with 'manage_settings' ? 'open' : '' }}">
+                <li class="admin-nav-group {{ app.request.attributes.get('_route') starts with 'manage_settings' or app.request.attributes.get('_route') starts with 'manage_sidebar_themes' ? 'open' : '' }}">
                     <button type="button" class="admin-nav-group-toggle">
-                        <i class="bi bi-gear"></i> Paramètres <i class="bi bi-chevron-down admin-nav-group-arrow"></i>
+                        <i class="bi bi-gear"></i> <span class="hide-menu">Paramètres</span> <i class="bi bi-chevron-down admin-nav-group-arrow"></i>
                     </button>
                     <ul class="admin-nav-submenu">
                         <li class="{{ app.request.attributes.get('_route') == 'manage_settings' ? 'active' : '' }}">
-                            <a href="{{ path('manage_settings') }}"><i class="bi bi-palette"></i> Interface</a>
+                            <a href="{{ path('manage_settings') }}"><i class="bi bi-palette"></i> <span class="hide-menu">Interface</span></a>
                         </li>
                     </ul>
                 </li>
@@ -224,42 +231,178 @@
 <script src="{{ asset('js/manage/part-catalog-compatibility.js') }}"></script>
 <script>
     (function () {
-        // Calcule si le texte de la sidebar doit être clair ou sombre,
-        // selon la luminosité de la couleur de fond choisie par l'utilisateur.
-        const sidebarBg = getComputedStyle(document.body).getPropertyValue('--sidebar-bg').trim();
-        if (sidebarBg && sidebarBg.startsWith('#')) {
-            const hex = sidebarBg.replace('#', '');
-            const r = parseInt(hex.substring(0, 2), 16);
-            const g = parseInt(hex.substring(2, 4), 16);
-            const b = parseInt(hex.substring(4, 6), 16);
-            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-
-            if (luminance < 0.6) {
-                // Fond sombre ou vif → texte clair partout dans la sidebar
-                document.documentElement.style.setProperty('--sidebar-text', 'rgba(255,255,255,0.85)');
-                document.documentElement.style.setProperty('--sidebar-border', 'rgba(255,255,255,0.15)');
-                document.documentElement.style.setProperty('--heading-color', '#ffffff');
-            }
-        }
-    })();
-
-    (function () {
         const burger = document.getElementById('sidebarBurgerToggle');
         const sidebar = document.getElementById('appSidebar');
         const overlay = document.getElementById('sidebarOverlay');
         if (!burger || !sidebar || !overlay) return;
 
-        const close = () => {
+        const isMobile = () => window.innerWidth < 992;
+
+        const closeMobile = () => {
             sidebar.classList.remove('sidebar-open');
             overlay.classList.remove('active');
         };
-        const toggle = () => {
-            sidebar.classList.toggle('sidebar-open');
-            overlay.classList.toggle('active');
-        };
 
-        burger.addEventListener('click', toggle);
-        overlay.addEventListener('click', close);
+        burger.addEventListener('click', function () {
+            if (isMobile()) {
+                // < 992px : sidebar hors-écran qui glisse par-dessus le contenu
+                sidebar.classList.toggle('sidebar-open');
+                overlay.classList.toggle('active');
+            } else {
+                // >= 992px : sidebar réduite en mode icônes seules (déjà stylée dans stackwave.css)
+                document.body.classList.toggle('sidebar-collapsed');
+            }
+        });
+        overlay.addEventListener('click', closeMobile);
+    })();
+
+    (function () {
+        const input = document.getElementById('adminNavSearchInput');
+        const results = document.getElementById('adminNavSearchResults');
+        if (!input || !results) return;
+
+        const items = Array.from(document.querySelectorAll('.admin-nav a[href]')).map(function (a) {
+            const iconEl = a.querySelector('i');
+            return {
+                label: a.textContent.trim(),
+                href: a.getAttribute('href'),
+                icon: iconEl ? iconEl.className : 'bi bi-dot',
+            };
+        }).filter(function (item) { return item.label.length > 0; });
+
+        function render(matches) {
+            results.innerHTML = '';
+            if (matches.length === 0) {
+                results.innerHTML = '<div class="header-search-no-results">Aucun élément de menu trouvé.</div>';
+                results.classList.add('active');
+                return;
+            }
+            matches.slice(0, 8).forEach(function (item) {
+                const a = document.createElement('a');
+                a.href = item.href;
+                a.className = 'header-search-result-item';
+                a.innerHTML = '<i class="' + item.icon + '"></i><span>' + item.label + '</span>';
+                results.appendChild(a);
+            });
+            results.classList.add('active');
+        }
+
+        input.addEventListener('input', function () {
+            const term = this.value.trim().toLowerCase();
+            if (term === '') {
+                results.classList.remove('active');
+                results.innerHTML = '';
+                return;
+            }
+            render(items.filter(function (item) { return item.label.toLowerCase().includes(term); }));
+        });
+
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                const first = results.querySelector('.header-search-result-item');
+                if (first) window.location.href = first.getAttribute('href');
+            }
+            if (e.key === 'Escape') {
+                results.classList.remove('active');
+                input.blur();
+            }
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!results.contains(e.target) && e.target !== input) {
+                results.classList.remove('active');
+            }
+        });
+    })();
+
+    (function () {
+        const sidebar = document.getElementById('appSidebar');
+        if (!sidebar) return;
+
+        let flyout = null;
+        let hideTimer = null;
+
+        function removeFlyout() {
+            if (flyout) { flyout.remove(); flyout = null; }
+        }
+
+        function showFlyout(li) {
+            if (!document.body.classList.contains('sidebar-collapsed')) return;
+            clearTimeout(hideTimer);
+            removeFlyout();
+
+            const toggle = li.querySelector(':scope > .admin-nav-group-toggle');
+            const labelEl = toggle ? toggle.querySelector('.hide-menu') : null;
+            if (!labelEl) return;
+
+            const label = labelEl.textContent.trim();
+            const iconEl = toggle.querySelector('i');
+            const iconClass = iconEl ? iconEl.className : '';
+            const isActive = li.classList.contains('open');
+            const subLinks = li.querySelectorAll(':scope > .admin-nav-submenu li a');
+
+            const fly = document.createElement('div');
+            fly.className = 'sidebar-flyout';
+
+            const titleEl = document.createElement('div');
+            titleEl.className = 'flyout-title' + (isActive ? ' active' : '');
+            if (iconClass) {
+                const iEl = document.createElement('i');
+                iEl.className = iconClass;
+                titleEl.appendChild(iEl);
+            }
+            titleEl.appendChild(document.createTextNode(label));
+            fly.appendChild(titleEl);
+
+            if (subLinks.length) {
+                const divider = document.createElement('div');
+                divider.className = 'flyout-divider';
+                fly.appendChild(divider);
+
+                const ul = document.createElement('ul');
+                ul.className = 'flyout-list';
+                subLinks.forEach(function (a) {
+                    const li2 = document.createElement('li');
+                    const newA = document.createElement('a');
+                    newA.setAttribute('href', a.getAttribute('href') || '#');
+                    const subIconEl = a.querySelector('i');
+                    if (subIconEl) {
+                        const subI = document.createElement('i');
+                        subI.className = subIconEl.className;
+                        newA.appendChild(subI);
+                    }
+                    const subLabel = a.querySelector('.hide-menu');
+                    newA.appendChild(document.createTextNode(subLabel ? subLabel.textContent.trim() : a.textContent.trim()));
+                    if (a.closest('li').classList.contains('active')) newA.classList.add('active');
+                    li2.appendChild(newA);
+                    ul.appendChild(li2);
+                });
+                fly.appendChild(ul);
+            }
+
+            document.body.appendChild(fly);
+            flyout = fly;
+
+            const rect = li.getBoundingClientRect();
+            const winH = window.innerHeight;
+            let top = rect.top;
+            document.body.appendChild(fly);
+            const flyH = fly.offsetHeight;
+            if (top + flyH > winH - 12) top = Math.max(12, winH - flyH - 12);
+            fly.style.top = top + 'px';
+
+            fly.addEventListener('mouseenter', function () { clearTimeout(hideTimer); });
+            fly.addEventListener('mouseleave', function () { hideTimer = setTimeout(removeFlyout, 120); });
+        }
+
+        sidebar.querySelectorAll('.admin-nav > li.admin-nav-group').forEach(function (li) {
+            li.addEventListener('mouseenter', function () { showFlyout(li); });
+            li.addEventListener('mouseleave', function () { hideTimer = setTimeout(removeFlyout, 120); });
+        });
+
+        document.addEventListener('click', function (e) {
+            if (e.target.closest('#sidebarBurgerToggle')) setTimeout(removeFlyout, 50);
+        });
     })();
 </script>
 {% block javascripts %}{% endblock %}

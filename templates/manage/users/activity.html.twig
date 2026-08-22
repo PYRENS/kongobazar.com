@@ -37,13 +37,17 @@
             <h6>Derniers produits</h6>
             {% if products|length > 0 %}
                 <table class="admin-table">
-                    <thead><tr><th>Produit</th><th>Prix</th><th>Statut</th></tr></thead>
+                    <thead><tr><th>Produit</th><th>Prix</th><th>Statut</th><th>Actions</th></tr></thead>
                     <tbody>
                         {% for product in products %}
                             <tr>
-                                <td>{{ product.title }}</td>
+                                <td>{{ product.title|length > 50 ? product.title|slice(0, 50) ~ '…' : product.title }}</td>
                                 <td>{{ product.basePrice }} {{ product.currency }}</td>
                                 <td>{{ product.status }}</td>
+                                <td class="admin-actions">
+                                    <a href="{{ path('manage_products_show', { id: product.id }) }}" class="admin-btn admin-btn--outline" title="Voir détails (Dashboard)"><i class="bi bi-eye"></i></a>
+                                    <a href="{{ path('catalog_product', { slug: product.slug }) }}" target="_blank" class="admin-btn admin-btn--outline" title="Voir sur le site"><i class="bi bi-box-arrow-up-right"></i></a>
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>

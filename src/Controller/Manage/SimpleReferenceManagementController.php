@@ -34,23 +34,82 @@ class SimpleReferenceManagementController extends AbstractController
         $sortField = $request->query->get('sort', 'position');
         $sortDir = $request->query->get('dir', 'ASC');
 
-        $sortField = in_array($sortField, ['name', 'position'], true) ? $sortField : 'position';
-        $qb = $em->getRepository($config['class'])->createQueryBuilder('i')
-            ->orderBy('i.' . $sortField, strtoupper($sortDir) === 'DESC' ? 'DESC' : 'ASC');
+        $sortField = in_array($sortField, ['name', 'position', 'usageCount'], true) ? $sortField : 'position';
+        $repo = $em->getRepository($config['class']);
 
+        $allItems = $repo->findBy([], ['position' => 'ASC']);
+        $allNames = array_map(fn ($i) => $i->getName(), $allItems);
+
+        $qb = $repo->createQueryBuilder('i');
+        if ($sortField !== 'usageCount') {
+            $qb->orderBy('i.' . $sortField, strtoupper($sortDir) === 'DESC' ? 'DESC' : 'ASC');
+        }
         if ($searchTerm) {
             $qb->andWhere('i.name LIKE :term')->setParameter('term', '%' . $searchTerm . '%');
         }
+        $items = $qb->getQuery()->getResult();
+
+        $rows = array_map(fn ($item) => [
+            'item' => $item,
+            'usageCount' => $this->countUsage($type, $item->getId(), $em),
+        ], $items);
+
+        if ($sortField === 'usageCount') {
+            $dirMultiplier = strtoupper($sortDir) === 'DESC' ? -1 : 1;
+            usort($rows, fn ($a, $b) => $dirMultiplier * ($a['usageCount'] <=> $b['usageCount']));
+        }
+
+        $total = count($rows);
+        $perPage = in_array((int) $request->query->get('perPage', 20), [10, 20, 50, 100], true)
+            ? (int) $request->query->get('perPage', 20) : 20;
+        $page = max(1, (int) $request->query->get('page', 1));
+        $rows = array_slice($rows, ($page - 1) * $perPage, $perPage);
 
         return $this->render('manage/simple_reference/index.html.twig', [
             'type' => $type,
             'label' => $config['label'],
             'icon' => self::ICONS[$type],
-            'items' => $qb->getQuery()->getResult(),
+            'usageLabel' => self::USAGE_LABELS[$type],
+            'rows' => $rows,
             'searchTerm' => $searchTerm,
             'currentSort' => $sortField,
             'currentDir' => $sortDir,
+            'page' => $page,
+            'pages' => max(1, (int) ceil($total / $perPage)),
+            'perPage' => $perPage,
+            'total' => $total,
+            'allNames' => $allNames,
+            'stats' => [
+                'total' => count($allItems),
+                'used' => count(array_filter($rows, fn ($r) => $r['usageCount'] > 0)),
+                'filtered' => $total,
+            ],
         ]);
+    }
+
+    private const USAGE_LABELS = [
+        'permis' => 'véhicules',
+        'types-moto' => 'motos',
+        'periodes-location' => 'annonces',
+    ];
+
+    private function countUsage(string $type, int $itemId, EntityManagerInterface $em): int
+    {
+        return match ($type) {
+            'permis' => (int) $em->getRepository(\App\Entity\VehicleListingDetails::class)
+                ->createQueryBuilder('v')->select('COUNT(v.id)')
+                ->andWhere('v.licenseType = :id')->setParameter('id', $itemId)
+                ->getQuery()->getSingleScalarResult(),
+            'types-moto' => (int) $em->getRepository(\App\Entity\VehicleListingDetails::class)
+                ->createQueryBuilder('v')->select('COUNT(v.id)')
+                ->andWhere('v.motorcycleType = :id')->setParameter('id', $itemId)
+                ->getQuery()->getSingleScalarResult(),
+            'periodes-location' => (int) $em->getRepository(\App\Entity\PropertyListingDetails::class)
+                ->createQueryBuilder('p')->select('COUNT(p.id)')
+                ->andWhere('p.rentalPeriod = :id')->setParameter('id', $itemId)
+                ->getQuery()->getSingleScalarResult(),
+            default => 0,
+        };
     }
 
     #[Route('/referentiel/{type}/nouveau', name: 'manage_reference_new', host: 'manage.kongobazar.com', methods: ['GET'], requirements: ['type' => 'permis|types-moto|periodes-location'])]

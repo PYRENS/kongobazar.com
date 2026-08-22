@@ -5,43 +5,174 @@
 {% block page_title %}Tableau de bord{% endblock %}
 
 {% block body %}
-    <div class="dashboard-tabs">
-        <button type="button" class="dashboard-tab active" data-dashboard-tab="numbers">
-            <i class="bi bi-123"></i> Chiffres
-        </button>
-        <button type="button" class="dashboard-tab" data-dashboard-tab="charts">
-            <i class="bi bi-bar-chart"></i> Graphiques
-        </button>
+    {% set flashProduct = latestFlashCampaign ? latestFlashCampaign.product : null %}
+    {% set orderProduct = latestOrderItem ? latestOrderItem.product : null %}
+    {% set productCards = [
+        { product: latestProduct, badge: 'NOUVEAU', color: 'blue', sub: latestProduct ? 'Ajouté le ' ~ latestProduct.createdAt|date('d/m/Y') : '' },
+        { product: bestSeller, badge: 'MEILLEURE VENTE', color: 'rose', sub: bestSeller ? bestSeller.salesCount ~ ' ventes au total' : '' },
+        { product: flashProduct, badge: 'VENTE FLASH', color: 'lavender', sub: latestFlashCampaign ? 'Jusqu\'au ' ~ latestFlashCampaign.endAt|date('d/m/Y') : '' },
+        { product: orderProduct, badge: 'DERNIER ACHETÉ', color: 'mint', sub: latestOrderItem ? 'Commande #' ~ latestOrderItem.order.id : '' },
+        { product: latestSoldProduct, badge: 'VENDU', color: 'blue', sub: latestSoldProduct ? 'Statut : vendu' : '' },
+        { product: latestDiscountedProduct, badge: 'EN RABAIS', color: 'rose', sub: latestDiscountedProduct ? latestDiscountedProduct.compareAtPrice ~ ' → ' ~ latestDiscountedProduct.basePrice ~ ' ' ~ latestDiscountedProduct.currency : '' },
+    ] %}
+
+    <div class="row g-3 mb-4">
+        {% for card in productCards %}
+            <div class="col-xl-2 col-md-4 col-6">
+                {% if card.product %}
+                    {% set p = card.product %}
+                    {% set img = p.images|first %}
+                    <div class="sw-card overflow-hidden eco-product-card eco-card-no-border h-100">
+                        <div class="eco-hero eco-hero-{{ card.color }}" style="padding:10px;">
+                            <span class="eco-prod-badge eco-prod-badge-{{ card.color }}" style="font-size:9px;">{{ card.badge }}</span>
+                            {% if img %}
+                                <div style="width:100%;height:90px;background:#fff;border-radius:8px;margin-top:6px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+                                    <img src="{{ vich_uploader_asset(img, 'imageFile') }}" style="max-width:100%;max-height:100%;object-fit:contain;">
+                                </div>
+                            {% else %}
+                                <div class="eco-prod-emoji eco-prod-emoji-{{ card.color }}" style="font-size:32px;"><i class="bi bi-box-seam"></i></div>
+                            {% endif %}
+                        </div>
+                        <div class="card-body p-2">
+                            <h6 class="eco-prod-title" style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ p.title }}">{{ p.title }}</h6>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="eco-price eco-price-{{ card.color }}" style="font-size:13px;">{{ p.basePrice }} {{ p.currency }}</span>
+                            </div>
+                            <p class="text-muted mb-2" style="font-size:10px;">{{ card.sub }}</p>
+                            <a href="{{ path('manage_products_show', { id: p.id }) }}" class="btn btn-sm w-100 eco-prod-btn eco-prod-btn-{{ card.color }}" style="font-size:11px;padding:4px;">Voir</a>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="sw-card eco-card-no-border h-100 d-flex align-items-center justify-content-center text-muted" style="min-height:220px;font-size:11px;background:var(--body-bg);">
+                        <div class="text-center p-2">
+                            <i class="bi bi-inbox" style="font-size:28px;opacity:0.4;"></i>
+                            <p class="mb-0 mt-2">{{ card.badge|capitalize }}<br>aucun produit</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
     </div>
 
-    <div class="dashboard-panel active" id="dashboardPanel-numbers">
-        <div class="row">
-            <div class="col-md-4">
-                <div class="admin-card">
-                    <div style="font-size:28px;font-weight:800;color:var(--admin-primary);">{{ totalUsers }}</div>
-                    <div style="color:#999;font-size:13px;">Utilisateurs inscrits</div>
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card eco-kpi-primary">
+                <div class="card-body eco-kpi-bd">
+                    <div class="d-flex align-items-start justify-content-between gap-2">
+                        <div class="eco-flex1">
+                            <p class="eco-kpi-lbl eco-kpi-lbl-primary">Utilisateurs inscrits</p>
+                            <h2 class="eco-kpi-val">{{ totalUsers }}</h2>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <span class="eco-kpi-badge eco-kpi-badge-primary"><i class="bi bi-people"></i> Total</span>
+                            </div>
+                        </div>
+                        <svg width="84" height="48" viewBox="0 0 84 48" class="eco-sparkline">
+                            <defs><linearGradient id="sgUsers" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5D87FF" stop-opacity="0.3"/><stop offset="100%" stop-color="#5D87FF" stop-opacity="0"/></linearGradient></defs>
+                            <polygon points="0,44 12,38 24,40 36,30 48,32 60,20 72,22 84,10 84,48 0,48" fill="url(#sgUsers)"/>
+                            <polyline points="0,44 12,38 24,40 36,30 48,32 60,20 72,22 84,10" fill="none" stroke="#5D87FF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="eco-kpi-footer">
+                        <div><div class="eco-kpi-foot-lbl">Vendeurs</div><div class="eco-kpi-foot-val eco-kpi-foot-val-primary">{{ totalSellers }}</div></div>
+                        <div><div class="eco-kpi-foot-lbl">Acheteurs</div><div class="eco-kpi-foot-val">{{ totalUsers - totalSellers }}</div></div>
+                    </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="admin-card">
-                    <div style="font-size:28px;font-weight:800;color:var(--admin-primary);">{{ totalSellers }}</div>
-                    <div style="color:#999;font-size:13px;">Profils vendeurs</div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card eco-kpi-success">
+                <div class="card-body eco-kpi-bd">
+                    <div class="d-flex align-items-start justify-content-between gap-2">
+                        <div class="eco-flex1">
+                            <p class="eco-kpi-lbl eco-kpi-lbl-success">Profils vendeurs</p>
+                            <h2 class="eco-kpi-val">{{ totalSellers }}</h2>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <span class="eco-kpi-badge eco-kpi-badge-success"><i class="bi bi-shop"></i> Réseau</span>
+                            </div>
+                        </div>
+                        <svg width="84" height="48" viewBox="0 0 84 48" class="eco-sparkline">
+                            <defs><linearGradient id="sgSellers" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#13DEB9" stop-opacity="0.3"/><stop offset="100%" stop-color="#13DEB9" stop-opacity="0"/></linearGradient></defs>
+                            <polygon points="0,42 12,36 24,38 36,26 48,28 60,18 72,20 84,8 84,48 0,48" fill="url(#sgSellers)"/>
+                            <polyline points="0,42 12,36 24,38 36,26 48,28 60,18 72,20 84,8" fill="none" stroke="#13DEB9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="eco-kpi-footer">
+                        <div><div class="eco-kpi-foot-lbl">% du total</div><div class="eco-kpi-foot-val">{{ totalUsers > 0 ? (totalSellers / totalUsers * 100)|round : 0 }}%</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card eco-kpi-warning">
+                <div class="card-body eco-kpi-bd">
+                    <div class="d-flex align-items-start justify-content-between gap-2">
+                        <div class="eco-flex1">
+                            <p class="eco-kpi-lbl eco-kpi-lbl-warning">Produits</p>
+                            <h2 class="eco-kpi-val">{{ totalProducts }}</h2>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <span class="eco-kpi-badge eco-kpi-badge-warning"><i class="bi bi-box-seam"></i> Catalogue</span>
+                            </div>
+                        </div>
+                        <svg width="84" height="48" viewBox="0 0 84 48" class="eco-sparkline">
+                            <defs><linearGradient id="sgProducts" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFAE1F" stop-opacity="0.3"/><stop offset="100%" stop-color="#FFAE1F" stop-opacity="0"/></linearGradient></defs>
+                            <polygon points="0,44 12,40 24,36 36,38 48,30 60,26 72,22 84,14 84,48 0,48" fill="url(#sgProducts)"/>
+                            <polyline points="0,44 12,40 24,36 36,38 48,30 60,26 72,22 84,14" fill="none" stroke="#FFAE1F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="eco-kpi-footer">
+                        <div><div class="eco-kpi-foot-lbl">Statut</div><div class="eco-kpi-foot-val">Tous confondus</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card eco-kpi-purple">
+                <div class="card-body eco-kpi-bd">
+                    <div class="d-flex align-items-start justify-content-between gap-2">
+                        <div class="eco-flex1">
+                            <p class="eco-kpi-lbl eco-kpi-lbl-purple">Ventes Flash actives</p>
+                            <h2 class="eco-kpi-val">{{ activeFlashSales }}</h2>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <span class="eco-kpi-badge eco-kpi-badge-purple"><i class="bi bi-lightning-charge"></i> En cours</span>
+                            </div>
+                        </div>
+                        <svg width="84" height="48" viewBox="0 0 84 48" class="eco-sparkline">
+                            <defs><linearGradient id="sgFlash" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7460EE" stop-opacity="0.3"/><stop offset="100%" stop-color="#7460EE" stop-opacity="0"/></linearGradient></defs>
+                            <polygon points="0,44 12,40 24,44 36,34 48,36 60,28 72,24 84,16 84,48 0,48" fill="url(#sgFlash)"/>
+                            <polyline points="0,44 12,40 24,44 36,34 48,36 60,28 72,24 84,16" fill="none" stroke="#7460EE" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="eco-kpi-footer">
+                        <div><div class="eco-kpi-foot-lbl">Voir</div><div class="eco-kpi-foot-val eco-kpi-foot-val-primary"><a href="{{ path('manage_discount_campaigns_index') }}">Gérer →</a></div></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="dashboard-panel" id="dashboardPanel-charts">
-        <div class="row">
-            <div class="col-md-6">
-                <div class="admin-card">
-                    <h6>Inscriptions (6 derniers mois)</h6>
+    <div class="row g-3 mb-4">
+        <div class="col-xl-7">
+            <div class="sw-card">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <div>
+                        <h5>Inscriptions</h5>
+                        <p class="eco-card-sub">Nouveaux comptes créés · 6 derniers mois</p>
+                    </div>
+                </div>
+                <div class="card-body">
                     <div class="chart-box"><canvas id="signupsChart"></canvas></div>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="admin-card">
-                    <h6>Répartition dans le réseau</h6>
+        </div>
+        <div class="col-xl-5">
+            <div class="sw-card h-100">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h5>Répartition du réseau</h5>
+                </div>
+                <div class="card-body">
                     <div class="chart-box"><canvas id="networkChart"></canvas></div>
                 </div>
             </div>
@@ -52,15 +183,6 @@
 {% block javascripts %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <script>
-        document.querySelectorAll('[data-dashboard-tab]').forEach((tab) => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.dashboard-tab').forEach((t) => t.classList.remove('active'));
-                document.querySelectorAll('.dashboard-panel').forEach((p) => p.classList.remove('active'));
-                tab.classList.add('active');
-                document.getElementById('dashboardPanel-' + tab.dataset.dashboardTab).classList.add('active');
-            });
-        });
-
         new Chart(document.getElementById('signupsChart'), {
             type: 'line',
             data: {
@@ -68,8 +190,8 @@
                 datasets: [{
                     label: 'Inscriptions',
                     data: [{% for row in signupsByMonth %}{{ row.total }},{% endfor %}],
-                    borderColor: '#2FA8E0',
-                    backgroundColor: 'rgba(47,168,224,0.15)',
+                    borderColor: '#5D87FF',
+                    backgroundColor: 'rgba(93,135,255,0.15)',
                     tension: 0.3,
                     fill: true,
                 }],
@@ -83,7 +205,7 @@
                 labels: [{% for row in networkBreakdown %}'{{ row.label }}',{% endfor %}],
                 datasets: [{
                     data: [{% for row in networkBreakdown %}{{ row.total }},{% endfor %}],
-                    backgroundColor: ['#C9992A', '#2FA8E0', '#43a047', '#e53935', '#8e44ad'],
+                    backgroundColor: ['#5D87FF', '#13DEB9', '#FFAE1F', '#7460EE', '#FA896B'],
                 }],
             },
             options: { maintainAspectRatio: false },

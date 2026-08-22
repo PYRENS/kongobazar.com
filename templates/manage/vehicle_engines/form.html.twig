@@ -1,115 +1,124 @@
 {% extends 'manage/base.html.twig' %}
 
+{% block title %}{{ engine ? 'Modifier la motorisation' : 'Nouvelle motorisation' }}{% endblock %}
+{% block page_icon %}bi-gear{% endblock %}
+{% block page_title %}{{ engine ? 'Modifier « ' ~ engine.label ~ ' »' : 'Nouvelle motorisation' }}{% endblock %}
+
 {% block body %}
-    <h1 class="h4 mb-3">{{ engine ? 'Modifier la motorisation' : 'Nouvelle motorisation' }}</h1>
+    <div class="sw-card" style="max-width:760px;">
+        <div class="card-header"><h6 class="mb-0 fw-bold">{{ engine ? 'Modifier la motorisation' : 'Nouvelle motorisation' }}</h6></div>
+        <div class="card-body">
+            <form method="post" action="{{ engine ? path('manage_vehicle_engines_update', {id: engine.id}) : path('manage_vehicle_engines_new') }}">
+                {% if presetVariant %}
+                    <input type="hidden" name="vehicle_type" value="auto">
+                    <input type="hidden" name="variant_id" value="{{ presetVariant.id }}">
+                    <div class="mb-3">
+                        <label class="acc-form-label">Rattachement</label>
+                        <div class="form-control-plaintext border rounded px-3 py-2 bg-light">
+                            {{ presetVariant.model.brand.name }} › {{ presetVariant.model.name }} › {{ presetVariant.name ?: '-' }}
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="mb-3">
+                        <label class="acc-form-label d-block">Type</label>
+                        <div class="form-check form-check-inline">
+                            <input type="radio" name="vehicle_type" value="auto" class="form-check-input" id="typeAuto" data-vehicle-type-radio
+                                {{ (engine is null or engine.variant) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="typeAuto">Auto (Variante requise)</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input type="radio" name="vehicle_type" value="moto" class="form-check-input" id="typeMoto" data-vehicle-type-radio
+                                {{ (engine and engine.model) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="typeMoto">Moto (Modèle direct, sans Variante)</label>
+                        </div>
+                    </div>
 
-    <form method="post" action="{{ engine ? path('manage_vehicle_engines_update', {id: engine.id}) : path('manage_vehicle_engines_new') }}">
-        {% if presetVariant %}
-            <input type="hidden" name="vehicle_type" value="auto">
-            <input type="hidden" name="variant_id" value="{{ presetVariant.id }}">
-            <div class="mb-3">
-                <label class="form-label">Rattachement</label>
-                <div class="form-control-plaintext border rounded px-3 py-2 bg-light">
-                    {{ presetVariant.model.brand.name }} › {{ presetVariant.model.name }} › {{ presetVariant.name ?: '-' }}
-                </div>
-            </div>
-        {% else %}
-            <div class="mb-3">
-                <label class="form-label d-block">Type</label>
-                <div class="form-check form-check-inline">
-                    <input type="radio" name="vehicle_type" value="auto" class="form-check-input" id="typeAuto" data-vehicle-type-radio
-                        {{ (engine is null or engine.variant) ? 'checked' : '' }}>
-                    <label class="form-check-label" for="typeAuto">Auto (Variante requise)</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input type="radio" name="vehicle_type" value="moto" class="form-check-input" id="typeMoto" data-vehicle-type-radio
-                        {{ (engine and engine.model) ? 'checked' : '' }}>
-                    <label class="form-check-label" for="typeMoto">Moto (Modèle direct, sans Variante)</label>
-                </div>
-            </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="acc-form-label">Marque</label>
+                            <select class="acc-form-select" data-vehicle-brand-select>
+                                <option value="">— Choisir —</option>
+                                {% set currentBrand = engine ? (engine.variant ? engine.variant.model.brand : engine.model.brand) : null %}
+                                {% for brand in brands %}
+                                    <option value="{{ brand.id }}" {{ currentBrand and currentBrand.id == brand.id ? 'selected' : '' }}>{{ brand.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="acc-form-label">Modèle</label>
+                            {% set currentModel = engine ? (engine.variant ? engine.variant.model : engine.model) : null %}
+                            <select name="model_id" class="acc-form-select" data-vehicle-model-select data-preselected="{{ currentModel ? currentModel.id : '' }}" required>
+                                <option value="">— Choisissez d'abord une marque —</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3" data-vehicle-variant-block>
+                            <label class="acc-form-label">Variante</label>
+                            <select name="variant_id" class="acc-form-select" data-vehicle-variant-select data-preselected="{{ engine and engine.variant ? engine.variant.id : '' }}">
+                                <option value="">— Choisissez d'abord un modèle —</option>
+                            </select>
+                        </div>
+                    </div>
+                {% endif %}
 
-            <div class="row">
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Marque</label>
-                    <select class="form-select" data-vehicle-brand-select>
-                        <option value="">— Choisir —</option>
-                        {% set currentBrand = engine ? (engine.variant ? engine.variant.model.brand : engine.model.brand) : null %}
-                        {% for brand in brands %}
-                            <option value="{{ brand.id }}" {{ currentBrand and currentBrand.id == brand.id ? 'selected' : '' }}>{{ brand.name }}</option>
-                        {% endfor %}
-                    </select>
+                <div class="mb-3">
+                    <label class="acc-form-label">Libellé moteur</label>
+                    <input type="text" name="label" class="acc-form-input" value="{{ engine ? engine.label : '' }}" placeholder="ex: 1.2 TCe ou 101ccm" required>
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Modèle</label>
-                    {% set currentModel = engine ? (engine.variant ? engine.variant.model : engine.model) : null %}
-                    <select name="model_id" class="form-select" data-vehicle-model-select data-preselected="{{ currentModel ? currentModel.id : '' }}" required>
-                        <option value="">— Choisissez d'abord une marque —</option>
-                    </select>
-                </div>
-                <div class="col-md-4 mb-3" data-vehicle-variant-block>
-                    <label class="form-label">Variante</label>
-                    <select name="variant_id" class="form-select" data-vehicle-variant-select data-preselected="{{ engine and engine.variant ? engine.variant.id : '' }}">
-                        <option value="">— Choisissez d'abord un modèle —</option>
-                    </select>
-                </div>
-            </div>
-        {% endif %}
 
-        <div class="mb-3">
-            <label class="form-label">Libellé moteur</label>
-            <input type="text" name="label" class="form-control" value="{{ engine ? engine.label : '' }}" placeholder="ex: 1.2 TCe ou 101ccm" required>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label class="acc-form-label">Puissance CV</label>
+                        <input type="number" name="power_cv" id="powerCvInput" class="acc-form-input" value="{{ engine ? engine.powerCv : '' }}">
+                        <small class="text-muted">La conversion vers kW se calcule automatiquement.</small>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="acc-form-label">Puissance kW</label>
+                        <input type="number" name="power_kw" id="powerKwInput" class="acc-form-input" value="{{ engine ? engine.powerKw : '' }}">
+                        <small class="text-muted">Modifiable manuellement si besoin.</small>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="acc-form-label">Cylindrée (cm³, Moto)</label>
+                        <input type="number" name="displacement_cc" id="displacementCcInput" class="acc-form-input" value="{{ engine ? engine.displacementCc : '' }}"
+                            {{ (engine is null or engine.variant) ? 'disabled' : '' }}>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="acc-form-label">Énergie</label>
+                        <select name="fuel_type_id" class="acc-form-select">
+                            <option value="">— Aucune —</option>
+                            {% for fuelType in fuelTypes %}
+                                <option value="{{ fuelType.id }}" {{ engine and engine.fuelType and engine.fuelType.id == fuelType.id ? 'selected' : '' }}>{{ fuelType.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label class="acc-form-label">Mois début</label>
+                        <input type="text" name="month_start" class="acc-form-input" maxlength="2" placeholder="MM" value="{{ engine ? engine.monthStart : '' }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="acc-form-label">Année début</label>
+                        <input type="number" name="year_start" class="acc-form-input" value="{{ engine ? engine.yearStart : '' }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="acc-form-label">Mois fin</label>
+                        <input type="text" name="month_end" class="acc-form-input" maxlength="2" placeholder="vide = en cours" value="{{ engine ? engine.monthEnd : '' }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="acc-form-label">Année fin</label>
+                        <input type="number" name="year_end" class="acc-form-input" placeholder="vide = en cours" value="{{ engine ? engine.yearEnd : '' }}">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check2 me-2"></i>Enregistrer</button>
+                <a href="{{ path('manage_vehicle_engines_index') }}" class="btn btn-outline-secondary ms-2">Annuler</a>
+            </form>
         </div>
+    </div>
+{% endblock %}
 
-        <div class="row">
-            <div class="col-md-3 mb-3">
-                <label class="form-label">Puissance CV</label>
-                <input type="number" name="power_cv" id="powerCvInput" class="form-control" value="{{ engine ? engine.powerCv : '' }}">
-                <small class="text-muted">La conversion vers kW se calcule automatiquement.</small>
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">Puissance kW</label>
-                <input type="number" name="power_kw" id="powerKwInput" class="form-control" value="{{ engine ? engine.powerKw : '' }}">
-                <small class="text-muted">Modifiable manuellement si besoin.</small>
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">Cylindrée (cm³, Moto)</label>
-                <input type="number" name="displacement_cc" id="displacementCcInput" class="form-control" value="{{ engine ? engine.displacementCc : '' }}"
-                    {{ (engine is null or engine.variant) ? 'disabled' : '' }}>
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">Énergie</label>
-                <select name="fuel_type_id" class="form-select">
-                    <option value="">— Aucune —</option>
-                    {% for fuelType in fuelTypes %}
-                        <option value="{{ fuelType.id }}" {{ engine and engine.fuelType and engine.fuelType.id == fuelType.id ? 'selected' : '' }}>{{ fuelType.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-3 mb-3">
-                <label class="form-label">Mois début</label>
-                <input type="text" name="month_start" class="form-control" maxlength="2" placeholder="MM" value="{{ engine ? engine.monthStart : '' }}">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">Année début</label>
-                <input type="number" name="year_start" class="form-control" value="{{ engine ? engine.yearStart : '' }}">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">Mois fin</label>
-                <input type="text" name="month_end" class="form-control" maxlength="2" placeholder="vide = en cours" value="{{ engine ? engine.monthEnd : '' }}">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">Année fin</label>
-                <input type="number" name="year_end" class="form-control" placeholder="vide = en cours" value="{{ engine ? engine.yearEnd : '' }}">
-            </div>
-        </div>
-
-        <button type="submit" class="btn btn-success">Enregistrer</button>
-        <a href="{{ path('manage_vehicle_engines_index') }}" class="btn btn-outline-secondary">Annuler</a>
-    </form>
-
+{% block javascripts %}
     <script>
         (function () {
             const cvInput = document.getElementById('powerCvInput');

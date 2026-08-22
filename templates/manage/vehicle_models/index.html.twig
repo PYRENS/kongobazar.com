@@ -18,93 +18,182 @@
 {% import _self as self %}
 
 {% block body %}
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="h4 mb-0">{{ selectedBrand ? 'Les modèles de la marque ' ~ selectedBrand.name : 'Modèles véhicules' }}</h1>
-        <a href="{{ path('manage_vehicle_models_new') }}" class="btn btn-primary btn-sm">+ Nouveau modèle</a>
+    <div class="row g-3 mb-4" id="modelsPageTop">
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-blue h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-blue"><i class="bi bi-car-front-fill"></i></div>
+                <div class="ctb-stat-val">{{ stats.total }}</div>
+                <div class="ctb-stat-label">Modèles au total</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-green h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-green"><i class="bi bi-car-front"></i></div>
+                <div class="ctb-stat-val">{{ stats.auto }}</div>
+                <div class="ctb-stat-label">Auto</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-orange h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-orange"><i class="bi bi-scooter"></i></div>
+                <div class="ctb-stat-val">{{ stats.moto }}</div>
+                <div class="ctb-stat-label">Moto</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-purple h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-purple"><i class="bi bi-list-ul"></i></div>
+                <div class="ctb-stat-val">{{ stats.filtered }}</div>
+                <div class="ctb-stat-label">Résultats filtrés</div>
+            </div>
+        </div>
     </div>
 
-    <form method="get" class="mb-3 d-flex align-items-center gap-3 flex-wrap">
-        <input type="text" name="q" class="form-control" style="max-width: 260px;" placeholder="Rechercher un modèle..." value="{{ searchTerm }}">
-        <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-search"></i></button>
+    <div class="row g-3 mb-3">
+        <div class="col-12">
+            <div class="sw-card">
+                <div class="card-body py-3">
+                    <form method="get" class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <div class="ctb-search-wrap">
+                            <i class="bi bi-search ctb-search-icon"></i>
+                            <input type="text" name="q" id="modelSearchInput" class="ctb-search-input" style="width:260px;" placeholder="Rechercher un modèle..." value="{{ searchTerm }}" autocomplete="off">
+                            <div class="header-search-results" id="modelSuggestions"></div>
+                        </div>
 
-        <select name="brand" class="form-select" style="max-width: 300px;" onchange="this.form.submit()">
-            <option value="">— Toutes les marques —</option>
-            {% for brand in brands %}
-                <option value="{{ brand.id }}" {{ selectedBrandId == brand.id ? 'selected' : '' }}>{{ brand.name }}</option>
-            {% endfor %}
-        </select>
+                        <select name="brand" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
+                            <option value="">— Toutes les marques —</option>
+                            {% for brand in brands %}
+                                <option value="{{ brand.id }}" {{ selectedBrandId == brand.id ? 'selected' : '' }}>{{ brand.name }}</option>
+                            {% endfor %}
+                        </select>
 
-        <div class="form-check">
-            <input type="checkbox" name="auto" value="1" class="form-check-input" id="filterAuto" onchange="this.form.submit()"
-                {{ filterAuto ? 'checked' : '' }}>
-            <label class="form-check-label" for="filterAuto">Auto</label>
+                        <div class="form-check">
+                            <input type="checkbox" name="auto" value="1" class="form-check-input" id="filterAuto" onchange="this.form.submit()" {{ filterAuto ? 'checked' : '' }}>
+                            <label class="form-check-label" for="filterAuto">Auto</label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" name="moto" value="1" class="form-check-input" id="filterMoto" onchange="this.form.submit()" {{ filterMoto ? 'checked' : '' }}>
+                            <label class="form-check-label" for="filterMoto">Moto</label>
+                        </div>
+
+                        <select name="perPage" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
+                            {% for n in [10, 20, 50, 100] %}
+                                <option value="{{ n }}" {{ perPage == n ? 'selected' : '' }}>{{ n }} / page</option>
+                            {% endfor %}
+                        </select>
+
+                        <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search me-1"></i>Rechercher</button>
+                        {% if selectedBrandId or filterAuto or filterMoto or searchTerm %}
+                            <a href="{{ path('manage_vehicle_models_index') }}" class="btn btn-outline-secondary btn-sm">Réinitialiser</a>
+                        {% endif %}
+                        <a href="{{ path('manage_vehicle_models_new') }}" class="btn btn-primary btn-sm ms-auto"><i class="bi bi-plus-lg me-1"></i>Nouveau modèle</a>
+                    </form>
+                </div>
+            </div>
         </div>
-        <div class="form-check">
-            <input type="checkbox" name="moto" value="1" class="form-check-input" id="filterMoto" onchange="this.form.submit()"
-                {{ filterMoto ? 'checked' : '' }}>
-            <label class="form-check-label" for="filterMoto">Moto</label>
+    </div>
+
+    <div class="sw-card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table ctb-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Logo</th>
+                            <th>{{ self.sortLink('brand', 'Marque', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('name', 'Nom', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('name2', 'Nom alternatif', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('type', 'Type', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('primaryCount', 'Variantes/Motorisations', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('engineCount', 'Motorisations', currentSort, currentDir) }}</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in rows %}
+                            {% set model = row.model %}
+                            <tr>
+                                <td>
+                                    {% if model.brand.logoName %}
+                                        <img src="{{ vich_uploader_asset(model.brand, 'logoFile') }}" alt="" style="width:28px;height:28px;object-fit:contain;">
+                                    {% else %}<span class="text-muted">—</span>{% endif %}
+                                </td>
+                                <td><a href="{{ path('manage_brands_show', {id: model.brand.id}) }}">{{ model.brand.name }}</a></td>
+                                <td class="ctb-contact-name"><a href="{{ path('manage_vehicle_models_show', {id: model.id}) }}">{{ model.name }}</a></td>
+                                <td>{{ model.name2 ?: '—' }}</td>
+                                <td>{{ model.isMoto ? 'Moto' : 'Auto' }}</td>
+                                <td>
+                                    {% if row.primaryCount > 0 %}
+                                        <a href="{{ path('manage_vehicle_models_show', {id: model.id}) }}#{{ model.isMoto ? 'motorisations' : 'variantes' }}">{{ row.primaryCount }}</a>
+                                    {% else %}0{% endif %}
+                                </td>
+                                <td>
+                                    {% if row.engineCount %}
+                                        <a href="{{ path('manage_vehicle_models_show', {id: model.id}) }}#motorisations">{{ row.engineCount }}</a>
+                                    {% else %}
+                                        {{ row.engineCount is not null ? '0' : '—' }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="ctb-act-row">
+                                        <a href="{{ path('manage_vehicle_models_show', {id: model.id}) }}" class="ctb-act-btn" title="Voir"><i class="bi bi-eye"></i></a>
+                                        <a href="{{ path('manage_vehicle_models_edit', {id: model.id}) }}" class="ctb-act-btn" title="Modifier"><i class="bi bi-pencil"></i></a>
+                                        <form action="{{ path('manage_vehicle_models_delete', {id: model.id}) }}" method="post" onsubmit="return confirm('Supprimer ce modèle ?');">
+                                            <button type="submit" class="ctb-act-btn ctb-act-danger" title="Supprimer"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="8" class="text-muted text-center py-4">Aucun modèle pour l'instant.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="ctb-table-footer">
+                <span class="ctb-footer-info">{{ total }} modèle{{ total != 1 ? 's' : '' }} au total — page {{ page }} / {{ pages }}</span>
+                {% if pages > 1 %}
+                    <div class="ctb-pagination">
+                        <a href="{{ path('manage_vehicle_models_index', app.request.query.all|merge({page: max(1, page - 1)})) }}" class="ctb-page-btn {{ page <= 1 ? 'disabled' : '' }}"><i class="bi bi-chevron-left"></i></a>
+                        {% for p in max(1, page - 2)..min(pages, page + 2) %}
+                            <a href="{{ path('manage_vehicle_models_index', app.request.query.all|merge({page: p})) }}" class="ctb-page-btn {{ p == page ? 'ctb-page-active' : '' }}">{{ p }}</a>
+                        {% endfor %}
+                        <a href="{{ path('manage_vehicle_models_index', app.request.query.all|merge({page: min(pages, page + 1)})) }}" class="ctb-page-btn {{ page >= pages ? 'disabled' : '' }}"><i class="bi bi-chevron-right"></i></a>
+                    </div>
+                {% endif %}
+            </div>
         </div>
+    </div>
+{% endblock %}
 
-        {% if selectedBrandId or filterAuto or filterMoto or searchTerm %}
-            <a href="{{ path('manage_vehicle_models_index') }}" class="btn btn-sm btn-outline-secondary">Réinitialiser</a>
-        {% endif %}
-    </form>
+{% block javascripts %}
+    <script>
+        const allModelNames = {{ allModelNames|json_encode|raw }};
+        const modelSearchInput = document.getElementById('modelSearchInput');
+        const modelSuggestions = document.getElementById('modelSuggestions');
 
-    <p class="text-muted mb-2">{{ rows|length }} modèle{{ rows|length > 1 ? 's' : '' }} au total</p>
+        function renderModelSuggestions(term) {
+            modelSuggestions.innerHTML = '';
+            if (!term) { modelSuggestions.classList.remove('active'); return; }
+            const matches = allModelNames.filter((n) => n.toLowerCase().includes(term.toLowerCase())).slice(0, 8);
+            if (matches.length === 0) { modelSuggestions.classList.remove('active'); return; }
+            matches.forEach((name) => {
+                const item = document.createElement('div');
+                item.className = 'header-search-result-item';
+                item.innerHTML = '<i class="bi bi-car-front"></i><span>' + name + '</span>';
+                item.addEventListener('click', () => {
+                    modelSearchInput.value = name;
+                    modelSuggestions.classList.remove('active');
+                    modelSearchInput.closest('form').submit();
+                });
+                modelSuggestions.appendChild(item);
+            });
+            modelSuggestions.classList.add('active');
+        }
 
-    <table class="table admin-table">
-        <thead>
-            <tr>
-                <th>Logo</th>
-                <th>{{ self.sortLink('brand', 'Marque', currentSort, currentDir) }}</th>
-                <th>{{ self.sortLink('name', 'Nom', currentSort, currentDir) }}</th>
-                <th>{{ self.sortLink('name2', 'Nom alternatif', currentSort, currentDir) }}</th>
-                <th>{{ self.sortLink('type', 'Type', currentSort, currentDir) }}</th>
-                <th>{{ self.sortLink('primaryCount', 'Variantes/Motorisations', currentSort, currentDir) }}</th>
-                <th>{{ self.sortLink('engineCount', 'Motorisations', currentSort, currentDir) }}</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in rows %}
-                {% set model = row.model %}
-                <tr>
-                    <td>
-                        {% if model.brand.logoName %}
-                            <img src="{{ vich_uploader_asset(model.brand, 'logoFile') }}" alt="" style="width:28px;height:28px;object-fit:contain;">
-                        {% else %}
-                            <span class="text-muted">—</span>
-                        {% endif %}
-                    </td>
-                    <td><a href="{{ path('manage_brands_show', {id: model.brand.id}) }}">{{ model.brand.name }}</a></td>
-                    <td><a href="{{ path('manage_vehicle_models_show', {id: model.id}) }}">{{ model.name }}</a></td>
-                    <td>{{ model.name2 ?: '—' }}</td>
-                    <td>{{ model.isMoto ? 'Moto' : 'Auto' }}</td>
-                    <td>
-                        {% if row.primaryCount > 0 %}
-                            <a href="{{ path('manage_vehicle_models_show', {id: model.id}) }}#{{ model.isMoto ? 'motorisations' : 'variantes' }}">{{ row.primaryCount }}</a>
-                        {% else %}
-                            0
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if row.engineCount %}
-                            <a href="{{ path('manage_vehicle_models_show', {id: model.id}) }}#motorisations">{{ row.engineCount }}</a>
-                        {% else %}
-                            {{ row.engineCount is not null ? '0' : '—' }}
-                        {% endif %}
-                    </td>
-                    <td class="text-end">
-                        <a href="{{ path('manage_vehicle_models_show', {id: model.id}) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i> Voir</a>
-                        <a href="{{ path('manage_vehicle_models_edit', {id: model.id}) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i> Modifier</a>
-                        <form action="{{ path('manage_vehicle_models_delete', {id: model.id}) }}" method="post" class="d-inline" onsubmit="return confirm('Supprimer ce modèle ?');">
-                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-                        </form>
-                    </td>
-                </tr>
-            {% else %}
-                <tr><td colspan="8" class="text-muted">Aucun modèle pour l'instant.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+        modelSearchInput.addEventListener('input', () => renderModelSuggestions(modelSearchInput.value.trim()));
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.ctb-search-wrap')) modelSuggestions.classList.remove('active');
+        });
+    </script>
 {% endblock %}

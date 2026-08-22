@@ -1,0 +1,62 @@
+{% macro ajaxSortLink(field, label, currentSort, currentDir) %}
+    {% set nextDir = (currentSort == field and currentDir == 'ASC') ? 'DESC' : 'ASC' %}
+    <a href="#" class="admin-sort-link js-ajax-sort" data-sort="{{ field }}" data-dir="{{ nextDir }}">
+        {{ label }}
+        {% if currentSort == field %}
+            <i class="bi bi-caret-{{ currentDir == 'ASC' ? 'up' : 'down' }}-fill"></i>
+        {% else %}
+            <i class="bi bi-arrow-down-up admin-sort-icon-idle"></i>
+        {% endif %}
+    </a>
+{% endmacro %}
+{% import _self as self %}
+
+<div class="table-responsive">
+    <table class="table ctb-table mb-0">
+        <thead>
+            <tr>
+                <th>{{ self.ajaxSortLink('label', 'Moteur', enginesSort, enginesDir) }}</th>
+                {% if not model.isMoto %}<th>{{ self.ajaxSortLink('variant', 'Variante', enginesSort, enginesDir) }}</th>{% endif %}
+                <th>{{ self.ajaxSortLink('powerCv', 'Puissance CV', enginesSort, enginesDir) }}</th>
+                <th>{{ self.ajaxSortLink('powerKw', 'Puissance kW', enginesSort, enginesDir) }}</th>
+                <th>{{ self.ajaxSortLink('period', 'Période', enginesSort, enginesDir) }}</th>
+                <th>{{ self.ajaxSortLink('fuelType', 'Énergie', enginesSort, enginesDir) }}</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for engine in engines %}
+                <tr>
+                    <td class="ctb-contact-name">{{ engine.label }}</td>
+                    {% if not model.isMoto %}<td>{{ engine.variant ? (engine.variant.name ?: '-') : '-' }}</td>{% endif %}
+                    <td>{{ engine.powerCv ?: '-' }}</td>
+                    <td>{{ engine.powerKw ?: '-' }}</td>
+                    <td>{{ engine.periodLabel ?: '-' }}</td>
+                    <td>{{ engine.fuelType ? engine.fuelType.name : '-' }}</td>
+                    <td>
+                        <div class="ctb-act-row">
+                            <a href="{{ path('manage_vehicle_engines_edit', {id: engine.id}) }}" class="ctb-act-btn" title="Modifier"><i class="bi bi-pencil"></i></a>
+                            <form action="{{ path('manage_vehicle_engines_delete', {id: engine.id}) }}" method="post" onsubmit="return confirm('Supprimer cette motorisation ?');">
+                                <button type="submit" class="ctb-act-btn ctb-act-danger" title="Supprimer"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="{{ model.isMoto ? 6 : 7 }}" class="text-muted text-center py-4">{{ enginesTerm ? 'Aucune motorisation ne correspond à la recherche.' : 'Aucune motorisation pour ce modèle.' }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<div class="ctb-table-footer">
+    <span class="ctb-footer-info">{{ enginesTotal }} motorisation{{ enginesTotal != 1 ? 's' : '' }} — page {{ enginesPage }} / {{ enginesPages }}</span>
+    {% if enginesPages > 1 %}
+        <div class="ctb-pagination">
+            <a href="#" class="ctb-page-btn js-ajax-page {{ enginesPage <= 1 ? 'disabled' : '' }}" data-page="{{ max(1, enginesPage - 1) }}"><i class="bi bi-chevron-left"></i></a>
+            {% for p in max(1, enginesPage - 2)..min(enginesPages, enginesPage + 2) %}
+                <a href="#" class="ctb-page-btn js-ajax-page {{ p == enginesPage ? 'ctb-page-active' : '' }}" data-page="{{ p }}">{{ p }}</a>
+            {% endfor %}
+            <a href="#" class="ctb-page-btn js-ajax-page {{ enginesPage >= enginesPages ? 'disabled' : '' }}" data-page="{{ min(enginesPages, enginesPage + 1) }}"><i class="bi bi-chevron-right"></i></a>
+        </div>
+    {% endif %}
+</div>

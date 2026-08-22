@@ -14,17 +14,47 @@ use Symfony\Component\Routing\Attribute\Route;
 class FuelTypeManagementController extends AbstractController
 {
     #[Route('/energies', name: 'manage_fuel_types_index', host: 'manage.kongobazar.com', methods: ['GET'])]
-    public function index(Request $request, FuelTypeRepository $repository): Response
+    public function index(Request $request, FuelTypeRepository $repository, \App\Repository\VehicleEngineRepository $engineRepository): Response
     {
         $searchTerm = $request->query->get('q');
         $sortField = $request->query->get('sort', 'name');
         $sortDir = $request->query->get('dir', 'ASC');
 
+        $allFuelTypes = $repository->findFiltered(null, 'name', 'ASC');
+        $fuelTypes = $repository->findFiltered($searchTerm, $sortField, $sortDir);
+
+        $rows = array_map(fn (FuelType $f) => [
+            'fuelType' => $f,
+            'engineCount' => $engineRepository->countByFuelType($f->getId()),
+        ], $fuelTypes);
+
+        if ($sortField === 'engineCount') {
+            $dirMultiplier = strtoupper($sortDir) === 'DESC' ? -1 : 1;
+            usort($rows, fn ($a, $b) => $dirMultiplier * ($a['engineCount'] <=> $b['engineCount']));
+        }
+
+        $total = count($rows);
+        $perPage = in_array((int) $request->query->get('perPage', 20), [10, 20, 50, 100], true)
+            ? (int) $request->query->get('perPage', 20) : 20;
+        $page = max(1, (int) $request->query->get('page', 1));
+        $rows = array_slice($rows, ($page - 1) * $perPage, $perPage);
+
         return $this->render('manage/fuel_types/index.html.twig', [
-            'fuelTypes' => $repository->findFiltered($searchTerm, $sortField, $sortDir),
+            'rows' => $rows,
             'searchTerm' => $searchTerm,
             'currentSort' => $sortField,
             'currentDir' => $sortDir,
+            'page' => $page,
+            'pages' => max(1, (int) ceil($total / $perPage)),
+            'perPage' => $perPage,
+            'total' => $total,
+            'allFuelTypeNames' => array_map(fn (FuelType $f) => $f->getName(), $allFuelTypes),
+            'stats' => [
+                'total' => $repository->countAll(),
+                'active' => $repository->countActive(),
+                'totalEngines' => array_sum(array_column($engineRepository->getBreakdownByFuelType(), 'total')),
+            ],
+            'breakdown' => $engineRepository->getBreakdownByFuelType(),
         ]);
     }
 

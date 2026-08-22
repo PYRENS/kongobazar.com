@@ -16,6 +16,32 @@ class VehicleEngineRepository extends ServiceEntityRepository
         parent::__construct($registry, VehicleEngine::class);
     }
 
+    public function countAll(): int
+    {
+        return (int) $this->createQueryBuilder('e')
+            ->select('COUNT(e.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function countAutoAll(): int
+    {
+        return (int) $this->createQueryBuilder('e')
+            ->select('COUNT(e.id)')
+            ->andWhere('e.variant IS NOT NULL')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function countMotoAll(): int
+    {
+        return (int) $this->createQueryBuilder('e')
+            ->select('COUNT(e.id)')
+            ->andWhere('e.model IS NOT NULL')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     /** @return VehicleEngine[] */
     public function findByVariant(int $variantId): array
     {
@@ -119,5 +145,38 @@ class VehicleEngineRepository extends ServiceEntityRepository
             ->setParameter('brandId', $brandId)
             ->getQuery()
             ->getSingleScalarResult();
+    }
+
+    public function countByFuelType(int $fuelTypeId): int
+    {
+        return (int) $this->createQueryBuilder('e')
+            ->select('COUNT(e.id)')
+            ->andWhere('e.fuelType = :fuelTypeId')
+            ->setParameter('fuelTypeId', $fuelTypeId)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function countWithoutFuelType(): int
+    {
+        return (int) $this->createQueryBuilder('e')
+            ->select('COUNT(e.id)')
+            ->andWhere('e.fuelType IS NULL')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /** @return array<int, array{name: string, total: int}> Répartition du nombre de motorisations par énergie */
+    public function getBreakdownByFuelType(): array
+    {
+        $rows = $this->createQueryBuilder('e')
+            ->select('f.name as name, COUNT(e.id) as total')
+            ->join('e.fuelType', 'f')
+            ->groupBy('f.id')
+            ->orderBy('total', 'DESC')
+            ->getQuery()
+            ->getResult();
+
+        return array_map(fn ($r) => ['name' => $r['name'], 'total' => (int) $r['total']], $rows);
     }
 }

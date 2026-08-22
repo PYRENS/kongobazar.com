@@ -42,6 +42,26 @@
 
 .product-negotiable { color: #777; font-size: 13px; margin-bottom: 16px; }
 
+.product-authenticity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin: 6px 0 10px;
+    cursor: help;
+}
+.product-authenticity-original {
+    background: rgba(16, 185, 129, 0.12);
+    color: #047857;
+}
+.product-authenticity-replica {
+    background: rgba(245, 158, 11, 0.12);
+    color: #B45309;
+}
+
 .product-option-group { margin-bottom: 16px; }
 .product-option-label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 8px; }
 .product-swatches { display: flex; gap: 8px; }

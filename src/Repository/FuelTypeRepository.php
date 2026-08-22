@@ -16,6 +16,23 @@ class FuelTypeRepository extends ServiceEntityRepository
         parent::__construct($registry, FuelType::class);
     }
 
+    public function countAll(): int
+    {
+        return (int) $this->createQueryBuilder('f')
+            ->select('COUNT(f.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function countActive(): int
+    {
+        return (int) $this->createQueryBuilder('f')
+            ->select('COUNT(f.id)')
+            ->andWhere('f.active = true')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     /** @return FuelType[] */
     public function findFiltered(?string $term, string $sort, string $dir): array
     {

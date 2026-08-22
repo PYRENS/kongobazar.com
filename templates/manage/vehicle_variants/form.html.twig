@@ -2,65 +2,68 @@
 
 {% block title %}{{ variant ? 'Modifier la variante' : 'Nouvelle variante' }}{% endblock %}
 {% block page_icon %}bi-diagram-3{% endblock %}
-{% block page_title %}{{ variant ? 'Modifier la variante' : 'Nouvelle variante' }}{% endblock %}
+{% block page_title %}{{ variant ? 'Modifier « ' ~ (variant.name ?: 'la variante') ~ ' »' : 'Nouvelle variante' }}{% endblock %}
 
 {% block body %}
-    <h1 class="h4 mb-3">{{ variant ? 'Modifier la variante' : 'Nouvelle variante' }}</h1>
+    <div class="sw-card" style="max-width:620px;">
+        <div class="card-header"><h6 class="mb-0 fw-bold">{{ variant ? 'Modifier la variante' : 'Nouvelle variante' }}</h6></div>
+        <div class="card-body">
+            <form method="post" action="{{ variant ? path('manage_vehicle_variants_update', {id: variant.id}) : path('manage_vehicle_variants_new') }}">
+                {% if presetModel %}
+                    <input type="hidden" name="model_id" value="{{ presetModel.id }}">
+                    <div class="mb-3">
+                        <label class="acc-form-label">Rattachement</label>
+                        <div class="form-control-plaintext border rounded px-3 py-2 bg-light">
+                            {{ presetModel.brand.name }} › {{ presetModel.name }}
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="acc-form-label">Marque</label>
+                            <select class="acc-form-select" data-vehicle-brand-select>
+                                <option value="">— Choisir —</option>
+                                {% for brand in brands %}
+                                    <option value="{{ brand.id }}" {{ variant and variant.model and variant.model.brand.id == brand.id ? 'selected' : '' }}>{{ brand.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="acc-form-label">Modèle</label>
+                            <select name="model_id" class="acc-form-select" data-vehicle-model-select data-preselected="{{ variant and variant.model ? variant.model.id : '' }}" required>
+                                <option value="">— Choisissez d'abord une marque —</option>
+                            </select>
+                        </div>
+                    </div>
+                {% endif %}
 
-    <form method="post" action="{{ variant ? path('manage_vehicle_variants_update', {id: variant.id}) : path('manage_vehicle_variants_new') }}">
-        {% if presetModel %}
-            <input type="hidden" name="model_id" value="{{ presetModel.id }}">
-            <div class="mb-3">
-                <label class="form-label">Rattachement</label>
-                <div class="form-control-plaintext border rounded px-3 py-2 bg-light">
-                    {{ presetModel.brand.name }} › {{ presetModel.name }}
+                <div class="mb-3">
+                    <label class="acc-form-label">Nom de la variante (optionnel)</label>
+                    <input type="text" name="name" class="acc-form-input" value="{{ variant ? variant.name : '' }}">
                 </div>
-            </div>
-        {% else %}
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Marque</label>
-                    <select class="form-select" data-vehicle-brand-select>
-                        <option value="">— Choisir —</option>
-                        {% for brand in brands %}
-                            <option value="{{ brand.id }}" {{ variant and variant.model and variant.model.brand.id == brand.id ? 'selected' : '' }}>{{ brand.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Modèle</label>
-                    <select name="model_id" class="form-select" data-vehicle-model-select data-preselected="{{ variant and variant.model ? variant.model.id : '' }}" required>
-                        <option value="">— Choisissez d'abord une marque —</option>
-                    </select>
-                </div>
-            </div>
-        {% endif %}
 
-        <div class="mb-3">
-            <label class="form-label">Nom de la variante (optionnel)</label>
-            <input type="text" name="name" class="form-control" value="{{ variant ? variant.name : '' }}">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label class="acc-form-label">Mois début</label>
+                        <input type="text" name="month_begin" class="acc-form-input" maxlength="2" placeholder="MM" value="{{ variant ? variant.monthBegin : '' }}" required>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="acc-form-label">Année début</label>
+                        <input type="number" name="year_begin" class="acc-form-input" value="{{ variant ? variant.yearBegin : '' }}" required>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="acc-form-label">Mois fin</label>
+                        <input type="text" name="month_end" class="acc-form-input" maxlength="2" placeholder="MM (vide = en cours)" value="{{ variant ? variant.monthEnd : '' }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="acc-form-label">Année fin</label>
+                        <input type="number" name="year_end" class="acc-form-input" placeholder="vide = en cours" value="{{ variant ? variant.yearEnd : '' }}">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check2 me-2"></i>Enregistrer</button>
+                <a href="{{ path('manage_vehicle_variants_index') }}" class="btn btn-outline-secondary ms-2">Annuler</a>
+            </form>
         </div>
-
-        <div class="row">
-            <div class="col-md-3 mb-3">
-                <label class="form-label">Mois début</label>
-                <input type="text" name="month_begin" class="form-control" maxlength="2" placeholder="MM" value="{{ variant ? variant.monthBegin : '' }}" required>
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">Année début</label>
-                <input type="number" name="year_begin" class="form-control" value="{{ variant ? variant.yearBegin : '' }}" required>
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">Mois fin</label>
-                <input type="text" name="month_end" class="form-control" maxlength="2" placeholder="MM (vide = en cours)" value="{{ variant ? variant.monthEnd : '' }}">
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="form-label">Année fin</label>
-                <input type="number" name="year_end" class="form-control" placeholder="vide = en cours" value="{{ variant ? variant.yearEnd : '' }}">
-            </div>
-        </div>
-
-        <button type="submit" class="btn btn-success">Enregistrer</button>
-        <a href="{{ path('manage_vehicle_variants_index') }}" class="btn btn-outline-secondary">Annuler</a>
-    </form>
+    </div>
 {% endblock %}

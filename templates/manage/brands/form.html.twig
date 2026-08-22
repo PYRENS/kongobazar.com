@@ -2,117 +2,122 @@
 
 {% block title %}{{ brand ? 'Modifier la marque' : 'Nouvelle marque' }}{% endblock %}
 {% block page_icon %}bi-award{% endblock %}
-{% block page_title %}{{ brand ? 'Modifier la marque' : 'Nouvelle marque' }}{% endblock %}
+{% block page_title %}{{ brand ? 'Modifier « ' ~ brand.name ~ ' »' : 'Nouvelle marque' }}{% endblock %}
 
 {% block body %}
-    <h1 class="h4 mb-3">{{ brand ? 'Modifier la marque' : 'Nouvelle marque' }}</h1>
+    <div class="sw-card" style="max-width:620px;">
+        <div class="card-header"><h6 class="mb-0 fw-bold">{{ brand ? 'Modifier la marque' : 'Nouvelle marque' }}</h6></div>
+        <div class="card-body">
+            <form method="post" action="{{ brand ? path('manage_brands_update', {id: brand.id}) : path('manage_brands_new') }}" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label class="acc-form-label">Logo</label>
+                    <div class="admin-file-upload-group">
+                        <div class="admin-upload-thumb" id="newLogoPreviewBox" style="display:none;">
+                            <span class="admin-upload-thumb-label">{% if brand and brand.logoName %}Nouveau{% endif %}</span>
+                            <div class="admin-upload-thumb-inner">
+                                <img src="" id="newLogoPreview" alt="Nouveau logo">
+                                <button type="button" class="admin-upload-remove" id="removeNewLogo" aria-label="Retirer le nouveau logo">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                        </div>
 
-    <form method="post" action="{{ brand ? path('manage_brands_update', {id: brand.id}) : path('manage_brands_new') }}" enctype="multipart/form-data">
-        <div class="mb-3">
-            <label class="form-label">Logo</label>
-            <div class="admin-file-upload-group">
-                <div class="admin-upload-thumb" id="newLogoPreviewBox" style="display:none;">
-                    <span class="admin-upload-thumb-label">{% if brand and brand.logoName %}Nouveau{% endif %}</span>
-                    <div class="admin-upload-thumb-inner">
-                        <img src="" id="newLogoPreview" alt="Nouveau logo">
-                        <button type="button" class="admin-upload-remove" id="removeNewLogo" aria-label="Retirer le nouveau logo">
-                            <i class="bi bi-x"></i>
-                        </button>
+                        <div class="admin-upload-thumb">
+                            <span class="admin-upload-thumb-label">&nbsp;</span>
+                            <label class="admin-upload-dropzone" for="logoInput">
+                                <i class="bi bi-camera"></i>
+                                <span>Upload</span>
+                            </label>
+                        </div>
+                        <input type="file" name="logo" id="logoInput" accept="image/*" class="admin-upload-input-hidden">
+
+                        {% if brand and brand.logoName %}
+                            <div class="admin-upload-thumb">
+                                <span class="admin-upload-thumb-label">Actuel</span>
+                                <div class="admin-upload-thumb-inner">
+                                    <img src="{{ vich_uploader_asset(brand, 'logoFile') }}" alt="Logo actuel">
+                                </div>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
 
-                <div class="admin-upload-thumb">
-                    <span class="admin-upload-thumb-label">&nbsp;</span>
-                    <label class="admin-upload-dropzone" for="logoInput">
-                        <i class="bi bi-camera"></i>
-                        <span>Upload</span>
-                    </label>
+                <div class="mb-3">
+                    <label class="acc-form-label">Nom</label>
+                    <input type="text" name="name" class="acc-form-input" value="{{ brand ? brand.name : '' }}" required>
                 </div>
-                <input type="file" name="logo" id="logoInput" accept="image/*" class="admin-upload-input-hidden">
 
-                {% if brand and brand.logoName %}
-                    <div class="admin-upload-thumb">
-                        <span class="admin-upload-thumb-label">Actuel</span>
-                        <div class="admin-upload-thumb-inner">
-                            <img src="{{ vich_uploader_asset(brand, 'logoFile') }}" alt="Logo actuel">
+                <div class="mb-3">
+                    <label class="acc-form-label">Sigle (optionnel)</label>
+                    <input type="text" name="sigle" class="acc-form-input" value="{{ brand ? brand.sigle : '' }}" maxlength="20" placeholder="ex: BMW, VW">
+                </div>
+
+                <div class="mb-3">
+                    <label class="acc-form-label d-block">Domaine(s) d'usage</label>
+                    <div class="form-check form-check-inline">
+                        <input type="checkbox" name="type[]" value="auto" class="form-check-input" id="typeAuto"
+                            {{ brand and brand.hasType('auto') ? 'checked' : '' }}>
+                        <label class="form-check-label" for="typeAuto">Auto</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input type="checkbox" name="type[]" value="moto" class="form-check-input" id="typeMoto"
+                            {{ brand and brand.hasType('moto') ? 'checked' : '' }}>
+                        <label class="form-check-label" for="typeMoto">Moto</label>
+                    </div>
+                    <small class="text-muted d-block">Laisser les deux cases décochées pour une marque générique (mode, électronique...).</small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="acc-form-label">Pays</label>
+                    {% set selectedPays = brand and brand.pays ? brand.pays : null %}
+                    <div class="admin-country-picker" id="paysPicker">
+                        <button type="button" class="admin-country-picker-toggle" id="paysPickerToggle">
+                            <span class="admin-country-picker-toggle-label">
+                                {% if selectedPays %}
+                                    <span class="fi fi-{{ selectedPays.iso2|lower }}"></span> {{ selectedPays.name }}
+                                {% else %}
+                                    <span class="text-muted">— Aucun —</span>
+                                {% endif %}
+                            </span>
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                        <div class="admin-country-picker-panel" id="paysPickerPanel" style="display:none;">
+                            <input type="text" class="admin-country-picker-search" id="paysPickerSearch" placeholder="Rechercher un pays...">
+                            <div class="admin-country-picker-list">
+                                <button type="button" class="admin-country-picker-row" data-pays-id="" data-pays-flag="" data-pays-name="— Aucun —">
+                                    <span class="text-muted">— Aucun —</span>
+                                </button>
+                                {% for pays in paysList %}
+                                    <button type="button" class="admin-country-picker-row" data-pays-id="{{ pays.id }}" data-pays-flag="fi-{{ pays.iso2|lower }}" data-pays-name="{{ pays.name }}">
+                                        <span class="fi fi-{{ pays.iso2|lower }}"></span> {{ pays.name }}
+                                    </button>
+                                {% endfor %}
+                            </div>
                         </div>
                     </div>
-                {% endif %}
-            </div>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Nom</label>
-            <input type="text" name="name" class="form-control" value="{{ brand ? brand.name : '' }}" required>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Sigle (optionnel)</label>
-            <input type="text" name="sigle" class="form-control" value="{{ brand ? brand.sigle : '' }}" maxlength="20" placeholder="ex: BMW, VW">
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label d-block">Domaine(s) d'usage</label>
-            <div class="form-check form-check-inline">
-                <input type="checkbox" name="type[]" value="auto" class="form-check-input" id="typeAuto"
-                    {{ brand and brand.hasType('auto') ? 'checked' : '' }}>
-                <label class="form-check-label" for="typeAuto">Auto</label>
-            </div>
-            <div class="form-check form-check-inline">
-                <input type="checkbox" name="type[]" value="moto" class="form-check-input" id="typeMoto"
-                    {{ brand and brand.hasType('moto') ? 'checked' : '' }}>
-                <label class="form-check-label" for="typeMoto">Moto</label>
-            </div>
-            <small class="text-muted d-block">Laisser les deux cases décochées pour une marque générique (mode, électronique...).</small>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Pays</label>
-            {% set selectedPays = brand and brand.pays ? brand.pays : null %}
-            <div class="admin-country-picker" id="paysPicker">
-                <button type="button" class="admin-country-picker-toggle" id="paysPickerToggle">
-                    <span class="admin-country-picker-toggle-label">
-                        {% if selectedPays %}
-                            <span class="fi fi-{{ selectedPays.iso2|lower }}"></span> {{ selectedPays.name }}
-                        {% else %}
-                            <span class="text-muted">— Aucun —</span>
-                        {% endif %}
-                    </span>
-                    <i class="bi bi-chevron-down"></i>
-                </button>
-                <div class="admin-country-picker-panel" id="paysPickerPanel" style="display:none;">
-                    <input type="text" class="admin-country-picker-search" id="paysPickerSearch" placeholder="Rechercher un pays...">
-                    <div class="admin-country-picker-list">
-                        <button type="button" class="admin-country-picker-row" data-pays-id="" data-pays-flag="" data-pays-name="— Aucun —">
-                            <span class="text-muted">— Aucun —</span>
-                        </button>
-                        {% for pays in paysList %}
-                            <button type="button" class="admin-country-picker-row" data-pays-id="{{ pays.id }}" data-pays-flag="fi-{{ pays.iso2|lower }}" data-pays-name="{{ pays.name }}">
-                                <span class="fi fi-{{ pays.iso2|lower }}"></span> {{ pays.name }}
-                            </button>
-                        {% endfor %}
-                    </div>
+                    <input type="hidden" name="pays_id" id="paysIdInput" value="{{ selectedPays ? selectedPays.id : '' }}">
                 </div>
-            </div>
-            <input type="hidden" name="pays_id" id="paysIdInput" value="{{ selectedPays ? selectedPays.id : '' }}">
+
+                <div class="mb-3 form-check">
+                    <input type="checkbox" name="verified" value="1" class="form-check-input" id="verified"
+                        {{ brand and brand.verified ? 'checked' : '' }}>
+                    <label class="form-check-label" for="verified">Marque vérifiée</label>
+                </div>
+
+                <div class="mb-3 form-check">
+                    <input type="checkbox" name="active" value="1" class="form-check-input" id="active"
+                        {{ brand is null or brand.active ? 'checked' : '' }}>
+                    <label class="form-check-label" for="active">Marque active</label>
+                </div>
+
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check2 me-2"></i>Enregistrer</button>
+                <a href="{{ path('manage_brands_index') }}" class="btn btn-outline-secondary ms-2">Annuler</a>
+            </form>
         </div>
+    </div>
+{% endblock %}
 
-        <div class="mb-3 form-check">
-            <input type="checkbox" name="verified" value="1" class="form-check-input" id="verified"
-                {{ brand and brand.verified ? 'checked' : '' }}>
-            <label class="form-check-label" for="verified">Marque vérifiée</label>
-        </div>
-
-        <div class="mb-3 form-check">
-            <input type="checkbox" name="active" value="1" class="form-check-input" id="active"
-                {{ brand is null or brand.active ? 'checked' : '' }}>
-            <label class="form-check-label" for="active">Marque active</label>
-        </div>
-
-        <button type="submit" class="btn btn-success">Enregistrer</button>
-        <a href="{{ path('manage_brands_index') }}" class="btn btn-outline-secondary">Annuler</a>
-    </form>
-
+{% block javascripts %}
     <script>
         const logoInput = document.getElementById('logoInput');
         const logoPreviewBox = document.getElementById('newLogoPreviewBox');

@@ -4,8 +4,24 @@
 {% block page_icon %}bi-box-seam{% endblock %}
 {% block page_title %}Produits de {{ brand.name }}{% endblock %}
 
+{% set statusLabels = { 'active': 'Actif', 'draft': 'Brouillon', 'suspended': 'Bloqué', 'coming_soon': 'Bientôt disponible', 'archived': 'Archivé', 'sold': 'Vendu' } %}
+{% set statusBadgeMap = { 'active': 'ctb-status-active', 'draft': 'ctb-status-inactive', 'suspended': 'ctb-status-banned', 'coming_soon': 'ctb-status-pending', 'archived': 'ctb-status-inactive', 'sold': 'ctb-status-pending' } %}
+
+{% macro sortLink(field, label, currentSort, currentDir) %}
+    {% set nextDir = (currentSort == field and currentDir == 'ASC') ? 'DESC' : 'ASC' %}
+    <a href="?sort={{ field }}&dir={{ nextDir }}" class="admin-sort-link">
+        {{ label }}
+        {% if currentSort == field %}
+            <i class="bi bi-caret-{{ currentDir == 'ASC' ? 'up' : 'down' }}-fill"></i>
+        {% else %}
+            <i class="bi bi-arrow-down-up admin-sort-icon-idle"></i>
+        {% endif %}
+    </a>
+{% endmacro %}
+{% import _self as self %}
+
 {% block body %}
-    <nav class="admin-breadcrumb">
+    <nav class="admin-breadcrumb mb-3">
         <a href="{{ path('manage_brands_index') }}"><i class="bi bi-award"></i> Marques</a>
         <i class="bi bi-chevron-right"></i>
         <a href="{{ path('manage_brands_show', {id: brand.id}) }}">{{ brand.name }}</a>
@@ -13,96 +29,160 @@
         <span>Produits</span>
     </nav>
 
-    <div class="d-flex justify-content-between align-items-center mb-3 mt-2">
-        <h1 class="h4 mb-0">Produits de {{ brand.name }}</h1>
-        <a href="{{ path('manage_brands_show', {id: brand.id}) }}" class="btn btn-outline-secondary btn-sm">Retour à la marque</a>
-    </div>
+    <div class="row g-3 mb-3">
+        <div class="col-12">
+            <div class="sw-card">
+                <div class="card-body py-3">
+                    <a href="{{ path('manage_brands_show', {id: brand.id}) }}" class="btn btn-outline-secondary btn-sm mb-3"><i class="bi bi-arrow-left me-1"></i>Retour à la marque</a>
 
-    <form method="get" class="mb-3 d-flex align-items-center gap-2 flex-wrap">
-        <input type="text" name="q" class="form-control" style="max-width: 260px;" placeholder="Rechercher un titre, une référence..." value="{{ currentTerm }}">
+                    <form method="get" id="brandProductsForm" class="d-flex align-items-center flex-wrap gap-3">
+                        <div class="ctb-search-wrap" style="width:280px;">
+                            <i class="bi bi-search ctb-search-icon"></i>
+                            <input type="text" name="q" id="productSearchInput" class="ctb-search-input" placeholder="Rechercher un titre, une référence..." value="{{ currentTerm }}" autocomplete="off">
+                            <div class="header-search-results" id="productSuggestions"></div>
+                        </div>
 
-        <select name="status" class="form-select" style="max-width: 200px;">
-            <option value="">— Tous statuts —</option>
-            <option value="active" {{ currentStatus == 'active' ? 'selected' : '' }}>Actif</option>
-            <option value="draft" {{ currentStatus == 'draft' ? 'selected' : '' }}>Brouillon</option>
-            <option value="sold" {{ currentStatus == 'sold' ? 'selected' : '' }}>Vendu</option>
-            <option value="suspended" {{ currentStatus == 'suspended' ? 'selected' : '' }}>Suspendu</option>
-        </select>
+                        <select name="status" class="form-select form-select-sm" style="width:auto;">
+                            <option value="">— Tous statuts —</option>
+                            {% for s in ['active', 'draft', 'sold', 'suspended'] %}
+                                <option value="{{ s }}" {{ currentStatus == s ? 'selected' : '' }}>{{ statusLabels[s] }}</option>
+                            {% endfor %}
+                        </select>
 
-        <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-search"></i> Filtrer</button>
-        {% if currentTerm or currentStatus %}
-            <a href="{{ path('manage_brands_products', {id: brand.id}) }}" class="btn btn-sm btn-outline-secondary">Réinitialiser</a>
-        {% endif %}
-    </form>
+                        <select name="perPage" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
+                            {% for n in [10, 20, 50, 100] %}
+                                <option value="{{ n }}" {{ perPage == n ? 'selected' : '' }}>{{ n }} / page</option>
+                            {% endfor %}
+                        </select>
 
-    <p class="text-muted mb-2">{{ total }} produit{{ total > 1 ? 's' : '' }} au total</p>
-
-    <table class="admin-table">
-        <thead>
-            <tr>
-                <th>Image</th>
-                <th>Titre</th>
-                <th>Catégorie</th>
-                <th>Prix</th>
-                <th>État</th>
-                <th>Statut</th>
-                <th>Ventes</th>
-                <th>Créé le</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for product in products %}
-                {% set firstImage = product.images.first %}
-                <tr>
-                    <td>
-                        {% if firstImage %}
-                            <img src="{{ vich_uploader_asset(firstImage, 'imageFile') }}" alt="" class="admin-zoomable-thumb" style="width:48px;height:48px;object-fit:cover;border-radius:4px;cursor:zoom-in;">
-                        {% else %}
-                            <span class="text-muted">N/A</span>
+                        <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search me-1"></i>Filtrer</button>
+                        {% if currentTerm or currentStatus %}
+                            <a href="{{ path('manage_brands_products', {id: brand.id}) }}" class="btn btn-outline-secondary btn-sm">Réinitialiser</a>
                         {% endif %}
-                    </td>
-                    <td>{{ product.title }}</td>
-                    <td>{{ product.category ? product.category.name : '—' }}</td>
-                    <td>{{ product.basePrice }} {{ product.currency }}</td>
-                    <td>{{ product.condition == 'new' ? 'Neuf' : 'Occasion' }}</td>
-                    <td>{{ product.status }}</td>
-                    <td>{{ product.salesCount }}</td>
-                    <td>{{ product.createdAt ? product.createdAt|date('d/m/Y') : '—' }}</td>
-                    <td class="admin-actions">
-                        <a href="#" class="admin-btn admin-btn--outline"><i class="bi bi-eye"></i></a>
-                    </td>
-                </tr>
-            {% else %}
-                <tr><td colspan="9" class="text-muted p-3">Aucun produit pour cette marque.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    {% if pages > 1 %}
-        <div class="d-flex justify-content-between align-items-center mt-2">
-            <a href="?page={{ max(1, page - 1) }}{{ currentStatus ? '&status=' ~ currentStatus : '' }}{{ currentTerm ? '&q=' ~ currentTerm : '' }}" class="admin-btn admin-btn--outline {{ page <= 1 ? 'disabled' : '' }}">‹ Précédent</a>
-            <span class="text-muted">Page {{ page }} / {{ pages }}</span>
-            <a href="?page={{ min(pages, page + 1) }}{{ currentStatus ? '&status=' ~ currentStatus : '' }}{{ currentTerm ? '&q=' ~ currentTerm : '' }}" class="admin-btn admin-btn--outline {{ page >= pages ? 'disabled' : '' }}">Suivant ›</a>
+                    </form>
+                </div>
+            </div>
         </div>
-    {% endif %}
-
-    {# --- Lightbox zoom image --- #}
-    <div id="imageZoomOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;cursor:zoom-out;">
-        <img id="imageZoomFull" src="" style="max-width:90%;max-height:90%;border-radius:6px;">
     </div>
 
+    <div class="sw-card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table ctb-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>{{ self.sortLink('kongobazarReference', 'Réf. KongoBazar', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('title', 'Titre', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('category', 'Catégorie', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('seller', 'Vendeur', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('basePrice', 'Prix', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('condition', 'État', currentSort, currentDir) }}</th>
+                            <th>Authenticité</th>
+                            <th>{{ self.sortLink('status', 'Statut', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('stock', 'Stock', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('salesCount', 'Ventes', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('createdAt', 'Créé le', currentSort, currentDir) }}</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                            {% set firstImage = product.images|first %}
+                            {% set totalStock = 0 %}
+                            {% for variant in product.variants %}{% set totalStock = totalStock + variant.quantity %}{% endfor %}
+                            <tr>
+                                <td>
+                                    {% if firstImage %}
+                                        <img src="{{ vich_uploader_asset(firstImage, 'imageFile') }}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;">
+                                    {% else %}
+                                        <div class="ctb-avatar ctb-av-blue" style="border-radius:8px;"><i class="bi bi-box-seam"></i></div>
+                                    {% endif %}
+                                </td>
+                                <td class="text-muted" style="font-size:12px;">{{ product.kongobazarReference }}</td>
+                                <td class="ctb-contact-name" title="{{ product.title }}">{{ product.title|length > 50 ? product.title|slice(0, 50) ~ '…' : product.title }}</td>
+                                <td>{{ product.category ? product.category.name : '—' }}</td>
+                                <td>
+                                    {% if product.sellerProfile %}
+                                        <a href="{{ path('manage_users_show', { id: product.sellerProfile.user.id }) }}">{{ product.sellerProfile.displayName }}</a>
+                                    {% else %}—{% endif %}
+                                </td>
+                                <td>{{ product.basePrice }} {{ product.currency }}</td>
+                                <td>{{ product.condition == 'new' ? 'Neuf' : 'Occasion' }}</td>
+                                <td>
+                                    {% if product.authenticityStatus == 'original' %}
+                                        <span class="ctb-status-badge ctb-status-active"><i class="bi bi-patch-check"></i> Original</span>
+                                    {% elseif product.authenticityStatus == 'replica' %}
+                                        <span class="ctb-status-badge ctb-status-pending"><i class="bi bi-info-circle"></i> Réplique</span>
+                                    {% else %}<span class="text-muted">—</span>{% endif %}
+                                </td>
+                                <td><span class="ctb-status-badge {{ statusBadgeMap[product.status]|default('ctb-status-inactive') }}">{{ statusLabels[product.status]|default(product.status) }}</span></td>
+                                <td>{{ totalStock }}</td>
+                                <td>{{ product.salesCount }}</td>
+                                <td>{{ product.createdAt ? product.createdAt|date('d/m/Y') : '—' }}</td>
+                                <td>
+                                    <div class="ctb-act-row">
+                                        <a href="{{ path('manage_products_show', { id: product.id }) }}" class="ctb-act-btn" title="Voir détails (Dashboard)"><i class="bi bi-eye"></i></a>
+                                        <a href="{{ path('catalog_product', { slug: product.slug }) }}" target="_blank" class="ctb-act-btn" title="Voir sur le site"><i class="bi bi-box-arrow-up-right"></i></a>
+                                        <a href="{{ path('manage_products_edit', { id: product.id }) }}" class="ctb-act-btn" title="Modifier"><i class="bi bi-pencil"></i></a>
+                                        <form action="{{ path('manage_categories_product_toggle_block', { id: product.id }) }}" method="post">
+                                            <button type="submit" class="ctb-act-btn {{ product.status == 'suspended' ? '' : 'ctb-act-danger' }}" title="{{ product.status == 'suspended' ? 'Débloquer' : 'Bloquer' }}">
+                                                <i class="bi {{ product.status == 'suspended' ? 'bi-check-circle' : 'bi-slash-circle' }}"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="12" class="text-muted text-center py-4">Aucun produit pour cette marque.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="ctb-table-footer">
+                <span class="ctb-footer-info">{{ total }} produit{{ total != 1 ? 's' : '' }} au total — page {{ page }} / {{ pages }}</span>
+                {% if pages > 1 %}
+                    <div class="ctb-pagination">
+                        <a href="{{ path('manage_brands_products', {id: brand.id}|merge(app.request.query.all|merge({page: max(1, page - 1)}))) }}" class="ctb-page-btn {{ page <= 1 ? 'disabled' : '' }}"><i class="bi bi-chevron-left"></i></a>
+                        {% for p in max(1, page - 2)..min(pages, page + 2) %}
+                            <a href="{{ path('manage_brands_products', {id: brand.id}|merge(app.request.query.all|merge({page: p}))) }}" class="ctb-page-btn {{ p == page ? 'ctb-page-active' : '' }}">{{ p }}</a>
+                        {% endfor %}
+                        <a href="{{ path('manage_brands_products', {id: brand.id}|merge(app.request.query.all|merge({page: min(pages, page + 1)}))) }}" class="ctb-page-btn {{ page >= pages ? 'disabled' : '' }}"><i class="bi bi-chevron-right"></i></a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
     <script>
-        document.querySelectorAll('.admin-zoomable-thumb').forEach(function (img) {
-            img.addEventListener('click', function () {
-                const overlay = document.getElementById('imageZoomOverlay');
-                const full = document.getElementById('imageZoomFull');
-                full.src = img.src;
-                overlay.style.display = 'flex';
+        const allProductTitles = {{ allProductTitles|json_encode|raw }};
+        const productSearchInput = document.getElementById('productSearchInput');
+        const productSuggestions = document.getElementById('productSuggestions');
+
+        function renderProductSuggestions(term) {
+            productSuggestions.innerHTML = '';
+            if (!term) { productSuggestions.classList.remove('active'); return; }
+            const matches = allProductTitles.filter((t) => t.toLowerCase().includes(term.toLowerCase())).slice(0, 8);
+            if (matches.length === 0) { productSuggestions.classList.remove('active'); return; }
+            matches.forEach((title) => {
+                const item = document.createElement('div');
+                item.className = 'header-search-result-item';
+                item.innerHTML = '<i class="bi bi-box-seam"></i><span>' + title + '</span>';
+                item.addEventListener('click', () => {
+                    productSearchInput.value = title;
+                    productSuggestions.classList.remove('active');
+                    document.getElementById('brandProductsForm').submit();
+                });
+                productSuggestions.appendChild(item);
             });
-        });
-        document.getElementById('imageZoomOverlay').addEventListener('click', function () {
-            this.style.display = 'none';
+            productSuggestions.classList.add('active');
+        }
+
+        productSearchInput.addEventListener('input', () => renderProductSuggestions(productSearchInput.value.trim()));
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.ctb-search-wrap')) productSuggestions.classList.remove('active');
         });
     </script>
 {% endblock %}

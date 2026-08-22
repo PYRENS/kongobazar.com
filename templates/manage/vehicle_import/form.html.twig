@@ -2,34 +2,127 @@
 
 {% block title %}Import de motorisations{% endblock %}
 {% block page_icon %}bi-upload{% endblock %}
-{% block page_title %}Import de motorisations (texte brut)ureau{% endblock %}
+{% block page_title %}Import de motorisations (texte brut){% endblock %}
 
 {% block body %}
-    <div class="mb-3">
-        <label class="form-label">Type</label>
-        <div class="form-check form-check-inline">
-            <input type="radio" name="import_type" value="auto" class="form-check-input" id="importTypeAuto" checked>
-            <label class="form-check-label" for="importTypeAuto">Auto</label>
-        </div>
-        <div class="form-check form-check-inline">
-            <input type="radio" name="import_type" value="moto" class="form-check-input" id="importTypeMoto">
-            <label class="form-check-label" for="importTypeMoto">Moto</label>
-        </div>
-    </div>
+    <div class="sw-card mb-3">
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="acc-form-label d-block">Type</label>
+                <div class="form-check form-check-inline">
+                    <input type="radio" name="import_type" value="auto" class="form-check-input" id="importTypeAuto" checked>
+                    <label class="form-check-label" for="importTypeAuto">Auto</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input type="radio" name="import_type" value="moto" class="form-check-input" id="importTypeMoto">
+                    <label class="form-check-label" for="importTypeMoto">Moto</label>
+                </div>
+            </div>
 
-    <div class="mb-3">
-        <label class="form-label">Texte brut à traiter</label>
-        <textarea id="importTextarea" class="form-control" rows="12" placeholder="Colle ici le texte copié depuis la source (marque, modèle, motorisations...)"></textarea>
-    </div>
+            <div class="mb-3">
+                <label class="acc-form-label d-inline-flex align-items-center gap-2">
+                    Texte brut à traiter
+                    <button type="button" id="helpBtn" class="btn btn-sm btn-outline-secondary py-0 px-2" title="Voir un exemple de format à coller">
+                        <i class="bi bi-question-circle"></i> Aide
+                    </button>
+                </label>
+                <textarea id="importTextarea" class="acc-form-input" rows="12" placeholder="Colle ici le texte copié depuis la source (marque, modèle, motorisations...)"></textarea>
+            </div>
 
-    <div class="mb-3">
-        <button type="button" id="verifyBtn" class="btn btn-primary" disabled>Vérifier les données</button>
-        <button type="button" id="saveBtn" class="btn btn-success" disabled>Enregistrer</button>
+            <div class="d-flex gap-2">
+                <button type="button" id="verifyBtn" class="btn btn-primary" disabled>Vérifier les données</button>
+                <button type="button" id="saveBtn" class="btn btn-success" disabled>Enregistrer</button>
+            </div>
+        </div>
     </div>
 
     <div id="importErrors" class="alert alert-danger" style="display:none;"></div>
     <div id="importResult"></div>
 
+    {# --- Modale d'aide : exemple de format à coller (différent selon Auto/Moto) --- #}
+    <div class="custom-modal-overlay" id="helpOverlay">
+        <div class="custom-modal-box" style="max-width:600px;">
+            <div class="custom-modal-header">
+                <h6 class="mb-0 fw-bold">Exemple de format à coller — <span id="helpTypeLabel">Auto</span></h6>
+                <button type="button" class="btn-close" id="closeHelp"></button>
+            </div>
+            <div class="custom-modal-body">
+                <div id="helpAuto">
+                    <p class="text-muted mb-2" style="font-size:13px;">
+                        Structure attendue : marque en 1ère ligne, puis modèle et variante sur la 2ème ligne — <strong>séparés par un "?"</strong>
+                        (ex: <code>ix35 ? (LM, EL, ELH)</code> — "ix35" est le modèle, "(LM, EL, ELH)" la variante), suivis de la période entre parenthèses,
+                        puis les motorisations groupées par énergie (sous-titres en gras), une par ligne avec sa période juste en dessous.
+                    </p>
+                    <pre style="background:var(--body-bg);border-radius:8px;padding:14px;font-size:12.5px;white-space:pre-wrap;max-height:400px;overflow-y:auto;">HYUNDAI
+ix35 ? (LM, EL, ELH) (08.2009 - 10.2016)
+2.0 CRDi 4WD (D4HA) (135 KW / 184 CV) 01.2010 - 12.2015
+Rechercher
+Essence
+1.6 (99 KW / 135 CV)
+11.2010 - 12.2015
+2.0 (122 KW / 166 CV)
+01.2010 - 12.2015
+2.0 (G4KD) (120 KW / 163 CV)
+01.2010 - 07.2013
+2.0 4WD (116 KW / 158 CV)
+09.2014 - 06.2015
+Diesel
+1.7 CRDi (85 KW / 116 CV)
+11.2010 - 12.2015
+2.0 CRDi (130 KW / 177 CV)
+01.2012 - 12.2015
+2.0 CRDi (135 KW / 184 CV)
+01.2012 - 12.2015
+2.0 CRDi (D4HA) (100 KW / 136 CV)
+01.2010 - 12.2015
+2.0 CRDi 4WD (100 KW / 136 CV)
+01.2010 - 12.2015
+2.0 CRDi 4WD (D4HA) (135 KW / 184 CV)
+01.2010 - 12.2015
+électrique
+Fuel Cell (100 KW / 136 CV)
+09.2014 - 12.2015
+Autre
+Essence
+2.0 (112 KW / 152 CV)
+09.2014 - 12.2015
+2.0 (113 KW / 154 CV)
+08.2013 - 12.2015
+2.0 (114 KW / 155 CV)
+11.2013 - 12.2015
+2.0 (116 KW / 158 CV)
+10.2012 - 07.2013
+Hydrogène
+FCEV (53 KW / 72 CV)
+10.2012 - ...</pre>
+                </div>
+
+                <div id="helpMoto" style="display:none;">
+                    <p class="text-muted mb-2" style="font-size:13px;">
+                        Structure Moto : <strong>pas de "?" et pas de variante</strong> — juste le nom du modèle suivi de sa période entre parenthèses.
+                        Pas besoin non plus de sous-titre énergie — les motorisations peuvent s'enchaîner directement, chacune suivie de sa période.
+                    </p>
+                    <pre style="background:var(--body-bg);border-radius:8px;padding:14px;font-size:12.5px;white-space:pre-wrap;max-height:400px;overflow-y:auto;">YAMAHA
+AEROX (01.1997 - ...)
+Aerox 49ccm (2 KW / 3 CV)
+01.2014 - ...
+Aerox 100 CatCon. (SB05, YQ) 101ccm (6 KW / 7 CV)
+01.2000 - 12.2003
+Aerox 4 49ccm (3 KW / 4 CV)
+01.2014 - ...
+Aerox 50 CatCon. (AEROX-R, YQ) 49ccm (3 KW / 4 CV)
+01.1997 - 12.1999
+Aerox 50 R (SA14, YQ) 49ccm (2 KW / 3 CV)
+01.2013 - 12.2013
+Aerox 50 R Naked (SA14, YQ) 49ccm (2 KW / 3 CV)
+01.2013 - 12.2013</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
     <script>
         (function () {
             const textarea = document.getElementById('importTextarea');
@@ -37,6 +130,27 @@
             const saveBtn = document.getElementById('saveBtn');
             const errorsBox = document.getElementById('importErrors');
             const resultBox = document.getElementById('importResult');
+
+            const helpBtn = document.getElementById('helpBtn');
+            const helpOverlay = document.getElementById('helpOverlay');
+            const helpAuto = document.getElementById('helpAuto');
+            const helpMoto = document.getElementById('helpMoto');
+            const helpTypeLabel = document.getElementById('helpTypeLabel');
+            document.body.appendChild(helpOverlay);
+
+            helpBtn.addEventListener('click', function () {
+                const isAuto = getType() === 'auto';
+                helpAuto.style.display = isAuto ? '' : 'none';
+                helpMoto.style.display = isAuto ? 'none' : '';
+                helpTypeLabel.textContent = isAuto ? 'Auto' : 'Moto';
+                helpOverlay.classList.add('active');
+            });
+            helpOverlay.addEventListener('click', (e) => {
+                if (e.target === helpOverlay || e.target.closest('#closeHelp')) helpOverlay.classList.remove('active');
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') helpOverlay.classList.remove('active');
+            });
 
             let lastResult = null;
 
@@ -99,39 +213,39 @@
                 let html = '';
 
                 // --- Marque ---
-                html += '<div class="card mb-2"><div class="card-body">';
+                html += '<div class="sw-card mb-2"><div class="card-body">';
                 html += '<strong>Marque :</strong> ' + escapeHtml(result.brand.inputName) + ' ';
                 if (result.brand.found) {
-                    html += '<span class="badge bg-success">trouvée</span>';
+                    html += '<span class="ctb-status-badge ctb-status-active">trouvée</span>';
                 } else {
-                    html += '<span class="badge bg-warning text-dark">non trouvée</span> ';
+                    html += '<span class="ctb-status-badge ctb-status-pending">non trouvée</span> ';
                     html += '<button type="button" class="btn btn-sm btn-outline-primary create-brand-btn">Créer cette marque</button>';
                 }
                 html += '</div></div>';
 
                 // --- Modèle ---
-                html += '<div class="card mb-2"><div class="card-body">';
+                html += '<div class="sw-card mb-2"><div class="card-body">';
                 html += '<strong>Modèle :</strong> ' + escapeHtml(result.model.inputName) + ' ';
                 if (!result.brand.found) {
                     html += '<span class="text-muted">(en attente de la marque)</span>';
                 } else if (result.model.found) {
-                    html += '<span class="badge bg-success">trouvé</span>';
+                    html += '<span class="ctb-status-badge ctb-status-active">trouvé</span>';
                 } else {
-                    html += '<span class="badge bg-warning text-dark">non trouvé</span> ';
+                    html += '<span class="ctb-status-badge ctb-status-pending">non trouvé</span> ';
                     html += '<button type="button" class="btn btn-sm btn-outline-primary create-model-btn">Créer ce modèle</button>';
                 }
                 html += '</div></div>';
 
                 // --- Variante (Auto uniquement) ---
                 if (result.type === 'auto') {
-                    html += '<div class="card mb-2"><div class="card-body">';
+                    html += '<div class="sw-card mb-2"><div class="card-body">';
                     html += '<strong>Variante :</strong> ' + escapeHtml(result.variant.inputName || '-') + ' ';
                     if (!result.model.found) {
                         html += '<span class="text-muted">(en attente du modèle)</span>';
                     } else if (result.variant.found) {
-                        html += '<span class="badge bg-success">trouvée</span>';
+                        html += '<span class="ctb-status-badge ctb-status-active">trouvée</span>';
                     } else {
-                        html += '<span class="badge bg-warning text-dark">non trouvée</span> ';
+                        html += '<span class="ctb-status-badge ctb-status-pending">non trouvée</span> ';
                         html += '<button type="button" class="btn btn-sm btn-outline-primary create-variant-btn">Créer cette variante</button>';
                     }
                     html += '</div></div>';
@@ -140,14 +254,14 @@
                 // --- Carburants manquants (dédupliqués) ---
                 const missingFuels = [...new Set(result.rows.filter((r) => r.fuel.inputName && !r.fuel.found).map((r) => r.fuel.inputName))];
                 missingFuels.forEach((fuelName) => {
-                    html += '<div class="card mb-2"><div class="card-body">';
-                    html += '<strong>Énergie :</strong> ' + escapeHtml(fuelName) + ' <span class="badge bg-warning text-dark">non trouvée</span> ';
+                    html += '<div class="sw-card mb-2"><div class="card-body">';
+                    html += '<strong>Énergie :</strong> ' + escapeHtml(fuelName) + ' <span class="ctb-status-badge ctb-status-pending">non trouvée</span> ';
                     html += '<button type="button" class="btn btn-sm btn-outline-primary create-fuel-btn" data-fuel="' + escapeHtml(fuelName) + '">Créer cette énergie</button>';
                     html += '</div></div>';
                 });
 
                 // --- Tableau des motorisations ---
-                html += '<table class="table admin-table"><thead><tr>';
+                html += '<div class="sw-card"><div class="card-body p-0"><div class="table-responsive"><table class="table ctb-table mb-0"><thead><tr>';
                 html += '<th>Moteur</th><th>CV</th><th>kW</th><th>Cylindrée</th><th>Énergie</th><th>Période</th><th>Statut</th>';
                 html += '</tr></thead><tbody>';
                 result.rows.forEach((row) => {
@@ -155,20 +269,20 @@
                     const period = row.periodBegin
                         ? row.periodBegin.month + '.' + row.periodBegin.year + ' - ' + (row.periodEnd ? row.periodEnd.month + '.' + row.periodEnd.year : '...')
                         : '<span class="text-danger">manquante</span>';
-                    html += '<tr' + (row.engineExists ? ' class="table-secondary"' : '') + '>';
+                    html += '<tr>';
                     html += '<td><input type="text" class="form-control form-control-sm" value="' + escapeHtml(row.label) + '" ' + disabled + '></td>';
                     html += '<td><input type="number" class="form-control form-control-sm" value="' + (row.powerCv ?? '') + '" ' + disabled + '></td>';
                     html += '<td><input type="number" class="form-control form-control-sm" value="' + (row.powerKw ?? '') + '" ' + disabled + '></td>';
                     html += '<td>' + (row.displacementCc ?? '-') + '</td>';
-                    html += '<td>' + escapeHtml(row.fuel.inputName || '-') + (row.fuel.found ? ' <span class="badge bg-success">ok</span>' : (row.fuel.inputName ? ' <span class="badge bg-warning text-dark">à créer</span>' : '')) + '</td>';
+                    html += '<td>' + escapeHtml(row.fuel.inputName || '-') + (row.fuel.found ? ' <span class="ctb-status-badge ctb-status-active">ok</span>' : (row.fuel.inputName ? ' <span class="ctb-status-badge ctb-status-pending">à créer</span>' : '')) + '</td>';
                     html += '<td>' + period + '</td>';
-                    html += '<td>' + (row.engineExists ? '<span class="badge bg-secondary">existe déjà</span>' : '<span class="badge bg-info text-dark">nouvelle</span>') + '</td>';
+                    html += '<td>' + (row.engineExists ? '<span class="ctb-status-badge ctb-status-inactive">existe déjà</span>' : '<span class="ctb-status-badge ctb-status-active">nouvelle</span>') + '</td>';
                     html += '</tr>';
                 });
-                html += '</tbody></table>';
+                html += '</tbody></table></div></div></div>';
 
                 if (result.unrecognizedLines && result.unrecognizedLines.length > 0) {
-                    html += '<div class="alert alert-warning"><strong>Lignes non reconnues (ignorées) :</strong><br>' + result.unrecognizedLines.map(escapeHtml).join('<br>') + '</div>';
+                    html += '<div class="alert alert-warning mt-2"><strong>Lignes non reconnues (ignorées) :</strong><br>' + result.unrecognizedLines.map(escapeHtml).join('<br>') + '</div>';
                 }
 
                 resultBox.innerHTML = html;

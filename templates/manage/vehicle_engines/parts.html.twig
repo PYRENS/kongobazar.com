@@ -1,0 +1,187 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Pièces compatibles — {{ engine.label }}{% endblock %}
+{% block page_icon %}bi-gear-wide-connected{% endblock %}
+{% block page_title %}Pièces compatibles avec « {{ engine.label }} »{% endblock %}
+
+{% block body %}
+    <div class="sw-card mb-3">
+        <div class="card-body py-3">
+            <a href="{{ path('manage_vehicle_search') }}" class="btn btn-outline-secondary btn-sm mb-3"><i class="bi bi-arrow-left me-1"></i>Retour à la recherche</a>
+
+            <form method="get" id="partsFilterForm" class="d-flex align-items-center flex-wrap gap-2">
+                <div class="ctb-search-wrap" style="width:230px;">
+                    <i class="bi bi-search ctb-search-icon"></i>
+                    <input type="text" name="q" id="partSearchInput" class="ctb-search-input" placeholder="Rechercher une pièce..." value="{{ currentTerm }}" autocomplete="off">
+                    <div class="header-search-results" id="partSuggestions"></div>
+                </div>
+
+                <div class="geo-picker" data-geo-picker style="flex-direction:row;gap:6px;">
+                    <select data-geo-level="1" class="form-select form-select-sm" style="width:auto;">
+                        <option value="">— Toutes les provinces —</option>
+                        {% for province in provinces %}
+                            <option value="{{ province.id }}" {{ currentLocationUnit and currentLocationUnit.id == province.id ? 'selected' : '' }}>{{ province.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <input type="hidden" name="location" id="locationFinalInput" data-geo-final-value value="{{ currentLocationId }}">
+
+                <select name="condition" class="form-select form-select-sm" style="width:auto;">
+                    <option value="">Neuf/Occasion</option>
+                    <option value="new" {{ currentCondition == 'new' ? 'selected' : '' }}>Neuf</option>
+                    <option value="used" {{ currentCondition == 'used' ? 'selected' : '' }}>Occasion</option>
+                </select>
+
+                <select name="sort" class="form-select form-select-sm" style="width:auto;">
+                    <option value="createdAt" {{ currentSort == 'createdAt' ? 'selected' : '' }}>Plus récent</option>
+                    <option value="basePrice" {{ currentSort == 'basePrice' ? 'selected' : '' }}>Prix</option>
+                    <option value="salesCount" {{ currentSort == 'salesCount' ? 'selected' : '' }}>Ventes</option>
+                    <option value="title" {{ currentSort == 'title' ? 'selected' : '' }}>Titre</option>
+                </select>
+                <input type="hidden" name="dir" value="{{ currentDir }}">
+                <input type="hidden" name="brand" value="{{ currentBrand }}">
+                <input type="hidden" name="category" id="categoryHiddenInput" value="{{ currentCategory }}">
+
+                <select name="perPage" class="form-select form-select-sm" style="width:auto;">
+                    {% for n in [10, 20, 50, 100] %}
+                        <option value="{{ n }}" {{ perPage == n ? 'selected' : '' }}>{{ n }} / page</option>
+                    {% endfor %}
+                </select>
+
+                <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search me-1"></i>Filtrer</button>
+                <a href="{{ path('manage_vehicle_engine_parts', {id: engine.id}) }}" class="btn btn-outline-warning btn-sm">Reset</a>
+            </form>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-xl-3">
+            <div class="sw-card mb-3">
+                <div class="card-header"><h6 class="mb-0 fw-bold" style="font-size:12px;text-transform:uppercase;letter-spacing:0.05em;">Catégories</h6></div>
+                <div class="card-body p-2">
+                    <a href="{{ path('manage_vehicle_engine_parts', {id: engine.id}|merge(app.request.query.all|merge({category: null}))) }}"
+                       class="d-flex justify-content-between align-items-center px-2 py-1 rounded {{ not currentCategory ? 'fw-bold' : '' }}" style="text-decoration:none;color:inherit;">
+                        Toutes <span class="text-muted">{{ total }}</span>
+                    </a>
+                    {% for facet in categoryFacets %}
+                        <a href="{{ path('manage_vehicle_engine_parts', {id: engine.id}|merge(app.request.query.all|merge({category: facet.id}))) }}"
+                           class="d-flex justify-content-between align-items-center px-2 py-1 rounded {{ currentCategory == facet.id ? 'fw-bold text-primary' : '' }}" style="text-decoration:none;color:inherit;">
+                            {{ facet.name }} <span class="text-muted">({{ facet.total }})</span>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-9">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="btn-group">
+                    <button type="button" id="gridViewBtn" class="btn btn-sm btn-outline-secondary active" title="Vue grille"><i class="bi bi-grid-3x3-gap"></i></button>
+                    <button type="button" id="listViewBtn" class="btn btn-sm btn-outline-secondary" title="Vue liste"><i class="bi bi-list-ul"></i></button>
+                </div>
+                <span class="text-muted">{{ total }} pièce{{ total != 1 ? 's' : '' }} compatible{{ total != 1 ? 's' : '' }} — page {{ page }} / {{ pages }}</span>
+            </div>
+
+            <div id="partsResults">
+                {% for catName, products in grouped %}
+                    <div class="mb-4">
+                        <h6 class="fw-bold mb-3">{{ catName }} <span class="text-muted fw-normal">({{ products|length }})</span></h6>
+                        <div class="row g-3 parts-grid">
+                            {% for product in products %}
+                                {% set firstImage = product.images|first %}
+                                <div class="col-xl-3 col-md-4 col-6 part-card-col">
+                                    <div class="sw-card h-100 part-card">
+                                        <div class="part-card-image" style="height:150px;background:var(--body-bg);display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:12px 12px 0 0;flex-shrink:0;">
+                                            {% if firstImage %}
+                                                <img src="{{ vich_uploader_asset(firstImage, 'imageFile') }}" style="max-width:100%;max-height:100%;object-fit:contain;">
+                                            {% else %}
+                                                <i class="bi bi-box-seam text-muted" style="font-size:36px;"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="card-body part-card-body">
+                                            <h6 class="mb-1" style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ product.title }}">{{ product.title }}</h6>
+                                            <p class="text-muted mb-2" style="font-size:11px;">{{ product.brand ? product.brand.name : '—' }} · {{ product.condition == 'new' ? 'Neuf' : 'Occasion' }}</p>
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <strong>{{ product.basePrice }} {{ product.currency }}</strong>
+                                                <span class="text-muted" style="font-size:11px;">{{ product.salesCount }} vente{{ product.salesCount != 1 ? 's' : '' }}</span>
+                                            </div>
+                                            <div class="d-flex gap-1">
+                                                <a href="{{ path('manage_products_show', {id: product.id}) }}" class="btn btn-outline-secondary btn-sm flex-fill"><i class="bi bi-eye"></i></a>
+                                                <a href="{{ path('manage_products_edit', {id: product.id}) }}" class="btn btn-outline-primary btn-sm flex-fill"><i class="bi bi-pencil"></i></a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="sw-card">
+                        <div class="card-body text-center text-muted py-5">
+                            <i class="bi bi-inbox" style="font-size:40px;"></i>
+                            <p class="mt-2 mb-0">Aucune pièce ne correspond à ces critères.</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            {% if pages > 1 %}
+                <div class="d-flex justify-content-center mt-3">
+                    <div class="ctb-pagination">
+                        <a href="{{ path('manage_vehicle_engine_parts', {id: engine.id}|merge(app.request.query.all|merge({page: max(1, page - 1)}))) }}" class="ctb-page-btn {{ page <= 1 ? 'disabled' : '' }}"><i class="bi bi-chevron-left"></i></a>
+                        {% for p in max(1, page - 2)..min(pages, page + 2) %}
+                            <a href="{{ path('manage_vehicle_engine_parts', {id: engine.id}|merge(app.request.query.all|merge({page: p}))) }}" class="ctb-page-btn {{ p == page ? 'ctb-page-active' : '' }}">{{ p }}</a>
+                        {% endfor %}
+                        <a href="{{ path('manage_vehicle_engine_parts', {id: engine.id}|merge(app.request.query.all|merge({page: min(pages, page + 1)}))) }}" class="ctb-page-btn {{ page >= pages ? 'disabled' : '' }}"><i class="bi bi-chevron-right"></i></a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    <script src="{{ asset('assets/js/manage/geo-picker.js') }}"></script>
+    <script>
+        const allPartTitles = {{ allTitles|json_encode|raw }};
+        const partSearchInput = document.getElementById('partSearchInput');
+        const partSuggestions = document.getElementById('partSuggestions');
+
+        function renderPartSuggestions(term) {
+            partSuggestions.innerHTML = '';
+            if (!term) { partSuggestions.classList.remove('active'); return; }
+            const matches = allPartTitles.filter((t) => t.toLowerCase().includes(term.toLowerCase())).slice(0, 8);
+            if (matches.length === 0) { partSuggestions.classList.remove('active'); return; }
+            matches.forEach((title) => {
+                const item = document.createElement('div');
+                item.className = 'header-search-result-item';
+                item.innerHTML = '<i class="bi bi-box-seam"></i><span>' + title + '</span>';
+                item.addEventListener('click', () => {
+                    partSearchInput.value = title;
+                    partSuggestions.classList.remove('active');
+                    document.getElementById('partsFilterForm').submit();
+                });
+                partSuggestions.appendChild(item);
+            });
+            partSuggestions.classList.add('active');
+        }
+
+        partSearchInput.addEventListener('input', () => renderPartSuggestions(partSearchInput.value.trim()));
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.ctb-search-wrap')) partSuggestions.classList.remove('active');
+        });
+
+        // --- Bascule grille / liste (purement visuel, sans recharger la page) ---
+        const gridBtn = document.getElementById('gridViewBtn');
+        const listBtn = document.getElementById('listViewBtn');
+        const resultsBox = document.getElementById('partsResults');
+
+        function setViewMode(mode) {
+            resultsBox.classList.toggle('parts-list-mode', mode === 'list');
+            gridBtn.classList.toggle('active', mode === 'grid');
+            listBtn.classList.toggle('active', mode === 'list');
+        }
+        gridBtn.addEventListener('click', () => setViewMode('grid'));
+        listBtn.addEventListener('click', () => setViewMode('list'));
+    </script>
+{% endblock %}

@@ -1,8 +1,8 @@
 {% extends 'manage/base.html.twig' %}
 
-{% block title %}{{ brand.name }} — Marque{% endblock %}
+{% block title %}Marque : {{ brand.name }}{% endblock %}
 {% block page_icon %}bi-award{% endblock %}
-{% block page_title %}{{ brand.name }}{% endblock %}
+{% block page_title %}Marque : {{ brand.name }}{% endblock %}
 
 {% macro sortLink(field, label, currentSort, currentDir) %}
     {% set nextDir = (currentSort == field and currentDir == 'ASC') ? 'DESC' : 'ASC' %}
@@ -18,176 +18,190 @@
 {% import _self as self %}
 
 {% block body %}
-    <nav class="admin-breadcrumb">
+    <nav class="admin-breadcrumb mb-3">
         <a href="{{ path('manage_brands_index') }}"><i class="bi bi-award"></i> Marques</a>
         <i class="bi bi-chevron-right"></i>
         <span>{{ brand.name }}</span>
     </nav>
 
-    {# --- Section 1 : Informations --- #}
-    <div class="admin-card" style="margin-top:12px;">
-        <div class="admin-info-illustration-row">
-            <div class="admin-info-col">
-                <h6><i class="bi bi-info-circle"></i> Informations de la marque</h6>
-                <table class="admin-table" style="box-shadow:none;margin-bottom:16px;">
-                    <tr><td><strong>Nom</strong></td><td>{{ brand.name }}</td></tr>
-                    {% if brand.sigle %}
-                        <tr><td><strong>Sigle</strong></td><td>{{ brand.sigle }}</td></tr>
-                    {% endif %}
-                    <tr>
-                        <td><strong>Pays</strong></td>
-                        <td>
-                            {% if brand.pays %}
-                                <span class="fi fi-{{ brand.pays.iso2|lower }}"></span> {{ brand.pays.name }}
-                            {% else %}—{% endif %}
-                        </td>
-                    </tr>
-                    <tr><td><strong>Type</strong></td><td>{{ brand.type ? brand.type|join(', ') : 'Générique' }}</td></tr>
-                    <tr><td><strong>Vérifiée</strong></td><td>{{ brand.verified ? 'Oui' : 'Non' }}</td></tr>
-                    <tr>
-                        <td><strong>Statut</strong></td>
-                        <td><span class="admin-badge admin-badge--{{ brand.active ? 'active' : 'disabled' }}">{{ brand.active ? 'Active' : 'Désactivée' }}</span></td>
-                    </tr>
-                </table>
-
-                <div class="admin-actions">
-                    <a href="{{ path('manage_brands_index') }}" class="admin-btn admin-btn--outline">← Retour</a>
-                    <a href="{{ path('manage_brands_edit', {id: brand.id}) }}" class="admin-btn admin-btn--outline"><i class="bi bi-pencil"></i> Modifier</a>
-                    <form action="{{ path('manage_brands_toggle', {id: brand.id}) }}" method="post">
-                        <button type="submit" class="admin-btn admin-btn--outline">
-                            <i class="bi {{ brand.active ? 'bi-pause-circle' : 'bi-check-circle' }}"></i>
-                            {{ brand.active ? 'Désactiver' : 'Activer' }}
-                        </button>
-                    </form>
+    {# --- Section 2 (déplacée ici) : Statistiques --- #}
+    <div class="row g-3 mb-3">
+        {% if isVehicle %}
+            {% if isAuto %}
+                <div class="col-xl-3 col-md-6">
+                    <div class="sw-card ctb-stat ctb-stat-blue h-100">
+                        <div class="ctb-stat-icon ctb-stat-icon-blue"><i class="bi bi-car-front"></i></div>
+                        <div class="ctb-stat-val"><a href="{{ path('manage_vehicle_models_index', {brand: brand.id, auto: 1}) }}">{{ autoModelCount }}</a></div>
+                        <div class="ctb-stat-label">Modèles Auto</div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="sw-card ctb-stat ctb-stat-green h-100">
+                        <div class="ctb-stat-icon ctb-stat-icon-green"><i class="bi bi-diagram-3"></i></div>
+                        <div class="ctb-stat-val">
+                            {% if autoVariantCount > 0 %}<a href="{{ path('manage_vehicle_variants_index', {q: brand.name}) }}">{{ autoVariantCount }}</a>{% else %}0{% endif %}
+                        </div>
+                        <div class="ctb-stat-label">Variantes Auto</div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="sw-card ctb-stat ctb-stat-purple h-100">
+                        <div class="ctb-stat-icon ctb-stat-icon-purple"><i class="bi bi-gear"></i></div>
+                        <div class="ctb-stat-val">
+                            {% if autoEngineCount > 0 %}<a href="{{ path('manage_vehicle_engines_index') }}">{{ autoEngineCount }}</a>{% else %}0{% endif %}
+                        </div>
+                        <div class="ctb-stat-label">Motorisations Auto</div>
+                    </div>
+                </div>
+            {% endif %}
+            {% if isMoto %}
+                <div class="col-xl-3 col-md-6">
+                    <div class="sw-card ctb-stat ctb-stat-orange h-100">
+                        <div class="ctb-stat-icon ctb-stat-icon-orange"><i class="bi bi-scooter"></i></div>
+                        <div class="ctb-stat-val"><a href="{{ path('manage_vehicle_models_index', {brand: brand.id, moto: 1}) }}">{{ motoModelCount }}</a></div>
+                        <div class="ctb-stat-label">Modèles Moto</div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="sw-card ctb-stat ctb-stat-blue h-100">
+                        <div class="ctb-stat-icon ctb-stat-icon-blue"><i class="bi bi-gear"></i></div>
+                        <div class="ctb-stat-val">
+                            {% if motoEngineCount > 0 %}<a href="{{ path('manage_vehicle_engines_index') }}">{{ motoEngineCount }}</a>{% else %}0{% endif %}
+                        </div>
+                        <div class="ctb-stat-label">Motorisations Moto</div>
+                    </div>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="col-xl-3 col-md-6">
+                <div class="sw-card ctb-stat ctb-stat-blue h-100">
+                    <div class="ctb-stat-icon ctb-stat-icon-blue"><i class="bi bi-box-seam"></i></div>
+                    <div class="ctb-stat-val">
+                        {% if productCount > 0 %}<a href="{{ path('manage_brands_products', {id: brand.id}) }}">{{ productCount }}</a>{% else %}0{% endif %}
+                    </div>
+                    <div class="ctb-stat-label">Produits</div>
                 </div>
             </div>
+        {% endif %}
+    </div>
 
-            <div class="admin-illustration-col">
-                <span class="admin-illustration-label">Logo</span>
-                {% if brand.logoName %}
-                    <img src="{{ vich_uploader_asset(brand, 'logoFile') }}" class="admin-illustration-preview admin-illustration-preview--logo">
-                {% else %}
-                    <div class="admin-illustration-empty">
-                        <i class="bi bi-award"></i>
+    {# --- Section 1 : Informations --- #}
+    <div class="row g-3 mb-3">
+        <div class="col-xl-8">
+            <div class="sw-card h-100">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-info-circle me-2"></i>Informations de la marque</h6>
+                    <span class="ctb-status-badge {{ brand.active ? 'ctb-status-active' : 'ctb-status-inactive' }}">{{ brand.active ? 'Active' : 'Désactivée' }}</span>
+                </div>
+                <div class="card-body">
+                    <table class="table mb-3">
+                        <tr><td class="text-muted" style="width:220px;">Nom</td><td class="fw-bold">{{ brand.name }}</td></tr>
+                        {% if brand.sigle %}<tr><td class="text-muted">Sigle</td><td>{{ brand.sigle }}</td></tr>{% endif %}
+                        <tr>
+                            <td class="text-muted">Pays</td>
+                            <td>
+                                {% if brand.pays %}
+                                    <span class="fi fi-{{ brand.pays.iso2|lower }}"></span> {{ brand.pays.name }}
+                                {% else %}—{% endif %}
+                            </td>
+                        </tr>
+                        <tr><td class="text-muted">Type</td><td>{{ brand.type ? brand.type|join(', ') : 'Générique' }}</td></tr>
+                        <tr>
+                            <td class="text-muted">Vérifiée</td>
+                            <td>
+                                {% if brand.verified %}
+                                    <span class="ctb-status-badge ctb-status-active"><i class="bi bi-patch-check"></i> Oui</span>
+                                {% else %}Non{% endif %}
+                            </td>
+                        </tr>
+                    </table>
+
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="{{ path('manage_brands_index') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Retour</a>
+                        <a href="{{ path('manage_brands_edit', {id: brand.id}) }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-pencil me-1"></i>Modifier</a>
+                        <form action="{{ path('manage_brands_toggle', {id: brand.id}) }}" method="post">
+                            <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi {{ brand.active ? 'bi-pause-circle' : 'bi-check-circle' }} me-1"></i>
+                                {{ brand.active ? 'Désactiver' : 'Activer' }}
+                            </button>
+                        </form>
                     </div>
-                {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4">
+            <div class="sw-card h-100">
+                <div class="card-header"><h6 class="mb-0 fw-bold">Logo</h6></div>
+                <div class="card-body d-flex align-items-center justify-content-center" style="min-height:200px;">
+                    {% if brand.logoName %}
+                        <img src="{{ vich_uploader_asset(brand, 'logoFile') }}" style="max-width:100%;max-height:180px;object-fit:contain;">
+                    {% else %}
+                        <div class="text-muted text-center">
+                            <i class="bi bi-award" style="font-size:48px;"></i>
+                            <p class="mt-2 mb-0">Aucun logo</p>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
 
-    {# --- Section 2 : Statistiques --- #}
-    <div class="admin-card">
-        <h6><i class="bi bi-bar-chart"></i> Statistiques</h6>
-        {% if isVehicle %}
-            <div class="row">
-                {% if isAuto %}
-                    <div class="col-md-6">
-                        <p class="fw-bold mb-1"><i class="bi bi-car-front"></i> Auto</p>
-                        <table class="admin-table" style="box-shadow:none;">
-                            <tr><td>Modèles</td><td><a href="{{ path('manage_vehicle_models_index', {brand: brand.id, auto: 1}) }}">{{ autoModelCount }}</a></td></tr>
-                            <tr>
-                                <td>Variantes</td>
-                                <td>
-                                    {% if autoVariantCount > 0 %}
-                                        <a href="{{ path('manage_vehicle_variants_index', {q: brand.name}) }}">{{ autoVariantCount }}</a>
-                                    {% else %}0{% endif %}
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Motorisations</td>
-                                <td>
-                                    {% if autoEngineCount > 0 %}
-                                        <a href="{{ path('manage_vehicle_engines_index') }}">{{ autoEngineCount }}</a>
-                                    {% else %}0{% endif %}
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                {% endif %}
-                {% if isMoto %}
-                    <div class="col-md-6">
-                        <p class="fw-bold mb-1"><i class="bi bi-scooter"></i> Moto</p>
-                        <table class="admin-table" style="box-shadow:none;">
-                            <tr><td>Modèles</td><td><a href="{{ path('manage_vehicle_models_index', {brand: brand.id, moto: 1}) }}">{{ motoModelCount }}</a></td></tr>
-                            <tr>
-                                <td>Motorisations</td>
-                                <td>
-                                    {% if motoEngineCount > 0 %}
-                                        <a href="{{ path('manage_vehicle_engines_index') }}">{{ motoEngineCount }}</a>
-                                    {% else %}0{% endif %}
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                {% endif %}
-            </div>
-        {% else %}
-            <table class="admin-table" style="box-shadow:none;">
-                <tr>
-                    <td>Produits</td>
-                    <td>
-                        {% if productCount > 0 %}
-                            <a href="{{ path('manage_brands_products', {id: brand.id}) }}">{{ productCount }}</a>
-                        {% else %}
-                            0
-                        {% endif %}
-                    </td>
-                </tr>
-            </table>
-        {% endif %}
-    </div>
-
     {# --- Section 3 : Tableau des modèles (Auto/Moto uniquement) --- #}
     {% if isVehicle %}
-        <div class="admin-card">
-            <h6><i class="bi bi-car-front"></i> Modèles de {{ brand.name }}</h6>
-            <a href="{{ path('manage_vehicle_models_new') }}" class="admin-btn admin-btn--primary" style="margin-bottom:12px;">
-                <i class="bi bi-plus-lg"></i> Ajouter un modèle
-            </a>
-
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>{{ self.sortLink('name', 'Nom', currentSort, currentDir) }}</th>
-                        <th>{{ self.sortLink('name2', 'Nom alternatif', currentSort, currentDir) }}</th>
-                        <th>{{ self.sortLink('type', 'Type', currentSort, currentDir) }}</th>
-                        <th>{{ self.sortLink('primaryCount', 'Variantes/Motorisations', currentSort, currentDir) }}</th>
-                        <th>{{ self.sortLink('engineCount', 'Motorisations', currentSort, currentDir) }}</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in modelRows %}
-                        {% set model = row.model %}
-                        <tr>
-                            <td><a href="{{ path('manage_vehicle_models_show', {id: model.id}) }}">{{ model.name }}</a></td>
-                            <td>{{ model.name2 ?: '—' }}</td>
-                            <td>{{ model.isMoto ? 'Moto' : 'Auto' }}</td>
-                            <td>
-                                {% if row.primaryCount > 0 %}
-                                    <a href="{{ path('manage_vehicle_models_show', {id: model.id}) }}#{{ model.isMoto ? 'motorisations' : 'variantes' }}">{{ row.primaryCount }}</a>
-                                {% else %}0{% endif %}
-                            </td>
-                            <td>
-                                {% if row.engineCount %}
-                                    <a href="{{ path('manage_vehicle_models_show', {id: model.id}) }}#motorisations">{{ row.engineCount }}</a>
-                                {% else %}
-                                    {{ row.engineCount is not null ? '0' : '—' }}
-                                {% endif %}
-                            </td>
-                            <td class="admin-actions">
-                                <a href="{{ path('manage_vehicle_models_show', {id: model.id}) }}" class="admin-btn admin-btn--outline"><i class="bi bi-eye"></i></a>
-                                <a href="{{ path('manage_vehicle_models_edit', {id: model.id}) }}" class="admin-btn admin-btn--outline"><i class="bi bi-pencil"></i></a>
-                                <form action="{{ path('manage_vehicle_models_delete', {id: model.id}) }}" method="post" onsubmit="return confirm('Supprimer ce modèle ?');">
-                                    <button type="submit" class="admin-btn admin-btn--outline"><i class="bi bi-trash"></i></button>
-                                </form>
-                            </td>
-                        </tr>
-                    {% else %}
-                        <tr><td colspan="6" class="text-muted">Aucun modèle pour cette marque.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="sw-card">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-car-front me-2"></i>Modèles de {{ brand.name }}</h6>
+                <a href="{{ path('manage_vehicle_models_new') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Ajouter un modèle</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table ctb-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>{{ self.sortLink('name', 'Nom', currentSort, currentDir) }}</th>
+                                <th>{{ self.sortLink('name2', 'Nom alternatif', currentSort, currentDir) }}</th>
+                                <th>{{ self.sortLink('type', 'Type', currentSort, currentDir) }}</th>
+                                <th>{{ self.sortLink('primaryCount', 'Variantes/Motorisations', currentSort, currentDir) }}</th>
+                                <th>{{ self.sortLink('engineCount', 'Motorisations', currentSort, currentDir) }}</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in modelRows %}
+                                {% set model = row.model %}
+                                <tr>
+                                    <td class="ctb-contact-name"><a href="{{ path('manage_vehicle_models_show', {id: model.id}) }}">{{ model.name }}</a></td>
+                                    <td>{{ model.name2 ?: '—' }}</td>
+                                    <td>{{ model.isMoto ? 'Moto' : 'Auto' }}</td>
+                                    <td>
+                                        {% if row.primaryCount > 0 %}
+                                            <a href="{{ path('manage_vehicle_models_show', {id: model.id}) }}#{{ model.isMoto ? 'motorisations' : 'variantes' }}">{{ row.primaryCount }}</a>
+                                        {% else %}0{% endif %}
+                                    </td>
+                                    <td>
+                                        {% if row.engineCount %}
+                                            <a href="{{ path('manage_vehicle_models_show', {id: model.id}) }}#motorisations">{{ row.engineCount }}</a>
+                                        {% else %}
+                                            {{ row.engineCount is not null ? '0' : '—' }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="ctb-act-row">
+                                            <a href="{{ path('manage_vehicle_models_show', {id: model.id}) }}" class="ctb-act-btn" title="Voir"><i class="bi bi-eye"></i></a>
+                                            <a href="{{ path('manage_vehicle_models_edit', {id: model.id}) }}" class="ctb-act-btn" title="Modifier"><i class="bi bi-pencil"></i></a>
+                                            <form action="{{ path('manage_vehicle_models_delete', {id: model.id}) }}" method="post" onsubmit="return confirm('Supprimer ce modèle ?');">
+                                                <button type="submit" class="ctb-act-btn ctb-act-danger" title="Supprimer"><i class="bi bi-trash"></i></button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr><td colspan="6" class="text-muted text-center py-4">Aucun modèle pour cette marque.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     {% endif %}
 {% endblock %}

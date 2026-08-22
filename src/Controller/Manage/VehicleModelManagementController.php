@@ -45,6 +45,12 @@ class VehicleModelManagementController extends AbstractController
         $sortDir = $request->query->get('dir', 'ASC');
         $rows = $this->sortRows($rows, $sortField, $sortDir);
 
+        $total = count($rows);
+        $perPage = in_array((int) $request->query->get('perPage', 20), [10, 20, 50, 100], true)
+            ? (int) $request->query->get('perPage', 20) : 20;
+        $page = max(1, (int) $request->query->get('page', 1));
+        $rows = array_slice($rows, ($page - 1) * $perPage, $perPage);
+
         return $this->render('manage/vehicle_models/index.html.twig', [
             'rows' => $rows,
             'brands' => $brandRepository->findVehicleBrands(),
@@ -55,6 +61,17 @@ class VehicleModelManagementController extends AbstractController
             'searchTerm' => $searchTerm,
             'currentSort' => $sortField,
             'currentDir' => $sortDir,
+            'page' => $page,
+            'pages' => max(1, (int) ceil($total / $perPage)),
+            'perPage' => $perPage,
+            'total' => $total,
+            'stats' => [
+                'total' => $repository->countAll(),
+                'auto' => $repository->countByType(false),
+                'moto' => $repository->countByType(true),
+                'filtered' => $total,
+            ],
+            'allModelNames' => array_map(fn ($m) => $m->getName(), $repository->findFiltered($brandId, $filterAuto, $filterMoto, null)),
         ]);
     }
 
@@ -65,37 +82,117 @@ class VehicleModelManagementController extends AbstractController
         \App\Repository\VehicleVariantRepository $variantRepository,
         \App\Repository\VehicleEngineRepository $engineRepository
     ): Response {
-        $perPage = 10;
-        $variantsPage = max(1, (int) $request->query->get('variants_page', 1));
-        $enginesPage = max(1, (int) $request->query->get('engines_page', 1));
-        $variantsSort = $request->query->get('variants_sort', 'yearBegin');
-        $variantsDir = $request->query->get('variants_dir', 'DESC');
-        $enginesSort = $request->query->get('engines_sort', 'label');
-        $enginesDir = $request->query->get('engines_dir', 'ASC');
+        $vData = $this->buildVariantsData($model, $request, $variantRepository);
+        $eData = $this->buildEnginesData($model, $request, $engineRepository);
 
-        $allVariants = $model->isMoto() ? [] : $variantRepository->findByModel($model->getId());
-        $allEngines = $model->isMoto()
+        return $this->render('manage/vehicle_models/show.html.twig', array_merge(
+            ['model' => $model],
+            $vData,
+            $eData
+        ));
+    }
+
+    #[Route('/vehicules/modeles/{id}/variantes-fragment', name: 'manage_vehicle_models_variants_fragment', host: 'manage.kongobazar.com', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function variantsFragment(VehicleModel $model, Request $request, \App\Repository\VehicleVariantRepository $variantRepository): Response
+    {
+        return $this->render('manage/vehicle_models/_variants_table.html.twig',
+            array_merge(['model' => $model], $this->buildVariantsData($model, $request, $variantRepository))
+        );
+    }
+
+    #[Route('/vehicules/modeles/{id}/motorisations-fragment', name: 'manage_vehicle_models_engines_fragment', host: 'manage.kongobazar.com', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function enginesFragment(VehicleModel $model, Request $request, \App\Repository\VehicleEngineRepository $engineRepository): Response
+    {
+        return $this->render('manage/vehicle_models/_engines_table.html.twig',
+            array_merge(['model' => $model], $this->buildEnginesData($model, $request, $engineRepository))
+        );
+    }
+
+    private function resolvePerPage(Request $request, string $key): int
+    {
+        $val = (int) $request->query->get($key, 10);
+        return in_array($val, [10, 20, 50, 100], true) ? $val : 10;
+    }
+
+    private function buildVariantsData(VehicleModel $model, Request $request, \App\Repository\VehicleVariantRepository $variantRepository): array
+    {
+        $term = trim((string) $request->query->get('variants_q', ''));
+        $sort = $request->query->get('variants_sort', 'yearBegin');
+        $dir = $request->query->get('variants_dir', 'DESC');
+        $page = max(1, (int) $request->query->get('variants_page', 1));
+        $perPage = $this->resolvePerPage($request, 'variants_perpage');
+
+        $raw = $model->isMoto() ? [] : $variantRepository->findByModel($model->getId());
+        $allNames = array_values(array_map(function ($v) {
+            $period = $v->getMonthBegin() . '/' . $v->getYearBegin() . ' — ' . ($v->getMonthEnd() ? $v->getMonthEnd() . '/' . $v->getYearEnd() : '...');
+            return [
+                'value' => $v->getName() ?: '-',
+                'label' => ($v->getName() ?: '-') . ' (' . $period . ')',
+            ];
+        }, $raw));
+
+        $filtered = $term === ''
+            ? $raw
+            : array_values(array_filter($raw, fn ($v) => str_contains(mb_strtolower($v->getName() ?? ''), mb_strtolower($term))));
+
+        $filtered = $this->sortVariants($filtered, $sort, $dir);
+        $total = count($filtered);
+
+        return [
+            'variants' => array_slice($filtered, ($page - 1) * $perPage, $perPage),
+            'variantsPage' => $page,
+            'variantsPages' => max(1, (int) ceil($total / $perPage)),
+            'variantsTotal' => $total,
+            'variantsSort' => $sort,
+            'variantsDir' => $dir,
+            'variantsPerPage' => $perPage,
+            'variantsTerm' => $term,
+            'allVariantNames' => $allNames,
+        ];
+    }
+
+    private function buildEnginesData(VehicleModel $model, Request $request, \App\Repository\VehicleEngineRepository $engineRepository): array
+    {
+        $term = trim((string) $request->query->get('engines_q', ''));
+        $sort = $request->query->get('engines_sort', 'label');
+        $dir = $request->query->get('engines_dir', 'ASC');
+        $page = max(1, (int) $request->query->get('engines_page', 1));
+        $perPage = $this->resolvePerPage($request, 'engines_perpage');
+
+        $raw = $model->isMoto()
             ? $engineRepository->findByModel($model->getId())
             : $engineRepository->findByModelViaVariants($model->getId());
+        $allLabels = array_values(array_map(function ($e) {
+            $period = $e->getPeriodLabel();
+            $parts = array_filter([
+                $e->getLabel(),
+                $e->getFuelType() ? $e->getFuelType()->getName() : null,
+                $e->getPowerCv() ? $e->getPowerCv() . ' Cv' : null,
+            ]);
+            $base = implode(' ', $parts);
+            return [
+                'value' => $e->getLabel(),
+                'label' => $period ? $base . ' (' . $period . ')' : $base,
+            ];
+        }, $raw));
+        $filtered = $term === ''
+            ? $raw
+            : array_values(array_filter($raw, fn ($e) => str_contains(mb_strtolower($e->getLabel() ?? ''), mb_strtolower($term))));
 
-        $allVariants = $this->sortVariants($allVariants, $variantsSort, $variantsDir);
-        $allEngines = $this->sortEngines($allEngines, $enginesSort, $enginesDir);
+        $filtered = $this->sortEngines($filtered, $sort, $dir);
+        $total = count($filtered);
 
-        return $this->render('manage/vehicle_models/show.html.twig', [
-            'model' => $model,
-            'variants' => array_slice($allVariants, ($variantsPage - 1) * $perPage, $perPage),
-            'variantsPage' => $variantsPage,
-            'variantsPages' => max(1, (int) ceil(count($allVariants) / $perPage)),
-            'variantsTotal' => count($allVariants),
-            'variantsSort' => $variantsSort,
-            'variantsDir' => $variantsDir,
-            'engines' => array_slice($allEngines, ($enginesPage - 1) * $perPage, $perPage),
-            'enginesPage' => $enginesPage,
-            'enginesPages' => max(1, (int) ceil(count($allEngines) / $perPage)),
-            'enginesTotal' => count($allEngines),
-            'enginesSort' => $enginesSort,
-            'enginesDir' => $enginesDir,
-        ]);
+        return [
+            'engines' => array_slice($filtered, ($page - 1) * $perPage, $perPage),
+            'enginesPage' => $page,
+            'enginesPages' => max(1, (int) ceil($total / $perPage)),
+            'enginesTotal' => $total,
+            'enginesSort' => $sort,
+            'enginesDir' => $dir,
+            'enginesPerPage' => $perPage,
+            'enginesTerm' => $term,
+            'allEngineLabels' => $allLabels,
+        ];
     }
 
     private function sortVariants(array $variants, string $field, string $dir): array
@@ -125,7 +222,7 @@ class VehicleModelManagementController extends AbstractController
 
     private function sortEngines(array $engines, string $field, string $dir): array
     {
-        $allowed = ['label', 'powerCv', 'powerKw', 'period', 'fuelType'];
+        $allowed = ['label', 'powerCv', 'powerKw', 'period', 'fuelType', 'variant'];
         if (!in_array($field, $allowed, true)) {
             $field = 'label';
         }
@@ -137,6 +234,7 @@ class VehicleModelManagementController extends AbstractController
                 'powerKw' => $a->getPowerKw() ?? -1,
                 'period' => $a->getYearStart() ?? 0,
                 'fuelType' => $a->getFuelType()?->getName() ?? '',
+                'variant' => $a->getVariant() ? ($a->getVariant()->getName() ?? '') : '',
                 default => $a->getLabel(),
             };
             $valB = match ($field) {
@@ -144,6 +242,7 @@ class VehicleModelManagementController extends AbstractController
                 'powerKw' => $b->getPowerKw() ?? -1,
                 'period' => $b->getYearStart() ?? 0,
                 'fuelType' => $b->getFuelType()?->getName() ?? '',
+                'variant' => $b->getVariant() ? ($b->getVariant()->getName() ?? '') : '',
                 default => $b->getLabel(),
             };
             return $dirMultiplier * ($valA <=> $valB);

@@ -36,7 +36,7 @@ function fetchAndAppendCategoryLevel(parentId, picker, finalInput, level, exclud
 
             const newSelect = document.createElement('select');
             newSelect.dataset.categoryLevel = String(level);
-            newSelect.className = 'form-select mb-2';
+            newSelect.className = picker.querySelector('select[data-category-level="1"]').className;
             newSelect.innerHTML = '<option value="">— Sous-catégorie —</option>';
             data.results.forEach((cat) => {
                 const opt = document.createElement('option');

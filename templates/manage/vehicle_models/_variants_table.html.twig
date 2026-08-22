@@ -1,0 +1,62 @@
+{% macro ajaxSortLink(field, label, currentSort, currentDir) %}
+    {% set nextDir = (currentSort == field and currentDir == 'ASC') ? 'DESC' : 'ASC' %}
+    <a href="#" class="admin-sort-link js-ajax-sort" data-sort="{{ field }}" data-dir="{{ nextDir }}">
+        {{ label }}
+        {% if currentSort == field %}
+            <i class="bi bi-caret-{{ currentDir == 'ASC' ? 'up' : 'down' }}-fill"></i>
+        {% else %}
+            <i class="bi bi-arrow-down-up admin-sort-icon-idle"></i>
+        {% endif %}
+    </a>
+{% endmacro %}
+{% import _self as self %}
+
+<div class="table-responsive">
+    <table class="table ctb-table mb-0">
+        <thead>
+            <tr>
+                <th>{{ self.ajaxSortLink('name', 'Variante', variantsSort, variantsDir) }}</th>
+                <th>{{ self.ajaxSortLink('yearBegin', 'Période', variantsSort, variantsDir) }}</th>
+                <th>{{ self.ajaxSortLink('engineCount', 'Motorisations', variantsSort, variantsDir) }}</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for variant in variants %}
+                {% set variantEngineCount = variant.engines|length %}
+                <tr>
+                    <td class="ctb-contact-name"><a href="{{ path('manage_vehicle_variants_show', {id: variant.id}) }}">{{ variant.name ?: '-' }}</a></td>
+                    <td>{{ variant.monthBegin }}/{{ variant.yearBegin }} — {{ variant.monthEnd ? variant.monthEnd ~ '/' ~ variant.yearEnd : '...' }}</td>
+                    <td>
+                        {% if variantEngineCount > 0 %}
+                            <a href="{{ path('manage_vehicle_variants_show', {id: variant.id}) }}#motorisations">{{ variantEngineCount }}</a>
+                        {% else %}0{% endif %}
+                    </td>
+                    <td>
+                        <div class="ctb-act-row">
+                            <a href="{{ path('manage_vehicle_variants_show', {id: variant.id}) }}" class="ctb-act-btn" title="Voir"><i class="bi bi-eye"></i></a>
+                            <a href="{{ path('manage_vehicle_variants_edit', {id: variant.id}) }}" class="ctb-act-btn" title="Modifier"><i class="bi bi-pencil"></i></a>
+                            <form action="{{ path('manage_vehicle_variants_delete', {id: variant.id}) }}" method="post" onsubmit="return confirm('Supprimer cette variante ?');">
+                                <button type="submit" class="ctb-act-btn ctb-act-danger" title="Supprimer"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="4" class="text-muted text-center py-4">{{ model.isMoto ? 'Modèle Moto — pas de variante.' : (variantsTerm ? 'Aucune variante ne correspond à la recherche.' : 'Aucune variante pour ce modèle.') }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<div class="ctb-table-footer">
+    <span class="ctb-footer-info">{{ variantsTotal }} variante{{ variantsTotal != 1 ? 's' : '' }} — page {{ variantsPage }} / {{ variantsPages }}</span>
+    {% if variantsPages > 1 %}
+        <div class="ctb-pagination">
+            <a href="#" class="ctb-page-btn js-ajax-page {{ variantsPage <= 1 ? 'disabled' : '' }}" data-page="{{ max(1, variantsPage - 1) }}"><i class="bi bi-chevron-left"></i></a>
+            {% for p in max(1, variantsPage - 2)..min(variantsPages, variantsPage + 2) %}
+                <a href="#" class="ctb-page-btn js-ajax-page {{ p == variantsPage ? 'ctb-page-active' : '' }}" data-page="{{ p }}">{{ p }}</a>
+            {% endfor %}
+            <a href="#" class="ctb-page-btn js-ajax-page {{ variantsPage >= variantsPages ? 'disabled' : '' }}" data-page="{{ min(variantsPages, variantsPage + 1) }}"><i class="bi bi-chevron-right"></i></a>
+        </div>
+    {% endif %}
+</div>

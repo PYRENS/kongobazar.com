@@ -72,6 +72,16 @@ class SellerProfileRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
+    public function countByStatus(string $status): int
+    {
+        return (int) $this->createQueryBuilder('s')
+            ->select('COUNT(s.id)')
+            ->andWhere('s.status = :status')
+            ->setParameter('status', $status)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     public function countByType(string $type): int
     {
         $class = match ($type) {

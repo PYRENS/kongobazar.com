@@ -39,6 +39,16 @@
             {% endif %}
             <h1 class="product-title">{{ product.title }}</h1>
 
+            {% if product.authenticityStatus %}
+                <div class="product-authenticity-badge product-authenticity-{{ product.authenticityStatus }}" title="Déclaration du vendeur — KongoBazar ne certifie pas l'authenticité.">
+                    {% if product.authenticityStatus == 'original' %}
+                        <i class="bi bi-patch-check-fill"></i> Original — déclaré par le vendeur
+                    {% else %}
+                        <i class="bi bi-info-circle"></i> Réplique / inspiré — déclaré par le vendeur
+                    {% endif %}
+                </div>
+            {% endif %}
+
             <div class="product-rating-row">
                 <span class="product-stars">★★★★☆</span>
                 <span class="product-rating-count">({{ 'product.reviews_soon'|trans }})</span>
