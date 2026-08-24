@@ -30,11 +30,11 @@
                 {% else %}
                     <div class="col-12">
                         <label class="acc-form-label">Catégorie parente</label>
-                        <div class="category-picker" data-category-picker data-category-exclude="{{ category.id }}">
+                        <div class="category-picker" data-category-picker data-category-exclude="{{ category.id }}" data-preselected-ancestors="{{ parentAncestorIds }}">
                             <select data-category-level="1" class="acc-form-select">
                                 <option value="">— Aucune (rayon racine) —</option>
                                 {% for root in rootCategories %}
-                                    <option value="{{ root.id }}" {{ parent and parent.parent is null and parent.id == root.id ? 'selected' : '' }}>{{ root.name }}</option>
+                                    <option value="{{ root.id }}">{{ root.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -79,6 +79,37 @@
                         {{ category and category.authenticityRelevant ? 'checked' : '' }}>
                     <label class="form-check-label" for="authenticityRelevant">Authenticité pertinente</label>
                     <small class="text-muted d-block">À activer pour les catégories exposées à la contrefaçon (électronique, mode, montres/bijoux, parfums, pièces auto...). Permet au vendeur de déclarer si son produit est original ou une réplique — c'est une déclaration du vendeur, pas une certification KongoBazar.</small>
+                </div>
+
+                <div class="col-12">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleVehicleSettingsBtn">
+                        <i class="bi bi-gear me-1"></i>Autres paramètres (Auto-Moto)
+                        <i class="bi bi-chevron-down ms-1" id="toggleVehicleSettingsIcon"></i>
+                    </button>
+                </div>
+
+                <div class="col-12" id="vehicleSettingsPanel" style="display:none;">
+                    <div class="row g-3 p-3 mt-1" style="background:#f8f9fb;border-radius:8px;">
+                        <div class="col-12 form-check form-switch">
+                            <input type="checkbox" name="is_vehicle_part" value="1" class="form-check-input" id="isVehiclePart"
+                                {{ category and category.isVehiclePart ? 'checked' : '' }}>
+                            <label class="form-check-label" for="isVehiclePart">Pièce détachée véhicule</label>
+                            <small class="text-muted d-block">À activer sur la catégorie "Pièce détachée" (et elle seule — ses sous-catégories héritent automatiquement). Fait apparaître le champ Fabricant spécifique aux pièces auto/moto sur la fiche catalogue.</small>
+                        </div>
+
+                        <div class="col-6 form-check form-switch">
+                            <input type="checkbox" name="is_auto_part_root" value="1" class="form-check-input" id="isAutoPartRoot"
+                                {{ category and category.isAutoPartRoot ? 'checked' : '' }}>
+                            <label class="form-check-label" for="isAutoPartRoot">Racine pièces Auto</label>
+                            <small class="text-muted d-block">Sur le nœud "Pièce de rechange" côté Auto — repère utilisé par le filtre catégorie et le filtre Auto/Moto du catalogue.</small>
+                        </div>
+                        <div class="col-6 form-check form-switch">
+                            <input type="checkbox" name="is_moto_part_root" value="1" class="form-check-input" id="isMotoPartRoot"
+                                {{ category and category.isMotoPartRoot ? 'checked' : '' }}>
+                            <label class="form-check-label" for="isMotoPartRoot">Racine pièces Moto</label>
+                            <small class="text-muted d-block">Même principe côté Moto.</small>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="col-12">
@@ -293,6 +324,25 @@
             imageInput.value = '';
             preview.src = '';
             previewBox.style.display = 'none';
+        });
+
+        // --- Repli "Autres paramètres (Auto-Moto)" ---
+        const toggleVehicleSettingsBtn = document.getElementById('toggleVehicleSettingsBtn');
+        const vehicleSettingsPanel = document.getElementById('vehicleSettingsPanel');
+        const toggleVehicleSettingsIcon = document.getElementById('toggleVehicleSettingsIcon');
+        // Ouvert par défaut si une des 3 cases est déjà cochée (édition d'une catégorie déjà configurée), sinon replié.
+        const hasVehicleSettings = document.getElementById('isVehiclePart').checked
+            || document.getElementById('isAutoPartRoot').checked
+            || document.getElementById('isMotoPartRoot').checked;
+        if (hasVehicleSettings) {
+            vehicleSettingsPanel.style.display = 'block';
+            toggleVehicleSettingsIcon.classList.replace('bi-chevron-down', 'bi-chevron-up');
+        }
+        toggleVehicleSettingsBtn.addEventListener('click', function () {
+            const isOpen = vehicleSettingsPanel.style.display !== 'none';
+            vehicleSettingsPanel.style.display = isOpen ? 'none' : 'block';
+            toggleVehicleSettingsIcon.classList.toggle('bi-chevron-down', isOpen);
+            toggleVehicleSettingsIcon.classList.toggle('bi-chevron-up', !isOpen);
         });
     </script>
 {% endblock %}

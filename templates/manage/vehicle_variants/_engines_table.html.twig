@@ -37,6 +37,7 @@
                     <td>{{ engine.periodLabel ?: '-' }}</td>
                     <td>
                         <div class="ctb-act-row">
+                            <a href="{{ path('manage_vehicle_engine_parts', {id: engine.id}) }}" class="ctb-act-btn" title="Voir pièces de rechange"><i class="bi bi-box-seam"></i></a>
                             <a href="{{ path('manage_vehicle_engines_edit', {id: engine.id}) }}" class="ctb-act-btn" title="Modifier"><i class="bi bi-pencil"></i></a>
                             <form action="{{ path('manage_vehicle_engines_delete', {id: engine.id}) }}" method="post" onsubmit="return confirm('Supprimer cette motorisation ?');">
                                 <button type="submit" class="ctb-act-btn ctb-act-danger" title="Supprimer"><i class="bi bi-trash"></i></button>

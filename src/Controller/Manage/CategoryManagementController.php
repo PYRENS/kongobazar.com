@@ -19,7 +19,7 @@ class CategoryManagementController extends AbstractController
     public function index(Request $request, CategoryRepository $repository): Response
     {
         $searchTerm = $request->query->get('q');
-        $sortField = $request->query->get('sort', 'position');
+        $sortField = $request->query->get('sort', 'name');
         $sortDir = $request->query->get('dir', 'ASC');
 
         if ($searchTerm) {
@@ -61,17 +61,25 @@ class CategoryManagementController extends AbstractController
 
     private function sortRows(array $rows, string $field, string $dir): array
     {
-        $allowed = ['name', 'childrenCount', 'productCount'];
+        $allowed = ['name', 'childrenCount', 'productCount', 'position'];
         if (!in_array($field, $allowed, true)) {
-            $field = 'position';
-            usort($rows, fn ($a, $b) => $a['category']->getPosition() <=> $b['category']->getPosition());
-            return $rows;
+            $field = 'name';
         }
         $dirMultiplier = strtoupper($dir) === 'DESC' ? -1 : 1;
 
-        usort($rows, function ($a, $b) use ($field, $dirMultiplier) {
-            $valA = $field === 'name' ? $a['category']->getName() : $a[$field];
-            $valB = $field === 'name' ? $b['category']->getName() : $b[$field];
+        // Tri alphabétique "vrai" (locale française) plutôt qu'octet par octet — sinon les accents
+        // (É, È, À...) se classent après Z au lieu d'à côté de leur lettre de base.
+        $collator = class_exists(\Collator::class) ? new \Collator('fr_FR') : null;
+
+        usort($rows, function ($a, $b) use ($field, $dirMultiplier, $collator) {
+            if ($field === 'name') {
+                $valA = $a['category']->getName();
+                $valB = $b['category']->getName();
+                $cmp = $collator ? $collator->compare($valA, $valB) : strcasecmp($valA, $valB);
+                return $dirMultiplier * $cmp;
+            }
+            $valA = $field === 'position' ? $a['category']->getPosition() : $a[$field];
+            $valB = $field === 'position' ? $b['category']->getPosition() : $b[$field];
             return $dirMultiplier * ($valA <=> $valB);
         });
 
@@ -123,9 +131,18 @@ class CategoryManagementController extends AbstractController
     #[Route('/categories/{id}/modifier', name: 'manage_categories_edit', host: 'manage.kongobazar.com', methods: ['GET'])]
     public function edit(Category $category, CategoryRepository $repository): Response
     {
+        $parent = $category->getParent();
+        $ancestorIds = [];
+        $node = $parent;
+        while ($node) {
+            array_unshift($ancestorIds, $node->getId());
+            $node = $node->getParent();
+        }
+
         return $this->render('manage/categories/form.html.twig', [
             'category' => $category,
-            'parent' => $category->getParent(),
+            'parent' => $parent,
+            'parentAncestorIds' => implode(',', $ancestorIds),
             'rootCategories' => $repository->findRootCategories($category->getId()),
         ]);
     }
@@ -171,6 +188,9 @@ class CategoryManagementController extends AbstractController
         $category->setPosition((int) $request->request->get('position', 0));
         $category->setRequiresModel((bool) $request->request->get('requires_model'));
         $category->setAuthenticityRelevant((bool) $request->request->get('authenticity_relevant'));
+        $category->setIsVehiclePart((bool) $request->request->get('is_vehicle_part'));
+        $category->setIsAutoPartRoot((bool) $request->request->get('is_auto_part_root'));
+        $category->setIsMotoPartRoot((bool) $request->request->get('is_moto_part_root'));
 
         $imageFile = $request->files->get('image');
         if ($imageFile) {
@@ -234,7 +254,13 @@ class CategoryManagementController extends AbstractController
     #[Route('/categories/{id}', name: 'manage_categories_show', host: 'manage.kongobazar.com', methods: ['GET'])]
     public function show(Category $category, Request $request, CategoryRepository $repository, \App\Repository\ProductRepository $productRepository): Response
     {
-        $sortField = $request->query->get('sort', 'position');
+        $ancestors = [];
+        $node = $category;
+        while ($node) {
+            array_unshift($ancestors, $node->getName());
+            $node = $node->getParent();
+        }
+        $sortField = $request->query->get('sort', 'name');
         $sortDir = $request->query->get('dir', 'ASC');
         $searchTerm = $request->query->get('q');
         $allowedPerPage = [10, 20, 50, 100];
@@ -272,6 +298,7 @@ class CategoryManagementController extends AbstractController
 
         return $this->render('manage/categories/show.html.twig', [
             'category' => $category,
+            'categoryAncestorNames' => $ancestors,
             'childRows' => $childRows,
             'searchTerm' => $searchTerm,
             'childPage' => $childPage,

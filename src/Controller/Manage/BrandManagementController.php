@@ -195,7 +195,7 @@ class BrandManagementController extends AbstractController
 
     private function sortRows(array $rows, string $field, string $dir): array
     {
-        $allowed = ['name', 'sigle', 'pays', 'type', 'verified', 'productCount', 'modelCount', 'active'];
+        $allowed = ['name', 'sigle', 'pays', 'type', 'verified', 'productCount', 'modelCount', 'active', 'createdAt'];
         if (!in_array($field, $allowed, true)) {
             $field = 'name';
         }
@@ -210,6 +210,7 @@ class BrandManagementController extends AbstractController
                 'productCount' => $a['productCount'],
                 'modelCount' => $a['modelCount'] ?? -1,
                 'active' => (int) $a['brand']->isActive(),
+                'createdAt' => $a['brand']->getCreatedAt()?->getTimestamp() ?? 0,
                 default => $a['brand']->getName(),
             };
             $valB = match ($field) {
@@ -220,6 +221,7 @@ class BrandManagementController extends AbstractController
                 'productCount' => $b['productCount'],
                 'modelCount' => $b['modelCount'] ?? -1,
                 'active' => (int) $b['brand']->isActive(),
+                'createdAt' => $b['brand']->getCreatedAt()?->getTimestamp() ?? 0,
                 default => $b['brand']->getName(),
             };
             return $dirMultiplier * ($valA <=> $valB);
@@ -308,6 +310,7 @@ class BrandManagementController extends AbstractController
         $name = (string) $request->request->get('name');
         $brand->setName($name);
         $brand->setVerified((bool) $request->request->get('verified'));
+        $brand->setPremium((bool) $request->request->get('premium'));
 
         $logoFile = $request->files->get('logo');
         if ($logoFile) {

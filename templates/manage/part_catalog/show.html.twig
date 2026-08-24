@@ -18,6 +18,8 @@
             {% if entry.complete %}<span class="admin-badge admin-badge--active">Complétée</span>{% endif %}
             {% if entry.status == 'validated' %}
                 <span class="admin-badge admin-badge--active">Validée</span>
+            {% elseif entry.status == 'draft' %}
+                <span class="admin-badge admin-badge--disabled">Brouillon</span>
             {% else %}
                 <span class="admin-badge admin-badge--disabled">En attente</span>
             {% endif %}
@@ -29,90 +31,203 @@
         </div>
     </div>
 
-    <form method="post" action="{{ path('manage_part_catalog_update', {id: entry.id}) }}">
-        <div class="admin-card">
-            <h6><i class="bi bi-info-circle"></i> Informations générales</h6>
+    <form method="post" action="{{ path('manage_part_catalog_update', {id: entry.id}) }}" enctype="multipart/form-data">
+        <div class="row g-3">
+            <div class="col-xl-4">
+                <div class="admin-card h-100">
+                    <h6><i class="bi bi-info-circle"></i> Informations générales</h6>
 
-            <div class="mb-3">
-                <label class="form-label">Nom</label>
-                <input type="text" name="name" class="form-control" value="{{ entry.name }}" required>
+                    <div class="mb-3">
+                        <label class="form-label">Nom</label>
+                        <input type="text" name="name" class="form-control" value="{{ entry.name }}" placeholder="Laisser vide pour générer automatiquement">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Statut</label>
+                        <select name="status" class="form-select" style="max-width:220px;">
+                            <option value="draft" {{ entry.status == 'draft' ? 'selected' : '' }}>Brouillon</option>
+                            <option value="pending_review" {{ entry.status == 'pending_review' ? 'selected' : '' }}>En attente de validation</option>
+                            <option value="validated" {{ entry.status == 'validated' ? 'selected' : '' }}>Validée</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Catégorie</label>
+                        <div class="category-picker" data-category-picker id="categoryPickerRoot" data-preselected-ancestors="{{ categoryAncestorIds }}">
+                            <select data-category-level="1" class="form-select">
+                                <option value="">— Choisir —</option>
+                                {% for root in rootCategories %}
+                                    <option value="{{ root.id }}" {{ root.id == categoryAncestorIds|split(',')|first|default(null) ? 'selected' : '' }}>{{ root.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <small class="text-muted d-block mt-1">Sélectionné : <strong id="categorySelectedDisplay">{{ entry.category.name }}</strong></small>
+                        <input type="hidden" name="category_id" id="categoryIdInput" data-category-final-value value="{{ entry.category.id }}">
+                    </div>
+
+                    <div class="mb-3" id="brandFieldWrap">
+                        <label class="acc-form-label">Fabricant</label>
+                        <div class="d-flex align-items-center gap-3">
+                            <div style="flex:1;">
+                                <div class="ctb-search-wrap" id="brandFieldSearchWrap" style="width:100%;{{ entry.brand ? 'display:none;' : '' }}">
+                                    <i class="bi bi-award ctb-search-icon"></i>
+                                    <input type="text" id="entryBrandInput" class="ctb-search-input" placeholder="Rechercher un fabricant..." autocomplete="off" style="width:100%;">
+                                    <div class="header-search-results" id="entryBrandSuggestions"></div>
+                                </div>
+                                <div id="entryBrandTagWrap" class="mt-2" style="display:{{ entry.brand ? '' : 'none' }};">
+                                    <span class="ctb-status-badge ctb-status-active">
+                                        <span id="entryBrandTagLabel">{{ entry.brand ? entry.brand.name : '' }}</span>
+                                        <i class="bi bi-x-circle ms-1" id="entryBrandTagRemove" style="cursor:pointer;"></i>
+                                    </span>
+                                </div>
+                                <button type="button" id="brandUnknownBtn" class="btn btn-sm btn-outline-secondary mt-2" style="display:{{ entry.brand ? 'none' : '' }};">Marque inconnue</button>
+                            </div>
+                            <div id="entryBrandLogoBox" style="width:70px;height:70px;border:1px solid var(--border-color);border-radius:8px;display:{{ entry.brand and entry.brand.logoName ? 'flex' : 'none' }};align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
+                                <img id="entryBrandLogoImg" src="{{ entry.brand and entry.brand.logoName ? vich_uploader_asset(entry.brand, 'logoFile') : '' }}" style="max-width:100%;max-height:100%;object-fit:contain;">
+                            </div>
+                        </div>
+                        <input type="hidden" name="brand_id" id="entryBrandIdInput" value="{{ entry.brand ? entry.brand.id : '' }}">
+                    </div>
+
+                    <div class="mb-3 p-2" style="background:#f8f9fb;border-radius:6px;">
+                        <div class="form-check form-check-inline">
+                            <input type="checkbox" name="is_verified" value="1" class="form-check-input" id="isVerified" {{ entry.verified ? 'checked' : '' }}>
+                            <label class="form-check-label" for="isVerified">Vérifiée</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input type="checkbox" name="is_complete" value="1" class="form-check-input" id="isComplete" {{ entry.complete ? 'checked' : '' }}>
+                            <label class="form-check-label" for="isComplete">Complétée</label>
+                        </div>
+                        <small class="text-muted d-block mt-1">Coche les deux pour pouvoir passer le statut sur "Validée".</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">EAN</label>
+                        <input type="text" name="ean" class="form-control" value="{{ entry.ean }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Référence fabricant</label>
+                        <input type="text" name="manufacturer_ref" class="form-control" value="{{ entry.manufacturerRef }}">
+                    </div>
+                </div>
             </div>
 
-            <div class="mb-3">
-                <label class="form-label">Catégorie</label>
-                <div class="category-picker" data-category-picker id="categoryPickerRoot">
-                    <select data-category-level="1" class="form-select">
-                        <option value="">— Choisir —</option>
-                        {% for root in rootCategories %}
-                            <option value="{{ root.id }}">{{ root.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <small class="text-muted d-block mt-1">Sélectionné : <strong id="categorySelectedDisplay">{{ entry.category.name }}</strong></small>
-                <input type="hidden" name="category_id" id="categoryIdInput" value="{{ entry.category.id }}"
-                    data-ancestor-ids="{{ entry.category.ancestors|map(a => a.id)|join(',') }}">
-            </div>
-
-            <div class="mb-3 d-flex align-items-start gap-3">
-                <div>
-                    <label class="form-label">Marque de la pièce</label>
-                    <input type="text" id="partBrandSearchInput" class="form-control" style="max-width:300px;" placeholder="Rechercher une marque..."
-                        value="{{ entry.brand ? entry.brand.name : '' }}" autocomplete="off">
-                    <div id="partBrandSearchResults" class="list-group mt-1" style="max-width:300px;position:relative;z-index:10;"></div>
-                    <input type="hidden" name="brand_id" id="partBrandIdInput" value="{{ entry.brand ? entry.brand.id : '' }}">
-                </div>
-                <div>
-                    <img id="partBrandLogoPreview" src="{{ entry.brand and entry.brand.logoName ? '/media/logos_brands/' ~ entry.brand.logoName : '' }}"
-                        style="max-width:70px;max-height:70px;object-fit:contain;{{ entry.brand and entry.brand.logoName ? '' : 'display:none;' }}">
-                </div>
-            </div>
-
-            <div class="mb-3 p-2" style="background:#f8f9fb;border-radius:6px;">
-                <div class="form-check form-check-inline">
-                    <input type="checkbox" name="is_verified" value="1" class="form-check-input" id="isVerified" {{ entry.verified ? 'checked' : '' }}>
-                    <label class="form-check-label" for="isVerified">Vérifiée</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input type="checkbox" name="is_complete" value="1" class="form-check-input" id="isComplete" {{ entry.complete ? 'checked' : '' }}>
-                    <label class="form-check-label" for="isComplete">Complétée</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input type="checkbox" name="is_validated" value="1" class="form-check-input" id="isValidated" {{ entry.status == 'validated' ? 'checked' : '' }}>
-                    <label class="form-check-label" for="isValidated">Validée</label>
-                </div>
-                <small class="text-muted d-block mt-1">"Validée" ne peut être cochée que si "Vérifiée" et "Complétée" le sont déjà.</small>
-            </div>
-
-            <div class="row">
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">EAN</label>
-                    <input type="text" name="ean" class="form-control" value="{{ entry.ean }}">
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Référence fabricant</label>
-                    <input type="text" name="manufacturer_ref" class="form-control" value="{{ entry.manufacturerRef }}">
-                </div>
-            </div>
-        </div>
-
-        <div class="admin-card">
-            <h6><i class="bi bi-upc"></i> Codes OEM</h6>
-            <textarea name="oem_codes" class="form-control" rows="5" placeholder="OE 38920-RSR-E02 — HONDA&#10;OE 758-D1805 (sans marque)">{% for oem in entry.oemCodes %}{{ oem.code }}{{ oem.brand ? ' — ' ~ oem.brand.name : '' }}
+            <div class="col-xl-8">
+                <div class="admin-card mb-3">
+                    <h6><i class="bi bi-upc"></i> Codes OEM</h6>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <textarea name="oem_codes" class="form-control" rows="6" placeholder="Un code par ligne&#10;OE 758-D1805&#10;OE 263202F100 — HYUNDAI / KIA">{% for oem in entry.oemCodes %}{{ oem.code }}{{ oem.brand ? ' — ' ~ oem.brand.name : '' }}
 {% endfor %}</textarea>
-            <small class="text-muted">Un code par ligne, marque optionnelle après un tiret long (—).</small>
+                        </div>
+                        <div class="col-6">
+                            <div id="oemPreview" class="border rounded p-2" style="min-height:140px;font-size:12px;background:var(--body-bg);"></div>
+                        </div>
+                    </div>
+                    <small class="text-muted d-block mt-1">Marque optionnelle après un tiret long (—). "MARQUE1 / MARQUE2" partage le même code entre plusieurs marques.</small>
+
+                    {% if entry.oemCodes|length > 0 and entryPartType != 'moto' %}
+                        {% set oemByBrand = {} %}
+                        {% for oem in entry.oemCodes %}
+                            {% set key = oem.brand ? oem.brand.name : '__unbranded__' %}
+                            {% set oemByBrand = oemByBrand|merge({ (key): (oemByBrand[key]|default([]))|merge([oem]) }) %}
+                        {% endfor %}
+
+                        <hr>
+                        <h6 class="mb-2" style="font-size:13px;">Codes OEM enregistrés</h6>
+                        <div class="row g-2">
+                            {% for brandName, codes in oemByBrand %}
+                                <div class="col-md-4">
+                                    <div class="border rounded p-2">
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            {% if brandName != '__unbranded__' and codes[0].brand.logoName %}
+                                                <img src="{{ vich_uploader_asset(codes[0].brand, 'logoFile') }}" style="width:24px;height:24px;object-fit:contain;">
+                                            {% endif %}
+                                            <strong style="font-size:12px;">{{ brandName == '__unbranded__' ? 'Sans marque' : brandName }}</strong>
+                                        </div>
+                                        <ul class="mb-0 ps-3" style="font-size:12px;">
+                                            {% for oem in codes %}
+                                                <li>{{ oem.code }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="admin-card mb-3">
+                    <h6><i class="bi bi-tags"></i> Marque(s) de véhicule compatibles (génériques)</h6>
+                    <select name="compatible_brand_ids[]" class="form-select" multiple size="8">
+                        {% if vehicleBrandsGrouped.premium|length > 0 %}
+                            <optgroup label="★ Premium">
+                                {% for b in vehicleBrandsGrouped.premium %}
+                                    <option value="{{ b.id }}" {{ b.id in entry.brandCompatibilities|map(c => c.brand.id) ? 'selected' : '' }}>{{ b.name }}</option>
+                                {% endfor %}
+                            </optgroup>
+                        {% endif %}
+                        <optgroup label="Autres marques">
+                            {% for b in vehicleBrandsGrouped.others %}
+                                <option value="{{ b.id }}" {{ b.id in entry.brandCompatibilities|map(c => c.brand.id) ? 'selected' : '' }}>{{ b.name }}</option>
+                            {% endfor %}
+                        </optgroup>
+                    </select>
+                    <small class="text-muted">Pour des véhicules précis (marque/modèle/variante/motorisation), utilise "Véhicules associés" plus bas.</small>
+                </div>
+
+                <div class="admin-card">
+                    <h6><i class="bi bi-sliders"></i> Caractéristiques</h6>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <textarea name="characteristics_raw" id="characRawInput" class="form-control" rows="8" placeholder="ex:&#10;Hauteur:131&#10;Diamètre intérieur 2 [mm]:20">{{ characteristicsRawPrefill }}</textarea>
+                        </div>
+                        <div class="col-6">
+                            <div id="characPreview" class="border rounded p-2" style="min-height:180px;font-size:12px;background:var(--body-bg);"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="admin-card">
-            <h6><i class="bi bi-tags"></i> Marque(s) de véhicule compatibles</h6>
-            <select name="compatible_brand_ids[]" class="form-select" multiple size="6">
-                {% for b in vehicleBrands %}
-                    <option value="{{ b.id }}" {{ b.id in entry.brandCompatibilities|map(c => c.brand.id) ? 'selected' : '' }}>{{ b.name }}</option>
-                {% endfor %}
-            </select>
-        </div>
+        <div class="row g-3 mt-1">
+            <div class="col-xl-6">
+                <div class="admin-card h-100">
+                    <h6><i class="bi bi-images"></i> Images</h6>
+                    <div class="admin-file-upload-group" id="imageUploadGroup">
+                        <div class="admin-upload-thumb">
+                            <span class="admin-upload-thumb-label">&nbsp;</span>
+                            <label class="admin-upload-dropzone" for="imagesInput">
+                                <i class="bi bi-camera"></i>
+                                <span>Upload</span>
+                            </label>
+                        </div>
+                        <input type="file" name="images[]" id="imagesInput" accept="image/*" multiple class="admin-upload-input-hidden">
+                        <div id="imagesOrderList" style="display:contents;">
+                            {% for image in entry.images %}
+                                <div class="admin-upload-thumb" data-kind="existing" data-existing-id="{{ image.id }}">
+                                    <span class="admin-upload-thumb-label order-label drag-handle">
+                                        <i class="bi bi-grip-horizontal"></i> #
+                                    </span>
+                                    <div class="admin-upload-thumb-inner">
+                                        <img src="{{ vich_uploader_asset(image, 'imageFile') }}" class="admin-zoomable-thumb" alt="">
+                                        <button type="button" class="admin-upload-remove" data-remove-existing="{{ image.id }}"><i class="bi bi-x"></i></button>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <input type="hidden" name="image_order" id="imageOrderInput" value="">
+                    <small class="text-muted d-block mt-1">Glisse-dépose par la poignée (▤) pour réordonner — la première image devient l'image principale.</small>
+                </div>
+            </div>
 
-        <div class="admin-card">
-            {% include 'manage/_partials/_product_fields_attributes.html.twig' with {attributes: attributes, existingAttributeValues: existingAttributeValues, categoryId: entry.category.id} %}
+            <div class="col-xl-6">
+                <div class="admin-card h-100">
+                    <h6>Description</h6>
+                    <textarea name="description" class="form-control" rows="10">{{ entry.description }}</textarea>
+                </div>
+            </div>
         </div>
 
         <div class="mt-3">
@@ -120,88 +235,159 @@
         </div>
     </form>
 
-    <div class="admin-card">
-        <h6><i class="bi bi-gear"></i> Motorisations compatibles</h6>
+    <div class="admin-card mt-3" id="motoMotorisationsCard" style="display:none;">
+        <h6><i class="bi bi-motorcycle"></i> Motorisations associées (Moto)</h6>
+
+        <ul class="nav nav-tabs mb-3">
+            <li class="nav-item"><button class="nav-link active" id="motoCascadeTabBtn" type="button">Marque → Modèle → Motorisations</button></li>
+            <li class="nav-item"><button class="nav-link" id="motoImportTabBtn" type="button">Importer d'une autre pièce Moto</button></li>
+        </ul>
+
+        <div id="motoCascadeTab">
+            <div class="d-flex align-items-end gap-2 flex-wrap mb-3">
+                <div>
+                    <label class="acc-form-label d-block">Marque</label>
+                    <select id="motoCascadeBrandSelect" class="form-select" style="min-width:200px;">
+                        <option value="">— Choisir —</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="acc-form-label d-block">Modèle</label>
+                    <select id="motoCascadeModelSelect" class="form-select" style="min-width:200px;" disabled>
+                        <option value="">— Choisir —</option>
+                    </select>
+                </div>
+            </div>
+            <div id="motoCascadeEnginesWrap" style="display:none;">
+                <label class="acc-form-label d-block">Motorisations (Ctrl/Cmd + clic pour en choisir plusieurs)</label>
+                <select id="motoCascadeEnginesSelect" class="form-select" multiple size="8"></select>
+                <button type="button" id="motoCascadeAttachBtn" class="btn btn-sm btn-success mt-2">Attacher la sélection</button>
+            </div>
+        </div>
+
+        <div id="motoImportTab" style="display:none;">
+            <input type="text" id="motoImportSearchInput" class="form-control form-control-sm" placeholder="Rechercher une pièce Moto (nom, EAN, réf.)...">
+            <div id="motoImportSearchResults" class="list-group mt-1"></div>
+            <div id="motoImportChecklist" class="mt-2"></div>
+        </div>
+    </div>
+
+    <div class="admin-card mt-3" id="autoVehiclesAssociatedWrap" style="display:none;">
+        <h6><i class="bi bi-car-front"></i> Véhicules associés (marque/modèle/variante + motorisations)</h6>
+
+        <button type="button" id="toggleVaDuplicateBtn" class="btn btn-sm btn-outline-secondary mb-2">
+            <i class="bi bi-files"></i> Récupérer les véhicules associés d'une autre pièce
+        </button>
+        <div id="vaDuplicateBlock" style="display:none;" class="mb-3 p-2 border rounded">
+            <input type="text" id="vaDuplicateSearchInput" class="form-control form-control-sm" placeholder="Rechercher une pièce du catalogue...">
+            <div id="vaDuplicateSearchResults" class="list-group mt-1"></div>
+            <div id="vaDuplicateChecklist" class="mt-2"></div>
+        </div>
+
+        <textarea id="vaRawInput" class="form-control" rows="12" placeholder="Format attendu, ex:&#10;HYUNDAI Santa Fe II (CM) (Année de construction 10.2005 - 12.2012)&#10;2.0 CRDi, Année de construction 12.2010 - 12.2012, 1995 ccm, 150 CV"></textarea>
+        <button type="button" id="vaAnalyzeBtn" class="btn btn-sm btn-primary mt-2">Analyser</button>
+        <div id="vaErrors" class="alert alert-danger mt-2" style="display:none;"></div>
+        <div id="vaResult" class="mt-3"></div>
+    </div>
+
+    <div class="admin-card mt-3">
+        <h6><i class="bi bi-gear"></i> Motorisations compatibles ({{ entry.engineCompatibilities|length }})</h6>
 
         <input type="hidden" id="partCatalogEntryId" value="{{ entry.id }}">
 
-        <div id="compatAttachedList" class="mb-3">
-            {% for compat in entry.engineCompatibilities %}
-                <span class="badge bg-secondary me-1 mb-1">
-                    {{ compat.vehicleEngine.brandNameCache }} {{ compat.vehicleEngine.modelNameCache }} {{ compat.vehicleEngine.variantNameCache }} {{ compat.vehicleEngine.label }}
-                    <button type="button" class="btn-close btn-close-white btn-sm" style="font-size:8px;" data-detach="{{ compat.id }}"></button>
-                </span>
-            {% endfor %}
-        </div>
+        {% if groupedVehicles|length > 0 %}
+            <div class="accordion mb-3" id="editVehicleAccordion">
+                {% for brandName, models in groupedVehicles %}
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#editVBrand{{ loop.index }}">
+                                {{ brandName }}
+                            </button>
+                        </h2>
+                        <div id="editVBrand{{ loop.index }}" class="accordion-collapse collapse" data-bs-parent="#editVehicleAccordion">
+                            <div class="accordion-body p-0">
+                                {% for modelName, variants in models %}
+                                    <div class="p-3 border-bottom">
+                                        <div class="fw-bold mb-1">{{ modelName }}</div>
+                                        {% for variantName, engines in variants %}
+                                            {% if variantName %}
+                                                <div class="ms-3 mb-1">
+                                                    <span class="text-muted" style="font-size:12px;"><i class="bi bi-diagram-3 me-1"></i>{{ variantName }}</span>
+                                                    <div class="d-flex flex-wrap gap-1 mt-1 ps-3">
+                                                        {% for engine in engines %}
+                                                            {% for compat in entry.engineCompatibilities %}
+                                                                {% if compat.vehicleEngine.id == engine.id %}
+                                                                    <span class="badge bg-secondary" style="font-weight:400;">
+                                                                        {{ engine.label }} <span class="opacity-75">({{ engine.periodLabel }})</span>
+                                                                        <button type="button" class="btn-close btn-close-white btn-sm ms-1" style="font-size:8px;" data-detach="{{ compat.id }}"></button>
+                                                                    </span>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                            {% else %}
+                                                <div class="d-flex flex-wrap gap-1 mt-1">
+                                                    {% for engine in engines %}
+                                                        {% for compat in entry.engineCompatibilities %}
+                                                            {% if compat.vehicleEngine.id == engine.id %}
+                                                                <span class="badge bg-secondary" style="font-weight:400;">
+                                                                    {{ engine.label }} <span class="opacity-75">({{ engine.periodLabel }})</span>
+                                                                    <button type="button" class="btn-close btn-close-white btn-sm ms-1" style="font-size:8px;" data-detach="{{ compat.id }}"></button>
+                                                                </span>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-muted">Aucune motorisation compatible pour l'instant.</p>
+        {% endif %}
 
         <button type="button" id="toggleCompatBtn" class="btn btn-sm btn-outline-primary mb-3">
             <i class="bi bi-clipboard-plus"></i> Associer à des motorisations précises
         </button>
 
         <div id="compatTextBlock" style="display:none;">
-            <textarea id="compatRawText" class="form-control" rows="10" placeholder="Colle ici le texte brut..."></textarea>
+            <textarea id="compatRawText" class="form-control" rows="10" placeholder="Format attendu (marque/modèle séparés par un '?', une motorisation par ligne), ex:&#10;HYUNDAI&#10;ix35 ? (LM, EL, ELH) (08.2009 - 10.2016)&#10;2.0 CRDi 4WD (D4HA) (135 KW / 184 CV) 01.2010 - 12.2015"></textarea>
             <button type="button" id="compatAnalyzeBtn" class="btn btn-sm btn-primary mt-2">Analyser</button>
             <div id="compatErrors" class="alert alert-danger mt-2" style="display:none;"></div>
             <div id="compatResult" class="mt-2"></div>
         </div>
     </div>
 
-    <div class="admin-card">
-        <h6><i class="bi bi-images"></i> Galerie officielle</h6>
-
-        <form method="post" action="{{ path('manage_part_catalog_gallery_update', {id: entry.id}) }}" enctype="multipart/form-data">
-            <div class="admin-file-upload-group">
-                <div class="admin-upload-thumb">
-                    <span class="admin-upload-thumb-label">&nbsp;</span>
-                    <label class="admin-upload-dropzone" for="catalogImagesInput">
-                        <i class="bi bi-camera"></i>
-                        <span>Upload</span>
-                    </label>
-                </div>
-                <input type="file" name="images[]" id="catalogImagesInput" accept="image/*" multiple class="admin-upload-input-hidden">
-
-                {% for image in entry.images %}
-                    <div class="admin-upload-thumb {{ loop.first ? 'admin-upload-thumb--primary' : '' }}">
-                        <span class="admin-upload-thumb-label">{{ loop.first ? 'Principale' : '#' ~ loop.index }}</span>
-                        <div class="admin-upload-thumb-inner">
-                            <img src="{{ vich_uploader_asset(image, 'imageFile') }}" class="admin-zoomable-thumb" alt="">
-                            <div class="form-check mt-1">
-                                <input type="checkbox" name="remove_image_ids[]" value="{{ image.id }}" class="form-check-input" id="removeCatImg{{ image.id }}">
-                                <label class="form-check-label small" for="removeCatImg{{ image.id }}">Retirer</label>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-            <small class="text-muted d-block mt-1">L'ordre d'upload détermine l'ordre d'affichage — la première image reste la principale.</small>
-            <button type="submit" class="btn btn-sm btn-primary mt-2">Mettre à jour la galerie</button>
-        </form>
-    </div>
-
     <div id="imageZoomOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;cursor:zoom-out;">
         <img id="imageZoomFull" src="" style="max-width:90%;max-height:90%;border-radius:6px;">
     </div>
+{% endblock %}
 
+{% block javascripts %}
+    <script src="{{ asset('js/manage/part-catalog-compatibility.js') }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            if (window.initPartBrandAutocomplete) window.initPartBrandAutocomplete();
-            if (window.initProductAttributePaste) window.initProductAttributePaste();
             if (window.initPartCatalogEngineWidget) window.initPartCatalogEngineWidget();
+
+            const entryPartType = '{{ entryPartType|default('') }}';
+            if (entryPartType === 'moto') {
+                document.getElementById('motoMotorisationsCard').style.display = '';
+                document.getElementById('autoVehiclesAssociatedWrap').style.display = 'none';
+                initMotoMotorisationsWidget();
+            } else {
+                document.getElementById('autoVehiclesAssociatedWrap').style.display = '';
+                document.getElementById('motoMotorisationsCard').style.display = 'none';
+                initVehicleAssociationWidget();
+            }
 
             const verifiedCb = document.getElementById('isVerified');
             const completeCb = document.getElementById('isComplete');
-            const validatedCb = document.getElementById('isValidated');
-
-            function syncValidatedAvailability() {
-                const canValidate = verifiedCb.checked && completeCb.checked;
-                validatedCb.disabled = !canValidate;
-                if (!canValidate) validatedCb.checked = false;
-            }
-
-            // N'applique la contrainte qu'à partir d'une vraie interaction —
-            // ne touche jamais l'état déjà enregistré au chargement de la page.
-            verifiedCb.addEventListener('change', syncValidatedAvailability);
-            completeCb.addEventListener('change', syncValidatedAvailability);
 
             const zoomOverlay = document.getElementById('imageZoomOverlay');
             const zoomFull = document.getElementById('imageZoomFull');
@@ -215,5 +401,559 @@
                 this.style.display = 'none';
             });
         });
+
+        // --- Fabricant : recherche + logo + "Marque inconnue" (identique à la création) ---
+        const allBrandsForEntry = {{ allBrands|map(b => {id: b.id, name: b.name, logo: b.logoName ? vich_uploader_asset(b, 'logoFile') : null})|json_encode|raw }};
+        const brandFieldSearchWrap = document.getElementById('brandFieldSearchWrap');
+        const entryBrandInput = document.getElementById('entryBrandInput');
+        const entryBrandSuggestions = document.getElementById('entryBrandSuggestions');
+        const entryBrandTagWrap = document.getElementById('entryBrandTagWrap');
+        const entryBrandTagLabel = document.getElementById('entryBrandTagLabel');
+        const entryBrandTagRemove = document.getElementById('entryBrandTagRemove');
+        const entryBrandIdInput = document.getElementById('entryBrandIdInput');
+        const entryBrandLogoBox = document.getElementById('entryBrandLogoBox');
+        const entryBrandLogoImg = document.getElementById('entryBrandLogoImg');
+        const brandUnknownBtn = document.getElementById('brandUnknownBtn');
+
+        function setEntryBrand(id, name, logo) {
+            entryBrandIdInput.value = id || '';
+            if (id) {
+                entryBrandTagLabel.textContent = name;
+                entryBrandTagWrap.style.display = '';
+                brandFieldSearchWrap.style.display = 'none';
+                brandUnknownBtn.style.display = 'none';
+                if (logo) {
+                    entryBrandLogoImg.src = logo;
+                    entryBrandLogoBox.style.display = 'flex';
+                } else {
+                    entryBrandLogoBox.style.display = 'none';
+                }
+            } else {
+                entryBrandTagWrap.style.display = 'none';
+                brandFieldSearchWrap.style.display = '';
+                brandUnknownBtn.style.display = '';
+                entryBrandLogoBox.style.display = 'none';
+                entryBrandInput.value = '';
+            }
+        }
+
+        function renderEntryBrandSuggestions(term) {
+            entryBrandSuggestions.innerHTML = '';
+            const matches = (term ? allBrandsForEntry.filter((b) => b.name.toLowerCase().includes(term.toLowerCase())) : allBrandsForEntry).slice(0, 10);
+            if (matches.length === 0) { entryBrandSuggestions.classList.remove('active'); return; }
+            matches.forEach((b) => {
+                const item = document.createElement('div');
+                item.className = 'header-search-result-item';
+                item.innerHTML = '<i class="bi bi-award"></i><span>' + b.name + '</span>';
+                item.addEventListener('click', () => {
+                    setEntryBrand(b.id, b.name, b.logo);
+                    entryBrandSuggestions.classList.remove('active');
+                });
+                entryBrandSuggestions.appendChild(item);
+            });
+            entryBrandSuggestions.classList.add('active');
+        }
+        entryBrandInput.addEventListener('focus', function () { renderEntryBrandSuggestions(this.value.trim()); });
+        entryBrandInput.addEventListener('input', function () { renderEntryBrandSuggestions(this.value.trim()); });
+        entryBrandTagRemove.addEventListener('click', function () { setEntryBrand(null, '', null); });
+        brandUnknownBtn.addEventListener('click', function () { setEntryBrand('unknown', 'Marque inconnue', null); });
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.ctb-search-wrap')) entryBrandSuggestions.classList.remove('active');
+        });
+
+        // --- Aperçus en direct : OEM + Caractéristiques ---
+        const oemRawInput = document.querySelector('textarea[name="oem_codes"]');
+        const oemPreview = document.getElementById('oemPreview');
+        function renderOemPreview() {
+            const lines = oemRawInput.value.split(/\r\n|\r|\n/).map((l) => l.trim()).filter(Boolean);
+            if (lines.length === 0) { oemPreview.innerHTML = '<span class="text-muted">Aucun code pour l\'instant.</span>'; return; }
+            let html = '<div class="d-flex flex-wrap gap-1">';
+            lines.forEach((line) => {
+                const m = line.match(/^(?:OEN?\s+)?(.+?)\s*[—–]\s*(.+)$/u);
+                if (m) {
+                    m[2].split('/').map((b) => b.trim()).filter(Boolean).forEach((brandName) => {
+                        html += '<span class="badge bg-light text-dark border" style="font-weight:400;">' + escHtml(m[1].trim()) + ' <span class="text-muted">(' + escHtml(brandName) + ')</span></span>';
+                    });
+                } else {
+                    html += '<span class="badge bg-light text-dark border" style="font-weight:400;">' + escHtml(line.replace(/^OEN?\s+/i, '').trim()) + '</span>';
+                }
+            });
+            html += '</div>';
+            oemPreview.innerHTML = html;
+        }
+        oemRawInput.addEventListener('input', renderOemPreview);
+        renderOemPreview();
+
+        const characRawInput = document.getElementById('characRawInput');
+        const characPreview = document.getElementById('characPreview');
+        function renderCharacPreview() {
+            const lines = characRawInput.value.split(/\r\n|\r|\n/).map((l) => l.trim()).filter(Boolean);
+            if (lines.length === 0) { characPreview.innerHTML = '<span class="text-muted">Aucune caractéristique pour l\'instant.</span>'; return; }
+            let html = '<table class="table table-sm mb-0"><tbody>';
+            lines.forEach((line) => {
+                const idx = line.indexOf(':');
+                if (idx === -1) return;
+                let label = line.substring(0, idx).trim();
+                const value = line.substring(idx + 1).trim();
+                let unit = '';
+                const um = label.match(/^(.*)\[([^\]]+)\]\s*$/u);
+                if (um) { label = um[1].trim(); unit = um[2].trim(); }
+                html += '<tr><td class="text-muted">' + escHtml(label) + (unit ? ' <span class="text-muted">[' + escHtml(unit) + ']</span>' : '') + '</td><td><strong>' + escHtml(value) + '</strong></td></tr>';
+            });
+            html += '</tbody></table>';
+            characPreview.innerHTML = html;
+        }
+        characRawInput.addEventListener('input', renderCharacPreview);
+        renderCharacPreview();
+
+        function addToCompatibleBrandsSelect(id, name) {
+            const select = document.querySelector('select[name="compatible_brand_ids[]"]');
+            if (!select) return;
+            let option = Array.from(select.options).find((o) => o.value === String(id));
+            if (!option) {
+                option = document.createElement('option');
+                option.value = id;
+                option.textContent = name;
+                select.appendChild(option);
+            }
+            option.selected = true;
+        }
+
+        function initMotoMotorisationsWidget() {
+            const entryId = {{ entry.id }};
+
+            const cascadeTabBtn = document.getElementById('motoCascadeTabBtn');
+            const importTabBtn = document.getElementById('motoImportTabBtn');
+            const cascadeTab = document.getElementById('motoCascadeTab');
+            const importTab = document.getElementById('motoImportTab');
+            cascadeTabBtn.addEventListener('click', () => {
+                cascadeTabBtn.classList.add('active'); importTabBtn.classList.remove('active');
+                cascadeTab.style.display = ''; importTab.style.display = 'none';
+            });
+            importTabBtn.addEventListener('click', () => {
+                importTabBtn.classList.add('active'); cascadeTabBtn.classList.remove('active');
+                importTab.style.display = ''; cascadeTab.style.display = 'none';
+            });
+
+            // --- Méthode 1 : cascade Marque → Modèle → Motorisations (multi-select) ---
+            const brandSelect = document.getElementById('motoCascadeBrandSelect');
+            const modelSelect = document.getElementById('motoCascadeModelSelect');
+            const enginesWrap = document.getElementById('motoCascadeEnginesWrap');
+            const enginesSelect = document.getElementById('motoCascadeEnginesSelect');
+            const attachBtn = document.getElementById('motoCascadeAttachBtn');
+
+            fetch('{{ path("manage_part_catalog_moto_brands") }}').then((r) => r.json()).then((data) => {
+                data.results.forEach((b) => {
+                    const opt = document.createElement('option');
+                    opt.value = b.id; opt.textContent = b.name;
+                    brandSelect.appendChild(opt);
+                });
+            });
+
+            brandSelect.addEventListener('change', function () {
+                modelSelect.innerHTML = '<option value="">— Choisir —</option>';
+                modelSelect.disabled = !this.value;
+                enginesWrap.style.display = 'none';
+                if (!this.value) return;
+                fetch('{{ path("manage_part_catalog_moto_models", {brandId: 0}) }}'.replace('/0', '/' + this.value))
+                    .then((r) => r.json())
+                    .then((data) => {
+                        data.results.forEach((m) => {
+                            const opt = document.createElement('option');
+                            opt.value = m.id; opt.textContent = m.name;
+                            modelSelect.appendChild(opt);
+                        });
+                    });
+            });
+
+            modelSelect.addEventListener('change', function () {
+                enginesSelect.innerHTML = '';
+                enginesWrap.style.display = this.value ? '' : 'none';
+                if (!this.value) return;
+                fetch('{{ path("manage_part_catalog_moto_engines", {modelId: 0}) }}'.replace('/0', '/' + this.value))
+                    .then((r) => r.json())
+                    .then((data) => {
+                        data.results.forEach((e) => {
+                            const opt = document.createElement('option');
+                            opt.value = e.id; opt.textContent = e.label;
+                            enginesSelect.appendChild(opt);
+                        });
+                    });
+            });
+
+            attachBtn.addEventListener('click', function () {
+                const selected = Array.from(enginesSelect.selectedOptions);
+                if (selected.length === 0) return;
+                Promise.all(selected.map((opt) => {
+                    const params = new URLSearchParams({ engine_id: opt.value });
+                    return fetch('{{ path("manage_part_catalog_attach_engine", {id: entry.id}) }}', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params });
+                })).then(() => {
+                    alert(selected.length + ' motorisation(s) attachée(s).');
+                    window.location.reload();
+                });
+            });
+
+            // --- Méthode 2 : importer d'une autre pièce Moto (réutilise le même mécanisme que côté Auto) ---
+            const importSearchInput = document.getElementById('motoImportSearchInput');
+            const importSearchResults = document.getElementById('motoImportSearchResults');
+            const importChecklist = document.getElementById('motoImportChecklist');
+            let importSearchTimeout;
+
+            importSearchInput.addEventListener('input', function () {
+                clearTimeout(importSearchTimeout);
+                const term = this.value.trim();
+                if (term.length < 2) { importSearchResults.innerHTML = ''; return; }
+                importSearchTimeout = setTimeout(() => {
+                    fetch('{{ path("manage_part_catalog_va_search_source") }}?q=' + encodeURIComponent(term) + '&exclude=' + entryId)
+                        .then((r) => r.json())
+                        .then((data) => {
+                            importSearchResults.innerHTML = '';
+                            data.results.forEach((item) => {
+                                const btn = document.createElement('button');
+                                btn.type = 'button';
+                                btn.className = 'list-group-item list-group-item-action';
+                                btn.textContent = item.label;
+                                btn.addEventListener('click', () => {
+                                    importSearchInput.value = item.label;
+                                    importSearchResults.innerHTML = '';
+                                    loadImportSource(item.type, item.id);
+                                });
+                                importSearchResults.appendChild(btn);
+                            });
+                        });
+                }, 300);
+            });
+
+            function loadImportSource(sourceType, sourceId) {
+                const url = '{{ path("manage_part_catalog_va_source_engines", {type: "catalog", id: 1}) }}'
+                    .replace('/catalog/', '/' + sourceType + '/')
+                    .replace(/\/1$/, '/' + sourceId);
+                fetch(url).then((r) => r.json()).then((data) => renderImportChecklist(data.items));
+            }
+
+            function renderImportChecklist(items) {
+                if (items.length === 0) {
+                    importChecklist.innerHTML = '<p class="text-muted mb-0">Cette pièce n\'a aucune motorisation associée.</p>';
+                    return;
+                }
+                let html = '';
+                items.forEach((item, index) => {
+                    html += '<div class="form-check"><input type="checkbox" class="form-check-input" id="motoImp' + index + '" checked data-engine-id="' + item.engineId + '">';
+                    html += '<label class="form-check-label" for="motoImp' + index + '">' + item.label + '</label></div>';
+                });
+                html += '<button type="button" id="motoImportApplyBtn" class="btn btn-sm btn-success mt-2">Attacher la sélection</button>';
+                importChecklist.innerHTML = html;
+
+                document.getElementById('motoImportApplyBtn').addEventListener('click', function () {
+                    const checked = Array.from(importChecklist.querySelectorAll('input[type="checkbox"]:checked'));
+                    Promise.all(checked.map((cb) => {
+                        const params = new URLSearchParams({ engine_id: cb.dataset.engineId });
+                        return fetch('{{ path("manage_part_catalog_attach_engine", {id: entry.id}) }}', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params });
+                    })).then(() => {
+                        alert(checked.length + ' motorisation(s) attachée(s).');
+                        window.location.reload();
+                    });
+                });
+            }
+        }
+
+        function escHtml(str) {
+            const d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+
+        // --- Images : liste unique réordonnable, glisser-déposer, première = principale ---
+        const imagesInput = document.getElementById('imagesInput');
+        const imagesOrderList = document.getElementById('imagesOrderList');
+        const imageOrderInput = document.getElementById('imageOrderInput');
+        let selectedFiles = [];
+
+        function refreshFileInput() {
+            const dt = new DataTransfer();
+            selectedFiles.forEach((f) => dt.items.add(f));
+            imagesInput.files = dt.files;
+        }
+        function refreshOrderLabelsAndTokens() {
+            const blocks = Array.from(imagesOrderList.querySelectorAll('[data-kind]'));
+            const tokens = [];
+            blocks.forEach((block, index) => {
+                block.classList.toggle('admin-upload-thumb--primary', index === 0);
+                const label = block.querySelector('.order-label');
+                label.innerHTML = '<i class="bi bi-grip-horizontal"></i> ' + (index === 0 ? 'Principale' : '#' + (index + 1));
+                tokens.push(block.dataset.kind === 'existing' ? 'existing:' + block.dataset.existingId : 'new');
+            });
+            imageOrderInput.value = tokens.join(',');
+        }
+        function createNewThumb(file, fileIndex) {
+            const div = document.createElement('div');
+            div.className = 'admin-upload-thumb';
+            div.dataset.kind = 'new';
+            div.dataset.fileIndex = String(fileIndex);
+            div.innerHTML =
+                '<span class="admin-upload-thumb-label order-label drag-handle"><i class="bi bi-grip-horizontal"></i> #</span>' +
+                '<div class="admin-upload-thumb-inner">' +
+                '<img src="' + URL.createObjectURL(file) + '" class="admin-zoomable-thumb">' +
+                '<button type="button" class="admin-upload-remove"><i class="bi bi-x"></i></button>' +
+                '</div>';
+            return div;
+        }
+        function syncSelectedFilesFromDom() {
+            const newBlocks = Array.from(imagesOrderList.querySelectorAll('[data-kind="new"]'));
+            const reordered = newBlocks.map((b) => selectedFiles[parseInt(b.dataset.fileIndex, 10)]);
+            selectedFiles = reordered;
+            newBlocks.forEach((b, i) => { b.dataset.fileIndex = String(i); });
+            refreshFileInput();
+        }
+        imagesInput.addEventListener('change', function () {
+            const startIndex = selectedFiles.length;
+            selectedFiles = selectedFiles.concat(Array.from(this.files));
+            Array.from(this.files).forEach((file, i) => {
+                imagesOrderList.appendChild(createNewThumb(file, startIndex + i));
+            });
+            refreshFileInput();
+            refreshOrderLabelsAndTokens();
+        });
+        let draggedBlock = null;
+        imagesOrderList.addEventListener('mousedown', function (e) {
+            const handle = e.target.closest('.drag-handle');
+            if (!handle) return;
+            e.preventDefault();
+            draggedBlock = handle.closest('[data-kind]');
+            draggedBlock.classList.add('is-dragging');
+            document.addEventListener('mousemove', onDragMove);
+            document.addEventListener('mouseup', onDragEnd);
+        });
+        function onDragMove(e) {
+            if (!draggedBlock) return;
+            const siblings = Array.from(imagesOrderList.querySelectorAll('[data-kind]')).filter((el) => el !== draggedBlock);
+            for (const sibling of siblings) {
+                const rect = sibling.getBoundingClientRect();
+                if (e.clientX > rect.left && e.clientX < rect.right && e.clientY > rect.top && e.clientY < rect.bottom) {
+                    const after = e.clientX > rect.left + rect.width / 2;
+                    sibling.parentNode.insertBefore(draggedBlock, after ? sibling.nextSibling : sibling);
+                    break;
+                }
+            }
+        }
+        function onDragEnd() {
+            if (draggedBlock) draggedBlock.classList.remove('is-dragging');
+            draggedBlock = null;
+            document.removeEventListener('mousemove', onDragMove);
+            document.removeEventListener('mouseup', onDragEnd);
+            syncSelectedFilesFromDom();
+            refreshOrderLabelsAndTokens();
+        }
+        imagesOrderList.addEventListener('click', function (e) {
+            const block = e.target.closest('[data-kind]');
+            if (!block) return;
+            if (e.target.closest('.admin-upload-remove')) {
+                if (block.dataset.kind === 'existing') {
+                    const hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.name = 'remove_image_ids[]';
+                    hidden.value = block.dataset.existingId;
+                    block.closest('form').appendChild(hidden);
+                } else {
+                    const idx = parseInt(block.dataset.fileIndex, 10);
+                    selectedFiles.splice(idx, 1);
+                }
+                block.remove();
+                syncSelectedFilesFromDom();
+                refreshOrderLabelsAndTokens();
+            }
+        });
+        refreshOrderLabelsAndTokens();
+        // --- Dupliquer les véhicules associés d'une autre pièce ---
+        const toggleVaDuplicateBtn = document.getElementById('toggleVaDuplicateBtn');
+        if (toggleVaDuplicateBtn) {
+            const vaDuplicateBlock = document.getElementById('vaDuplicateBlock');
+            const vaDuplicateSearchInput = document.getElementById('vaDuplicateSearchInput');
+            const vaDuplicateSearchResults = document.getElementById('vaDuplicateSearchResults');
+            const vaDuplicateChecklist = document.getElementById('vaDuplicateChecklist');
+            const currentEntryId = {{ entry.id }};
+
+            toggleVaDuplicateBtn.addEventListener('click', () => {
+                vaDuplicateBlock.style.display = vaDuplicateBlock.style.display === 'none' ? 'block' : 'none';
+            });
+
+            let vaSearchTimeout;
+            vaDuplicateSearchInput.addEventListener('input', function () {
+                clearTimeout(vaSearchTimeout);
+                const term = this.value.trim();
+                if (term.length < 2) { vaDuplicateSearchResults.innerHTML = ''; return; }
+                vaSearchTimeout = setTimeout(() => {
+                    fetch('{{ path("manage_part_catalog_va_search_source") }}?q=' + encodeURIComponent(term) + '&exclude=' + currentEntryId)
+                        .then((r) => r.json())
+                        .then((data) => {
+                            vaDuplicateSearchResults.innerHTML = '';
+                            data.results.forEach((item) => {
+                                const btn = document.createElement('button');
+                                btn.type = 'button';
+                                btn.className = 'list-group-item list-group-item-action';
+                                btn.textContent = item.label;
+                                btn.addEventListener('click', () => {
+                                    vaDuplicateSearchInput.value = item.label;
+                                    vaDuplicateSearchResults.innerHTML = '';
+                                    loadVaSource(item.type, item.id);
+                                });
+                                vaDuplicateSearchResults.appendChild(btn);
+                            });
+                        });
+                }, 300);
+            });
+
+            function loadVaSource(sourceType, sourceId) {
+                const url = '{{ path("manage_part_catalog_va_source_engines", {type: "catalog", id: 1}) }}'
+                    .replace('/catalog/', '/' + sourceType + '/')
+                    .replace(/\/1$/, '/' + sourceId);
+                fetch(url)
+                    .then((r) => r.json())
+                    .then((data) => renderVaChecklist(data.items));
+            }
+
+            function renderVaChecklist(items) {
+                if (items.length === 0) {
+                    vaDuplicateChecklist.innerHTML = '<p class="text-muted mb-0">Cette pièce n\'a aucune motorisation associée.</p>';
+                    return;
+                }
+                let html = '';
+                items.forEach((item, index) => {
+                    html += '<div class="form-check"><input type="checkbox" class="form-check-input" id="vaDup' + index + '" checked data-engine-id="' + item.engineId + '">';
+                    html += '<label class="form-check-label" for="vaDup' + index + '">' + item.label + '</label></div>';
+                });
+                html += '<button type="button" id="vaApplyDuplicateBtn" class="btn btn-sm btn-success mt-2">Attacher la sélection</button>';
+                vaDuplicateChecklist.innerHTML = html;
+
+                document.getElementById('vaApplyDuplicateBtn').addEventListener('click', function () {
+                    const checked = Array.from(vaDuplicateChecklist.querySelectorAll('input[type="checkbox"]:checked'));
+                    Promise.all(checked.map((cb) => {
+                        const params = new URLSearchParams({ engine_id: cb.dataset.engineId });
+                        return fetch('{{ path("manage_part_catalog_attach_engine", {id: entry.id}) }}', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params });
+                    })).then(() => {
+                        alert(checked.length + ' motorisation(s) attachée(s).');
+                        window.location.reload();
+                    });
+                });
+            }
+        }
+
+        // --- Véhicules associés (texte brut, nouveau format) ---
+        function initVehicleAssociationWidget() {
+            const entryId = {{ entry.id }};
+            const rawInput = document.getElementById('vaRawInput');
+            const analyzeBtn = document.getElementById('vaAnalyzeBtn');
+            const errorsBox = document.getElementById('vaErrors');
+            const resultBox = document.getElementById('vaResult');
+            if (!rawInput) return;
+
+            function post(url, data) {
+                const params = new URLSearchParams(data);
+                return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params }).then((r) => r.json());
+            }
+            function esc(s) { const d = document.createElement('div'); d.textContent = s ?? ''; return d.innerHTML; }
+            function periodLabel(begin, end) {
+                if (!begin) return '';
+                return begin.month + '.' + begin.year + ' - ' + (end ? end.month + '.' + end.year : '...');
+            }
+
+            analyzeBtn.addEventListener('click', function () {
+                errorsBox.style.display = 'none';
+                post('{{ path("manage_part_catalog_va_analyze") }}', { text: rawInput.value }).then((res) => {
+                    if (res.error) { errorsBox.textContent = res.error; errorsBox.style.display = 'block'; resultBox.innerHTML = ''; return; }
+                    renderGroups(res.groups);
+                });
+            });
+
+            function renderGroups(groups) {
+                resultBox.innerHTML = '';
+                groups.forEach((group, gi) => {
+                    const box = document.createElement('div');
+                    box.className = 'admin-card mb-2';
+                    let html = '<div class="mb-2"><strong>' + esc(group.headerLine) + '</strong></div>';
+
+                    html += '<div class="mb-1">Marque : ';
+                    if (group.brand.found) { html += '<span class="badge bg-success">trouvée</span>'; }
+                    else {
+                        html += '<span class="badge bg-warning text-dark">non trouvée (' + esc(group.brand.triedText) + ')</span> ';
+                        html += '<input type="text" class="form-control form-control-sm d-inline-block va-brand-input" style="width:220px;" value="' + esc(group.brand.inputPrefix) + '"> ';
+                        html += '<button type="button" class="btn btn-sm btn-outline-primary va-create-brand">Créer</button>';
+                    }
+                    html += '</div>';
+
+                    html += '<div class="mb-1">Modèle : ';
+                    if (!group.brand.found) { html += '<span class="text-muted">(en attente de la marque)</span>'; }
+                    else if (group.model.found) { html += '<span class="badge bg-success">trouvé</span>'; }
+                    else {
+                        html += '<span class="badge bg-warning text-dark">non trouvé</span> ';
+                        html += '<input type="text" class="form-control form-control-sm d-inline-block va-model-input" style="width:220px;" value="' + esc(group.model.inputText) + '"> ';
+                        html += '<button type="button" class="btn btn-sm btn-outline-primary va-create-model">Créer</button>';
+                    }
+                    html += '</div>';
+
+                    html += '<div class="mb-2">Variante : ';
+                    if (!group.model.found) { html += '<span class="text-muted">(en attente du modèle)</span>'; }
+                    else if (group.variant.found) { html += '<span class="badge bg-success">trouvée</span>'; }
+                    else {
+                        html += '<span class="badge bg-warning text-dark">non trouvée</span> ';
+                        html += '<input type="text" class="form-control form-control-sm d-inline-block va-variant-input" style="width:220px;" value="' + esc(group.variant.inputText) + '"> ';
+                        html += '<span class="text-muted" style="font-size:11px;"> (' + periodLabel(group.periodBegin, group.periodEnd) + ')</span> ';
+                        html += '<button type="button" class="btn btn-sm btn-outline-primary va-create-variant">Créer</button>';
+                    }
+                    html += '</div>';
+
+                    html += '<table class="table table-sm mb-2"><thead><tr><th>Moteur</th><th>Puissance</th><th>Cylindrée</th><th>Période</th><th>Statut</th></tr></thead><tbody>';
+                    group.engines.forEach((e) => {
+                        html += '<tr><td>' + esc(e.label) + '</td><td>' + e.powerCv + ' CV</td><td>' + e.displacementCc + ' ccm</td><td>' + periodLabel(e.periodBegin, e.periodEnd) + '</td>';
+                        html += '<td>' + (e.exists ? '<span class="badge bg-secondary">existe déjà</span>' : '<span class="badge bg-success">nouvelle</span>') + '</td></tr>';
+                    });
+                    html += '</tbody></table>';
+
+                    if (group.unrecognizedLines && group.unrecognizedLines.length > 0) {
+                        html += '<div class="text-muted" style="font-size:11px;">Lignes ignorées : ' + group.unrecognizedLines.map(esc).join(', ') + '</div>';
+                    }
+
+                    const ready = group.brand.found && group.model.found && group.variant.found;
+                    html += '<button type="button" class="btn btn-sm btn-success va-save-group mt-2" ' + (ready ? '' : 'disabled') + '>Enregistrer ce véhicule</button>';
+
+                    box.innerHTML = html;
+                    resultBox.appendChild(box);
+                    bindGroupActions(box, group);
+                });
+            }
+
+            function bindGroupActions(box, group) {
+                const createBrandBtn = box.querySelector('.va-create-brand');
+                if (createBrandBtn) {
+                    createBrandBtn.addEventListener('click', function () {
+                        post('{{ path("manage_part_catalog_va_create_brand") }}', { name: box.querySelector('.va-brand-input').value.trim() }).then((res) => {
+                            if (res.id) addToCompatibleBrandsSelect(res.id, res.name);
+                            analyzeBtn.click();
+                        });
+                    });
+                }
+                const createModelBtn = box.querySelector('.va-create-model');
+                if (createModelBtn) {
+                    createModelBtn.addEventListener('click', function () {
+                        post('{{ path("manage_part_catalog_va_create_model") }}', { brand_id: group.brand.id, name: box.querySelector('.va-model-input').value.trim() }).then(() => analyzeBtn.click());
+                    });
+                }
+                const createVariantBtn = box.querySelector('.va-create-variant');
+                if (createVariantBtn) {
+                    createVariantBtn.addEventListener('click', function () {
+                        const begin = group.periodBegin || {}; const end = group.periodEnd || {};
+                        post('{{ path("manage_part_catalog_va_create_variant") }}', {
+                            model_id: group.model.id, name: box.querySelector('.va-variant-input').value.trim(),
+                            month_begin: begin.month || '', year_begin: begin.year || '', month_end: end.month || '', year_end: end.year || '',
+                        }).then(() => analyzeBtn.click());
+                    });
+                }
+                box.querySelector('.va-save-group').addEventListener('click', function () {
+                    post('{{ path("manage_part_catalog_va_save_group", {id: 0}) }}'.replace('/0/', '/' + entryId + '/'), {
+                        variant_id: group.variant.id, engines: JSON.stringify(group.engines),
+                    }).then((res) => { alert((res.attached || 0) + ' motorisation(s) rattachée(s).'); window.location.reload(); });
+                });
+            }
+        }
     </script>
 {% endblock %}

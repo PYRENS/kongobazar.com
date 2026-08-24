@@ -46,11 +46,42 @@ class BrandRepository extends ServiceEntityRepository
     }
 
     /** Marques typées Auto et/ou Moto uniquement (exclut les marques génériques). */
+    /** @return array{premium: Brand[], others: Brand[]} Marques ordonnées : premium en tête (alpha), puis les autres (alpha). */
+    public function findVehicleBrandsGrouped(): array
+    {
+        $all = $this->findVehicleBrands();
+        usort($all, fn (\App\Entity\Brand $a, \App\Entity\Brand $b) => strcasecmp($a->getName(), $b->getName()));
+
+        return [
+            'premium' => array_values(array_filter($all, fn (\App\Entity\Brand $b) => $b->isPremium())),
+            'others' => array_values(array_filter($all, fn (\App\Entity\Brand $b) => !$b->isPremium())),
+        ];
+    }
+
     public function findVehicleBrands(): array
     {
         $brands = $this->findBy([], ['name' => 'ASC']);
 
         return array_values(array_filter($brands, fn (\App\Entity\Brand $b) => $b->hasType('auto') || $b->hasType('moto')));
+    }
+
+    public function findMotoVehicleBrands(): array
+    {
+        $brands = $this->findBy([], ['name' => 'ASC']);
+
+        return array_values(array_filter($brands, fn (\App\Entity\Brand $b) => $b->hasType('moto')));
+    }
+
+    /** @return array{premium: Brand[], others: Brand[]} Marques Moto uniquement, groupées premium/autres. */
+    public function findMotoVehicleBrandsGrouped(): array
+    {
+        $all = $this->findMotoVehicleBrands();
+        usort($all, fn (\App\Entity\Brand $a, \App\Entity\Brand $b) => strcasecmp($a->getName(), $b->getName()));
+
+        return [
+            'premium' => array_values(array_filter($all, fn (\App\Entity\Brand $b) => $b->isPremium())),
+            'others' => array_values(array_filter($all, fn (\App\Entity\Brand $b) => !$b->isPremium())),
+        ];
     }
 
     //    /**

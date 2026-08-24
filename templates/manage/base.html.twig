@@ -119,11 +119,26 @@
                             <a href="{{ path('manage_vehicle_import') }}"><i class="bi bi-upload"></i> <span class="hide-menu">Import motorisations</span></a>
                         </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_vehicle_search' ? 'active' : '' }}">
-                            <a href="{{ path('manage_vehicle_search') }}"><i class="bi bi-search"></i> <span class="hide-menu">Recherche</span></a>
+                            <a href="{{ path('manage_vehicle_search') }}"><i class="bi bi-search"></i> Recherche</a>
                         </li>
-                        <li class="{{ app.request.attributes.get('_route') starts with 'manage_part_catalog' ? 'active' : '' }}">
-                            <a href="{{ path('manage_part_catalog_index') }}"><i class="bi bi-collection"></i> <span class="hide-menu">Catalogue Pièces</span></a>
+                    </ul>
+                </li>
+
+                {% set catalogRoots = part_catalog_root_categories() %}
+                {% set catalogGroupActive = app.request.attributes.get('_route') starts with 'manage_part_catalog' %}
+                <li class="admin-nav-group {{ catalogGroupActive ? 'open' : '' }}">
+                    <button type="button" class="admin-nav-group-toggle">
+                        <i class="bi bi-collection"></i> Catalogue <i class="bi bi-chevron-down admin-nav-group-arrow"></i>
+                    </button>
+                    <ul class="admin-nav-submenu">
+                        <li class="{{ catalogGroupActive and not app.request.get('rootCategory') ? 'active' : '' }}">
+                            <a href="{{ path('manage_part_catalog_index') }}"><i class="bi bi-collection"></i> Toutes catégories</a>
                         </li>
+                        {% for root in catalogRoots %}
+                            <li class="{{ catalogGroupActive and app.request.get('rootCategory') == root.id ? 'active' : '' }}">
+                                <a href="{{ path('manage_part_catalog_index', {rootCategory: root.id}) }}"><i class="bi bi-tag"></i> Catalogue {{ root.name }}</a>
+                            </li>
+                        {% endfor %}
                     </ul>
                 </li>
 

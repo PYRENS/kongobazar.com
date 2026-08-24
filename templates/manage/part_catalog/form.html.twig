@@ -5,36 +5,557 @@
 {% block page_title %}Nouvelle fiche catalogue{% endblock %}
 
 {% block body %}
-    <form method="post" action="{{ path('manage_part_catalog_create') }}">
-        <div class="mb-3">
-            <label class="form-label">Nom</label>
-            <input type="text" name="name" class="form-control" required placeholder="ex: Courroie de distribution GATES Micro-V">
-        </div>
+    <form method="post" action="{{ path('manage_part_catalog_create') }}" enctype="multipart/form-data">
+        <div class="row g-3">
+            <div class="col-xl-4">
+                <div class="sw-card h-100">
+                    <div class="card-header"><h6 class="mb-0 fw-bold">Informations générales</h6></div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="acc-form-label">Nom</label>
+                            <input type="text" name="name" class="acc-form-input" required placeholder="ex: Courroie de distribution GATES Micro-V">
+                        </div>
 
-        <div class="mb-3">
-            <label class="form-label">Catégorie</label>
-            <div class="category-picker" data-category-picker id="categoryPickerRoot">
-                <select data-category-level="1" class="form-select">
-                    <option value="">— Choisir —</option>
-                    {% for root in rootCategories %}
-                        <option value="{{ root.id }}">{{ root.name }}</option>
-                    {% endfor %}
-                </select>
+                        <div class="mb-3">
+                            <label class="acc-form-label">Statut</label>
+                            <select name="status" class="acc-form-select" style="max-width:220px;">
+                                <option value="draft">Brouillon</option>
+                                <option value="pending_review">En attente de validation</option>
+                                <option value="validated">Validée</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="acc-form-label">Catégorie</label>
+                            <div class="category-picker" data-category-picker id="categoryPickerRoot">
+                                <select data-category-level="1" class="form-select">
+                                    <option value="">— Choisir —</option>
+                                    {% for root in rootCategories %}
+                                        <option value="{{ root.id }}">{{ root.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <small class="text-muted d-block mt-1">Sélectionné : <strong id="categorySelectedDisplay">aucune</strong></small>
+                            <input type="hidden" name="category_id" id="categoryIdInput" data-category-final-value data-ancestor-ids="">
+                        </div>
+
+                        <div class="mb-3" id="brandFieldWrap" style="display:none;">
+                            <label class="acc-form-label">Fabricant</label>
+                            <div class="d-flex align-items-center gap-3">
+                                <div style="flex:1;">
+                                    <div class="ctb-search-wrap" id="brandFieldSearchWrap" style="width:100%;">
+                                        <i class="bi bi-award ctb-search-icon"></i>
+                                        <input type="text" id="entryBrandInput" class="ctb-search-input" placeholder="Rechercher un fabricant..." autocomplete="off" style="width:100%;">
+                                        <div class="header-search-results" id="entryBrandSuggestions"></div>
+                                    </div>
+                                    <div id="entryBrandTagWrap" class="mt-2" style="display:none;">
+                                        <span class="ctb-status-badge ctb-status-active">
+                                            <span id="entryBrandTagLabel"></span>
+                                            <i class="bi bi-x-circle ms-1" id="entryBrandTagRemove" style="cursor:pointer;"></i>
+                                        </span>
+                                    </div>
+                                    <button type="button" id="brandUnknownBtn" class="btn btn-sm btn-outline-secondary mt-2">Marque inconnue</button>
+                                </div>
+                                <div id="entryBrandLogoBox" style="width:70px;height:70px;border:1px solid var(--border-color);border-radius:8px;display:none;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
+                                    <img id="entryBrandLogoImg" src="" style="max-width:100%;max-height:100%;object-fit:contain;">
+                                </div>
+                            </div>
+                            <input type="hidden" name="brand_id" id="entryBrandIdInput" value="">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="acc-form-label">EAN (optionnel)</label>
+                            <input type="text" name="ean" class="acc-form-input" style="max-width:300px;">
+                        </div>
+                        <div class="mb-3">
+                            <label class="acc-form-label">Référence fabricant (optionnel)</label>
+                            <input type="text" name="manufacturer_ref" class="acc-form-input" style="max-width:300px;">
+                        </div>
+
+                    </div>
+                </div>
             </div>
-            <small class="text-muted d-block mt-1">Sélectionné : <strong id="categorySelectedDisplay">aucune</strong></small>
-            <input type="hidden" name="category_id" id="categoryIdInput" data-ancestor-ids="">
+
+            <div class="col-xl-8" id="vehiclePartExtrasWrap" style="display:none;">
+                <div class="sw-card mb-3" id="oemCardWrap">
+                    <div class="card-header"><h6 class="mb-0 fw-bold">OEM</h6></div>
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="acc-form-label" style="font-size:11px;">Texte brut</label>
+                                <textarea name="oem_codes" id="oemRawInput" class="acc-form-input" rows="8" placeholder="ex:&#10;7E0 615 601 D&#10;OE 038109119A — Audi"></textarea>
+                            </div>
+                            <div class="col-6">
+                                <label class="acc-form-label" style="font-size:11px;">Données traitées</label>
+                                <div id="oemPreview" class="border rounded p-2" style="min-height:180px;font-size:12px;background:var(--body-bg);"></div>
+                            </div>
+                        </div>
+                        <button type="button" id="oemCheckBrandsBtn" class="btn btn-sm btn-outline-primary mt-2">Vérifier les marques</button>
+                        <div id="oemBrandsResult" class="mt-2"></div>
+                    </div>
+                </div>
+
+                <div class="sw-card">
+                    <div class="card-header"><h6 class="mb-0 fw-bold">Caractéristiques</h6></div>
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="acc-form-label" style="font-size:11px;">Texte brut</label>
+                                <textarea name="characteristics_raw" id="characRawInput" class="acc-form-input" rows="8" placeholder="ex:&#10;Hauteur:131&#10;Diamètre intérieur 2 [mm]:20"></textarea>
+                            </div>
+                            <div class="col-6">
+                                <label class="acc-form-label" style="font-size:11px;">Données traitées</label>
+                                <div id="characPreview" class="border rounded p-2" style="min-height:180px;font-size:12px;background:var(--body-bg);"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sw-card" id="descriptionMotoWrap" style="display:none;">
+                    <div class="card-header"><h6 class="mb-0 fw-bold">Description</h6></div>
+                    <div class="card-body">
+                        <textarea name="description" id="descriptionMotoInput" class="form-control" rows="6"></textarea>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">EAN (optionnel)</label>
-            <input type="text" name="ean" class="form-control" style="max-width:300px;">
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Référence fabricant (optionnel)</label>
-            <input type="text" name="manufacturer_ref" class="form-control" style="max-width:300px;">
+        <div class="row g-3 mt-1">
+            <div class="col-xl-6">
+                <div class="sw-card h-100">
+                    <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-images me-2"></i>Images</h6></div>
+                    <div class="card-body">
+                        <div class="admin-file-upload-group" id="imageUploadGroup">
+                            <div class="admin-upload-thumb">
+                                <span class="admin-upload-thumb-label">&nbsp;</span>
+                                <label class="admin-upload-dropzone" for="imagesInput">
+                                    <i class="bi bi-camera"></i>
+                                    <span>Upload</span>
+                                </label>
+                            </div>
+                            <input type="file" name="images[]" id="imagesInput" accept="image/*" multiple class="admin-upload-input-hidden">
+                            <div id="imagesOrderList" style="display:contents;"></div>
+                        </div>
+                        <input type="hidden" name="image_order" id="imageOrderInput" value="">
+                        <small class="text-muted d-block mt-1">Glisse-dépose par la poignée (▤) pour réordonner — la première image (à gauche) devient l'image principale.</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-6" id="descriptionAutoWrap">
+                <div class="sw-card h-100">
+                <div class="card-header"><h6 class="mb-0 fw-bold">Description</h6></div>
+                    <div class="card-body">
+                        <textarea name="description" id="descriptionAutoInput" class="acc-form-input" rows="10" placeholder="Description libre de la pièce, utilisable par tous les vendeurs qui s'y rattacheront..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-6" id="motosAssociatedPlaceholder" style="display:none;">
+                <div class="sw-card h-100">
+                    <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-motorcycle me-2"></i>Motos associées</h6></div>
+                    <div class="card-body">
+                        <select name="compatible_brand_ids_moto[]" id="motoCompatibleBrandsSelect" class="form-select" multiple size="8" disabled>
+                            {% if motoVehicleBrandsGrouped.premium|length > 0 %}
+                                <optgroup label="★ Premium">
+                                    {% for b in motoVehicleBrandsGrouped.premium %}
+                                        <option value="{{ b.id }}">{{ b.name }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                            {% endif %}
+                            <optgroup label="Autres marques">
+                                {% for b in motoVehicleBrandsGrouped.others %}
+                                    <option value="{{ b.id }}">{{ b.name }}</option>
+                                {% endfor %}
+                            </optgroup>
+                        </select>
+                        <small class="text-muted d-block mt-1">Ctrl/Cmd + clic pour sélectionner plusieurs marques.</small>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <button type="submit" class="btn btn-success">Créer</button>
-        <a href="{{ path('manage_part_catalog_index') }}" class="btn btn-outline-secondary">Annuler</a>
+        <div class="row g-3 mt-1" id="vehiclesAssociatedWrap" style="display:none;">
+            <div class="col-12">
+                <div class="sw-card">
+                    <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-car-front me-2"></i>Véhicules associés</h6></div>
+                    <div class="card-body">
+                        <label class="acc-form-label">Marque(s) de véhicule compatibles</label>
+                        <select name="compatible_brand_ids[]" class="form-select" multiple size="8">
+                            {% if vehicleBrandsGrouped.premium|length > 0 %}
+                                <optgroup label="★ Premium">
+                                    {% for b in vehicleBrandsGrouped.premium %}
+                                        <option value="{{ b.id }}">{{ b.name }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                            {% endif %}
+                            <optgroup label="Autres marques">
+                                {% for b in vehicleBrandsGrouped.others %}
+                                    <option value="{{ b.id }}">{{ b.name }}</option>
+                                {% endfor %}
+                            </optgroup>
+                        </select>
+                        <small class="text-muted d-block mt-1">
+                            Ctrl/Cmd + clic pour sélectionner plusieurs marques. Pour associer des motorisations précises
+                            (pas juste des marques), rendez-vous sur la fiche une fois créée — la page suivante propose
+                            directement cette option.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="imageZoomOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;cursor:zoom-out;">
+            <img id="imageZoomFull" src="" style="max-width:90%;max-height:90%;border-radius:6px;">
+        </div>
+
+        <div class="mt-3">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check2 me-2"></i>Créer</button>
+            <a href="{{ path('manage_part_catalog_index') }}" class="btn btn-outline-secondary ms-2">Annuler</a>
+        </div>
     </form>
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        const categoryVehiclePartMap = {{ categoryVehiclePartMap|json_encode|raw }};
+        const allBrandsForEntry = {{ allBrands|map(b => {id: b.id, name: b.name, logo: b.logoName ? vich_uploader_asset(b, 'logoFile') : null})|json_encode|raw }};
+
+        const brandFieldWrap = document.getElementById('brandFieldWrap');
+        const vehiclePartExtrasWrap = document.getElementById('vehiclePartExtrasWrap');
+        const brandFieldSearchWrap = document.getElementById('brandFieldSearchWrap');
+        const entryBrandInput = document.getElementById('entryBrandInput');
+        const entryBrandSuggestions = document.getElementById('entryBrandSuggestions');
+        const entryBrandTagWrap = document.getElementById('entryBrandTagWrap');
+        const entryBrandTagLabel = document.getElementById('entryBrandTagLabel');
+        const entryBrandTagRemove = document.getElementById('entryBrandTagRemove');
+        const entryBrandIdInput = document.getElementById('entryBrandIdInput');
+        const entryBrandLogoBox = document.getElementById('entryBrandLogoBox');
+        const entryBrandLogoImg = document.getElementById('entryBrandLogoImg');
+        const brandUnknownBtn = document.getElementById('brandUnknownBtn');
+
+        const categoryPartTypeMap = {{ categoryPartTypeMap|json_encode|raw }};
+
+        function toggleVehiclePartFields() {
+            const catId = document.getElementById('categoryIdInput').value;
+            const eligible = !!(catId && categoryVehiclePartMap[catId]);
+            const partType = categoryPartTypeMap[catId] || null;
+            const isMoto = partType === 'moto';
+
+            brandFieldWrap.style.display = eligible ? '' : 'none';
+            vehiclePartExtrasWrap.style.display = eligible ? '' : 'none';
+            document.getElementById('vehiclesAssociatedWrap').style.display = (eligible && !isMoto) ? '' : 'none';
+
+            document.getElementById('oemCardWrap').style.display = '';
+            document.getElementById('descriptionMotoWrap').style.display = isMoto ? '' : 'none';
+            document.getElementById('descriptionAutoWrap').style.display = isMoto ? 'none' : '';
+            document.getElementById('motosAssociatedPlaceholder').style.display = isMoto ? '' : 'none';
+            document.getElementById('motoCompatibleBrandsSelect').disabled = !isMoto;
+
+            const autoCompatSelect = document.querySelector('select[name="compatible_brand_ids[]"]');
+            if (autoCompatSelect) autoCompatSelect.disabled = isMoto;
+
+            // Un seul champ "description" doit réellement être soumis (celui visible) — l'autre est neutralisé.
+            document.getElementById('descriptionAutoInput').disabled = isMoto;
+            document.getElementById('descriptionMotoInput').disabled = !isMoto;
+        }
+        document.getElementById('categoryPickerRoot').addEventListener('change', toggleVehiclePartFields);
+        toggleVehiclePartFields();
+
+        function setEntryBrand(id, name, logo) {
+            entryBrandIdInput.value = id || '';
+            if (id) {
+                entryBrandTagLabel.textContent = name;
+                entryBrandTagWrap.style.display = '';
+                brandFieldSearchWrap.style.display = 'none';
+                brandUnknownBtn.style.display = 'none';
+                if (logo) {
+                    entryBrandLogoImg.src = logo;
+                    entryBrandLogoBox.style.display = 'flex';
+                } else {
+                    entryBrandLogoBox.style.display = 'none';
+                }
+            } else {
+                entryBrandTagWrap.style.display = 'none';
+                brandFieldSearchWrap.style.display = '';
+                brandUnknownBtn.style.display = '';
+                entryBrandLogoBox.style.display = 'none';
+                entryBrandInput.value = '';
+            }
+        }
+
+        function renderEntryBrandSuggestions(term) {
+            entryBrandSuggestions.innerHTML = '';
+            const matches = (term ? allBrandsForEntry.filter((b) => b.name.toLowerCase().includes(term.toLowerCase())) : allBrandsForEntry).slice(0, 10);
+            if (matches.length === 0) { entryBrandSuggestions.classList.remove('active'); return; }
+            matches.forEach((b) => {
+                const item = document.createElement('div');
+                item.className = 'header-search-result-item';
+                item.innerHTML = '<i class="bi bi-award"></i><span>' + b.name + '</span>';
+                item.addEventListener('click', () => {
+                    setEntryBrand(b.id, b.name, b.logo);
+                    entryBrandSuggestions.classList.remove('active');
+                });
+                entryBrandSuggestions.appendChild(item);
+            });
+            entryBrandSuggestions.classList.add('active');
+        }
+        entryBrandInput.addEventListener('focus', function () { renderEntryBrandSuggestions(this.value.trim()); });
+        entryBrandInput.addEventListener('input', function () { renderEntryBrandSuggestions(this.value.trim()); });
+        entryBrandTagRemove.addEventListener('click', function () { setEntryBrand(null, '', null); });
+        brandUnknownBtn.addEventListener('click', function () { setEntryBrand('unknown', 'Marque inconnue', null); });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.ctb-search-wrap')) entryBrandSuggestions.classList.remove('active');
+        });
+
+        // --- Aperçu en direct : OEM ---
+        const oemRawInput = document.getElementById('oemRawInput');
+        const oemPreview = document.getElementById('oemPreview');
+        function renderOemPreview() {
+            const lines = oemRawInput.value.split(/\r\n|\r|\n/).map((l) => l.trim()).filter(Boolean);
+            if (lines.length === 0) { oemPreview.innerHTML = '<span class="text-muted">Aucun code pour l\'instant.</span>'; return; }
+            let html = '<ul class="mb-0 ps-3">';
+            lines.forEach((line) => {
+                const m = line.match(/^(?:OEN?\s+)?(.+?)\s*[—–]\s*(.+)$/u);
+                if (m) {
+                    const code = m[1].trim();
+                    // "HYUNDAI / KIA" — une entrée par marque partageant ce code.
+                    const brandNames = m[2].split('/').map((b) => b.trim()).filter(Boolean);
+                    brandNames.forEach((brandName) => {
+                        html += '<li><strong>' + escapeHtml(code) + '</strong> <span class="text-muted">(' + escapeHtml(brandName) + ')</span></li>';
+                    });
+                } else {
+                    const code = line.replace(/^OEN?\s+/i, '').trim();
+                    html += '<li><strong>' + escapeHtml(code) + '</strong></li>';
+                }
+            });
+            html += '</ul>';
+            oemPreview.innerHTML = html;
+        }
+        oemRawInput.addEventListener('input', renderOemPreview);
+        renderOemPreview();
+
+        // --- Vérification des marques citées dans OEM, avec proposition de création ---
+        const oemCheckBrandsBtn = document.getElementById('oemCheckBrandsBtn');
+        const oemBrandsResult = document.getElementById('oemBrandsResult');
+        if (oemCheckBrandsBtn) {
+            oemCheckBrandsBtn.addEventListener('click', function () {
+                checkOemBrands();
+            });
+        }
+
+        function checkOemBrands() {
+            const params = new URLSearchParams({ text: oemRawInput.value });
+            fetch('{{ path("manage_part_catalog_oem_check_brands") }}', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params })
+                .then((r) => r.json())
+                .then((res) => {
+                    oemBrandsResult.innerHTML = '';
+                    if (res.brands.length === 0) {
+                        oemBrandsResult.innerHTML = '<span class="text-muted" style="font-size:12px;">Aucune marque citée dans le texte OEM.</span>';
+                        return;
+                    }
+
+                    // Marques trouvées ET marques véhicule → sélection automatique dans le multi-select.
+                    // Trouvées mais pas marque véhicule (ex: Bosch) → normal, on ne touche pas au select.
+                    res.brands.filter((b) => b.found && b.isVehicleBrand).forEach((b) => {
+                        addToCompatibleBrandsSelect(b.id, b.name);
+                    });
+
+                    const missing = res.brands.filter((b) => !b.found);
+                    const nonVehicleFound = res.brands.filter((b) => b.found && !b.isVehicleBrand);
+
+                    if (missing.length === 0) {
+                        oemBrandsResult.innerHTML = '<span class="text-success" style="font-size:12px;"><i class="bi bi-check-circle"></i> Toutes les marques citées existent déjà.</span>';
+                    }
+
+                    if (nonVehicleFound.length > 0) {
+                        const note = document.createElement('div');
+                        note.className = 'text-muted mt-1';
+                        note.style.fontSize = '11px';
+                        note.textContent = 'Trouvée(s) mais pas marque véhicule (normal, ex: fabricant de pièces) : ' + nonVehicleFound.map((b) => b.name).join(', ');
+                        oemBrandsResult.appendChild(note);
+                    }
+
+                    missing.forEach((b) => {
+                        const row = document.createElement('div');
+                        row.className = 'd-flex align-items-center gap-2 mb-1 mt-1';
+                        row.innerHTML = '<span class="ctb-status-badge ctb-status-pending" style="font-size:11px;">' + b.name + ' — non trouvée</span>'
+                            + '<div class="form-check form-check-inline mb-0">'
+                            + '<input type="checkbox" class="form-check-input oem-is-auto" id="oemIsAuto-' + b.name.replace(/[^a-zA-Z0-9]/g, '') + '" checked>'
+                            + '<label class="form-check-label" style="font-size:11px;" for="oemIsAuto-' + b.name.replace(/[^a-zA-Z0-9]/g, '') + '">Marque automobile</label>'
+                            + '</div>'
+                            + '<button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 oem-create-brand-btn" data-name="' + b.name + '">Créer</button>';
+                        oemBrandsResult.appendChild(row);
+                    });
+                    oemBrandsResult.querySelectorAll('.oem-create-brand-btn').forEach((btn) => {
+                        btn.addEventListener('click', function () {
+                            const row = this.closest('.d-flex');
+                            const isAuto = row.querySelector('.oem-is-auto').checked;
+                            const params2 = new URLSearchParams({ name: this.dataset.name, is_auto: isAuto ? '1' : '0' });
+                            fetch('{{ path("manage_part_catalog_va_create_brand") }}', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params2 })
+                                .then((r) => r.json())
+                                .then((res) => {
+                                    if (res.id && res.isVehicleBrand) addToCompatibleBrandsSelect(res.id, res.name);
+                                    checkOemBrands();
+                                });
+                        });
+                    });
+                });
+        }
+
+        // --- Aperçu en direct : Caractéristiques ---
+        const characRawInput = document.getElementById('characRawInput');
+        const characPreview = document.getElementById('characPreview');
+        function renderCharacPreview() {
+            const lines = characRawInput.value.split(/\r\n|\r|\n/).map((l) => l.trim()).filter(Boolean);
+            if (lines.length === 0) { characPreview.innerHTML = '<span class="text-muted">Aucune caractéristique pour l\'instant.</span>'; return; }
+            let html = '<table class="table table-sm mb-0"><tbody>';
+            lines.forEach((line) => {
+                const idx = line.indexOf(':');
+                if (idx === -1) return;
+                let label = line.substring(0, idx).trim();
+                const value = line.substring(idx + 1).trim();
+                let unit = '';
+                const unitMatch = label.match(/^(.*)\[([^\]]+)\]\s*$/u);
+                if (unitMatch) {
+                    label = unitMatch[1].trim();
+                    unit = unitMatch[2].trim();
+                }
+                html += '<tr><td class="text-muted">' + escapeHtml(label) + (unit ? ' <span class="text-muted">[' + escapeHtml(unit) + ']</span>' : '') + '</td><td><strong>' + escapeHtml(value) + '</strong></td></tr>';
+            });
+            html += '</tbody></table>';
+            characPreview.innerHTML = html;
+        }
+        characRawInput.addEventListener('input', renderCharacPreview);
+        renderCharacPreview();
+
+        // --- Images : liste unique réordonnable, glisser-déposer, première = principale ---
+        const imagesInput = document.getElementById('imagesInput');
+        const imagesOrderList = document.getElementById('imagesOrderList');
+        const imageOrderInput = document.getElementById('imageOrderInput');
+
+        let selectedFiles = [];
+
+        function refreshFileInput() {
+            const dt = new DataTransfer();
+            selectedFiles.forEach((f) => dt.items.add(f));
+            imagesInput.files = dt.files;
+        }
+
+        function refreshOrderLabelsAndTokens() {
+            const blocks = Array.from(imagesOrderList.querySelectorAll('[data-kind]'));
+            const tokens = [];
+            blocks.forEach((block, index) => {
+                block.classList.toggle('admin-upload-thumb--primary', index === 0);
+                const label = block.querySelector('.order-label');
+                label.innerHTML = '<i class="bi bi-grip-horizontal"></i> ' + (index === 0 ? 'Principale' : '#' + (index + 1));
+                tokens.push(block.dataset.kind === 'existing' ? 'existing:' + block.dataset.existingId : 'new');
+            });
+            imageOrderInput.value = tokens.join(',');
+        }
+
+        function createNewThumb(file, fileIndex) {
+            const div = document.createElement('div');
+            div.className = 'admin-upload-thumb';
+            div.dataset.kind = 'new';
+            div.dataset.fileIndex = String(fileIndex);
+            div.innerHTML =
+                '<span class="admin-upload-thumb-label order-label drag-handle"><i class="bi bi-grip-horizontal"></i> #</span>' +
+                '<div class="admin-upload-thumb-inner">' +
+                '<img src="' + URL.createObjectURL(file) + '" class="admin-zoomable-thumb">' +
+                '<button type="button" class="admin-upload-remove"><i class="bi bi-x"></i></button>' +
+                '</div>';
+            return div;
+        }
+
+        function syncSelectedFilesFromDom() {
+            const newBlocks = Array.from(imagesOrderList.querySelectorAll('[data-kind="new"]'));
+            const reordered = newBlocks.map((b) => selectedFiles[parseInt(b.dataset.fileIndex, 10)]);
+            selectedFiles = reordered;
+            newBlocks.forEach((b, i) => { b.dataset.fileIndex = String(i); });
+            refreshFileInput();
+        }
+
+        imagesInput.addEventListener('change', function () {
+            const startIndex = selectedFiles.length;
+            selectedFiles = selectedFiles.concat(Array.from(this.files));
+            Array.from(this.files).forEach((file, i) => {
+                imagesOrderList.appendChild(createNewThumb(file, startIndex + i));
+            });
+            refreshFileInput();
+            refreshOrderLabelsAndTokens();
+        });
+
+        let draggedBlock = null;
+        imagesOrderList.addEventListener('mousedown', function (e) {
+            const handle = e.target.closest('.drag-handle');
+            if (!handle) return;
+            e.preventDefault();
+            draggedBlock = handle.closest('[data-kind]');
+            draggedBlock.classList.add('is-dragging');
+            document.addEventListener('mousemove', onDragMove);
+            document.addEventListener('mouseup', onDragEnd);
+        });
+
+        function onDragMove(e) {
+            if (!draggedBlock) return;
+            const siblings = Array.from(imagesOrderList.querySelectorAll('[data-kind]')).filter((el) => el !== draggedBlock);
+            for (const sibling of siblings) {
+                const rect = sibling.getBoundingClientRect();
+                if (e.clientX > rect.left && e.clientX < rect.right && e.clientY > rect.top && e.clientY < rect.bottom) {
+                    const after = e.clientX > rect.left + rect.width / 2;
+                    sibling.parentNode.insertBefore(draggedBlock, after ? sibling.nextSibling : sibling);
+                    break;
+                }
+            }
+        }
+
+        function onDragEnd() {
+            if (draggedBlock) draggedBlock.classList.remove('is-dragging');
+            draggedBlock = null;
+            document.removeEventListener('mousemove', onDragMove);
+            document.removeEventListener('mouseup', onDragEnd);
+            syncSelectedFilesFromDom();
+            refreshOrderLabelsAndTokens();
+        }
+
+        imagesOrderList.addEventListener('click', function (e) {
+            const block = e.target.closest('[data-kind]');
+            if (!block) return;
+            if (e.target.closest('.admin-upload-remove')) {
+                if (block.dataset.kind === 'new') {
+                    const idx = parseInt(block.dataset.fileIndex, 10);
+                    selectedFiles.splice(idx, 1);
+                }
+                block.remove();
+                syncSelectedFilesFromDom();
+                refreshOrderLabelsAndTokens();
+            }
+        });
+
+        // Ajoute (ou sélectionne si déjà présente) une marque nouvellement créée dans le multi-select "Marque(s) de véhicule compatibles".
+        function addToCompatibleBrandsSelect(id, name) {
+            const autoSelect = document.querySelector('select[name="compatible_brand_ids[]"]');
+            const motoSelect = document.getElementById('motoCompatibleBrandsSelect');
+            // On cible celui des deux qui est actif (pas désactivé) selon Auto/Moto sélectionné.
+            const target = (motoSelect && !motoSelect.disabled) ? motoSelect : autoSelect;
+            if (!target) return;
+
+            let option = Array.from(target.options).find((o) => o.value === String(id));
+            if (!option) {
+                option = document.createElement('option');
+                option.value = id;
+                option.textContent = name;
+                target.appendChild(option);
+            }
+            option.selected = true;
+        }
+
+        function escapeHtml(str) {
+            const d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+    </script>
 {% endblock %}

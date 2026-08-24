@@ -90,6 +90,7 @@
                             <th>{{ self.sortLink('productCount', 'Produits', currentSort, currentDir) }}</th>
                             <th>{{ self.sortLink('modelCount', 'Modèles', currentSort, currentDir) }}</th>
                             <th>{{ self.sortLink('active', 'Statut', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('createdAt', 'Créée le', currentSort, currentDir) }}</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -138,6 +139,7 @@
                                         </button>
                                     </form>
                                 </td>
+                                <td>{{ brand.createdAt ? brand.createdAt|date('d/m/Y') : '—' }}</td>
                                 <td>
                                     <div class="ctb-act-row">
                                         <a href="{{ path('manage_brands_show', {id: brand.id}) }}" class="ctb-act-btn" title="Voir"><i class="bi bi-eye"></i></a>

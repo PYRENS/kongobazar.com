@@ -331,7 +331,11 @@
                     tbody += '<td>' + esc(row.fuelType || '-') + '</td>';
                     tbody += '<td>' + esc(row.period || '-') + '</td>';
                     tbody += '<td>' + (row.partsCount > 0 ? '<a href="' + row.partsUrl + '">' + row.partsCount + '</a>' : '0') + '</td>';
-                    tbody += actionCell(row.editUrl, row.deleteUrl, 'Supprimer cette motorisation ?');
+                    tbody += '<td><div class="ctb-act-row">'
+                        + (row.partsCount > 0 ? '<a href="' + row.partsUrl + '" class="ctb-act-btn" title="Voir pièces de rechange"><i class="bi bi-box-seam"></i></a>' : '')
+                        + '<a href="' + row.editUrl + '" class="ctb-act-btn" title="Modifier"><i class="bi bi-pencil"></i></a>'
+                        + '<form action="' + row.deleteUrl + '" method="post" onsubmit="return confirm(\'Supprimer cette motorisation ?\');"><button type="submit" class="ctb-act-btn ctb-act-danger" title="Supprimer"><i class="bi bi-trash"></i></button></form>'
+                        + '</div></td>';
                     tbody += '</tr>';
                 });
                 if (rows.length === 0) tbody = '<tr><td colspan="7" class="text-muted text-center py-4">Aucune motorisation.</td></tr>';

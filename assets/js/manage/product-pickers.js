@@ -6,7 +6,11 @@ document.addEventListener('DOMContentLoaded', () => {
 function initProductCategoryPicker() {
     const root = document.getElementById('categoryPickerRoot');
     const finalInput = document.getElementById('categoryIdInput');
-    if (!root || !finalInput) return;
+    // Ce script est spécifique au formulaire produit (gère le hook onProductCategoryChange,
+    // le pré-remplissage des ancêtres, etc.) — il ne doit s'activer QUE si ce formulaire
+    // le demande explicitement, pour ne pas entrer en conflit avec category-picker.js
+    // (générique, utilisé par Catégories, Marques, Modèles véhicules, Catalogue pièces...).
+    if (!root || !finalInput || !root.hasAttribute('data-product-category-picker')) return;
 
     const ancestorIds = (finalInput.dataset.ancestorIds || '').split(',').filter(Boolean);
     const rootSelect = root.querySelector('select[data-category-level="1"]');

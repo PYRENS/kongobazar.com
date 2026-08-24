@@ -4,61 +4,187 @@
 {% block page_icon %}bi-collection{% endblock %}
 {% block page_title %}Catalogue Pièces{% endblock %}
 
+{% macro sortLink(field, label, currentSort, currentDir) %}
+    {% set nextDir = (currentSort == field and currentDir == 'ASC') ? 'DESC' : 'ASC' %}
+    <a href="#" class="admin-sort-link js-sort" data-sort="{{ field }}" data-dir="{{ nextDir }}">
+        {{ label }}
+        {% if currentSort == field %}
+            <i class="bi bi-caret-{{ currentDir == 'ASC' ? 'up' : 'down' }}-fill"></i>
+        {% else %}
+            <i class="bi bi-arrow-down-up admin-sort-icon-idle"></i>
+        {% endif %}
+    </a>
+{% endmacro %}
+{% import _self as self %}
+
 {% block body %}
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1 class="h4 mb-0">Catalogue Pièces</h1>
         <a href="{{ path('manage_part_catalog_new') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Nouvelle fiche</a>
     </div>
 
-    <form method="get" class="mb-3 d-flex align-items-center gap-2">
-        <input type="text" name="q" class="form-control" style="max-width: 260px;" placeholder="Nom, EAN, référence..." value="{{ searchTerm }}">
-        <select name="status" class="form-select" style="max-width: 200px;">
+    <div id="catalogFilterRoot" class="mb-3 d-flex align-items-center flex-wrap gap-2">
+        <input type="text" id="catalogSearchInput" class="form-control" style="max-width: 260px;" placeholder="Nom, EAN, réf. fabricant..." value="{{ searchTerm }}" autocomplete="off">
+        <div class="ms-auto"></div>
+
+        <div class="form-check form-check-inline mb-0">
+            <input type="checkbox" id="showAutoCheck" class="form-check-input" checked>
+            <label class="form-check-label" for="showAutoCheck">Pièces Auto</label>
+        </div>
+        <div class="form-check form-check-inline mb-0">
+            <input type="checkbox" id="showMotoCheck" class="form-check-input" checked>
+            <label class="form-check-label" for="showMotoCheck">Pièces Moto</label>
+        </div>
+
+        <div class="category-picker" data-category-picker id="categoryFilterPickerRoot" style="flex-direction:row;gap:6px;">
+            <select data-category-level="1" class="form-select" style="width:auto;">
+                <option value="">— Toutes catégories —</option>
+                {% for cat in partFilterCategories %}
+                    <option value="{{ cat.id }}">{{ cat.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <input type="hidden" id="categoryFilterIdInput" data-category-final-value value="{{ currentCategoryId }}">
+
+        <select id="catalogStatusSelect" class="form-select" style="max-width: 200px;">
             <option value="">— Tous statuts —</option>
+            <option value="draft" {{ currentStatus == 'draft' ? 'selected' : '' }}>Brouillon</option>
             <option value="pending_review" {{ currentStatus == 'pending_review' ? 'selected' : '' }}>En attente</option>
             <option value="validated" {{ currentStatus == 'validated' ? 'selected' : '' }}>Validée</option>
         </select>
-        <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-search"></i></button>
-    </form>
 
-    <table class="admin-table">
-        <thead>
-            <tr>
-                <th>Nom</th>
-                <th>Catégorie</th>
-                <th>Marque</th>
-                <th>EAN</th>
-                <th>Réf. fabricant</th>
-                <th>Statut</th>
-                <th>Créée le</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for entry in entries %}
-                <tr>
-                    <td><a href="{{ path('manage_part_catalog_show', {id: entry.id}) }}">{{ entry.name }}</a></td>
-                    <td>{{ entry.category.name }}</td>
-                    <td>{{ entry.brand ? entry.brand.name : '—' }}</td>
-                    <td>{{ entry.ean ?: '—' }}</td>
-                    <td>{{ entry.manufacturerRef ?: '—' }}</td>
-                    <td>
-                        {% if entry.status == 'validated' %}
-                            <span class="admin-badge admin-badge--active">Validée</span>
-                        {% else %}
-                            <span class="admin-badge admin-badge--disabled">En attente</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ entry.createdAt|date('d/m/Y') }}</td>
-                    <td class="admin-actions">
-                        <a href="{{ path('manage_part_catalog_show', {id: entry.id}) }}" class="admin-btn admin-btn--outline"><i class="bi bi-eye"></i></a>
-                        <form action="{{ path('manage_part_catalog_delete', {id: entry.id}) }}" method="post" onsubmit="return confirm('Supprimer cette fiche catalogue ?');">
-                            <button type="submit" class="admin-btn admin-btn--outline"><i class="bi bi-trash"></i></button>
-                        </form>
-                    </td>
-                </tr>
-            {% else %}
-                <tr><td colspan="8" class="text-muted">Aucune fiche catalogue.</td></tr>
+        <select id="catalogPerPageSelect" class="form-select ms-auto" style="max-width: 140px;">
+            {% for n in [10, 20, 50, 100] %}
+                <option value="{{ n }}" {{ perPage == n ? 'selected' : '' }}>{{ n }} / page</option>
             {% endfor %}
-        </tbody>
-    </table>
+        </select>
+    </div>
+
+    <div class="table-responsive">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Logo</th>
+                    <th>{{ self.sortLink('name', 'Nom', currentSort, currentDir) }}</th>
+                    <th>{{ self.sortLink('rootCategoryName', 'Catégorie', currentSort, currentDir) }}</th>
+                    <th>{{ self.sortLink('subcategory', 'Sous-catégorie', currentSort, currentDir) }}</th>
+                    <th>{{ self.sortLink('brand', 'Marque', currentSort, currentDir) }}</th>
+                    <th>EAN</th>
+                    <th>Réf. fabricant</th>
+                    <th>{{ self.sortLink('sellerCount', 'Vendeurs', currentSort, currentDir) }}</th>
+                    <th>{{ self.sortLink('engineCount', 'Motorisations', currentSort, currentDir) }}</th>
+                    <th>{{ self.sortLink('productCount', 'Produits', currentSort, currentDir) }}</th>
+                    <th>{{ self.sortLink('totalQuantity', 'Qté totale', currentSort, currentDir) }}</th>
+                    <th>{{ self.sortLink('status', 'Statut', currentSort, currentDir) }}</th>
+                    <th>{{ self.sortLink('updatedAt', 'Mise à jour', currentSort, currentDir) }}</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="catalogTableBody">
+                {% include 'manage/part_catalog/_index_rows.html.twig' %}
+            </tbody>
+        </table>
+    </div>
+
+    <div id="catalogFooter" class="d-flex justify-content-between align-items-center mt-2">
+        <span class="text-muted" id="catalogFooterInfo">{{ total }} fiche{{ total != 1 ? 's' : '' }} — page {{ page }} / {{ pages }}</span>
+        <div class="ctb-pagination" id="catalogPagination">
+            {% include 'manage/part_catalog/_index_pagination.html.twig' %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    <script src="{{ asset('js/manage/category-picker.js') }}"></script>
+    <script>
+        const state = {
+            q: '{{ searchTerm|e('js') }}',
+            category: '{{ currentCategoryId }}',
+            status: '{{ currentStatus }}',
+            sort: '{{ currentSort|default('name') }}',
+            dir: '{{ currentDir|default('ASC') }}',
+            showAuto: '1',
+            showMoto: '1',
+            perPage: {{ perPage|default(20) }},
+            page: {{ page|default(1) }},
+        };
+
+        const tableBody = document.getElementById('catalogTableBody');
+        const footerInfo = document.getElementById('catalogFooterInfo');
+        const pagination = document.getElementById('catalogPagination');
+        let debounceTimer;
+
+        function load() {
+            const params = new URLSearchParams(state);
+            fetch('{{ path("manage_part_catalog_index_fragment") }}?' + params.toString())
+                .then((r) => r.json())
+                .then((data) => {
+                    tableBody.innerHTML = data.rowsHtml;
+                    footerInfo.textContent = data.footerInfo;
+                    pagination.innerHTML = data.paginationHtml;
+                    bindSortLinks();
+                    bindPaginationLinks();
+                });
+        }
+
+        function bindSortLinks() {
+            document.querySelectorAll('.js-sort').forEach((link) => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    state.sort = this.dataset.sort;
+                    state.dir = this.dataset.dir;
+                    state.page = 1;
+                    load();
+                });
+            });
+        }
+        bindSortLinks();
+
+        function bindPaginationLinks() {
+            document.querySelectorAll('.js-page').forEach((link) => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    if (this.classList.contains('disabled')) return;
+                    state.page = parseInt(this.dataset.page, 10);
+                    load();
+                });
+            });
+        }
+        bindPaginationLinks();
+
+        const searchInput = document.getElementById('catalogSearchInput');
+        searchInput.addEventListener('input', function () {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => { state.q = this.value.trim(); state.page = 1; load(); }, 300);
+        });
+
+        document.getElementById('catalogStatusSelect').addEventListener('change', function () {
+            state.status = this.value;
+            state.page = 1;
+            load();
+        });
+
+        document.getElementById('categoryFilterPickerRoot').addEventListener('change', function () {
+            state.category = document.getElementById('categoryFilterIdInput').value;
+            state.page = 1;
+            load();
+        });
+
+        document.getElementById('showAutoCheck').addEventListener('change', function () {
+            state.showAuto = this.checked ? '1' : '0';
+            state.page = 1;
+            load();
+        });
+        document.getElementById('showMotoCheck').addEventListener('change', function () {
+            state.showMoto = this.checked ? '1' : '0';
+            state.page = 1;
+            load();
+        });
+
+        document.getElementById('catalogPerPageSelect').addEventListener('change', function () {
+            state.perPage = parseInt(this.value, 10);
+            state.page = 1;
+            load();
+        });
+    </script>
 {% endblock %}

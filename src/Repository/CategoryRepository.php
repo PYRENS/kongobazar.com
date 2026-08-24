@@ -56,6 +56,106 @@ class CategoryRepository extends ServiceEntityRepository
         return $map;
     }
 
+    /** @return Category[] Enfants directs des catégories marquées "Racine pièces Auto/Moto" (ex: Moteur, Freinage...), triés par nom. */
+    public function findPartFilterStartingCategories(): array
+    {
+        $roots = $this->createQueryBuilder('c')
+            ->andWhere('c.isAutoPartRoot = true OR c.isMotoPartRoot = true')
+            ->getQuery()
+            ->getResult();
+
+        $children = [];
+        foreach ($roots as $root) {
+            foreach ($this->findChildrenOf($root->getId()) as $child) {
+                $children[$child->getId()] = $child;
+            }
+        }
+
+        $children = array_values($children);
+        usort($children, fn (Category $a, Category $b) => strcasecmp($a->getName(), $b->getName()));
+
+        return $children;
+    }
+
+    /** @return array<int, string> [categoryId => 'auto'|'moto'] pour toute catégorie descendant d'une racine "pièces Auto" ou "pièces Moto". */
+    public function findAllPartTypeMap(): array
+    {
+        $autoRoots = $this->createQueryBuilder('c')->andWhere('c.isAutoPartRoot = true')->getQuery()->getResult();
+        $motoRoots = $this->createQueryBuilder('c')->andWhere('c.isMotoPartRoot = true')->getQuery()->getResult();
+
+        $map = [];
+        foreach ($autoRoots as $root) {
+            $map[$root->getId()] = 'auto';
+            foreach ($root->getDescendantCategories() as $d) {
+                $map[$d->getId()] = 'auto';
+            }
+        }
+        foreach ($motoRoots as $root) {
+            $map[$root->getId()] = 'moto';
+            foreach ($root->getDescendantCategories() as $d) {
+                $map[$d->getId()] = 'moto';
+            }
+        }
+
+        return $map;
+    }
+
+    /** @return int[] IDs de toutes les catégories descendant des racines "pièces Auto" et/ou "pièces Moto", selon ce qui est demandé. */
+    public function findCategoryIdsByPartType(bool $includeAuto, bool $includeMoto): array
+    {
+        if (!$includeAuto && !$includeMoto) {
+            return [];
+        }
+
+        $qb = $this->createQueryBuilder('c');
+        $conditions = [];
+        if ($includeAuto) {
+            $conditions[] = 'c.isAutoPartRoot = true';
+        }
+        if ($includeMoto) {
+            $conditions[] = 'c.isMotoPartRoot = true';
+        }
+        $roots = $qb->andWhere(implode(' OR ', $conditions))->getQuery()->getResult();
+
+        $ids = [];
+        foreach ($roots as $root) {
+            $ids[] = $root->getId();
+            foreach ($root->getDescendantCategories() as $descendant) {
+                $ids[] = $descendant->getId();
+            }
+        }
+
+        return array_values(array_unique($ids));
+    }
+
+    /** @return array<int, bool> [categoryId => true si elle-même OU un de ses parents est marqué "Pièce détachée véhicule"] */
+    public function findAllVehiclePartEligibleMap(): array
+    {
+        $all = $this->findBy([]);
+        $flagged = [];
+        foreach ($all as $cat) {
+            if ($cat->isVehiclePart()) {
+                $flagged[$cat->getId()] = true;
+            }
+        }
+
+        $map = [];
+        foreach ($all as $cat) {
+            $eligible = false;
+            $node = $cat;
+            while ($node) {
+                if (isset($flagged[$node->getId()])) {
+                    $eligible = true;
+                    break;
+                }
+                $node = $node->getParent();
+            }
+            $map[$cat->getId()] = $eligible;
+        }
+
+        return $map;
+    }
+
     /** Enfants directs d'une catégorie (ou rayons racine si $parentId est null) ayant au moins un produit en stock, directement ou dans leurs descendants. */
     public function findChildrenWithInStockProducts(?int $parentId): array
     {

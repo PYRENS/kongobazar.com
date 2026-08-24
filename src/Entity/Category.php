@@ -87,6 +87,17 @@ class Category
     #[ORM\Column(options: ['default' => false])]
     private bool $authenticityRelevant = false;
 
+    #[ORM\Column(options: ['default' => false])]
+    private bool $isVehiclePart = false;
+
+    // Marque le nœud "racine" des pièces détachées côté Auto (ex: catégorie "Pièce de rechange" sous Auto).
+    #[ORM\Column(options: ['default' => false])]
+    private bool $isAutoPartRoot = false;
+
+    // Idem côté Moto.
+    #[ORM\Column(options: ['default' => false])]
+    private bool $isMotoPartRoot = false;
+
     #[ORM\Column(nullable: true)]
     private ?int $trendingPinnedPosition = null;
 
@@ -414,6 +425,39 @@ class Category
     public function setAuthenticityRelevant(bool $authenticityRelevant): static
     {
         $this->authenticityRelevant = $authenticityRelevant;
+        return $this;
+    }
+
+    public function isVehiclePart(): bool
+    {
+        return $this->isVehiclePart;
+    }
+
+    public function setIsVehiclePart(bool $isVehiclePart): static
+    {
+        $this->isVehiclePart = $isVehiclePart;
+        return $this;
+    }
+
+    public function isAutoPartRoot(): bool
+    {
+        return $this->isAutoPartRoot;
+    }
+
+    public function setIsAutoPartRoot(bool $isAutoPartRoot): static
+    {
+        $this->isAutoPartRoot = $isAutoPartRoot;
+        return $this;
+    }
+
+    public function isMotoPartRoot(): bool
+    {
+        return $this->isMotoPartRoot;
+    }
+
+    public function setIsMotoPartRoot(bool $isMotoPartRoot): static
+    {
+        $this->isMotoPartRoot = $isMotoPartRoot;
         return $this;
     }
 

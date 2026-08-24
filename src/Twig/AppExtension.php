@@ -38,6 +38,7 @@ class AppExtension extends AbstractExtension
         private readonly Security $security,
         private readonly CartService $cartService,
         private readonly ProductRepository $productRepository,
+        private readonly \App\Repository\PartCatalogEntryRepository $partCatalogEntryRepository,
     ) {
     }
 
@@ -63,6 +64,7 @@ class AppExtension extends AbstractExtension
             new TwigFunction('best_sellers_widget', [$this, 'getBestSellersWidget']),
             new TwigFunction('product_sidebar_ad', [$this, 'getProductSidebarAd']),
             new TwigFunction('top_rayons', [$this, 'getTopRayons']),
+            new TwigFunction('part_catalog_root_categories', [$this, 'getPartCatalogRootCategories']),
         ];
     }
 
@@ -79,6 +81,29 @@ class AppExtension extends AbstractExtension
     public function getRootCategories(): array
     {
         return $this->categoryRepository->findRootCategories();
+    }
+
+    /** @return array<int, array{id: int, name: string}> Rayons racines pour lesquels il existe au moins une fiche catalogue pièces. */
+    public function getPartCatalogRootCategories(): array
+    {
+        $used = $this->partCatalogEntryRepository->getUsedRootCategories();
+
+        $roots = [];
+        foreach ($used as $row) {
+            $category = $this->categoryRepository->find($row['id']);
+            if (!$category) {
+                continue;
+            }
+            $root = $category;
+            while ($root->getParent()) {
+                $root = $root->getParent();
+            }
+            $roots[$root->getId()] = ['id' => $root->getId(), 'name' => $root->getName()];
+        }
+
+        usort($roots, fn ($a, $b) => $a['name'] <=> $b['name']);
+
+        return array_values($roots);
     }
 
     public function getTrendingCategories(): array

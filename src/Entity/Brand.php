@@ -31,6 +31,9 @@ class Brand
     #[ORM\Column]
     private ?bool $verified = null;
 
+    #[ORM\Column(options: ['default' => false])]
+    private bool $premium = false;
+
     #[ORM\Column(options: ['default' => true])]
     private bool $active = true;
 
@@ -118,6 +121,17 @@ class Brand
     {
         return $this->verified;
     }
+    public function isPremium(): bool
+    {
+        return $this->premium;
+    }
+
+    public function setPremium(bool $premium): static
+    {
+        $this->premium = $premium;
+        return $this;
+    }
+
     public function setVerified(bool $verified): static
     {
         $this->verified = $verified;

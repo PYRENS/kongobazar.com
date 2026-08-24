@@ -1,8 +1,16 @@
 {% extends 'manage/base.html.twig' %}
 
-{% block title %}{{ category.name }} — Catégorie{% endblock %}
+{% block title %}{{ categoryAncestorNames|join(' / ') }} — Catégorie{% endblock %}
 {% block page_icon %}bi-tags{% endblock %}
-{% block page_title %}{{ category.name }}{% endblock %}
+{% block page_title %}
+    {% for name in categoryAncestorNames %}
+        {% if not loop.last %}
+            <span class="text-muted" style="font-weight:400;">{{ name }}</span> <span class="text-muted">/</span>
+        {% else %}
+            {{ name }}
+        {% endif %}
+    {% endfor %}
+{% endblock %}
 
 {% block body %}
     {% set statusLabels = { 'active': 'Actif', 'draft': 'Brouillon', 'suspended': 'Bloqué', 'coming_soon': 'Bientôt disponible', 'archived': 'Archivé', 'sold': 'Vendu' } %}

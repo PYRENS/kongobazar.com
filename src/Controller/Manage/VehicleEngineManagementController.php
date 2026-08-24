@@ -160,9 +160,97 @@ class VehicleEngineManagementController extends AbstractController
         \App\Repository\AdministrativeUnitRepository $administrativeUnitRepository,
         BrandRepository $brandRepository,
     ): Response {
+        $data = $this->buildPartsData($engine, $request, $productRepository, $categoryRepository, $administrativeUnitRepository);
+
+        return $this->render('manage/vehicle_engines/parts.html.twig', array_merge($data, [
+            'engine' => $engine,
+            'categories' => $categoryRepository->findBy([], ['name' => 'ASC']),
+            'provinces' => $administrativeUnitRepository->findActiveRootUnits(),
+            'allTitles' => $productRepository->findCompatibleWithEngineTitles($engine->getId()),
+            'pageTitleText' => $this->buildEnginePageTitleText($engine),
+            'pageTitleHtml' => $this->buildEnginePageTitleHtml($engine),
+        ]));
+    }
+
+    private function buildEnginePageTitleText(VehicleEngine $engine): string
+    {
+        $parts = trim(($engine->getBrandNameCache() ?? '') . ' ' . ($engine->getModelNameCache() ?? ''));
+        if ($engine->getVariantNameCache()) {
+            $parts .= ' (' . $engine->getVariantNameCache() . ')';
+        }
+        $parts .= ' ' . $engine->getLabel();
+        if ($engine->getPowerCv()) {
+            $parts .= ' ' . $engine->getPowerCv() . ' Cv';
+        }
+        if ($engine->getPeriodLabel()) {
+            $parts .= ' (' . $engine->getPeriodLabel() . ')';
+        }
+        if ($engine->getFuelType()) {
+            $parts .= ' [' . $engine->getFuelType()->getName() . ']';
+        }
+
+        return 'Pièce de rechange compatible avec « ' . trim($parts) . ' »';
+    }
+
+    private function buildEnginePageTitleHtml(VehicleEngine $engine): string
+    {
+        $variant = $engine->getVariant();
+        $model = $engine->getModel() ?: ($variant ? $variant->getModel() : null);
+        $brand = $model ? $model->getBrand() : null;
+
+        $brandHtml = $brand
+            ? '<a href="' . $this->generateUrl('manage_brands_show', ['id' => $brand->getId()]) . '"><u>' . htmlspecialchars($brand->getName()) . '</u></a>'
+            : '<u>' . htmlspecialchars($engine->getBrandNameCache() ?? '') . '</u>';
+
+        $modelHtml = $model
+            ? '<a href="' . $this->generateUrl('manage_vehicle_models_show', ['id' => $model->getId()]) . '"><u>' . htmlspecialchars($model->getName()) . '</u></a>'
+            : '<u>' . htmlspecialchars($engine->getModelNameCache() ?? '') . '</u>';
+
+        $variantHtml = '';
+        if ($variant) {
+            $variantHtml = ' (<a href="' . $this->generateUrl('manage_vehicle_variants_show', ['id' => $variant->getId()]) . '"><u>' . htmlspecialchars($variant->getName() ?: '-') . '</u></a>)';
+        } elseif ($engine->getVariantNameCache()) {
+            $variantHtml = ' (<u>' . htmlspecialchars($engine->getVariantNameCache()) . '</u>)';
+        }
+
+        $html = $brandHtml . ' ' . $modelHtml . $variantHtml . ' <u>' . htmlspecialchars($engine->getLabel()) . '</u>';
+        if ($engine->getPowerCv()) {
+            $html .= ' <u>' . $engine->getPowerCv() . ' Cv</u>';
+        }
+        if ($engine->getPeriodLabel()) {
+            $html .= ' (' . htmlspecialchars($engine->getPeriodLabel()) . ')';
+        }
+        if ($engine->getFuelType()) {
+            $html .= ' [' . htmlspecialchars($engine->getFuelType()->getName()) . ']';
+        }
+
+        return 'Pièce de rechange compatible avec « ' . $html . ' »';
+    }
+
+    #[Route('/vehicules/motorisations/{id}/pieces-fragment', name: 'manage_vehicle_engine_parts_fragment', host: 'manage.kongobazar.com', methods: ['GET'])]
+    public function partsFragment(
+        VehicleEngine $engine,
+        Request $request,
+        \App\Repository\ProductRepository $productRepository,
+        \App\Repository\CategoryRepository $categoryRepository,
+        \App\Repository\AdministrativeUnitRepository $administrativeUnitRepository,
+    ): Response {
+        $data = $this->buildPartsData($engine, $request, $productRepository, $categoryRepository, $administrativeUnitRepository);
+
+        return $this->render('manage/vehicle_engines/_parts_fragment.html.twig', array_merge($data, ['engine' => $engine]));
+    }
+
+    private function buildPartsData(
+        VehicleEngine $engine,
+        Request $request,
+        \App\Repository\ProductRepository $productRepository,
+        \App\Repository\CategoryRepository $categoryRepository,
+        \App\Repository\AdministrativeUnitRepository $administrativeUnitRepository,
+    ): array {
         $term = $request->query->get('q') ?: null;
         $categoryId = $request->query->get('category') ? (int) $request->query->get('category') : null;
-        $brandId = $request->query->get('brand') ? (int) $request->query->get('brand') : null;
+        $brandParam = (string) $request->query->get('brand', '');
+        $brandIds = $brandParam !== '' ? array_filter(array_map('intval', explode(',', $brandParam))) : null;
         $condition = $request->query->get('condition') ?: null;
         $sort = $request->query->get('sort', 'createdAt');
         $dir = $request->query->get('dir', 'DESC');
@@ -170,8 +258,6 @@ class VehicleEngineManagementController extends AbstractController
             ? (int) $request->query->get('perPage', 20) : 20;
         $page = max(1, (int) $request->query->get('page', 1));
 
-        // Localisation : le vendeur/produit peut être situé à n'importe quel niveau
-        // (province seule, ou jusqu'à la commune) — on filtre sur l'unité choisie + tous ses descendants.
         $locationUnitId = $request->query->get('location') ? (int) $request->query->get('location') : null;
         $locationUnitIds = null;
         $locationUnit = null;
@@ -185,9 +271,34 @@ class VehicleEngineManagementController extends AbstractController
             }
         }
 
-        $total = $productRepository->countCompatibleWithEngine($engine->getId(), $term, $categoryId, $brandId, $condition, $locationUnitIds);
-        $products = $productRepository->findCompatibleWithEngine($engine->getId(), $term, $categoryId, $brandId, $condition, $sort, $dir, $page, $perPage, $locationUnitIds);
-        $categoryFacets = $productRepository->getCategoryFacetsForEngine($engine->getId(), $term, $brandId, $condition, $locationUnitIds);
+        $priceMin = $request->query->get('price_min') !== null && $request->query->get('price_min') !== '' ? (float) $request->query->get('price_min') : null;
+        $priceMax = $request->query->get('price_max') !== null && $request->query->get('price_max') !== '' ? (float) $request->query->get('price_max') : null;
+        $maxPriceAvailable = $productRepository->getMaxPriceForEngine($engine->getId(), $term, $categoryId, $brandIds, $condition, $locationUnitIds);
+
+        $total = $productRepository->countCompatibleWithEngine($engine->getId(), $term, $categoryId, $brandIds, $condition, $locationUnitIds, $priceMin, $priceMax);
+        $products = $productRepository->findCompatibleWithEngine($engine->getId(), $term, $categoryId, $brandIds, $condition, $sort, $dir, $page, $perPage, $locationUnitIds, $priceMin, $priceMax);
+        $categoryFacets = $productRepository->getCategoryFacetsForEngine($engine->getId(), $term, $brandIds, $condition, $locationUnitIds);
+        $availableBrands = $productRepository->getAvailableBrandsForEngine($engine->getId(), $term, $categoryId, $condition, $locationUnitIds, $priceMin, $priceMax);
+
+        $groupedFacets = [];
+        foreach ($categoryFacets as $facet) {
+            $catEntity = $categoryRepository->find($facet['id']);
+            $root = $catEntity;
+            while ($root && $root->getParent()) {
+                $root = $root->getParent();
+            }
+            $rootId = $root ? $root->getId() : $facet['id'];
+            $rootName = $root ? $root->getName() : $facet['name'];
+
+            if (!isset($groupedFacets[$rootId])) {
+                $groupedFacets[$rootId] = ['id' => $rootId, 'name' => $rootName, 'total' => 0, 'children' => []];
+            }
+            $groupedFacets[$rootId]['total'] += $facet['total'];
+            if ($facet['id'] !== $rootId) {
+                $groupedFacets[$rootId]['children'][] = $facet;
+            }
+        }
+        $groupedFacets = array_values($groupedFacets);
 
         $grouped = [];
         foreach ($products as $product) {
@@ -195,8 +306,7 @@ class VehicleEngineManagementController extends AbstractController
             $grouped[$catName][] = $product;
         }
 
-        return $this->render('manage/vehicle_engines/parts.html.twig', [
-            'engine' => $engine,
+        return [
             'grouped' => $grouped,
             'total' => $total,
             'page' => $page,
@@ -204,18 +314,19 @@ class VehicleEngineManagementController extends AbstractController
             'perPage' => $perPage,
             'currentTerm' => $term,
             'currentCategory' => $categoryId,
-            'currentBrand' => $brandId,
+            'currentBrandIds' => $brandIds ?: [],
             'currentCondition' => $condition,
             'currentSort' => $sort,
             'currentDir' => $dir,
             'currentLocationId' => $locationUnitId,
             'currentLocationUnit' => $locationUnit,
-            'categories' => $categoryRepository->findBy([], ['name' => 'ASC']),
+            'currentPriceMin' => $priceMin,
+            'currentPriceMax' => $priceMax,
+            'maxPriceAvailable' => $maxPriceAvailable,
             'categoryFacets' => $categoryFacets,
-            'brands' => $brandRepository->findBy([], ['name' => 'ASC']),
-            'provinces' => $administrativeUnitRepository->findActiveRootUnits(),
-            'allTitles' => $productRepository->findCompatibleWithEngineTitles($engine->getId()),
-        ]);
+            'groupedFacets' => $groupedFacets,
+            'availableBrands' => $availableBrands,
+        ];
     }
 
     /** @return string|null Message d'erreur si validation XOR échoue, sinon null. */

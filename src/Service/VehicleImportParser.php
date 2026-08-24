@@ -91,7 +91,9 @@ class VehicleImportParser
                 $sawFirstRealMotorisation = true;
 
                 $rows[] = [
-                    'fuelName' => $currentFuelName,
+                    // Pour la Moto, on ignore volontairement l'énergie même si le texte en contient —
+                    // on enregistre systématiquement sans énergie côté Moto.
+                    'fuelName' => 'moto' === $type ? null : $currentFuelName,
                     'label' => $label,
                     'powerKw' => $powerKw,
                     'powerCv' => $powerCv,
@@ -107,8 +109,13 @@ class VehicleImportParser
             // Tout ce qui n'est ni une motorisation (déjà traitée ci-dessus), ni du bruit,
             // ni une période isolée => en-tête carburant. On ne se fie plus à l'absence
             // de parenthèses, puisque des noms de carburant en contiennent (ex: "(GPL)").
-            if (null === $this->parsePeriod($line) && mb_strlen($line) <= 60) {
+            // Côté Moto, on ignore ce mécanisme : l'énergie ne doit jamais être prise en compte.
+            if ('auto' === $type && null === $this->parsePeriod($line) && mb_strlen($line) <= 60) {
                 $currentFuelName = $line;
+                $i++;
+                continue;
+            }
+            if ('moto' === $type && null === $this->parsePeriod($line) && mb_strlen($line) <= 60) {
                 $i++;
                 continue;
             }

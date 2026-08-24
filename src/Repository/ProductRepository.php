@@ -31,9 +31,9 @@ class ProductRepository extends ServiceEntityRepository
     /**
      * @return Product[] Produits (pièces) compatibles avec une motorisation, filtrés/triés/paginés.
      */
-    public function findCompatibleWithEngine(int $engineId, ?string $term, ?int $categoryId, ?int $brandId, ?string $condition, string $sort, string $dir, int $page, int $perPage, ?array $locationUnitIds = null): array
+    public function findCompatibleWithEngine(int $engineId, ?string $term, ?int $categoryId, ?array $brandIds, ?string $condition, string $sort, string $dir, int $page, int $perPage, ?array $locationUnitIds = null, ?float $priceMin = null, ?float $priceMax = null): array
     {
-        $qb = $this->buildCompatibleWithEngineQuery($engineId, $term, $categoryId, $brandId, $condition, $locationUnitIds);
+        $qb = $this->buildCompatibleWithEngineQuery($engineId, $term, $categoryId, $brandIds, $condition, $locationUnitIds, $priceMin, $priceMax);
         $dirSql = strtoupper($dir) === 'ASC' ? 'ASC' : 'DESC';
 
         match ($sort) {
@@ -49,14 +49,13 @@ class ProductRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function countCompatibleWithEngine(int $engineId, ?string $term, ?int $categoryId, ?int $brandId, ?string $condition, ?array $locationUnitIds = null): int
+    public function countCompatibleWithEngine(int $engineId, ?string $term, ?int $categoryId, ?array $brandIds, ?string $condition, ?array $locationUnitIds = null, ?float $priceMin = null, ?float $priceMax = null): int
     {
-        return (int) $this->buildCompatibleWithEngineQuery($engineId, $term, $categoryId, $brandId, $condition, $locationUnitIds)
+        return (int) $this->buildCompatibleWithEngineQuery($engineId, $term, $categoryId, $brandIds, $condition, $locationUnitIds, $priceMin, $priceMax)
             ->select('COUNT(DISTINCT p.id)')
             ->getQuery()
             ->getSingleScalarResult();
     }
-
     /** @return string[] Titres de toutes les pièces compatibles (non paginé), pour l'autocomplétion. */
     public function findCompatibleWithEngineTitles(int $engineId): array
     {
@@ -68,24 +67,46 @@ class ProductRepository extends ServiceEntityRepository
         return array_column($rows, 'title');
     }
 
-    private function buildCompatibleWithEngineQuery(int $engineId, ?string $term, ?int $categoryId, ?int $brandId, ?string $condition, ?array $locationUnitIds = null)
+    private function buildCompatibleWithEngineQuery(int $engineId, ?string $term, ?int $categoryId, ?array $brandIds, ?string $condition, ?array $locationUnitIds = null, ?float $priceMin = null, ?float $priceMax = null)
     {
         $qb = $this->createQueryBuilder('p')
             ->join('p.partListingDetails', 'pld')
             ->join('pld.engineCompatibilities', 'pec')
+            ->leftJoin('pld.partCatalogEntry', 'pce')
             ->andWhere('pec.vehicleEngine = :engineId')
             ->andWhere('p.status = :status')
             ->setParameter('engineId', $engineId)
             ->setParameter('status', 'active');
 
         if ($term) {
-            $qb->andWhere('p.title LIKE :term')->setParameter('term', '%' . $term . '%');
+            $conditions = $qb->expr()->orX(
+                $qb->expr()->like('p.title', ':term'),
+                $qb->expr()->like('p.ean', ':term'),
+                $qb->expr()->like('p.reference', ':term'),
+                $qb->expr()->like('pld.ean', ':term'),
+                $qb->expr()->like('pld.manufacturerRef', ':term'),
+                $qb->expr()->like('pld.oemCodes', ':term'),
+                $qb->expr()->like('pce.ean', ':term'),
+                $qb->expr()->like('pce.manufacturerRef', ':term')
+            );
+            $qb->setParameter('term', '%' . $term . '%');
+
+            // Réf. KongoBazar (ex: "KBZ-000042" ou juste "42") — se traduit en recherche par ID.
+            if (preg_match('/(\d{1,10})/', $term, $m)) {
+                $numericId = (int) ltrim($m[1], '0');
+                if ($numericId > 0) {
+                    $conditions->add($qb->expr()->eq('p.id', ':termId'));
+                    $qb->setParameter('termId', $numericId);
+                }
+            }
+
+            $qb->andWhere($conditions);
         }
         if ($categoryId) {
             $qb->andWhere('p.category = :categoryId')->setParameter('categoryId', $categoryId);
         }
-        if ($brandId) {
-            $qb->andWhere('p.brand = :brandId')->setParameter('brandId', $brandId);
+        if ($brandIds) {
+            $qb->andWhere('p.brand IN (:brandIds)')->setParameter('brandIds', $brandIds);
         }
         if ($condition) {
             $qb->andWhere('p.condition = :condition')->setParameter('condition', $condition);
@@ -96,17 +117,47 @@ class ProductRepository extends ServiceEntityRepository
                 ->andWhere('sellerUser.administrativeUnit IN (:locationUnits)')
                 ->setParameter('locationUnits', $locationUnitIds);
         }
+        if (null !== $priceMin) {
+            $qb->andWhere('p.basePrice >= :priceMin')->setParameter('priceMin', $priceMin);
+        }
+        if (null !== $priceMax) {
+            $qb->andWhere('p.basePrice <= :priceMax')->setParameter('priceMax', $priceMax);
+        }
 
         return $qb;
+    }
+
+    /** @return array<int, array{id: int, name: string}> Fabricants réellement présents parmi les pièces compatibles (facette, sans le filtre fabricant lui-même). */
+    public function getAvailableBrandsForEngine(int $engineId, ?string $term, ?int $categoryId, ?string $condition, ?array $locationUnitIds = null, ?float $priceMin = null, ?float $priceMax = null): array
+    {
+        $rows = $this->buildCompatibleWithEngineQuery($engineId, $term, $categoryId, null, $condition, $locationUnitIds, $priceMin, $priceMax)
+            ->join('p.brand', 'facetBrand')
+            ->select('DISTINCT facetBrand.id as id, facetBrand.name as name')
+            ->orderBy('facetBrand.name', 'ASC')
+            ->getQuery()
+            ->getArrayResult();
+
+        return array_map(fn ($r) => ['id' => (int) $r['id'], 'name' => $r['name']], $rows);
+    }
+
+    /** Prix le plus élevé parmi les pièces compatibles (filtres actifs SAUF le prix lui-même) — sert de plafond au spinner. */
+    public function getMaxPriceForEngine(int $engineId, ?string $term, ?int $categoryId, ?array $brandIds, ?string $condition, ?array $locationUnitIds = null): float
+    {
+        $result = $this->buildCompatibleWithEngineQuery($engineId, $term, $categoryId, $brandIds, $condition, $locationUnitIds)
+            ->select('MAX(p.basePrice)')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return $result !== null ? (float) $result : 0.0;
     }
 
     /**
      * @return array<int, array{id: int, name: string, total: int}> Nombre de pièces compatibles par catégorie
      *         (facette — calculée sans le filtre catégorie lui-même, pour permettre le changement de catégorie).
      */
-    public function getCategoryFacetsForEngine(int $engineId, ?string $term, ?int $brandId, ?string $condition, ?array $locationUnitIds = null): array
+    public function getCategoryFacetsForEngine(int $engineId, ?string $term, ?array $brandIds, ?string $condition, ?array $locationUnitIds = null): array
     {
-        $qb = $this->buildCompatibleWithEngineQuery($engineId, $term, null, $brandId, $condition, $locationUnitIds)
+        $qb = $this->buildCompatibleWithEngineQuery($engineId, $term, null, $brandIds, $condition, $locationUnitIds)
             ->join('p.category', 'facetCat')
             ->select('facetCat.id as id, facetCat.name as name, COUNT(DISTINCT p.id) as total')
             ->groupBy('facetCat.id')

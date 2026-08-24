@@ -64,7 +64,12 @@
                             {{ brand and brand.hasType('moto') ? 'checked' : '' }}>
                         <label class="form-check-label" for="typeMoto">Moto</label>
                     </div>
-                    <small class="text-muted d-block">Laisser les deux cases décochées pour une marque générique (mode, électronique...).</small>
+                    <div class="form-check form-check-inline">
+                        <input type="checkbox" name="type[]" value="piece" class="form-check-input" id="typePiece"
+                            {{ brand and brand.hasType('piece') ? 'checked' : '' }}>
+                        <label class="form-check-label" for="typePiece">Pièce détachée (ex: Bosch, Gates...)</label>
+                    </div>
+                    <small class="text-muted d-block">Laisser toutes les cases décochées pour une marque générique (mode, électronique...).</small>
                 </div>
 
                 <div class="mb-3">
@@ -102,6 +107,13 @@
                     <input type="checkbox" name="verified" value="1" class="form-check-input" id="verified"
                         {{ brand and brand.verified ? 'checked' : '' }}>
                     <label class="form-check-label" for="verified">Marque vérifiée</label>
+                </div>
+
+                <div class="mb-3 form-check">
+                    <input type="checkbox" name="premium" value="1" class="form-check-input" id="premium"
+                        {{ brand and brand.premium ? 'checked' : '' }}>
+                    <label class="form-check-label" for="premium">Marque premium</label>
+                    <small class="text-muted d-block">Apparaît en tête (par ordre alphabétique) dans les listes de marques, avant les autres.</small>
                 </div>
 
                 <div class="mb-3 form-check">

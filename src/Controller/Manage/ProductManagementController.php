@@ -111,6 +111,7 @@ class ProductManagementController extends AbstractController
             'product' => $product,
             'rootCategories' => $categoryRepository->findChildrenOf(null),
             'categoryRequiresModelMap' => $categoryRepository->findAllRequiresModelMap(),
+            'categoryAuthenticityMap' => $categoryRepository->findAllAuthenticityRelevantMap(),
         ]);
     }
 
