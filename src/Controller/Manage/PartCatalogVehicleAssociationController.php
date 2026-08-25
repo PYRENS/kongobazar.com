@@ -48,6 +48,48 @@ class PartCatalogVehicleAssociationController extends AbstractController
         return new JsonResponse(['results' => $results]);
     }
 
+    #[Route('/pieces-catalogue/auto-cascade/marques', name: 'manage_part_catalog_auto_brands', host: 'manage.kongobazar.com', methods: ['GET'])]
+    public function autoCascadeBrands(\App\Repository\BrandRepository $brandRepository): JsonResponse
+    {
+        $brands = $brandRepository->findByType('auto');
+
+        return new JsonResponse(['results' => array_map(fn ($b) => ['id' => $b->getId(), 'name' => $b->getName()], $brands)]);
+    }
+
+    #[Route('/pieces-catalogue/auto-cascade/modeles/{brandId}', name: 'manage_part_catalog_auto_models', host: 'manage.kongobazar.com', methods: ['GET'], requirements: ['brandId' => '\d+'])]
+    public function autoCascadeModels(int $brandId, \App\Repository\VehicleModelRepository $modelRepository): JsonResponse
+    {
+        $models = $modelRepository->findByBrandAndType($brandId, false);
+
+        return new JsonResponse(['results' => array_map(fn ($m) => ['id' => $m->getId(), 'name' => $m->getName()], $models)]);
+    }
+
+    #[Route('/pieces-catalogue/auto-cascade/variantes/{modelId}', name: 'manage_part_catalog_auto_variants', host: 'manage.kongobazar.com', methods: ['GET'], requirements: ['modelId' => '\d+'])]
+    public function autoCascadeVariants(int $modelId, \App\Repository\VehicleVariantRepository $variantRepository): JsonResponse
+    {
+        $variants = $variantRepository->findByModel($modelId);
+
+        $results = array_map(fn ($v) => [
+            'id' => $v->getId(),
+            'name' => trim(($v->getName() ?: 'Standard') . ' (' . $v->getYearBegin() . ($v->getYearEnd() ? '-' . $v->getYearEnd() : '-...') . ')'),
+        ], $variants);
+
+        return new JsonResponse(['results' => $results]);
+    }
+
+    #[Route('/pieces-catalogue/auto-cascade/motorisations/{variantId}', name: 'manage_part_catalog_auto_engines', host: 'manage.kongobazar.com', methods: ['GET'], requirements: ['variantId' => '\d+'])]
+    public function autoCascadeEngines(int $variantId, VehicleEngineRepository $engineRepository): JsonResponse
+    {
+        $engines = $engineRepository->findByVariant($variantId);
+
+        $results = array_map(fn ($e) => [
+            'id' => $e->getId(),
+            'label' => trim($e->getLabel() . ' ' . ($e->getPeriodLabel() ? '(' . $e->getPeriodLabel() . ')' : '')),
+        ], $engines);
+
+        return new JsonResponse(['results' => $results]);
+    }
+
     #[Route('/pieces-catalogue/vehicules-associes/rechercher-source', name: 'manage_part_catalog_va_search_source', host: 'manage.kongobazar.com', methods: ['GET'])]
     public function searchSource(Request $request, EntityManagerInterface $em): JsonResponse
     {
@@ -321,6 +363,10 @@ class PartCatalogVehicleAssociationController extends AbstractController
                 $em->persist($compat);
                 $attached++;
             }
+        }
+
+        if ($attached > 0) {
+            $entry->setUpdatedAt(new \DateTimeImmutable());
         }
 
         $em->flush();

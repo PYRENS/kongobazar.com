@@ -23,6 +23,37 @@
         <a href="{{ path('manage_part_catalog_new') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Nouvelle fiche</a>
     </div>
 
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-blue h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-blue"><i class="bi bi-collection"></i></div>
+                <div class="ctb-stat-val">{{ stats.total }}</div>
+                <div class="ctb-stat-label">Fiches au total</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-green h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-green"><i class="bi bi-car-front"></i></div>
+                <div class="ctb-stat-val">{{ stats.auto }}</div>
+                <div class="ctb-stat-label">Pièces Auto</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-purple h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-purple"><i class="bi bi-motorcycle"></i></div>
+                <div class="ctb-stat-val">{{ stats.moto }}</div>
+                <div class="ctb-stat-label">Pièces Moto</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-orange h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-orange"><i class="bi bi-patch-check"></i></div>
+                <div class="ctb-stat-val">{{ stats.validated }}</div>
+                <div class="ctb-stat-label">Validées</div>
+            </div>
+        </div>
+    </div>
+
     <div id="catalogFilterRoot" class="mb-3 d-flex align-items-center flex-wrap gap-2">
         <input type="text" id="catalogSearchInput" class="form-control" style="max-width: 260px;" placeholder="Nom, EAN, réf. fabricant..." value="{{ searchTerm }}" autocomplete="off">
         <div class="ms-auto"></div>
@@ -64,8 +95,10 @@
         <table class="admin-table">
             <thead>
                 <tr>
+                    <th>Image</th>
                     <th>Logo</th>
                     <th>{{ self.sortLink('name', 'Nom', currentSort, currentDir) }}</th>
+                    <th>{{ self.sortLink('partType', 'Type', currentSort, currentDir) }}</th>
                     <th>{{ self.sortLink('rootCategoryName', 'Catégorie', currentSort, currentDir) }}</th>
                     <th>{{ self.sortLink('subcategory', 'Sous-catégorie', currentSort, currentDir) }}</th>
                     <th>{{ self.sortLink('brand', 'Marque', currentSort, currentDir) }}</th>

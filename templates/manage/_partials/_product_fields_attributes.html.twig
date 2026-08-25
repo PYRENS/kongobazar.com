@@ -1,5 +1,6 @@
-<div class="admin-card">
-    <h6><i class="bi bi-sliders"></i> Caractéristiques</h6>
+<div class="sw-card">
+    <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-sliders text-primary me-2"></i>Caractéristiques</h6></div>
+    <div class="card-body">
 
     <input type="hidden" id="attrPasteCategoryId" value="{{ categoryId }}">
     <input type="hidden" id="attrDuplicateProductId" value="{{ productId ?: '' }}">
@@ -61,5 +62,6 @@
             {% endif %}
         </div>
     {% endfor %}
+    </div>
     </div>
 </div>

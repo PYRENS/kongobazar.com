@@ -54,6 +54,10 @@ class Brand
     #[ORM\Column(nullable: true)]
     private ?string $logoName = null;
 
+    /** URL du site officiel de la marque. Si renseignée, le logo devient cliquable partout où il s'affiche. */
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $url = null;
+
     /** @var Collection<int, Product> */
     #[ORM\OneToMany(mappedBy: 'brand', targetEntity: Product::class)]
     private Collection $products;
@@ -209,6 +213,18 @@ class Brand
     public function getLogoName(): ?string
     {
         return $this->logoName;
+    }
+
+    public function getUrl(): ?string
+    {
+        return $this->url;
+    }
+
+    public function setUrl(?string $url): static
+    {
+        $this->url = $url;
+
+        return $this;
     }
 
     /** @return Collection<int, Product> */

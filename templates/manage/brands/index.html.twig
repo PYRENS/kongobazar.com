@@ -83,6 +83,7 @@
                         <tr>
                             <th>Logo</th>
                             <th>{{ self.sortLink('name', 'Nom', currentSort, currentDir) }}</th>
+                            <th>Site web</th>
                             <th>{{ self.sortLink('sigle', 'Sigle', currentSort, currentDir) }}</th>
                             <th>{{ self.sortLink('pays', 'Pays', currentSort, currentDir) }}</th>
                             <th>{{ self.sortLink('type', 'Type', currentSort, currentDir) }}</th>
@@ -100,12 +101,19 @@
                             <tr>
                                 <td>
                                     {% if brand.logoName %}
+                                        {% if brand.url %}<a href="{{ brand.url }}" target="_blank" rel="noopener">{% endif %}
                                         <img src="{{ vich_uploader_asset(brand, 'logoFile') }}" alt="" style="width:36px;height:36px;object-fit:contain;">
+                                        {% if brand.url %}</a>{% endif %}
                                     {% else %}
                                         <div class="ctb-avatar ctb-av-blue" style="border-radius:8px;"><i class="bi bi-award"></i></div>
                                     {% endif %}
                                 </td>
                                 <td class="ctb-contact-name"><a href="{{ path('manage_brands_show', {id: brand.id}) }}">{{ brand.name }}</a></td>
+                                <td>
+                                    {% if brand.url %}
+                                        <a href="{{ brand.url }}" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right me-1"></i>Site web</a>
+                                    {% else %}<span class="text-muted">—</span>{% endif %}
+                                </td>
                                 <td>{{ brand.sigle ?: '—' }}</td>
                                 <td>
                                     {% if brand.pays %}
@@ -156,7 +164,7 @@
                                 </td>
                             </tr>
                         {% else %}
-                            <tr><td colspan="10" class="text-muted text-center py-4">Aucune marque ne correspond à ces critères.</td></tr>
+                            <tr><td colspan="11" class="text-muted text-center py-4">Aucune marque ne correspond à ces critères.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>

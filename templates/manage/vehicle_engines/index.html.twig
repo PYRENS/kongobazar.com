@@ -96,7 +96,9 @@
                             <tr>
                                 <td>
                                     {% if brand and brand.logoName %}
+                                        {% if brand.url %}<a href="{{ brand.url }}" target="_blank" rel="noopener">{% endif %}
                                         <img src="{{ vich_uploader_asset(brand, 'logoFile') }}" alt="" style="width:28px;height:28px;object-fit:contain;">
+                                        {% if brand.url %}</a>{% endif %}
                                     {% else %}<span class="text-muted">—</span>{% endif %}
                                 </td>
                                 <td>{{ engine.brandNameCache }} {{ engine.modelNameCache }} {{ engine.variantNameCache }}</td>

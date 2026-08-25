@@ -53,6 +53,12 @@
                 </div>
 
                 <div class="mb-3">
+                    <label class="acc-form-label">Site officiel de la marque (optionnel)</label>
+                    <input type="url" name="url" class="acc-form-input" value="{{ brand ? brand.url : '' }}" placeholder="https://www.marque.com" maxlength="255">
+                    <small class="text-muted d-block">Si renseigné, le logo de la marque devient cliquable (ouvre ce lien dans un nouvel onglet) partout où il s'affiche.</small>
+                </div>
+
+                <div class="mb-3">
                     <label class="acc-form-label d-block">Domaine(s) d'usage</label>
                     <div class="form-check form-check-inline">
                         <input type="checkbox" name="type[]" value="auto" class="form-check-input" id="typeAuto"

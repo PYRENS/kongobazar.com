@@ -145,7 +145,7 @@ class PartCatalogVehicleAssociationParser
         $group['model'] = ['found' => null !== $model, 'entity' => $model, 'id' => $model?->getId(), 'triedText' => $modelTried, 'inputText' => $afterBrand];
 
         $variant = null;
-        if ($model && '' !== $variantText) {
+        if ($model) {
             $variant = $this->findVariant($model, $variantText, $group['periodBegin']);
         }
         $group['variant'] = ['found' => null !== $variant, 'entity' => $variant, 'id' => $variant?->getId(), 'inputText' => $variantText];
@@ -223,9 +223,13 @@ class PartCatalogVehicleAssociationParser
     {
         $qb = $this->em->getRepository(VehicleVariant::class)->createQueryBuilder('v')
             ->andWhere('v.model = :model')
-            ->andWhere('LOWER(v.name) = :name')
-            ->setParameter('model', $model)
-            ->setParameter('name', mb_strtolower($name));
+            ->setParameter('model', $model);
+
+        if ('' === trim($name)) {
+            $qb->andWhere('v.name IS NULL');
+        } else {
+            $qb->andWhere('LOWER(v.name) = :name')->setParameter('name', mb_strtolower($name));
+        }
 
         if ($periodBegin) {
             $qb->andWhere('v.yearBegin = :yearBegin')->setParameter('yearBegin', $periodBegin['year']);
@@ -233,6 +237,8 @@ class PartCatalogVehicleAssociationParser
 
         return $qb->getQuery()->getOneOrNullResult();
     }
+
+
 
     private function findBrandByName(string $name): ?Brand
     {

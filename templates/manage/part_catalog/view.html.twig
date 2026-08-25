@@ -57,11 +57,12 @@
                 <div class="card-header"><h6 class="mb-0 fw-bold">Images</h6></div>
                 <div class="card-body">
                     {% if entry.images|length > 0 %}
-                        <div class="row g-2">
+                        <div class="mb-2 mx-auto" style="max-width:220px;border-radius:8px;overflow:hidden;background:var(--body-bg,#f5f5f5);">
+                            <img id="viewMainImage" src="{{ vich_uploader_asset(entry.images|first, 'imageFile') }}" style="width:100%;aspect-ratio:1;object-fit:contain;">
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 justify-content-center">
                             {% for image in entry.images %}
-                                <div class="col-4">
-                                    <img src="{{ vich_uploader_asset(image, 'imageFile') }}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;">
-                                </div>
+                                <img src="{{ vich_uploader_asset(image, 'imageFile') }}" class="view-thumb-item {{ loop.first ? 'active' : '' }}" data-full="{{ vich_uploader_asset(image, 'imageFile') }}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid {{ loop.first ? 'var(--primary,#0d6efd)' : 'transparent' }};">
                             {% endfor %}
                         </div>
                     {% else %}
@@ -91,7 +92,11 @@
                             <td>
                                 {% if entry.brand %}
                                     {{ entry.brand.name }}
-                                    {% if entry.brand.logoName %}<img src="{{ vich_uploader_asset(entry.brand, 'logoFile') }}" style="height:24px;vertical-align:middle;margin-left:6px;">{% endif %}
+                                    {% if entry.brand.logoName %}
+                                        {% if entry.brand.url %}<a href="{{ entry.brand.url }}" target="_blank" rel="noopener">{% endif %}
+                                        <img src="{{ vich_uploader_asset(entry.brand, 'logoFile') }}" style="height:24px;vertical-align:middle;margin-left:6px;">
+                                        {% if entry.brand.url %}</a>{% endif %}
+                                    {% endif %}
                                 {% else %}—{% endif %}
                             </td>
                         </tr>
@@ -249,4 +254,24 @@
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const mainImage = document.getElementById('viewMainImage');
+            if (!mainImage) return;
+            document.querySelectorAll('.view-thumb-item').forEach((thumb) => {
+                thumb.addEventListener('click', function () {
+                    mainImage.src = this.dataset.full;
+                    document.querySelectorAll('.view-thumb-item').forEach((t) => {
+                        t.classList.remove('active');
+                        t.style.borderColor = 'transparent';
+                    });
+                    this.classList.add('active');
+                    this.style.borderColor = 'var(--primary, #0d6efd)';
+                });
+            });
+        });
+    </script>
 {% endblock %}

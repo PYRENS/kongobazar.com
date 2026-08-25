@@ -31,6 +31,7 @@ class PartCatalogEngineController extends AbstractController
         $compat = new PartCatalogEngineCompatibility();
         $compat->setVehicleEngine($engine);
         $entry->addEngineCompatibility($compat);
+        $entry->setUpdatedAt(new \DateTimeImmutable());
         $em->persist($compat);
         $em->flush();
 
@@ -44,6 +45,7 @@ class PartCatalogEngineController extends AbstractController
             if ($compat->getId() === $compatId) {
                 $entry->removeEngineCompatibility($compat);
                 $em->remove($compat);
+                $entry->setUpdatedAt(new \DateTimeImmutable());
                 $em->flush();
                 break;
             }

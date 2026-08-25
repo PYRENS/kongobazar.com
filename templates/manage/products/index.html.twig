@@ -23,6 +23,37 @@
         <a href="{{ path('manage_products_new') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Nouveau produit</a>
     </div>
 
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-blue h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-blue"><i class="bi bi-box-seam"></i></div>
+                <div class="ctb-stat-val">{{ stats.total }}</div>
+                <div class="ctb-stat-label">Produits au total</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-green h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-green"><i class="bi bi-check-circle-fill"></i></div>
+                <div class="ctb-stat-val">{{ stats.active }}</div>
+                <div class="ctb-stat-label">Actifs</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-orange h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-orange"><i class="bi bi-file-earmark-text"></i></div>
+                <div class="ctb-stat-val">{{ stats.draft }}</div>
+                <div class="ctb-stat-label">Brouillons</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-purple h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-purple"><i class="bi bi-pause-circle"></i></div>
+                <div class="ctb-stat-val">{{ stats.suspended }}</div>
+                <div class="ctb-stat-label">Suspendus</div>
+            </div>
+        </div>
+    </div>
+
     <form method="get" class="mb-2 d-flex align-items-center gap-2 flex-wrap">
         <input type="text" name="q" class="form-control" style="max-width: 240px;" placeholder="Titre ou référence..." value="{{ searchTerm }}">
 

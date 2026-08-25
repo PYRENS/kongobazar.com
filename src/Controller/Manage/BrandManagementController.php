@@ -325,7 +325,7 @@ class BrandManagementController extends AbstractController
 
         $brand->setActive((bool) $request->request->get('active'));
         $brand->setSigle($request->request->get('sigle') ?: null);
-
+        $brand->setUrl($request->request->get('url') ?: null);
         if (null === $brand->getSlug()) {
             $slugger = new AsciiSlugger();
             $brand->setSlug(strtolower($slugger->slug($name)) . '-' . uniqid());

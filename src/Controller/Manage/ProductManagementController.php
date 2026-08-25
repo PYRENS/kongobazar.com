@@ -46,7 +46,15 @@ class ProductManagementController extends AbstractController
 
         $total = $repository->countFiltered($term, $categoryId, $status, $condition, $sellerProfileId);
 
+        $stats = [
+            'total' => $repository->countFiltered(null, null, null, null),
+            'active' => $repository->countFiltered(null, null, 'active', null),
+            'draft' => $repository->countFiltered(null, null, 'draft', null),
+            'suspended' => $repository->countFiltered(null, null, 'suspended', null),
+        ];
+
         return $this->render('manage/products/index.html.twig', [
+            'stats' => $stats,
             'products' => $repository->findFiltered($term, $categoryId, $status, $condition, $sort, $dir, $page, $perPage, $sellerProfileId),
             'categories' => $categoryRepository->findBy([], ['name' => 'ASC']),
             'rootCategories' => $categoryRepository->findChildrenOf(null),

@@ -189,7 +189,8 @@
                                 <h2 class="accordion-header">
                                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#brand-{{ loop.index }}">
                                         {% if brandLogos[brandName] is defined %}
-                                            <img src="{{ vich_uploader_asset(brandLogos[brandName], 'logoFile') }}" style="width:22px;height:22px;object-fit:contain;margin-right:10px;">
+                                            <img src="{{ vich_uploader_asset(brandLogos[brandName], 'logoFile') }}" style="width:22px;height:22px;object-fit:contain;margin-right:10px;{% if brandLogos[brandName].url %}cursor:pointer;{% endif %}"
+                                                {% if brandLogos[brandName].url %}onclick="event.stopPropagation(); window.open('{{ brandLogos[brandName].url|e('js') }}', '_blank', 'noopener')"{% endif %}>
                                         {% else %}
                                             <i class="bi bi-car-front me-2"></i>
                                         {% endif %}

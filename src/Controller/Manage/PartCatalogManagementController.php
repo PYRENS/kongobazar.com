@@ -48,7 +48,14 @@ class PartCatalogManagementController extends AbstractController
 
         $sort = $request->query->get('sort', 'name');
         $dir = $request->query->get('dir', 'ASC');
-        $allRows = $this->buildCatalogRows($repository->findFiltered($status, $term, $categoryIds), $repository, $sort, $dir);
+        $allRows = $this->buildCatalogRows($repository->findFiltered($status, $term, $categoryIds), $repository, $sort, $dir, $categoryRepository->findAllPartTypeMap());
+
+        $stats = [
+            'total' => count($repository->findFiltered(null, null, null)),
+            'auto' => count(array_filter($allRows, fn ($r) => $r['partType'] === 'auto')),
+            'moto' => count(array_filter($allRows, fn ($r) => $r['partType'] === 'moto')),
+            'validated' => count(array_filter($allRows, fn ($r) => $r['entry']->getStatus() === 'validated')),
+        ];
 
         $perPage = in_array((int) $request->query->get('perPage', 20), [10, 20, 50, 100], true)
             ? (int) $request->query->get('perPage', 20) : 20;
@@ -57,6 +64,7 @@ class PartCatalogManagementController extends AbstractController
         $rows = array_slice($allRows, ($page - 1) * $perPage, $perPage);
 
         return $this->render('manage/part_catalog/index.html.twig', [
+            'stats' => $stats,
             'rows' => $rows,
             'currentStatus' => $status,
             'searchTerm' => $term,
@@ -98,7 +106,7 @@ class PartCatalogManagementController extends AbstractController
 
         $sort = $request->query->get('sort', 'name');
         $dir = $request->query->get('dir', 'ASC');
-        $allRows = $this->buildCatalogRows($repository->findFiltered($status, $term, $categoryIds), $repository, $sort, $dir);
+        $allRows = $this->buildCatalogRows($repository->findFiltered($status, $term, $categoryIds), $repository, $sort, $dir, $categoryRepository->findAllPartTypeMap());
 
         $perPage = in_array((int) $request->query->get('perPage', 20), [10, 20, 50, 100], true)
             ? (int) $request->query->get('perPage', 20) : 20;
@@ -114,10 +122,11 @@ class PartCatalogManagementController extends AbstractController
         ]);
     }
 
-    private function buildCatalogRows(array $entries, PartCatalogEntryRepository $repository, string $sort, string $dir): array
+    private function buildCatalogRows(array $entries, PartCatalogEntryRepository $repository, string $sort, string $dir, array $partTypeMap = []): array
     {
-        $rows = array_map(function (PartCatalogEntry $entry) use ($repository) {
+        $rows = array_map(function (PartCatalogEntry $entry) use ($repository, $partTypeMap) {
             $directParent = $entry->getCategory() ? $entry->getCategory()->getParent() : null;
+            $partType = $partTypeMap[$entry->getCategory()?->getId()] ?? null;
 
             return [
                 'entry' => $entry,
@@ -126,10 +135,12 @@ class PartCatalogManagementController extends AbstractController
                 'productCount' => count($repository->getAttachedProducts($entry->getId())),
                 'engineCount' => $entry->getEngineCompatibilities()->count(),
                 'totalQuantity' => $repository->getTotalQuantity($entry->getId()),
+                'partType' => $partType,
+                'partTypeLabel' => 'moto' === $partType ? 'Moto' : ('auto' === $partType ? 'Auto' : null),
             ];
         }, $entries);
 
-        $allowed = ['name', 'rootCategoryName', 'subcategory', 'brand', 'sellerCount', 'engineCount', 'productCount', 'totalQuantity', 'status', 'updatedAt'];
+        $allowed = ['name', 'rootCategoryName', 'subcategory', 'brand', 'partType', 'sellerCount', 'engineCount', 'productCount', 'totalQuantity', 'status', 'updatedAt'];
         if (!in_array($sort, $allowed, true)) {
             $sort = 'name';
         }
@@ -140,6 +151,7 @@ class PartCatalogManagementController extends AbstractController
                 'rootCategoryName' => $a['rootCategoryName'] ?? '',
                 'subcategory' => $a['entry']->getCategory() ? $a['entry']->getCategory()->getName() : '',
                 'brand' => $a['entry']->getBrand() ? $a['entry']->getBrand()->getName() : '',
+                'partType' => $a['partTypeLabel'] ?? '',
                 'sellerCount' => $a['sellerCount'],
                 'engineCount' => $a['engineCount'],
                 'productCount' => $a['productCount'],
@@ -152,6 +164,7 @@ class PartCatalogManagementController extends AbstractController
                 'rootCategoryName' => $b['rootCategoryName'] ?? '',
                 'subcategory' => $b['entry']->getCategory() ? $b['entry']->getCategory()->getName() : '',
                 'brand' => $b['entry']->getBrand() ? $b['entry']->getBrand()->getName() : '',
+                'partType' => $b['partTypeLabel'] ?? '',
                 'sellerCount' => $b['sellerCount'],
                 'engineCount' => $b['engineCount'],
                 'productCount' => $b['productCount'],

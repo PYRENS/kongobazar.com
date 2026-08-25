@@ -219,7 +219,7 @@
 {% block javascripts %}
     <script>
         const categoryVehiclePartMap = {{ categoryVehiclePartMap|json_encode|raw }};
-        const allBrandsForEntry = {{ allBrands|map(b => {id: b.id, name: b.name, logo: b.logoName ? vich_uploader_asset(b, 'logoFile') : null})|json_encode|raw }};
+        const allBrandsForEntry = {{ allBrands|map(b => {id: b.id, name: b.name, logo: b.logoName ? vich_uploader_asset(b, 'logoFile') : null, url: b.url})|json_encode|raw }};
 
         const brandFieldWrap = document.getElementById('brandFieldWrap');
         const vehiclePartExtrasWrap = document.getElementById('vehiclePartExtrasWrap');
@@ -262,7 +262,11 @@
         document.getElementById('categoryPickerRoot').addEventListener('change', toggleVehiclePartFields);
         toggleVehiclePartFields();
 
-        function setEntryBrand(id, name, logo) {
+        entryBrandLogoImg.addEventListener('click', function () {
+            if (this.dataset.brandUrl) window.open(this.dataset.brandUrl, '_blank', 'noopener');
+        });
+
+        function setEntryBrand(id, name, logo, url) {
             entryBrandIdInput.value = id || '';
             if (id) {
                 entryBrandTagLabel.textContent = name;
@@ -271,6 +275,9 @@
                 brandUnknownBtn.style.display = 'none';
                 if (logo) {
                     entryBrandLogoImg.src = logo;
+                    entryBrandLogoImg.dataset.brandUrl = url || '';
+                    entryBrandLogoImg.style.cursor = url ? 'pointer' : 'default';
+                    entryBrandLogoImg.title = url ? 'Ouvrir le site de la marque' : '';
                     entryBrandLogoBox.style.display = 'flex';
                 } else {
                     entryBrandLogoBox.style.display = 'none';
@@ -293,7 +300,7 @@
                 item.className = 'header-search-result-item';
                 item.innerHTML = '<i class="bi bi-award"></i><span>' + b.name + '</span>';
                 item.addEventListener('click', () => {
-                    setEntryBrand(b.id, b.name, b.logo);
+                    setEntryBrand(b.id, b.name, b.logo, b.url);
                     entryBrandSuggestions.classList.remove('active');
                 });
                 entryBrandSuggestions.appendChild(item);

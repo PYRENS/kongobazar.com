@@ -8,8 +8,9 @@
     <form method="post" enctype="multipart/form-data" action="{{ product ? path('manage_products_update', {id: product.id}) : path('manage_products_new') }}">
 
     <div class="admin-form-grid">
-        <div class="admin-card">
-            <h6><i class="bi bi-info-circle"></i> Informations générales</h6>
+        <div class="sw-card">
+            <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-info-circle text-primary me-2"></i>Informations générales</h6></div>
+            <div class="card-body">
 
             <div class="mb-3">
                 <label class="form-label">Titre</label>
@@ -47,10 +48,13 @@
                     <small class="text-muted d-block">Déclaration du vendeur — KongoBazar ne certifie pas l'authenticité.</small>
                 </div>
             </div>
+
+            </div>
         </div>
 
-        <div class="admin-card">
-            <h6><i class="bi bi-diagram-3"></i> Classification</h6>
+        <div class="sw-card">
+            <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-diagram-3 text-primary me-2"></i>Classification</h6></div>
+            <div class="card-body">
 
             <div class="mb-3">
                 <label class="form-label">Catégorie</label>
@@ -75,15 +79,18 @@
                 <div id="sellerSearchResults" class="list-group mt-1" style="max-width:400px;position:relative;z-index:10;"></div>
                 <input type="hidden" name="seller_profile_id" id="sellerIdInput" value="{{ product and product.sellerProfile ? product.sellerProfile.id : '' }}" required>
             </div>
+
+            </div>
         </div>
 
-        <div class="admin-card" id="categoryFieldsContainer">
+        <div class="sw-card" id="categoryFieldsContainer">
             {# Rempli en AJAX au chargement et à chaque changement de catégorie #}
         </div>
     </div>
 
-    <div class="admin-card">
-        <h6><i class="bi bi-tag"></i> Tarification & Statut</h6>
+    <div class="sw-card">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-tag text-primary me-2"></i>Tarification & Statut</h6></div>
+        <div class="card-body">
 
         <div class="row">
             <div class="col-md-3 mb-3">
@@ -134,10 +141,13 @@
                 </div>
             </div>
         </div>
+
+        </div>
     </div>
 
-    <div class="admin-card">
-        <h6><i class="bi bi-images"></i> Images</h6>
+    <div class="sw-card">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-images text-primary me-2"></i>Images</h6></div>
+        <div class="card-body">
 
         <div class="admin-file-upload-group" id="imageUploadGroup">
             <div class="admin-upload-thumb">
@@ -168,6 +178,7 @@
 
         <input type="hidden" name="image_order" id="imageOrderInput" value="">
         <small class="text-muted d-block mt-1">Glisse-dépose par la poignée (▤) pour réordonner — la première image (à gauche) devient l'image principale.</small>
+        </div>
     </div>
 
     <div id="imageZoomOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;cursor:zoom-out;">

@@ -2,8 +2,9 @@
 {% set compatibleBrandIds = pld ? pld.compatibilities|map(c => c.brand.id) : [] %}
 {% set existingEngineCompats = pld ? pld.engineCompatibilities : [] %}
 
-<div class="admin-card">
-    <h6><i class="bi bi-gear"></i> Détails pièce / accessoire</h6>
+<div class="sw-card">
+    <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-gear text-primary me-2"></i>Détails pièce / accessoire</h6></div>
+    <div class="card-body">
 
     <div class="mb-3 d-flex align-items-start gap-3">
         <div>
@@ -68,5 +69,6 @@
                 </span>
             {% endfor %}
         </div>
+    </div>
     </div>
 </div>
