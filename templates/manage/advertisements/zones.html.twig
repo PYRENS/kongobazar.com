@@ -5,111 +5,199 @@
 {% block page_title %}Réglage des zones publicitaires{% endblock %}
 
 {% block body %}
-    <div class="d-flex align-items-center gap-2 mb-3">
-        <a href="{{ path('manage_ads_index') }}" class="btn btn-sm btn-outline-secondary">← Retour aux publicités</a>
+    <a href="{{ path('manage_ads_index') }}" class="btn btn-sm btn-outline-secondary mb-3">← Retour aux publicités</a>
 
-        <select id="pageGroupFilter" class="form-select" style="max-width:280px;">
-            <option value="">— Toutes les pages —</option>
-            {% for key, label in pageGroups %}
-                <option value="{{ key }}">{{ label }}</option>
-            {% endfor %}
-        </select>
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-blue h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-blue"><i class="bi bi-shuffle"></i></div>
+                <div class="ctb-stat-val">{{ stats.totalZones }}</div>
+                <div class="ctb-stat-label">Zones à emplacement unique</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-green h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-green"><i class="bi bi-check-circle-fill"></i></div>
+                <div class="ctb-stat-val">{{ stats.withActiveBanner }}</div>
+                <div class="ctb-stat-label">Avec une bannière active</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-orange h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-orange"><i class="bi bi-pin-angle-fill"></i></div>
+                <div class="ctb-stat-val">{{ stats.fixedMode }}</div>
+                <div class="ctb-stat-label">En mode Fixe</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-purple h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-purple"><i class="bi bi-eye"></i></div>
+                <div class="ctb-stat-val">{{ stats.totalImpressions }}</div>
+                <div class="ctb-stat-label">Affichages cumulés</div>
+            </div>
+        </div>
     </div>
 
-    <form method="post" action="{{ path('manage_ad_zones_save') }}">
-        {% for row in rows %}
-            <div class="admin-card zone-row-card" data-page-group="{{ row.pageGroup }}">
-                <h6>
-                    {{ row.zoneKey }}
-                    <small class="text-muted fw-normal">— {{ pageGroups[row.pageGroup] ?? row.pageGroup }}</small>
-                    {% if row.width and row.height %}
-                        <small class="text-muted fw-normal">({{ row.width }}×{{ row.height }})</small>
-                    {% endif %}
-                </h6>
+    <form method="get" id="zonesFilterForm" class="mb-3 d-flex align-items-center gap-2 flex-wrap">
+        <select name="pageGroup" id="zonesPageGroupSelect" class="form-select" style="max-width:220px;">
+            <option value="">— Toutes les pages —</option>
+            {% for key, label in pageGroups %}
+                <option value="{{ key }}" {{ currentPageGroup == key ? 'selected' : '' }}>{{ label }}</option>
+            {% endfor %}
+        </select>
 
-                {% if row.candidates|length == 0 %}
-                    <p class="text-muted mb-0">Aucune publicité active actuellement sur cette zone.</p>
-                {% else %}
-                    <div class="d-flex align-items-center gap-3 flex-wrap zone-controls" data-zone="{{ row.zoneKey }}">
-                        <div class="form-check">
-                            <input type="radio" name="mode_{{ row.zoneKey }}" value="random" class="form-check-input zone-mode-radio" id="mode_random_{{ row.zoneKey }}" {{ row.mode == 'random' ? 'checked' : '' }}>
-                            <label class="form-check-label" for="mode_random_{{ row.zoneKey }}">Aléatoire</label>
-                        </div>
-                        <div class="form-check">
-                            <input type="radio" name="mode_{{ row.zoneKey }}" value="fixed" class="form-check-input zone-mode-radio" id="mode_fixed_{{ row.zoneKey }}" {{ row.mode == 'fixed' ? 'checked' : '' }}>
-                            <label class="form-check-label" for="mode_fixed_{{ row.zoneKey }}">Fixe</label>
-                        </div>
+        <select name="mode" id="zonesModeSelect" class="form-select" style="max-width:180px;">
+            <option value="">— Tous modes —</option>
+            <option value="random" {{ currentMode == 'random' ? 'selected' : '' }}>Aléatoire</option>
+            <option value="fixed" {{ currentMode == 'fixed' ? 'selected' : '' }}>Fixe</option>
+        </select>
 
-                        <select name="fixed_{{ row.zoneKey }}" class="form-select zone-fixed-select" style="max-width:300px;display:{{ row.mode == 'fixed' ? 'block' : 'none' }};">
-                            <option value="">— Choisir la bannière fixe —</option>
-                            {% for ad in row.candidates %}
-                                <option value="{{ ad.id }}" {{ row.fixedAdvertisementId == ad.id ? 'selected' : '' }}>
-                                    {{ ad.title }} ({{ ad.impressionCount }} affichages, {{ ad.clickCount }} clics)
-                                </option>
-                            {% endfor %}
-                        </select>
+        <select name="perPage" id="zonesPerPageSelect" class="form-select" style="max-width:130px;">
+            {% for n in [10, 20, 50, 100] %}
+                <option value="{{ n }}" {{ perPage == n ? 'selected' : '' }}>{{ n }} / page</option>
+            {% endfor %}
+        </select>
 
-                        <button type="submit" class="btn btn-sm btn-success zone-save-btn" style="display:none;"><i class="bi bi-check-lg"></i> Enregistrer</button>
-                    </div>
-
-                    <table class="table table-sm mt-3 mb-0 zone-stats-table">
-                        <thead>
-                            <tr>
-                                <th>Bannière active sur cette zone</th>
-                                <th style="width:120px;">Affichages</th>
-                                <th style="width:100px;">Clics</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for ad in row.candidates %}
-                                <tr>
-                                    <td>{{ ad.title }}</td>
-                                    <td>{{ ad.impressionCount }}</td>
-                                    <td>{{ ad.clickCount }}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                {% endif %}
-            </div>
-        {% endfor %}
+        {% if currentPageGroup or currentMode %}
+            <a href="{{ path('manage_ad_zones_index') }}" class="btn btn-sm btn-outline-secondary">Réinitialiser</a>
+        {% endif %}
     </form>
 
-    <style>
-        .zone-stats-table th:nth-child(2),
-        .zone-stats-table td:nth-child(2) { width: 120px; text-align: right; }
-        .zone-stats-table th:nth-child(3),
-        .zone-stats-table td:nth-child(3) { width: 100px; text-align: right; }
-    </style>
+    <div class="sw-card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+    <table class="table ctb-table mb-0">
+        <thead>
+            <tr>
+                <th>Zone</th>
+                <th>Page</th>
+                <th>Dimension</th>
+                <th>Nbre de bannière</th>
+                <th>Affichages</th>
+                <th>Clics</th>
+                <th>Configuration</th>
+            </tr>
+        </thead>
+        <tbody id="zonesTableBody">
+            {% include 'manage/advertisements/_zones_rows.html.twig' %}
+        </tbody>
+    </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="ctb-table-footer">
+        <span class="ctb-footer-info" id="zonesFooterInfo">{{ total }} zone{{ total != 1 ? 's' : '' }} au total — page {{ page }} / {{ pages }}</span>
+        <div id="zonesPaginationWrap">
+            {% include 'manage/advertisements/_index_pagination.html.twig' %}
+        </div>
+    </div>
 
     <script>
-        document.querySelectorAll('.zone-controls').forEach(function (controls) {
-            const radios = controls.querySelectorAll('.zone-mode-radio');
-            const fixedSelect = controls.querySelector('.zone-fixed-select');
-            const saveBtn = controls.querySelector('.zone-save-btn');
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('zonesFilterForm');
+            const tbody = document.getElementById('zonesTableBody');
+            const footerInfo = document.getElementById('zonesFooterInfo');
+            const paginationWrap = document.getElementById('zonesPaginationWrap');
+            let currentPage = {{ page }};
 
-            function applyVisibility() {
-                const checked = controls.querySelector('.zone-mode-radio:checked');
-                fixedSelect.style.display = (checked && checked.value === 'fixed') ? 'block' : 'none';
+            function wireRows() {
+                tbody.querySelectorAll('tr[data-zone]').forEach(function (tr) {
+                    const zoneKey = tr.dataset.zone;
+                    const controls = tr.querySelector('.zone-controls');
+                    const radios = controls.querySelectorAll('.zone-mode-radio');
+                    const fixedSelect = tr.querySelector('.zone-fixed-select');
+                    const saveBtn = tr.querySelector('.zone-save-btn');
+                    const cancelBtn = tr.querySelector('.zone-cancel-btn');
+
+                    // Mémorise l'état d'origine (au chargement de la ligne) pour pouvoir y revenir avec "Annuler".
+                    const originalChecked = controls.querySelector('.zone-mode-radio:checked');
+                    const originalMode = originalChecked ? originalChecked.value : 'random';
+                    const originalFixedValue = fixedSelect.value;
+
+                    function applyVisibility() {
+                        const checked = controls.querySelector('.zone-mode-radio:checked');
+                        fixedSelect.style.display = (checked && checked.value === 'fixed') ? 'block' : 'none';
+                    }
+
+                    function showActionButtons() {
+                        saveBtn.style.display = 'inline-block';
+                        cancelBtn.style.display = 'inline-block';
+                    }
+
+                    function hideActionButtons() {
+                        saveBtn.style.display = 'none';
+                        cancelBtn.style.display = 'none';
+                    }
+
+                    radios.forEach(function (radio) {
+                        radio.addEventListener('change', function () {
+                            applyVisibility();
+                            showActionButtons();
+                        });
+                    });
+
+                    fixedSelect.addEventListener('change', function () {
+                        showActionButtons();
+                    });
+
+                    cancelBtn.addEventListener('click', function () {
+                        radios.forEach(function (radio) {
+                            radio.checked = (radio.value === originalMode);
+                        });
+                        fixedSelect.value = originalFixedValue;
+                        applyVisibility();
+                        hideActionButtons();
+                    });
+
+                    saveBtn.addEventListener('click', function () {
+                        const checked = controls.querySelector('.zone-mode-radio:checked');
+                        const params = new URLSearchParams({
+                            mode: checked ? checked.value : 'random',
+                            fixed_advertisement_id: fixedSelect.value || '',
+                        });
+                        fetch('/publicites/zones/' + zoneKey + '/enregistrer', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: params,
+                        }).then((r) => r.json()).then((res) => {
+                            if (res.ok) {
+                                hideActionButtons();
+                                saveBtn.innerHTML = '<i class="bi bi-check-lg"></i> Enregistré';
+                                setTimeout(() => { saveBtn.innerHTML = '<i class="bi bi-check-lg"></i> Enregistrer'; }, 1500);
+                            }
+                        });
+                    });
+                });
+            }
+            wireRows();
+
+            function refreshList() {
+                const params = new URLSearchParams(new FormData(form));
+                params.set('page', currentPage);
+                fetch('{{ path("manage_ad_zones_index_fragment") }}?' + params.toString())
+                    .then((r) => r.json())
+                    .then((data) => {
+                        tbody.innerHTML = data.rowsHtml;
+                        footerInfo.textContent = data.footerInfo;
+                        paginationWrap.innerHTML = data.paginationHtml;
+                        wireRows();
+                    });
             }
 
-            radios.forEach(function (radio) {
-                radio.addEventListener('change', function () {
-                    applyVisibility();
-                    saveBtn.style.display = 'inline-block';
+            ['zonesPageGroupSelect', 'zonesModeSelect', 'zonesPerPageSelect'].forEach((id) => {
+                document.getElementById(id).addEventListener('change', function () {
+                    currentPage = 1;
+                    refreshList();
                 });
             });
 
-            fixedSelect.addEventListener('change', function () {
-                saveBtn.style.display = 'inline-block';
-            });
-        });
-
-        const pageGroupFilter = document.getElementById('pageGroupFilter');
-        pageGroupFilter.addEventListener('change', function () {
-            const value = this.value;
-            document.querySelectorAll('.zone-row-card').forEach(function (card) {
-                card.style.display = (!value || card.dataset.pageGroup === value) ? '' : 'none';
+            paginationWrap.addEventListener('click', function (e) {
+                const link = e.target.closest('.ctb-page-btn');
+                if (!link || link.classList.contains('disabled')) return;
+                e.preventDefault();
+                currentPage = parseInt(link.dataset.page, 10);
+                refreshList();
             });
         });
     </script>

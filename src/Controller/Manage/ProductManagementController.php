@@ -30,6 +30,11 @@ use Symfony\Component\String\Slugger\AsciiSlugger;
 
 class ProductManagementController extends AbstractController
 {
+    public function __construct(
+        private readonly \Vich\UploaderBundle\Storage\StorageInterface $partImageStorage,
+    ) {
+    }
+
     #[Route('/produits', name: 'manage_products_index', host: 'manage.kongobazar.com', methods: ['GET'])]
     public function index(Request $request, ProductRepository $repository, CategoryRepository $categoryRepository, SellerProfileRepository $sellerProfileRepository): Response
     {
@@ -44,7 +49,9 @@ class ProductManagementController extends AbstractController
         $perPage = in_array((int) $request->query->get('perPage', 20), [10, 20, 50, 100], true)
             ? (int) $request->query->get('perPage', 20) : 20;
 
-        $total = $repository->countFiltered($term, $categoryId, $status, $condition, $sellerProfileId);
+        $categoryIds = $this->resolveCategoryIdsWithDescendants($categoryId, $categoryRepository);
+
+        $total = $repository->countFiltered($term, $categoryIds, $status, $condition, $sellerProfileId);
 
         $stats = [
             'total' => $repository->countFiltered(null, null, null, null),
@@ -55,7 +62,8 @@ class ProductManagementController extends AbstractController
 
         return $this->render('manage/products/index.html.twig', [
             'stats' => $stats,
-            'products' => $repository->findFiltered($term, $categoryId, $status, $condition, $sort, $dir, $page, $perPage, $sellerProfileId),
+            'vehicleSectionLabels' => $categoryRepository->findVehicleSectionLabelMap(),
+            'products' => $repository->findFiltered($term, $categoryIds, $status, $condition, $sort, $dir, $page, $perPage, $sellerProfileId),
             'categories' => $categoryRepository->findBy([], ['name' => 'ASC']),
             'rootCategories' => $categoryRepository->findChildrenOf(null),
             'searchTerm' => $term,
@@ -71,6 +79,52 @@ class ProductManagementController extends AbstractController
             'perPage' => $perPage,
             'total' => $total,
         ]);
+    }
+
+    #[Route('/produits/liste-fragment', name: 'manage_products_index_fragment', host: 'manage.kongobazar.com', methods: ['GET'])]
+    public function indexFragment(Request $request, ProductRepository $repository, CategoryRepository $categoryRepository): Response
+    {
+        $term = $request->query->get('q') ?: null;
+        $categoryId = $request->query->get('category') ? (int) $request->query->get('category') : null;
+        $status = $request->query->get('status') ?: null;
+        $condition = $request->query->get('condition') ?: null;
+        $sort = $request->query->get('sort', 'createdAt');
+        $dir = $request->query->get('dir', 'DESC');
+        $page = max(1, (int) $request->query->get('page', 1));
+        $perPage = in_array((int) $request->query->get('perPage', 20), [10, 20, 50, 100], true)
+            ? (int) $request->query->get('perPage', 20) : 20;
+
+        $categoryIds = $this->resolveCategoryIdsWithDescendants($categoryId, $categoryRepository);
+
+        $total = $repository->countFiltered($term, $categoryIds, $status, $condition, null);
+        $pages = max(1, (int) ceil($total / $perPage));
+
+        return $this->json([
+            'rowsHtml' => $this->renderView('manage/products/_index_rows.html.twig', [
+                'products' => $repository->findFiltered($term, $categoryIds, $status, $condition, $sort, $dir, $page, $perPage, null),
+                'vehicleSectionLabels' => $categoryRepository->findVehicleSectionLabelMap(),
+            ]),
+            'footerInfo' => $total . ' produit' . ($total != 1 ? 's' : '') . ' au total — page ' . $page . ' / ' . $pages,
+            'paginationHtml' => $this->renderView('manage/products/_index_pagination.html.twig', ['page' => $page, 'pages' => $pages]),
+        ]);
+    }
+
+    /** Un produit est rattaché à une sous-catégorie feuille — le filtre catégorie doit donc inclure ses descendants. */
+    private function resolveCategoryIdsWithDescendants(?int $categoryId, CategoryRepository $categoryRepository): ?array
+    {
+        if (!$categoryId) {
+            return null;
+        }
+
+        $selectedCategory = $categoryRepository->find($categoryId);
+        $categoryIds = [$categoryId];
+        if ($selectedCategory) {
+            foreach ($selectedCategory->getDescendantCategories() as $descendant) {
+                $categoryIds[] = $descendant->getId();
+            }
+        }
+
+        return $categoryIds;
     }
 
     #[Route('/produits/nouveau', name: 'manage_products_new', host: 'manage.kongobazar.com', methods: ['GET'])]
@@ -99,17 +153,27 @@ class ProductManagementController extends AbstractController
 
         $this->hydrateModeSpecific($product, $resolver->resolve($product->getCategory()), $request, $em);
         $this->hydrateAttributes($product, $request, $em);
-        $this->hydrateImages($product, $request, $em);
+        $imageError = $this->hydrateImages($product, $request, $em);
         $em->flush();
+
+        if ($imageError) {
+            $this->addFlash('error', $imageError);
+            return $this->redirectToRoute('manage_products_edit', ['id' => $product->getId()]);
+        }
 
         $this->addFlash('success', $product->getTitle() . ' créé.');
         return $this->redirectToRoute('manage_products_index');
     }
 
     #[Route('/produits/{id}', name: 'manage_products_show', host: 'manage.kongobazar.com', methods: ['GET'], requirements: ['id' => '\d+'])]
-    public function show(Product $product): Response
+    public function show(Product $product, EntityManagerInterface $em): Response
     {
-        return $this->render('manage/products/show.html.twig', ['product' => $product]);
+        $attributeValues = $em->getRepository(ProductAttributeValue::class)->findBy(['product' => $product]);
+
+        return $this->render('manage/products/show.html.twig', [
+            'product' => $product,
+            'attributeValues' => $attributeValues,
+        ]);
     }
 
     #[Route('/produits/{id}/modifier', name: 'manage_products_edit', host: 'manage.kongobazar.com', methods: ['GET'], requirements: ['id' => '\d+'])]
@@ -134,8 +198,13 @@ class ProductManagementController extends AbstractController
         $this->hydrateCommon($product, $request, $em);
         $this->hydrateModeSpecific($product, $resolver->resolve($product->getCategory()), $request, $em);
         $this->hydrateAttributes($product, $request, $em);
-        $this->hydrateImages($product, $request, $em);
+        $imageError = $this->hydrateImages($product, $request, $em);
         $em->flush();
+
+        if ($imageError) {
+            $this->addFlash('error', $imageError);
+            return $this->redirectToRoute('manage_products_edit', ['id' => $product->getId()]);
+        }
 
         $this->addFlash('success', $product->getTitle() . ' mis à jour.');
         return $this->redirectToRoute('manage_products_index');
@@ -374,6 +443,20 @@ class ProductManagementController extends AbstractController
 
     private function hydrateAttributes(Product $product, Request $request, EntityManagerInterface $em): void
     {
+        $catalogEntryId = $request->request->get('catalog_entry_id') ?: null;
+
+        if ($catalogEntryId) {
+            $this->hydrateFreeAttributes($product, $request, $em);
+
+            return;
+        }
+
+        $this->hydrateFixedAttributes($product, $request, $em);
+    }
+
+    /** Ancien système : champs fixes pré-configurés par catégorie (avec Coller/Dupliquer). */
+    private function hydrateFixedAttributes(Product $product, Request $request, EntityManagerInterface $em): void
+    {
         $existing = [];
         foreach ($em->getRepository(ProductAttributeValue::class)->findBy(['product' => $product]) as $v) {
             $existing[$v->getCategoryAttribute()->getId()] = $v;
@@ -416,11 +499,73 @@ class ProductManagementController extends AbstractController
             $em->persist($value);
         }
 
-        // supprime les valeurs dont la caractéristique n'appartient plus à cette catégorie (changement de catégorie)
         foreach ($existing as $attrId => $value) {
             if (!array_key_exists($attrId, $submitted)) {
                 $em->remove($value);
             }
+        }
+    }
+
+    /** Nouveau système : lignes libres nom + valeur, utilisé uniquement quand une pièce catalogue est liée. */
+    private function hydrateFreeAttributes(Product $product, Request $request, EntityManagerInterface $em): void
+    {
+        foreach ($em->getRepository(ProductAttributeValue::class)->findBy(['product' => $product]) as $existing) {
+            $em->remove($existing);
+        }
+        $em->flush();
+
+        $names = $request->request->all('attr_name');
+        $characteristicIds = $request->request->all('attr_characteristic_id');
+        $values = $request->request->all('attr_value');
+
+        foreach ($names as $i => $rawName) {
+            $name = trim((string) $rawName);
+            $value = trim((string) ($values[$i] ?? ''));
+            if ('' === $name || '' === $value) {
+                continue;
+            }
+
+            $characteristicId = $characteristicIds[$i] ?? null;
+            $characteristic = $characteristicId ? $em->getRepository(\App\Entity\Characteristic::class)->find((int) $characteristicId) : null;
+
+            if (!$characteristic) {
+                $normalizedName = mb_strtolower(trim(preg_replace('/\s+/u', ' ', str_replace(['’', '`'], "'", $name))));
+                $normalizedName = mb_strtolower(trim(preg_replace('/\s+/u', ' ', str_replace(['’', '`'], "'", $name))));
+                $candidates = $em->getRepository(\App\Entity\Characteristic::class)->createQueryBuilder('c')
+                    ->getQuery()->getResult();
+                $characteristic = null;
+                foreach ($candidates as $candidate) {
+                    $candidateNormalized = mb_strtolower(trim(preg_replace('/\s+/u', ' ', str_replace(['’', '`'], "'", $candidate->getName()))));
+                    if ($candidateNormalized === $normalizedName) {
+                        $characteristic = $candidate;
+                        break;
+                    }
+                }
+            }
+
+            if (!$characteristic) {
+                $characteristic = new \App\Entity\Characteristic();
+                $characteristic->setName($name);
+                $characteristic->setDataType('text');
+                $em->persist($characteristic);
+            }
+
+            $categoryAttribute = $em->getRepository(CategoryAttribute::class)->findOneBy([
+                'category' => $product->getCategory(),
+                'characteristic' => $characteristic,
+            ]);
+            if (!$categoryAttribute) {
+                $categoryAttribute = new CategoryAttribute();
+                $categoryAttribute->setCategory($product->getCategory());
+                $categoryAttribute->setCharacteristic($characteristic);
+                $em->persist($categoryAttribute);
+            }
+
+            $attrValue = new ProductAttributeValue();
+            $attrValue->setProduct($product);
+            $attrValue->setCategoryAttribute($categoryAttribute);
+            $attrValue->setTextValue($value);
+            $em->persist($attrValue);
         }
     }
 

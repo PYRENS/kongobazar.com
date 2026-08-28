@@ -1,0 +1,57 @@
+<div class="alert alert-success d-flex align-items-start gap-3 mb-0" style="background:#f0fdf4;border-color:#86efac;">
+    {% if entry.images|length > 0 %}
+        <img src="{{ vich_uploader_asset(entry.images|first, 'imageFile') }}" style="width:64px;height:64px;object-fit:cover;border-radius:6px;flex-shrink:0;">
+    {% endif %}
+    <div class="flex-grow-1">
+        <div class="d-flex align-items-center justify-content-between">
+            <strong>{{ entry.name }}</strong>
+            <a href="{{ path('manage_part_catalog_view', {id: entry.id}) }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-box-arrow-up-right"></i> Voir la fiche catalogue
+            </a>
+        </div>
+        {% if entry.brand %}<div class="text-muted small">Fabricant : {{ entry.brand.name }}</div>{% endif %}
+        {% if entry.ean %}<div class="text-muted small">EAN : {{ entry.ean }}</div>{% endif %}
+        {% if entry.manufacturerRef %}<div class="text-muted small">Réf. fabricant : {{ entry.manufacturerRef }}</div>{% endif %}
+
+        {% if entry.oemCodes|length > 0 %}
+            <div class="mt-2">
+                <span class="fw-medium small">Codes OEM :</span>
+                {% for oem in entry.oemCodes %}
+                    <span class="badge bg-light text-dark border me-1">{{ oem.code }}{{ oem.brand ? ' — ' ~ oem.brand.name : '' }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% if entry.attributeValues|length > 0 %}
+            <div class="mt-2">
+                <span class="fw-medium small">Caractéristiques :</span>
+                <ul class="mb-0 small">
+                    {% for av in entry.attributeValues %}
+                        <li>{{ av.categoryAttribute.name }} : {{ av.categoryAttributeOption ? av.categoryAttributeOption.label : (av.textValue ?: (av.numberValue ?: (av.booleanValue ? 'Oui' : 'Non'))) }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        {% if entry.brandCompatibilities|length > 0 %}
+            <div class="mt-2">
+                <span class="fw-medium small">Marques compatibles :</span>
+                {% for bc in entry.brandCompatibilities %}
+                    <span class="badge bg-light text-dark border me-1">{{ bc.brand.name }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% if entry.engineCompatibilities|length > 0 %}
+            <div class="mt-2">
+                <span class="fw-medium small">Motorisations compatibles ({{ entry.engineCompatibilities|length }}) :</span>
+                <div>
+                    {% for ec in entry.engineCompatibilities|slice(0, 10) %}
+                        <span class="badge bg-light text-dark border me-1 mb-1">{{ ec.vehicleEngine.brandNameCache }} {{ ec.vehicleEngine.modelNameCache }} {{ ec.vehicleEngine.label }}</span>
+                    {% endfor %}
+                    {% if entry.engineCompatibilities|length > 10 %}<span class="text-muted small">+{{ entry.engineCompatibilities|length - 10 }} autre(s)</span>{% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>

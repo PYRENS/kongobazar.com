@@ -169,9 +169,9 @@ class ProductRepository extends ServiceEntityRepository
     }
 
     /** @return Product[] */
-    public function findFiltered(?string $term, ?int $categoryId, ?string $status, ?string $condition, string $sort, string $dir, int $page, int $perPage, ?int $sellerProfileId = null): array
+    public function findFiltered(?string $term, ?array $categoryIds, ?string $status, ?string $condition, string $sort, string $dir, int $page, int $perPage, ?int $sellerProfileId = null): array
     {
-        $qb = $this->buildFilterQuery($term, $categoryId, $status, $condition, $sellerProfileId);
+        $qb = $this->buildFilterQuery($term, $categoryIds, $status, $condition, $sellerProfileId);
         $dirSql = strtoupper($dir) === 'ASC' ? 'ASC' : 'DESC';
 
         // leftJoin + addSelect : précharge la 1ère image en une seule requête,
@@ -215,9 +215,9 @@ class ProductRepository extends ServiceEntityRepository
         return iterator_to_array(new \Doctrine\ORM\Tools\Pagination\Paginator($query, true));
     }
 
-    public function countFiltered(?string $term, ?int $categoryId, ?string $status, ?string $condition, ?int $sellerProfileId = null): int
+    public function countFiltered(?string $term, ?array $categoryIds, ?string $status, ?string $condition, ?int $sellerProfileId = null): int
     {
-        return (int) $this->buildFilterQuery($term, $categoryId, $status, $condition, $sellerProfileId)
+        return (int) $this->buildFilterQuery($term, $categoryIds, $status, $condition, $sellerProfileId)
             ->select('COUNT(p.id)')
             ->getQuery()
             ->getSingleScalarResult();
@@ -251,15 +251,15 @@ class ProductRepository extends ServiceEntityRepository
         return $map;
     }
 
-    private function buildFilterQuery(?string $term, ?int $categoryId, ?string $status, ?string $condition, ?int $sellerProfileId = null)
+    private function buildFilterQuery(?string $term, ?array $categoryIds, ?string $status, ?string $condition, ?int $sellerProfileId = null)
     {
         $qb = $this->createQueryBuilder('p');
 
         if ($term) {
             $qb->andWhere('p.title LIKE :term OR p.reference LIKE :term')->setParameter('term', '%' . $term . '%');
         }
-        if ($categoryId) {
-            $qb->andWhere('p.category = :categoryId')->setParameter('categoryId', $categoryId);
+        if ($categoryIds) {
+            $qb->andWhere('p.category IN (:categoryIds)')->setParameter('categoryIds', $categoryIds);
         }
         if ($status) {
             $qb->andWhere('p.status = :status')->setParameter('status', $status);
@@ -318,9 +318,29 @@ class ProductRepository extends ServiceEntityRepository
     public function searchByCategoryAndTerm(int $categoryId, string $term, ?int $excludeId = null, int $limit = 15): array
     {
         $qb = $this->createQueryBuilder('p')
+            ->leftJoin('p.partListingDetails', 'pld')
             ->andWhere('p.category = :categoryId')->setParameter('categoryId', $categoryId)
-            ->andWhere('p.title LIKE :term OR p.reference LIKE :term')->setParameter('term', '%' . $term . '%')
             ->setMaxResults($limit);
+
+        $termConditions = $qb->expr()->orX(
+            $qb->expr()->like('p.title', ':term'),
+            $qb->expr()->like('p.reference', ':term'),
+            $qb->expr()->like('p.ean', ':term'),
+            $qb->expr()->like('pld.manufacturerRef', ':term'),
+            $qb->expr()->like('pld.ean', ':term')
+        );
+        $qb->setParameter('term', '%' . $term . '%');
+
+        // Référence KongoBazar (KBZ-000042, calculée depuis l'ID) — extrait le numéro et matche sur p.id
+        if (preg_match('/(\d+)/', $term, $m)) {
+            $kbzId = (int) ltrim($m[1], '0');
+            if ($kbzId > 0) {
+                $termConditions->add($qb->expr()->eq('p.id', ':kbzId'));
+                $qb->setParameter('kbzId', $kbzId);
+            }
+        }
+
+        $qb->andWhere($termConditions);
 
         if ($excludeId) {
             $qb->andWhere('p.id != :excludeId')->setParameter('excludeId', $excludeId);

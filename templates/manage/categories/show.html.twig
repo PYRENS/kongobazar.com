@@ -125,6 +125,7 @@
                             <th>{{ self.sortLink('name', 'Nom', currentSort, currentDir) }}</th>
                             <th>{{ self.sortLink('childrenCount', 'Sous-catégories', currentSort, currentDir) }}</th>
                             <th>{{ self.sortLink('productCount', 'Produits', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('attributeCount', 'Nbre Caract.', currentSort, currentDir) }}</th>
                             <th>Couleur</th>
                             <th>Actions</th>
                         </tr>
@@ -151,6 +152,11 @@
                                     {% else %}0{% endif %}
                                 </td>
                                 <td>
+                                    {% if row.attributeCount > 0 %}
+                                        <a href="{{ path('manage_category_attributes_index', { categoryId: child.id }) }}">{{ row.attributeCount }}</a>
+                                    {% else %}<span class="text-muted">0</span>{% endif %}
+                                </td>
+                                <td>
                                     {% if child.themeColor %}
                                         <span style="display:inline-block;width:20px;height:20px;border-radius:5px;background:{{ child.themeColor }};border:1px solid var(--border-color);"></span>
                                     {% else %}<span class="text-muted">—</span>{% endif %}
@@ -166,7 +172,7 @@
                                 </td>
                             </tr>
                         {% else %}
-                            <tr><td colspan="7" class="text-muted text-center py-4">Aucune sous-catégorie.</td></tr>
+                            <tr><td colspan="8" class="text-muted text-center py-4">Aucune sous-catégorie.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>

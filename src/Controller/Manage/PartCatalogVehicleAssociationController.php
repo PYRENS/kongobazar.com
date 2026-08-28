@@ -189,6 +189,7 @@ class PartCatalogVehicleAssociationController extends AbstractController
                     'powerCv' => $e['powerCv'],
                     'exists' => $e['exists'],
                     'existingId' => $e['existingId'] ?? null,
+                    'hasFuel' => $e['hasFuel'] ?? false,
                 ], $g['engines']),
                 'unrecognizedLines' => $g['unrecognizedLines'],
             ];

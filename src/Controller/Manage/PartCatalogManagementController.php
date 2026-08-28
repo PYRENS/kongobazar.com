@@ -223,9 +223,9 @@ class PartCatalogManagementController extends AbstractController
         foreach ($entry->getEngineCompatibilities() as $compat) {
             $engine = $compat->getVehicleEngine();
             $brandKey = $engine->getBrandNameCache() ?: 'Autre';
-            $modelKey = $engine->getModelNameCache() ?: '—';
-            $variantKey = $engine->getVariantNameCache() ?: 'Standard';
-            $groupedVehicles[$brandKey][$modelKey][$variantKey][] = $engine;
+            $modelVariantKey = trim(($engine->getModelNameCache() ?: '—') . ' ' . ($engine->getVariantNameCache() ?: 'Standard'));
+            $fuelKey = $engine->getFuelType() ? $engine->getFuelType()->getName() : 'Énergie non renseignée';
+            $groupedVehicles[$brandKey][$modelVariantKey][$fuelKey][] = $engine;
         }
 
         $similar = $repository->findSimilarByOem($entry);
@@ -282,10 +282,10 @@ class PartCatalogManagementController extends AbstractController
         foreach ($entry->getEngineCompatibilities() as $compat) {
             $engine = $compat->getVehicleEngine();
             $brandKey = $engine->getBrandNameCache() ?: 'Autre';
-            $modelKey = $engine->getModelNameCache() ?: '—';
-            // Les Moto n'ont pas de variante — on utilise une clé vide plutôt qu'un faux niveau "Standard".
-            $variantKey = $engine->getVariantNameCache() ?: '';
-            $groupedVehicles[$brandKey][$modelKey][$variantKey][] = $engine;
+            // Les Moto n'ont pas de variante — on l'omet simplement du libellé plutôt qu'un faux "Standard".
+            $modelVariantKey = trim(($engine->getModelNameCache() ?: '—') . ' ' . ($engine->getVariantNameCache() ?: ''));
+            $fuelKey = $engine->getFuelType() ? $engine->getFuelType()->getName() : 'Énergie non renseignée';
+            $groupedVehicles[$brandKey][$modelVariantKey][$fuelKey][] = $engine;
         }
 
         return $this->render('manage/part_catalog/show.html.twig', [
@@ -357,6 +357,7 @@ class PartCatalogManagementController extends AbstractController
         $manufacturerRef = $request->request->get('manufacturer_ref') ?: null;
         $entry->setManufacturerRef($manufacturerRef);
         $entry->setDescription($request->request->get('description') ?: null);
+        $entry->setNote($request->request->get('note') ?: null);
 
         $name = trim((string) $request->request->get('name'));
         if ('' === $name) {

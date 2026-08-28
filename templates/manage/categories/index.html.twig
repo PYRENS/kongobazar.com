@@ -101,6 +101,7 @@
                                     {% if isSearchMode %}<th>Chemin</th>{% endif %}
                                     <th>{{ self.sortLink('childrenCount', 'Sous-catégories', currentSort, currentDir) }}</th>
                                     <th>{{ self.sortLink('productCount', 'Produits', currentSort, currentDir) }}</th>
+                                    <th>{{ self.sortLink('attributeCount', 'Nbre Caract.', currentSort, currentDir) }}</th>
                                     <th>Modèle</th>
                                     <th>Authenticité</th>
                                     <th>Couleur</th>
@@ -134,6 +135,11 @@
                                             {% else %}0{% endif %}
                                         </td>
                                         <td>
+                                            {% if row.attributeCount > 0 %}
+                                                <a href="{{ path('manage_category_attributes_index', { categoryId: cat.id }) }}">{{ row.attributeCount }}</a>
+                                            {% else %}<span class="text-muted">0</span>{% endif %}
+                                        </td>
+                                        <td>
                                             {% if cat.requiresModel %}
                                                 <span class="ctb-status-badge ctb-status-active"><i class="bi bi-check-circle"></i> Oui</span>
                                             {% else %}<span class="text-muted">Non</span>{% endif %}
@@ -161,7 +167,7 @@
                                         </td>
                                     </tr>
                                 {% else %}
-                                    <tr><td colspan="10" class="text-muted text-center py-4">Aucune catégorie à ce niveau.</td></tr>
+                                    <tr><td colspan="11" class="text-muted text-center py-4">Aucune catégorie à ce niveau.</td></tr>
                                 {% endfor %}
                             </tbody>
                         </table>

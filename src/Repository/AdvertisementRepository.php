@@ -47,6 +47,40 @@ class AdvertisementRepository extends ServiceEntityRepository
     }
 
     /** @return Advertisement[] */
+    public function searchByTitle(string $term, int $limit = 15): array
+    {
+        return $this->createQueryBuilder('a')
+            ->andWhere('a.title LIKE :term')->setParameter('term', '%' . $term . '%')
+            ->orderBy('a.title', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** @return Advertisement[] — toutes les pubs réellement placées sur cette zone (via zonePlacements, pas juste "zone principale"). */
+    public function findByZonePlacement(string $zoneKey, ?string $status = null, ?int $position = null, ?string $dateFrom = null, ?string $dateTo = null): array
+    {
+        $qb = $this->createQueryBuilder('a')
+            ->innerJoin('a.zonePlacements', 'zp')
+            ->andWhere('zp.zoneKey = :zoneKey')->setParameter('zoneKey', $zoneKey);
+
+        if ($status) {
+            $qb->andWhere('a.status = :status')->setParameter('status', $status);
+        }
+        if (null !== $position) {
+            $qb->andWhere('a.position = :position')->setParameter('position', $position);
+        }
+        if ($dateFrom) {
+            $qb->andWhere('a.startAt >= :dateFrom')->setParameter('dateFrom', new \DateTimeImmutable($dateFrom));
+        }
+        if ($dateTo) {
+            $qb->andWhere('a.startAt <= :dateTo')->setParameter('dateTo', new \DateTimeImmutable($dateTo));
+        }
+
+        return $qb->orderBy('a.position', 'ASC')->getQuery()->getResult();
+    }
+
+    /** @return Advertisement[] */
     public function findFiltered(?string $zoneKey, ?string $status, ?string $term, string $sort = 'zoneKey', string $dir = 'ASC'): array
     {
         $qb = $this->createQueryBuilder('a');

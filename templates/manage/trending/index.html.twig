@@ -5,77 +5,99 @@
 {% block page_title %}Tendances{% endblock %}
 
 {% block body %}
-<div class="admin-card">
-    <h5 class="mb-3">Catégories épinglées <small class="text-muted">(affichées en premier, dans cet ordre)</small></h5>
-
-    {% if pinned|length == 0 %}
-        <p class="text-muted">Aucune catégorie épinglée. Le bandeau se remplit automatiquement avec les catégories les plus visitées (7 derniers jours).</p>
-    {% endif %}
-
-    <table class="table admin-table">
-        <tbody>
-            {% for category in pinned %}
-                <tr>
-                    <td style="width: 60px;">
-                        <form method="post" action="{{ path('manage_trending_move', { id: category.id, direction: 'up' }) }}" style="display:inline;">
-                            <button type="submit" class="btn btn-sm btn-light"{{ loop.first ? ' disabled' }}><i class="bi bi-arrow-up"></i></button>
-                        </form>
-                        <form method="post" action="{{ path('manage_trending_move', { id: category.id, direction: 'down' }) }}" style="display:inline;">
-                            <button type="submit" class="btn btn-sm btn-light"{{ loop.last ? ' disabled' }}><i class="bi bi-arrow-down"></i></button>
-                        </form>
-                    </td>
-                    <td><i class="bi {{ category.icon|default('bi-tag') }}"></i> {{ category.name }}</td>
-                    <td style="width: 120px;">
-                        <form method="post" action="{{ path('manage_trending_unpin', { id: category.id }) }}">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Détacher</button>
-                        </form>
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <hr class="my-4">
-
-    <h6>Épingler une catégorie</h6>
-    <form method="get" class="mb-3 d-flex gap-2" style="max-width: 400px;">
-        <input type="search" name="q" class="form-control" placeholder="Rechercher une catégorie..." value="{{ searchTerm }}">
-        <button type="submit" class="btn btn-outline-secondary btn-sm"><i class="bi bi-search"></i></button>
-    </form>
-
-    <div class="mb-3">
-        <small class="text-muted d-block mb-2">Ou par cascade — choisissez le niveau le plus profond auquel vous voulez épingler :</small>
-        <form method="post" action="{{ path('manage_trending_pin_cascade') }}" class="d-flex align-items-center gap-2 flex-wrap">
-            <div class="category-picker" data-category-picker id="trendingCategoryPicker">
-                <select data-category-level="1" class="form-select" style="max-width:220px;">
-                    <option value="">— Choisir —</option>
-                    {% for root in rootCategories %}
-                        <option value="{{ root.id }}">{{ root.name }}</option>
-                    {% endfor %}
-                </select>
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-blue h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-blue"><i class="bi bi-pin-angle-fill"></i></div>
+                <div class="ctb-stat-val">{{ stats.pinnedCount }}</div>
+                <div class="ctb-stat-label">Catégories épinglées</div>
             </div>
-            <input type="hidden" name="catId" data-category-final-value value="">
-            <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-pin-angle"></i> Épingler cette catégorie</button>
-        </form>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-green h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-green"><i class="bi bi-diagram-3"></i></div>
+                <div class="ctb-stat-val">{{ stats.totalCategories }}</div>
+                <div class="ctb-stat-label">Catégories au total</div>
+            </div>
+        </div>
     </div>
-    {% if searchResults|length > 0 %}
-        <table class="table admin-table">
-            <tbody>
-                {% for category in searchResults %}
-                    {% if not category.trendingPinned %}
-                        <tr>
-                            <td>{{ category.name }}</td>
-                            <td style="width: 120px;">
-                                <form method="post" action="{{ path('manage_trending_pin', { id: category.id }) }}">
-                                    <button type="submit" class="btn btn-sm btn-primary">Épingler</button>
-                                </form>
-                            </td>
-                        </tr>
-                    {% endif %}
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
-</div>
 
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-pin-angle text-primary me-2"></i>Catégories épinglées <small class="text-muted fw-normal">(affichées en premier, dans cet ordre)</small></h6></div>
+        <div class="card-body p-0">
+            {% if pinned|length == 0 %}
+                <p class="text-muted p-3 mb-0">Aucune catégorie épinglée. Le bandeau se remplit automatiquement avec les catégories les plus visitées (7 derniers jours).</p>
+            {% else %}
+                <table class="table ctb-table mb-0">
+                    <tbody>
+                        {% for category in pinned %}
+                            <tr>
+                                <td style="width: 80px;">
+                                    <form method="post" action="{{ path('manage_trending_move', { id: category.id, direction: 'up' }) }}" style="display:inline;">
+                                        <button type="submit" class="admin-btn admin-btn--outline"{{ loop.first ? ' disabled' }}><i class="bi bi-arrow-up"></i></button>
+                                    </form>
+                                    <form method="post" action="{{ path('manage_trending_move', { id: category.id, direction: 'down' }) }}" style="display:inline;">
+                                        <button type="submit" class="admin-btn admin-btn--outline"{{ loop.last ? ' disabled' }}><i class="bi bi-arrow-down"></i></button>
+                                    </form>
+                                </td>
+                                <td><i class="bi {{ category.icon|default('bi-tag') }}"></i> {{ category.name }}</td>
+                                <td style="width: 120px;">
+                                    <form method="post" action="{{ path('manage_trending_unpin', { id: category.id }) }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Détacher</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="sw-card">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-plus-circle text-primary me-2"></i>Épingler une catégorie</h6></div>
+        <div class="card-body">
+            <form method="get" class="mb-3 d-flex gap-2" style="max-width: 400px;">
+                <input type="search" name="q" class="form-control" placeholder="Rechercher une catégorie..." value="{{ searchTerm }}">
+                <button type="submit" class="btn btn-outline-secondary btn-sm"><i class="bi bi-search"></i></button>
+            </form>
+
+            <div class="mb-3">
+                <small class="text-muted d-block mb-2">Ou par cascade — choisis le niveau le plus profond auquel tu veux épingler :</small>
+                <form method="post" action="{{ path('manage_trending_pin_cascade') }}" class="d-flex align-items-center gap-2 flex-wrap">
+                    <div class="category-picker" data-category-picker id="trendingCategoryPicker">
+                        <select data-category-level="1" class="form-select" style="max-width:220px;">
+                            <option value="">— Choisir —</option>
+                            {% for root in rootCategories %}
+                                <option value="{{ root.id }}">{{ root.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <input type="hidden" name="catId" data-category-final-value value="">
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-pin-angle"></i> Épingler cette catégorie</button>
+                </form>
+            </div>
+
+            {% if searchResults|length > 0 %}
+                <table class="table ctb-table mb-0">
+                    <tbody>
+                        {% for category in searchResults %}
+                            {% if not category.trendingPinned %}
+                                <tr>
+                                    <td>{{ category.name }}</td>
+                                    <td style="width: 120px;">
+                                        <form method="post" action="{{ path('manage_trending_pin', { id: category.id }) }}">
+                                            <button type="submit" class="btn btn-sm btn-primary">Épingler</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% elseif searchTerm %}
+                <p class="text-muted mb-0">Aucune catégorie ne correspond à "{{ searchTerm }}".</p>
+            {% endif %}
+        </div>
+    </div>
 {% endblock %}

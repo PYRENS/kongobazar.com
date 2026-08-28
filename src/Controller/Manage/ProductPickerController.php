@@ -43,6 +43,40 @@ class ProductPickerController extends AbstractController
         ], $results)]);
     }
 
+    #[Route('/produits/catalogue-pieces/rechercher', name: 'manage_products_catalog_entry_search', host: 'manage.kongobazar.com', methods: ['GET'])]
+    public function searchCatalogEntry(Request $request, \App\Repository\PartCatalogEntryRepository $repository): Response
+    {
+        $term = trim((string) $request->query->get('q', ''));
+        $results = mb_strlen($term) >= 2 ? array_slice($repository->findFiltered(null, $term, null), 0, 15) : [];
+
+        return $this->json(['results' => array_map(fn (\App\Entity\PartCatalogEntry $e) => [
+            'id' => $e->getId(),
+            'label' => $e->getName()
+                . ($e->getEan() ? ' — EAN ' . $e->getEan() : '')
+                . ($e->getManufacturerRef() ? ' — Réf. ' . $e->getManufacturerRef() : ''),
+            'categoryId' => $e->getCategory()?->getId(),
+            'categoryAncestorIds' => $e->getCategory() ? implode(',', array_map(fn ($a) => $a->getId(), $e->getCategory()->getAncestors())) : '',
+        ], $results)]);
+    }
+
+    #[Route('/produits/catalogue-pieces/{id}/resume', name: 'manage_products_catalog_entry_summary', host: 'manage.kongobazar.com', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function catalogEntrySummary(\App\Entity\PartCatalogEntry $entry): Response
+    {
+        return $this->render('manage/_partials/_product_catalog_entry_summary.html.twig', ['entry' => $entry]);
+    }
+
+    #[Route('/produits/caracteristiques-recherche', name: 'manage_products_characteristics_search', host: 'manage.kongobazar.com', methods: ['GET'])]
+    public function searchCharacteristics(Request $request, \App\Repository\CharacteristicRepository $repository): Response
+    {
+        $term = trim((string) $request->query->get('q', ''));
+        $results = mb_strlen($term) >= 1 ? $repository->searchByName($term) : [];
+
+        return $this->json(['results' => array_map(fn (\App\Entity\Characteristic $c) => [
+            'id' => $c->getId(),
+            'label' => $c->getName() . ($c->getUnit() ? ' (' . $c->getUnit() . ')' : ''),
+        ], $results)]);
+    }
+
     #[Route('/produits/champs-categorie/{categoryId}', name: 'manage_products_category_fields', host: 'manage.kongobazar.com', methods: ['GET'], requirements: ['categoryId' => '\d+'])]
     public function categoryFields(
         int $categoryId,

@@ -6,6 +6,9 @@ function initCategoryPicker() {
     const picker = document.querySelector('[data-category-picker]');
     if (!picker) return;
 
+    // Ce picker est géré exclusivement par product-pickers.js (formulaire produit) — on ne s'y attache pas.
+    if (picker.hasAttribute('data-product-category-picker')) return;
+
     if (picker.dataset.categoryPickerInitialized) return;
     picker.dataset.categoryPickerInitialized = '1';
 

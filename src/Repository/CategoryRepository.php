@@ -100,6 +100,32 @@ class CategoryRepository extends ServiceEntityRepository
         return $map;
     }
 
+    /** @return array<int, string> [catégorie ID => libellé court "Auto / Pièce de rechange" | "Auto / Accessoire" | "Auto / Offres" | équivalents Moto] */
+    public function findVehicleSectionLabelMap(): array
+    {
+        $roots = [
+            'isAutoPartRoot' => 'Auto / Pièce de rechange',
+            'isMotoPartRoot' => 'Moto / Pièce de rechange',
+            'isAutoAccessoryRoot' => 'Auto / Accessoire',
+            'isMotoAccessoryRoot' => 'Moto / Accessoire',
+            'isAutoOfferRoot' => 'Auto / Offres',
+            'isMotoOfferRoot' => 'Moto / Offres',
+        ];
+
+        $map = [];
+        foreach ($roots as $field => $label) {
+            $matches = $this->createQueryBuilder('c')->andWhere("c.{$field} = true")->getQuery()->getResult();
+            foreach ($matches as $root) {
+                $map[$root->getId()] = $label;
+                foreach ($root->getDescendantCategories() as $d) {
+                    $map[$d->getId()] = $label;
+                }
+            }
+        }
+
+        return $map;
+    }
+
     /** @return int[] IDs de toutes les catégories descendant des racines "pièces Auto" et/ou "pièces Moto", selon ce qui est demandé. */
     public function findCategoryIdsByPartType(bool $includeAuto, bool $includeMoto): array
     {

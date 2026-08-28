@@ -1,67 +1,152 @@
+{% set pld = product ? product.partListingDetails : null %}
+{% set isCatalogLinked = pld and pld.partCatalogEntry %}
+
 <div class="sw-card">
     <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-sliders text-primary me-2"></i>Caractéristiques</h6></div>
     <div class="card-body">
 
-    <input type="hidden" id="attrPasteCategoryId" value="{{ categoryId }}">
-    <input type="hidden" id="attrDuplicateProductId" value="{{ productId ?: '' }}">
+    <div id="attrOldSystemWrap" style="{{ isCatalogLinked ? 'display:none;' : '' }}">
 
-    <div class="d-flex gap-2 mb-3">
-        <button type="button" id="toggleAttrPasteBtn" class="btn btn-sm btn-outline-primary">
-            <i class="bi bi-clipboard-plus"></i> Coller des caractéristiques brutes
-        </button>
-        <button type="button" id="toggleAttrDuplicateBtn" class="btn btn-sm btn-outline-primary">
-            <i class="bi bi-files"></i> Dupliquer depuis un autre produit
-        </button>
-    </div>
+        <input type="hidden" id="attrPasteCategoryId" value="{{ categoryId }}">
+        <input type="hidden" id="attrDuplicateProductId" value="{{ productId ?: '' }}">
 
-    <div id="attrDuplicateBlock" style="display:none;" class="mb-3 p-2" style="border:1px solid #eee;border-radius:6px;">
-        <label class="form-label">Produit source (même catégorie)</label>
-        <input type="text" id="attrDuplicateSearchInput" class="form-control" style="max-width:400px;" placeholder="Rechercher un produit..." autocomplete="off">
-        <div id="attrDuplicateSearchResults" class="list-group mt-1" style="max-width:400px;position:relative;z-index:10;"></div>
+        <div class="d-flex gap-2 mb-3">
+            <button type="button" id="toggleAttrPasteBtn" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-clipboard-plus"></i> Coller des caractéristiques brutes
+            </button>
+            <button type="button" id="toggleAttrDuplicateBtn" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-files"></i> Dupliquer depuis un autre produit
+            </button>
+        </div>
 
-        <div id="attrDuplicateChecklist" class="mt-3"></div>
-    </div>
+        <div id="attrDuplicateBlock" style="display:none;" class="mb-3 p-2" style="border:1px solid #eee;border-radius:6px;">
+            <label class="form-label">Produit source (même catégorie)</label>
+            <input type="text" id="attrDuplicateSearchInput" class="form-control" style="max-width:400px;" placeholder="Rechercher un produit..." autocomplete="off">
+            <div id="attrDuplicateSearchResults" class="list-group mt-1" style="max-width:400px;position:relative;z-index:10;"></div>
 
-    <div id="attrPasteBlock" style="display:none;" class="mb-3">
-        <textarea id="attrPasteText" class="form-control" rows="8" placeholder="Longueur [mm]: 1133&#10;Année jusqu'à: 09 / 2005&#10;Code moteur: K9K 766"></textarea>
-        <button type="button" id="attrPasteAnalyzeBtn" class="btn btn-sm btn-primary mt-2">Analyser</button>
-        <div id="attrPasteResult" class="mt-2"></div>
-    </div>
+            <div id="attrDuplicateChecklist" class="mt-3"></div>
+        </div>
 
-    <div id="attrFieldsContainer">
-    {% for attr in attributes %}
-        {% set existingValue = existingAttributeValues[attr.id] ?? null %}
-        <div class="mb-3 d-flex align-items-end gap-2">
-            <div class="flex-grow-1">
-                <label class="form-label">
-                    {{ attr.name }}{{ attr.unit ? ' (' ~ attr.unit ~ ')' : '' }}
-                    {{ not attr.nullable ? '*' : '' }}
-                </label>
+        <div id="attrPasteBlock" style="display:none;" class="mb-3">
+            <textarea id="attrPasteText" class="form-control" rows="8" placeholder="Longueur [mm]: 1133&#10;Année jusqu'à: 09 / 2005&#10;Code moteur: K9K 766"></textarea>
+            <button type="button" id="attrPasteAnalyzeBtn" class="btn btn-sm btn-primary mt-2">Analyser</button>
+            <div id="attrPasteResult" class="mt-2"></div>
+        </div>
 
-                {% if attr.dataType == 'text' %}
-                    <input type="text" name="attr[{{ attr.id }}]" class="form-control attr-field" value="{{ existingValue ? existingValue.textValue : '' }}" {{ not attr.nullable ? 'required' : '' }}>
-                {% elseif attr.dataType == 'number' %}
-                    <input type="number" step="0.001" name="attr[{{ attr.id }}]" class="form-control attr-field" value="{{ existingValue ? existingValue.numberValue : '' }}" {{ not attr.nullable ? 'required' : '' }}>
-                {% elseif attr.dataType == 'boolean' %}
-                    <select name="attr[{{ attr.id }}]" class="form-select attr-field" {{ not attr.nullable ? 'required' : '' }}>
-                        <option value="">—</option>
-                        <option value="1" {{ existingValue and existingValue.booleanValue == true ? 'selected' : '' }}>Oui</option>
-                        <option value="0" {{ existingValue and existingValue.booleanValue == false ? 'selected' : '' }}>Non</option>
-                    </select>
-                {% elseif attr.dataType == 'select' %}
-                    <select name="attr[{{ attr.id }}]" class="form-select attr-field" {{ not attr.nullable ? 'required' : '' }}>
-                        <option value="">— Choisir —</option>
-                        {% for option in attr.options %}
-                            <option value="{{ option.id }}" {{ existingValue and existingValue.categoryAttributeOption and existingValue.categoryAttributeOption.id == option.id ? 'selected' : '' }}>{{ option.label }}</option>
-                        {% endfor %}
-                    </select>
+        <div id="attrFieldsContainer">
+        {% for attr in attributes %}
+            {% set existingValue = existingAttributeValues[attr.id] ?? null %}
+            {% set hasValue = existingValue and (existingValue.textValue or existingValue.numberValue or existingValue.categoryAttributeOption or existingValue.booleanValue is not null) %}
+            {% if not attr.nullable or hasValue %}
+                <div class="mb-3 d-flex align-items-end gap-2">
+                    <div class="flex-grow-1">
+                        <label class="form-label">
+                            {{ attr.name }}{{ attr.unit ? ' (' ~ attr.unit ~ ')' : '' }}
+                            {{ not attr.nullable ? '*' : '' }}
+                        </label>
+
+                        {% if attr.dataType == 'text' %}
+                            <input type="text" name="attr[{{ attr.id }}]" class="form-control attr-field" value="{{ existingValue ? existingValue.textValue : '' }}" {{ not attr.nullable ? 'required' : '' }}>
+                        {% elseif attr.dataType == 'number' %}
+                            <input type="number" step="0.001" name="attr[{{ attr.id }}]" class="form-control attr-field" value="{{ existingValue ? existingValue.numberValue : '' }}" {{ not attr.nullable ? 'required' : '' }}>
+                        {% elseif attr.dataType == 'boolean' %}
+                            <select name="attr[{{ attr.id }}]" class="form-select attr-field" {{ not attr.nullable ? 'required' : '' }}>
+                                <option value="">—</option>
+                                <option value="1" {{ existingValue and existingValue.booleanValue == true ? 'selected' : '' }}>Oui</option>
+                                <option value="0" {{ existingValue and existingValue.booleanValue == false ? 'selected' : '' }}>Non</option>
+                            </select>
+                        {% elseif attr.dataType == 'select' %}
+                            <select name="attr[{{ attr.id }}]" class="form-select attr-field" {{ not attr.nullable ? 'required' : '' }}>
+                                <option value="">— Choisir —</option>
+                                {% for option in attr.options %}
+                                    <option value="{{ option.id }}" {{ existingValue and existingValue.categoryAttributeOption and existingValue.categoryAttributeOption.id == option.id ? 'selected' : '' }}>{{ option.label }}</option>
+                                {% endfor %}
+                            </select>
+                        {% endif %}
+                    </div>
+                    {% if attr.nullable %}
+                        <button type="button" class="btn btn-sm btn-outline-danger clear-attr-btn" title="Vider cette caractéristique"><i class="bi bi-x-lg"></i></button>
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% endfor %}
+        </div>
+
+        {% set hiddenCount = 0 %}
+        {% for attr in attributes %}
+            {% set existingValue = existingAttributeValues[attr.id] ?? null %}
+            {% set hasValue = existingValue and (existingValue.textValue or existingValue.numberValue or existingValue.categoryAttributeOption or existingValue.booleanValue is not null) %}
+            {% if attr.nullable and not hasValue %}
+                {% set hiddenCount = hiddenCount + 1 %}
+            {% endif %}
+        {% endfor %}
+
+        {% if hiddenCount > 0 %}
+            <button type="button" id="toggleEmptyAttrsBtn" class="btn btn-sm btn-outline-secondary mb-2">
+                <i class="bi bi-chevron-down"></i> Afficher {{ hiddenCount }} champ{{ hiddenCount > 1 ? 's' : '' }} vide{{ hiddenCount > 1 ? 's' : '' }}
+            </button>
+            <div id="attrEmptyFieldsContainer" style="display:none;">
+            {% for attr in attributes %}
+                {% set existingValue = existingAttributeValues[attr.id] ?? null %}
+                {% set hasValue = existingValue and (existingValue.textValue or existingValue.numberValue or existingValue.categoryAttributeOption or existingValue.booleanValue is not null) %}
+                {% if attr.nullable and not hasValue %}
+                <div class="mb-3 d-flex align-items-end gap-2">
+                    <div class="flex-grow-1">
+                        <label class="form-label">{{ attr.name }}{{ attr.unit ? ' (' ~ attr.unit ~ ')' : '' }}</label>
+
+                        {% if attr.dataType == 'text' %}
+                            <input type="text" name="attr[{{ attr.id }}]" class="form-control attr-field">
+                        {% elseif attr.dataType == 'number' %}
+                            <input type="number" step="0.001" name="attr[{{ attr.id }}]" class="form-control attr-field">
+                        {% elseif attr.dataType == 'boolean' %}
+                            <select name="attr[{{ attr.id }}]" class="form-select attr-field">
+                                <option value="">—</option>
+                                <option value="1">Oui</option>
+                                <option value="0">Non</option>
+                            </select>
+                        {% elseif attr.dataType == 'select' %}
+                            <select name="attr[{{ attr.id }}]" class="form-select attr-field">
+                                <option value="">— Choisir —</option>
+                                {% for option in attr.options %}
+                                    <option value="{{ option.id }}">{{ option.label }}</option>
+                                {% endfor %}
+                            </select>
+                        {% endif %}
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger clear-attr-btn" title="Vider cette caractéristique"><i class="bi bi-x-lg"></i></button>
+                </div>
                 {% endif %}
+            {% endfor %}
             </div>
-            {% if attr.nullable %}
-                <button type="button" class="btn btn-sm btn-outline-danger clear-attr-btn" title="Vider cette caractéristique"><i class="bi bi-x-lg"></i></button>
+        {% endif %}
+    </div>
+
+    <div id="attrFreeSystemWrap" style="{{ isCatalogLinked ? '' : 'display:none;' }}">
+        <small class="text-muted d-block mb-2">Pièce liée au catalogue : ajoute ici seulement des caractéristiques additionnelles propres à cette annonce (l'essentiel vient déjà de la fiche catalogue).</small>
+        <div id="attrRowsContainer">
+            {% if isCatalogLinked %}
+                {% for value in existingAttributeValues %}
+                    <div class="mb-2 d-flex align-items-center gap-2 attr-row">
+                        <div class="flex-grow-1" style="position:relative;">
+                            <input type="text" class="form-control attr-name-input" placeholder="Caractéristique" autocomplete="off"
+                                value="{{ value.categoryAttribute.characteristic.name }}">
+                            <input type="hidden" class="attr-characteristic-id" name="attr_characteristic_id[]" value="{{ value.categoryAttribute.characteristic.id }}">
+                            <input type="hidden" class="attr-name-hidden" name="attr_name[]" value="{{ value.categoryAttribute.characteristic.name }}">
+                            <div class="list-group attr-name-results" style="position:absolute;z-index:10;width:100%;"></div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <input type="text" class="form-control attr-value-input" name="attr_value[]" placeholder="Valeur" required
+                                value="{{ value.textValue ?: (value.numberValue ?: (value.categoryAttributeOption ? value.categoryAttributeOption.label : (value.booleanValue == true ? 'Oui' : (value.booleanValue == false ? 'Non' : '')))) }}">
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-attr-row" title="Supprimer cette ligne"><i class="bi bi-trash"></i></button>
+                    </div>
+                {% endfor %}
             {% endif %}
         </div>
-    {% endfor %}
+        <button type="button" id="addAttrRowBtn" class="btn btn-sm btn-outline-primary mt-2">
+            <i class="bi bi-plus-lg"></i> Ajouter une caractéristique
+        </button>
     </div>
+
     </div>
 </div>

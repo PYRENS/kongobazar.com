@@ -109,6 +109,32 @@
                             <label class="form-check-label" for="isMotoPartRoot">Racine pièces Moto</label>
                             <small class="text-muted d-block">Même principe côté Moto.</small>
                         </div>
+
+                        <div class="col-6 form-check form-switch">
+                            <input type="checkbox" name="is_auto_accessory_root" value="1" class="form-check-input" id="isAutoAccessoryRoot"
+                                {{ category and category.isAutoAccessoryRoot ? 'checked' : '' }}>
+                            <label class="form-check-label" for="isAutoAccessoryRoot">Racine accessoires Auto</label>
+                            <small class="text-muted d-block">Sur le nœud "Accessoire" côté Auto — sert au libellé affiché dans la liste Produits.</small>
+                        </div>
+                        <div class="col-6 form-check form-switch">
+                            <input type="checkbox" name="is_moto_accessory_root" value="1" class="form-check-input" id="isMotoAccessoryRoot"
+                                {{ category and category.isMotoAccessoryRoot ? 'checked' : '' }}>
+                            <label class="form-check-label" for="isMotoAccessoryRoot">Racine accessoires Moto</label>
+                            <small class="text-muted d-block">Même principe côté Moto.</small>
+                        </div>
+
+                        <div class="col-6 form-check form-switch">
+                            <input type="checkbox" name="is_auto_offer_root" value="1" class="form-check-input" id="isAutoOfferRoot"
+                                {{ category and category.isAutoOfferRoot ? 'checked' : '' }}>
+                            <label class="form-check-label" for="isAutoOfferRoot">Racine "Offres" Auto</label>
+                            <small class="text-muted d-block">Sur le nœud "Offres" côté Auto (annonces de vente du véhicule lui-même).</small>
+                        </div>
+                        <div class="col-6 form-check form-switch">
+                            <input type="checkbox" name="is_moto_offer_root" value="1" class="form-check-input" id="isMotoOfferRoot"
+                                {{ category and category.isMotoOfferRoot ? 'checked' : '' }}>
+                            <label class="form-check-label" for="isMotoOfferRoot">Racine "Offres" Moto</label>
+                            <small class="text-muted d-block">Même principe côté Moto.</small>
+                        </div>
                     </div>
                 </div>
 
@@ -330,10 +356,14 @@
         const toggleVehicleSettingsBtn = document.getElementById('toggleVehicleSettingsBtn');
         const vehicleSettingsPanel = document.getElementById('vehicleSettingsPanel');
         const toggleVehicleSettingsIcon = document.getElementById('toggleVehicleSettingsIcon');
-        // Ouvert par défaut si une des 3 cases est déjà cochée (édition d'une catégorie déjà configurée), sinon replié.
+        // Ouvert par défaut si une des cases est déjà cochée (édition d'une catégorie déjà configurée), sinon replié.
         const hasVehicleSettings = document.getElementById('isVehiclePart').checked
             || document.getElementById('isAutoPartRoot').checked
-            || document.getElementById('isMotoPartRoot').checked;
+            || document.getElementById('isMotoPartRoot').checked
+            || document.getElementById('isAutoAccessoryRoot').checked
+            || document.getElementById('isMotoAccessoryRoot').checked
+            || document.getElementById('isAutoOfferRoot').checked
+            || document.getElementById('isMotoOfferRoot').checked;
         if (hasVehicleSettings) {
             vehicleSettingsPanel.style.display = 'block';
             toggleVehicleSettingsIcon.classList.replace('bi-chevron-down', 'bi-chevron-up');

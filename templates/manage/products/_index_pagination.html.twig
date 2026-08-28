@@ -1,0 +1,9 @@
+{% if pages > 1 %}
+    <div class="ctb-pagination">
+        <a href="#" data-page="{{ max(1, page - 1) }}" class="ctb-page-btn {{ page <= 1 ? 'disabled' : '' }}"><i class="bi bi-chevron-left"></i></a>
+        {% for p in max(1, page - 2)..min(pages, page + 2) %}
+            <a href="#" data-page="{{ p }}" class="ctb-page-btn {{ p == page ? 'ctb-page-active' : '' }}">{{ p }}</a>
+        {% endfor %}
+        <a href="#" data-page="{{ min(pages, page + 1) }}" class="ctb-page-btn {{ page >= pages ? 'disabled' : '' }}"><i class="bi bi-chevron-right"></i></a>
+    </div>
+{% endif %}

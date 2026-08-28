@@ -276,7 +276,14 @@ Aerox 50 R Naked (SA14, YQ) 49ccm (2 KW / 3 CV)
                     html += '<td>' + (row.displacementCc ?? '-') + '</td>';
                     html += '<td>' + escapeHtml(row.fuel.inputName || '-') + (row.fuel.found ? ' <span class="ctb-status-badge ctb-status-active">ok</span>' : (row.fuel.inputName ? ' <span class="ctb-status-badge ctb-status-pending">à créer</span>' : '')) + '</td>';
                     html += '<td>' + period + '</td>';
-                    html += '<td>' + (row.engineExists ? '<span class="ctb-status-badge ctb-status-inactive">existe déjà</span>' : '<span class="ctb-status-badge ctb-status-active">nouvelle</span>') + '</td>';
+                    let statusCell = '<span class="ctb-status-badge ctb-status-active">nouvelle</span>';
+                    if (row.engineExists) {
+                        statusCell = '<span class="ctb-status-badge ctb-status-inactive">existe déjà</span>';
+                        if (row.engineMissingFuel && (row.fuel.found || row.fuel.id)) {
+                            statusCell += ' <span class="ctb-status-badge ctb-status-pending">énergie sera complétée</span>';
+                        }
+                    }
+                    html += '<td>' + statusCell + '</td>';
                     html += '</tr>';
                 });
                 html += '</tbody></table></div></div></div>';
@@ -350,6 +357,8 @@ Aerox 50 R Naked (SA14, YQ) 49ccm (2 KW / 3 CV)
                         periodBegin: row.periodBegin,
                         periodEnd: row.periodEnd,
                         engineExists: row.engineExists,
+                        engineId: row.engineId,
+                        engineMissingFuel: row.engineMissingFuel,
                     })),
                 };
 
@@ -359,7 +368,11 @@ Aerox 50 R Naked (SA14, YQ) 49ccm (2 KW / 3 CV)
                         errorsBox.style.display = 'block';
                         return;
                     }
-                    alert(res.created + ' motorisation(s) enregistrée(s).');
+                    let msg = res.created + ' motorisation(s) enregistrée(s).';
+                    if (res.fuelUpdated > 0) {
+                        msg += '\n' + res.fuelUpdated + ' motorisation(s) existante(s) complétée(s) avec leur énergie.';
+                    }
+                    alert(msg);
                     analyze();
                 });
             });

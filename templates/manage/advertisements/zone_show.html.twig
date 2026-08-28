@@ -1,0 +1,136 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Zone : {{ zoneInfo.label }}{% endblock %}
+{% block page_icon %}bi-bullseye{% endblock %}
+{% block page_title %}Zone : {{ zoneInfo.label }}{% endblock %}
+
+{% block body %}
+    {% set statusLabels = {
+        'scheduled': 'Programmée',
+        'active': 'Active',
+        'paused': 'En pause',
+        'expired': 'Expirée',
+    } %}
+
+    <a href="{{ path('manage_ads_index') }}" class="btn btn-outline-secondary btn-sm mb-3"><i class="bi bi-arrow-left me-1"></i>Retour aux publicités</a>
+
+    <div class="sw-card mb-4">
+        <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+                <h5 class="mb-1">{{ zoneInfo.label }}</h5>
+                <div class="text-muted small">
+                    Clé : <code>{{ zoneKey }}</code>
+                    · Page : {{ zoneInfo.page }}
+                    {% if zoneInfo.width and zoneInfo.height %} · Dimension attendue : {{ zoneInfo.width }}×{{ zoneInfo.height }}{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-blue h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-blue"><i class="bi bi-megaphone"></i></div>
+                <div class="ctb-stat-val">{{ stats.total }}</div>
+                <div class="ctb-stat-label">Bannières sur cette zone</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-green h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-green"><i class="bi bi-check-circle-fill"></i></div>
+                <div class="ctb-stat-val">{{ stats.active }}</div>
+                <div class="ctb-stat-label">Actives</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-orange h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-orange"><i class="bi bi-eye"></i></div>
+                <div class="ctb-stat-val">{{ stats.totalImpressions }}</div>
+                <div class="ctb-stat-label">Affichages (sur cette zone)</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-purple h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-purple"><i class="bi bi-cursor-fill"></i></div>
+                <div class="ctb-stat-val">{{ stats.totalClicks }}</div>
+                <div class="ctb-stat-label">Clics (sur cette zone)</div>
+            </div>
+        </div>
+    </div>
+
+    <form method="get" class="mb-3 d-flex align-items-center gap-2 flex-wrap">
+        <select name="status" class="form-select" style="max-width: 160px;">
+            <option value="">— Tous statuts —</option>
+            <option value="scheduled" {{ currentStatus == 'scheduled' ? 'selected' : '' }}>Programmée</option>
+            <option value="active" {{ currentStatus == 'active' ? 'selected' : '' }}>Active</option>
+            <option value="paused" {{ currentStatus == 'paused' ? 'selected' : '' }}>En pause</option>
+            <option value="expired" {{ currentStatus == 'expired' ? 'selected' : '' }}>Expirée</option>
+        </select>
+
+        <input type="number" name="position" class="form-control" style="max-width: 140px;" placeholder="Position" value="{{ currentPosition }}">
+
+        <input type="date" name="date_from" class="form-control" style="max-width: 170px;" value="{{ currentDateFrom }}" title="Début à partir de">
+        <span class="text-muted">→</span>
+        <input type="date" name="date_to" class="form-control" style="max-width: 170px;" value="{{ currentDateTo }}" title="Début jusqu'à">
+
+        <select name="perPage" class="form-select" style="max-width: 130px;" onchange="this.form.submit()">
+            {% for n in [10, 20, 50, 100] %}
+                <option value="{{ n }}" {{ perPage == n ? 'selected' : '' }}>{{ n }} / page</option>
+            {% endfor %}
+        </select>
+
+        <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-search"></i> Filtrer</button>
+        {% if currentStatus or currentPosition or currentDateFrom or currentDateTo %}
+            <a href="{{ path('manage_ad_zone_show', {zoneKey: zoneKey}) }}" class="btn btn-sm btn-outline-secondary">Réinitialiser</a>
+        {% endif %}
+    </form>
+
+    <div class="row g-3">
+        {% for row in rows %}
+            {% set ad = row.ad %}
+            <div class="col-lg-4 col-md-6">
+                <div class="sw-card h-100">
+                    <div class="card-body">
+                        {% if ad.imageName %}
+                            <img src="{{ vich_uploader_asset(ad, 'imageFile') }}" style="width:100%;border-radius:6px;object-fit:contain;background:var(--body-bg,#f5f5f5);">
+                        {% else %}
+                            <div class="text-muted text-center py-4" style="background:var(--body-bg,#f5f5f5);border-radius:6px;">
+                                <i class="bi bi-image" style="font-size:32px;"></i>
+                            </div>
+                        {% endif %}
+                        <h6 class="mt-2 mb-1">{{ ad.title }}</h6>
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="admin-badge admin-badge--{{ ad.status == 'active' ? 'active' : 'disabled' }}">{{ statusLabels[ad.status] ?? ad.status }}</span>
+                            <span class="text-muted small">Position {{ ad.position ?? '—' }}</span>
+                        </div>
+                        <div class="text-muted small mb-2">
+                            {{ ad.startAt ? ad.startAt|date('d/m/Y') : '—' }} → {{ ad.endAt ? ad.endAt|date('d/m/Y') : 'Sans fin' }}
+                        </div>
+                        <div class="d-flex gap-3 small mb-2">
+                            <span><i class="bi bi-eye text-muted"></i> {{ row.impressions }}</span>
+                            <span><i class="bi bi-cursor text-muted"></i> {{ row.clicks }}</span>
+                        </div>
+                        <a href="{{ path('manage_ads_edit', {id: ad.id}) }}" class="btn btn-sm btn-outline-primary w-100"><i class="bi bi-pencil"></i> Modifier</a>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="col-12">
+                <div class="sw-card"><div class="card-body text-muted">Aucune bannière sur cette zone pour l'instant.</div></div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="ctb-table-footer mt-3">
+        <span class="ctb-footer-info">{{ total }} bannière{{ total != 1 ? 's' : '' }} au total — page {{ page }} / {{ pages }}</span>
+        {% if pages > 1 %}
+            <div class="ctb-pagination">
+                <a href="{{ path('manage_ad_zone_show', {zoneKey: zoneKey}|merge(app.request.query.all)|merge({page: max(1, page - 1)})) }}" class="ctb-page-btn {{ page <= 1 ? 'disabled' : '' }}"><i class="bi bi-chevron-left"></i></a>
+                {% for p in max(1, page - 2)..min(pages, page + 2) %}
+                    <a href="{{ path('manage_ad_zone_show', {zoneKey: zoneKey}|merge(app.request.query.all)|merge({page: p})) }}" class="ctb-page-btn {{ p == page ? 'ctb-page-active' : '' }}">{{ p }}</a>
+                {% endfor %}
+                <a href="{{ path('manage_ad_zone_show', {zoneKey: zoneKey}|merge(app.request.query.all)|merge({page: min(pages, page + 1)})) }}" class="ctb-page-btn {{ page >= pages ? 'disabled' : '' }}"><i class="bi bi-chevron-right"></i></a>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

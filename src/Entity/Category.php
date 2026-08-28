@@ -98,6 +98,20 @@ class Category
     #[ORM\Column(options: ['default' => false])]
     private bool $isMotoPartRoot = false;
 
+    // Marque le nœud racine "Accessoire" sous Auto / Moto — sert au libellé affiché dans la liste Produits.
+    #[ORM\Column(options: ['default' => false])]
+    private bool $isAutoAccessoryRoot = false;
+
+    #[ORM\Column(options: ['default' => false])]
+    private bool $isMotoAccessoryRoot = false;
+
+    // Marque le nœud racine "Offres" sous Auto / Moto (annonces de vente du véhicule lui-même).
+    #[ORM\Column(options: ['default' => false])]
+    private bool $isAutoOfferRoot = false;
+
+    #[ORM\Column(options: ['default' => false])]
+    private bool $isMotoOfferRoot = false;
+
     #[ORM\Column(nullable: true)]
     private ?int $trendingPinnedPosition = null;
 
@@ -458,6 +472,50 @@ class Category
     public function setIsMotoPartRoot(bool $isMotoPartRoot): static
     {
         $this->isMotoPartRoot = $isMotoPartRoot;
+        return $this;
+    }
+
+    public function isAutoAccessoryRoot(): bool
+    {
+        return $this->isAutoAccessoryRoot;
+    }
+
+    public function setIsAutoAccessoryRoot(bool $isAutoAccessoryRoot): static
+    {
+        $this->isAutoAccessoryRoot = $isAutoAccessoryRoot;
+        return $this;
+    }
+
+    public function isMotoAccessoryRoot(): bool
+    {
+        return $this->isMotoAccessoryRoot;
+    }
+
+    public function setIsMotoAccessoryRoot(bool $isMotoAccessoryRoot): static
+    {
+        $this->isMotoAccessoryRoot = $isMotoAccessoryRoot;
+        return $this;
+    }
+
+    public function isAutoOfferRoot(): bool
+    {
+        return $this->isAutoOfferRoot;
+    }
+
+    public function setIsAutoOfferRoot(bool $isAutoOfferRoot): static
+    {
+        $this->isAutoOfferRoot = $isAutoOfferRoot;
+        return $this;
+    }
+
+    public function isMotoOfferRoot(): bool
+    {
+        return $this->isMotoOfferRoot;
+    }
+
+    public function setIsMotoOfferRoot(bool $isMotoOfferRoot): static
+    {
+        $this->isMotoOfferRoot = $isMotoOfferRoot;
         return $this;
     }
 

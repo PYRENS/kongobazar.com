@@ -24,11 +24,12 @@
                 <div class="card-header"><h6 class="mb-0 fw-bold">Images</h6></div>
                 <div class="card-body">
                     {% if product.images|length > 0 %}
-                        <div class="row g-2">
+                        <div class="mb-3" style="border-radius:8px;overflow:hidden;background:var(--body-bg,#f5f5f5);">
+                            <img id="productMainImage" src="{{ vich_uploader_asset(product.images|first, 'imageFile') }}" style="width:100%;max-height:420px;aspect-ratio:1;object-fit:contain;">
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 justify-content-center">
                             {% for img in product.images %}
-                                <div class="col-4">
-                                    <img src="{{ vich_uploader_asset(img, 'imageFile') }}" class="product-gallery-thumb" data-index="{{ loop.index0 }}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;cursor:zoom-in;">
-                                </div>
+                                <img src="{{ vich_uploader_asset(img, 'imageFile') }}" class="product-view-thumb-item {{ loop.first ? 'active' : '' }}" data-full="{{ vich_uploader_asset(img, 'imageFile') }}" style="width:72px;height:72px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid {{ loop.first ? 'var(--primary,#0d6efd)' : 'transparent' }};">
                             {% endfor %}
                         </div>
                     {% else %}
@@ -53,7 +54,19 @@
                         <tr><td class="text-muted">Réf. fabricant</td><td>{{ product.reference|default('—') }}</td></tr>
                         <tr><td class="text-muted">EAN</td><td>{{ product.ean|default('—') }}</td></tr>
                         <tr><td class="text-muted">Catégorie</td><td>{{ product.category ? product.category.name : '—' }}</td></tr>
-                        <tr><td class="text-muted">Marque</td><td>{{ product.brand ? product.brand.name : '—' }}</td></tr>
+                        <tr>
+                            <td class="text-muted">Marque</td>
+                            <td>
+                                {% if product.brand %}
+                                    {% if product.brand.logoName %}
+                                        {% if product.brand.url %}<a href="{{ product.brand.url }}" target="_blank" rel="noopener">{% endif %}
+                                        <img src="{{ vich_uploader_asset(product.brand, 'logoFile') }}" style="height:22px;vertical-align:middle;margin-right:6px;">
+                                        {% if product.brand.url %}</a>{% endif %}
+                                    {% endif %}
+                                    {{ product.brand.name }}
+                                {% else %}—{% endif %}
+                            </td>
+                        </tr>
                         <tr>
                             <td class="text-muted">Vendeur</td>
                             <td>
@@ -140,11 +153,11 @@
 
     {% if pld %}
         <div class="sw-card mb-3">
-            <div class="card-header"><i class="bi bi-gear-wide-connected me-2"></i><h6 class="mb-0 fw-bold d-inline">Caractéristiques de la pièce</h6></div>
+            <div class="card-header"><i class="bi bi-upc-scan me-2"></i><h6 class="mb-0 fw-bold d-inline">Références</h6></div>
             <div class="card-body">
                 <div class="row g-3">
-                    <div class="col-md-3 col-6"><i class="bi bi-upc text-muted me-2"></i>EAN : <strong>{{ pld.ean|default('—') }}</strong></div>
-                    <div class="col-md-3 col-6"><i class="bi bi-tag text-muted me-2"></i>Réf. fabricant : <strong>{{ pld.manufacturerRef|default('—') }}</strong></div>
+                    <div class="col-md-3 col-6"><i class="bi bi-upc text-muted me-2"></i>EAN : <strong>{{ (pld.partCatalogEntry ? pld.partCatalogEntry.ean : pld.ean)|default('—') }}</strong></div>
+                    <div class="col-md-3 col-6"><i class="bi bi-tag text-muted me-2"></i>Réf. fabricant : <strong>{{ (pld.partCatalogEntry ? pld.partCatalogEntry.manufacturerRef : (pld.manufacturerRef ?: product.reference))|default('—') }}</strong></div>
                     {% if pld.partCatalogEntry %}
                         <div class="col-md-3 col-6"><i class="bi bi-box text-muted me-2"></i>Pièce catalogue : <strong>{{ pld.partCatalogEntry.name }}</strong></div>
                         <div class="col-md-3 col-6"><i class="bi bi-diagram-3 text-muted me-2"></i>Catégorie pièce : <strong>{{ pld.partCatalogEntry.category ? pld.partCatalogEntry.category.name : '—' }}</strong></div>
@@ -162,6 +175,22 @@
                 </div>
             </div>
         </div>
+
+        {% if attributeValues|length > 0 %}
+            <div class="sw-card mb-3">
+                <div class="card-header"><i class="bi bi-sliders me-2"></i><h6 class="mb-0 fw-bold d-inline">Caractéristiques de la pièce</h6></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        {% for value in attributeValues %}
+                            <div class="col-md-4 col-6">
+                                <span class="text-muted">{{ value.categoryAttribute.characteristic.name }}{{ value.categoryAttribute.characteristic.unit ? ' (' ~ value.categoryAttribute.characteristic.unit ~ ')' : '' }} :</span>
+                                <strong>{{ value.textValue ?: (value.numberValue ?: (value.categoryAttributeOption ? value.categoryAttributeOption.label : (value.booleanValue == true ? 'Oui' : (value.booleanValue == false ? 'Non' : '—')))) }}</strong>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
 
         {% if pld.engineCompatibilities|length > 0 %}
             {% set grouped = {} %}
@@ -285,60 +314,24 @@
         </div>
     {% endif %}
 
-    {% if product.images|length > 0 %}
-        <div class="custom-modal-overlay" id="galleryOverlay">
-            <div class="custom-modal-box" style="max-width:900px;background:#0d0d0d;">
-                <div class="custom-modal-header" style="border-bottom:1px solid rgba(255,255,255,0.1);">
-                    <span class="text-white" id="galleryCounter"></span>
-                    <button type="button" class="btn-close btn-close-white" id="closeGallery"></button>
-                </div>
-                <div class="custom-modal-body d-flex align-items-center justify-content-center" style="min-height:60vh;position:relative;">
-                    <button type="button" id="galleryPrev" class="btn btn-outline-light position-absolute" style="left:10px;"><i class="bi bi-chevron-left"></i></button>
-                    <img id="galleryImage" src="" style="max-width:100%;max-height:70vh;object-fit:contain;">
-                    <button type="button" id="galleryNext" class="btn btn-outline-light position-absolute" style="right:10px;"><i class="bi bi-chevron-right"></i></button>
-                </div>
-            </div>
-        </div>
-    {% endif %}
 {% endblock %}
 
 {% block javascripts %}
-    {% if product.images|length > 0 %}
-        <script>
-            const galleryImages = [
-                {% for img in product.images %}"{{ vich_uploader_asset(img, 'imageFile') }}",{% endfor %}
-            ];
-            let galleryIndex = 0;
-
-            const galleryOverlay = document.getElementById('galleryOverlay');
-            const galleryImage = document.getElementById('galleryImage');
-            const galleryCounter = document.getElementById('galleryCounter');
-            document.body.appendChild(galleryOverlay);
-
-            function showGalleryImage(i) {
-                galleryIndex = (i + galleryImages.length) % galleryImages.length;
-                galleryImage.src = galleryImages[galleryIndex];
-                galleryCounter.textContent = (galleryIndex + 1) + ' / ' + galleryImages.length;
-            }
-
-            document.querySelectorAll('.product-gallery-thumb').forEach(function (thumb) {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const mainImage = document.getElementById('productMainImage');
+            if (!mainImage) return;
+            document.querySelectorAll('.product-view-thumb-item').forEach((thumb) => {
                 thumb.addEventListener('click', function () {
-                    showGalleryImage(parseInt(this.dataset.index, 10));
-                    galleryOverlay.classList.add('active');
+                    mainImage.src = this.dataset.full;
+                    document.querySelectorAll('.product-view-thumb-item').forEach((t) => {
+                        t.classList.remove('active');
+                        t.style.borderColor = 'transparent';
+                    });
+                    this.classList.add('active');
+                    this.style.borderColor = 'var(--primary, #0d6efd)';
                 });
             });
-
-            document.getElementById('galleryPrev').addEventListener('click', () => showGalleryImage(galleryIndex - 1));
-            document.getElementById('galleryNext').addEventListener('click', () => showGalleryImage(galleryIndex + 1));
-            galleryOverlay.addEventListener('click', (e) => {
-                if (e.target === galleryOverlay || e.target.closest('#closeGallery')) galleryOverlay.classList.remove('active');
-            });
-            document.addEventListener('keydown', (e) => {
-                if (!galleryOverlay.classList.contains('active')) return;
-                if (e.key === 'Escape') galleryOverlay.classList.remove('active');
-                if (e.key === 'ArrowLeft') showGalleryImage(galleryIndex - 1);
-                if (e.key === 'ArrowRight') showGalleryImage(galleryIndex + 1);
-            });
-        </script>
-    {% endif %}
+        });
+    </script>
 {% endblock %}

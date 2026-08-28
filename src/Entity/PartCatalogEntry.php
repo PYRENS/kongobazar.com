@@ -35,6 +35,10 @@ class PartCatalogEntry
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
+    /** Notes internes — ce qui manque pour passer au statut "Vérifiée" / "Validée". Non visible côté public. */
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $note = null;
+
     #[ORM\Column(options: ['default' => false])]
     private bool $blocked = false;
 
@@ -156,6 +160,17 @@ class PartCatalogEntry
     public function setDescription(?string $description): static
     {
         $this->description = $description;
+        return $this;
+    }
+
+    public function getNote(): ?string
+    {
+        return $this->note;
+    }
+
+    public function setNote(?string $note): static
+    {
+        $this->note = $note;
         return $this;
     }
 

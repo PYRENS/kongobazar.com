@@ -152,12 +152,14 @@ class PartCatalogVehicleAssociationParser
 
         foreach ($group['engines'] as &$engineRow) {
             $engineRow['exists'] = false;
+            $engineRow['hasFuel'] = false;
             if ($variant) {
                 foreach ($this->engineRepository->findByVariant($variant->getId()) as $existingEngine) {
                     if (mb_strtolower($existingEngine->getLabel()) === mb_strtolower($engineRow['label'])
                         && $existingEngine->getYearStart() === $engineRow['periodBegin']['year']) {
                         $engineRow['exists'] = true;
                         $engineRow['existingId'] = $existingEngine->getId();
+                        $engineRow['hasFuel'] = null !== $existingEngine->getFuelType();
                         break;
                     }
                 }

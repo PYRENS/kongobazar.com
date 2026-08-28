@@ -17,9 +17,14 @@ class TrendingManagementController extends AbstractController
     {
         $searchTerm = $request->query->get('q');
         $searchResults = $searchTerm ? $repository->searchByName($searchTerm) : [];
+        $pinned = $repository->findPinnedTrending();
 
         return $this->render('manage/trending/index.html.twig', [
-            'pinned' => $repository->findPinnedTrending(),
+            'pinned' => $pinned,
+            'stats' => [
+                'pinnedCount' => count($pinned),
+                'totalCategories' => $repository->countAll(),
+            ],
             'searchResults' => $searchResults,
             'searchTerm' => $searchTerm,
             'rootCategories' => $repository->findRootCategories(),

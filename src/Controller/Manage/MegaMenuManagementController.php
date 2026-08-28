@@ -14,8 +14,15 @@ class MegaMenuManagementController extends AbstractController
     #[Route('/menu-catalogue', name: 'manage_mega_menu_index', host: 'manage.kongobazar.com', methods: ['GET'])]
     public function index(CategoryRepository $repository): Response
     {
+        $rayons = $repository->findAllRootCategoriesForMegaMenuAdmin();
+
         return $this->render('manage/mega_menu/index.html.twig', [
-            'rayons' => $repository->findAllRootCategoriesForMegaMenuAdmin(),
+            'rayons' => $rayons,
+            'stats' => [
+                'total' => count($rayons),
+                'visible' => count(array_filter($rayons, fn ($r) => $r->isMegaMenuVisible())),
+                'hidden' => count(array_filter($rayons, fn ($r) => !$r->isMegaMenuVisible())),
+            ],
         ]);
     }
 

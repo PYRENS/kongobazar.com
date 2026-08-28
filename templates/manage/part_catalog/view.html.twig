@@ -57,12 +57,12 @@
                 <div class="card-header"><h6 class="mb-0 fw-bold">Images</h6></div>
                 <div class="card-body">
                     {% if entry.images|length > 0 %}
-                        <div class="mb-2 mx-auto" style="max-width:220px;border-radius:8px;overflow:hidden;background:var(--body-bg,#f5f5f5);">
-                            <img id="viewMainImage" src="{{ vich_uploader_asset(entry.images|first, 'imageFile') }}" style="width:100%;aspect-ratio:1;object-fit:contain;">
+                        <div class="mb-3" style="border-radius:8px;overflow:hidden;background:var(--body-bg,#f5f5f5);">
+                            <img id="viewMainImage" src="{{ vich_uploader_asset(entry.images|first, 'imageFile') }}" style="width:100%;max-height:420px;aspect-ratio:1;object-fit:contain;">
                         </div>
                         <div class="d-flex flex-wrap gap-2 justify-content-center">
                             {% for image in entry.images %}
-                                <img src="{{ vich_uploader_asset(image, 'imageFile') }}" class="view-thumb-item {{ loop.first ? 'active' : '' }}" data-full="{{ vich_uploader_asset(image, 'imageFile') }}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid {{ loop.first ? 'var(--primary,#0d6efd)' : 'transparent' }};">
+                                <img src="{{ vich_uploader_asset(image, 'imageFile') }}" class="view-thumb-item {{ loop.first ? 'active' : '' }}" data-full="{{ vich_uploader_asset(image, 'imageFile') }}" style="width:56px;height:56px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid {{ loop.first ? 'var(--primary,#0d6efd)' : 'transparent' }};">
                             {% endfor %}
                         </div>
                     {% else %}
@@ -150,10 +150,16 @@
 
     {% if groupedVehicles|length > 0 %}
         <div class="sw-card mb-3" id="vehicles">
-            <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-car-front me-2"></i>Véhicules compatibles</h6></div>
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-car-front me-2"></i>Véhicules compatibles</h6>
+                <button type="button" id="toggleViewEngineListBtn" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-chevron-down"></i> Afficher la liste
+                </button>
+            </div>
             <div class="card-body p-0">
+                <div id="viewEngineListWrap" style="display:none;">
                 <div class="accordion" id="vehicleAccordion">
-                    {% for brandName, models in groupedVehicles %}
+                    {% for brandName, modelVariants in groupedVehicles %}
                         <div class="accordion-item">
                             <h2 class="accordion-header">
                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#vBrand{{ loop.index }}">
@@ -162,12 +168,12 @@
                             </h2>
                             <div id="vBrand{{ loop.index }}" class="accordion-collapse collapse" data-bs-parent="#vehicleAccordion">
                                 <div class="accordion-body p-0">
-                                    {% for modelName, variants in models %}
+                                    {% for modelVariantName, fuels in modelVariants %}
                                         <div class="p-3 border-bottom">
-                                            <div class="fw-bold mb-1">{{ modelName }}</div>
-                                            {% for variantName, engines in variants %}
+                                            <div class="fw-bold mb-1">{{ modelVariantName }}</div>
+                                            {% for fuelName, engines in fuels %}
                                                 <div class="ms-3 mb-1">
-                                                    <span class="text-muted" style="font-size:12px;"><i class="bi bi-diagram-3 me-1"></i>{{ variantName }}</span>
+                                                    <span class="text-muted" style="font-size:12px;"><i class="bi bi-fuel-pump me-1"></i>{{ fuelName }}</span>
                                                     <ul class="mb-0 ps-4" style="font-size:13px;">
                                                         {% for engine in engines %}
                                                             <li>{{ engine.label }} <span class="text-muted">({{ engine.periodLabel }})</span></li>
@@ -181,6 +187,7 @@
                             </div>
                         </div>
                     {% endfor %}
+                </div>
                 </div>
             </div>
         </div>
@@ -260,18 +267,31 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const mainImage = document.getElementById('viewMainImage');
-            if (!mainImage) return;
-            document.querySelectorAll('.view-thumb-item').forEach((thumb) => {
-                thumb.addEventListener('click', function () {
-                    mainImage.src = this.dataset.full;
-                    document.querySelectorAll('.view-thumb-item').forEach((t) => {
-                        t.classList.remove('active');
-                        t.style.borderColor = 'transparent';
+            if (mainImage) {
+                document.querySelectorAll('.view-thumb-item').forEach((thumb) => {
+                    thumb.addEventListener('click', function () {
+                        mainImage.src = this.dataset.full;
+                        document.querySelectorAll('.view-thumb-item').forEach((t) => {
+                            t.classList.remove('active');
+                            t.style.borderColor = 'transparent';
+                        });
+                        this.classList.add('active');
+                        this.style.borderColor = 'var(--primary, #0d6efd)';
                     });
-                    this.classList.add('active');
-                    this.style.borderColor = 'var(--primary, #0d6efd)';
                 });
-            });
+            }
+
+            const toggleViewEngineListBtn = document.getElementById('toggleViewEngineListBtn');
+            const viewEngineListWrap = document.getElementById('viewEngineListWrap');
+            if (toggleViewEngineListBtn && viewEngineListWrap) {
+                toggleViewEngineListBtn.addEventListener('click', function () {
+                    const hidden = viewEngineListWrap.style.display === 'none';
+                    viewEngineListWrap.style.display = hidden ? '' : 'none';
+                    this.innerHTML = hidden
+                        ? '<i class="bi bi-chevron-up"></i> Masquer la liste'
+                        : '<i class="bi bi-chevron-down"></i> Afficher la liste';
+                });
+            }
         });
     </script>
 {% endblock %}

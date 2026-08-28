@@ -1,0 +1,45 @@
+{% for product in products %}
+    {% set firstImage = product.images.first %}
+    <tr>
+        <td>
+            {% if firstImage %}
+                <img src="{{ vich_uploader_asset(firstImage, 'imageFile') }}" alt="" style="width:40px;height:40px;object-fit:cover;border-radius:4px;">
+            {% else %}
+                <span class="text-muted">—</span>
+            {% endif %}
+        </td>
+        <td class="text-muted" style="font-size:12px;">{{ product.kongobazarReference }}</td>
+        <td title="{{ product.title }}">{{ product.title|length > 50 ? product.title|slice(0, 50) ~ '…' : product.title }}</td>
+        <td>
+            {% if product.category and vehicleSectionLabels[product.category.id] is defined %}
+                {{ vehicleSectionLabels[product.category.id] }}
+            {% elseif product.category %}
+                {{ product.category.parent ? product.category.parent.name ~ ' / ' ~ product.category.name : product.category.name }}
+            {% else %}—{% endif %}
+        </td>
+        <td>{{ product.brand ? product.brand.name : '—' }}</td>
+        <td>{{ product.sellerProfile ? product.sellerProfile.user.email : '—' }}</td>
+        <td>{{ product.basePrice }} {{ product.currency }}</td>
+        <td>{{ product.condition == 'new' ? 'Neuf' : 'Occasion' }}</td>
+        <td>
+            {% if product.authenticityStatus == 'original' %}
+                <span class="ctb-status-badge ctb-status-active"><i class="bi bi-patch-check"></i> Original</span>
+            {% elseif product.authenticityStatus == 'replica' %}
+                <span class="ctb-status-badge ctb-status-pending"><i class="bi bi-info-circle"></i> Réplique</span>
+            {% else %}<span class="text-muted">—</span>{% endif %}
+        </td>
+        <td>{{ {'active': 'Actif', 'draft': 'Brouillon', 'suspended': 'Suspendu'}[product.status] ?? product.status }}</td>
+        <td>{{ product.salesCount }}</td>
+        <td>{{ product.createdAt ? product.createdAt|date('d/m/Y') : '—' }}</td>
+        <td class="admin-actions">
+            <a href="{{ path('manage_products_show', {id: product.id}) }}" class="admin-btn admin-btn--outline" title="Voir détails (Dashboard)"><i class="bi bi-eye"></i></a>
+            <a href="{{ path('catalog_product', {slug: product.slug}) }}" target="_blank" class="admin-btn admin-btn--outline" title="Voir sur le site"><i class="bi bi-box-arrow-up-right"></i></a>
+            <a href="{{ path('manage_products_edit', {id: product.id}) }}" class="admin-btn admin-btn--outline" title="Modifier"><i class="bi bi-pencil"></i></a>
+            <form action="{{ path('manage_products_delete', {id: product.id}) }}" method="post" onsubmit="return confirm('Supprimer ' ~ product.title ~ ' ?');">
+                <button type="submit" class="admin-btn admin-btn--outline"><i class="bi bi-trash"></i></button>
+            </form>
+        </td>
+    </tr>
+{% else %}
+    <tr><td colspan="12" class="text-muted">Aucun produit.</td></tr>
+{% endfor %}

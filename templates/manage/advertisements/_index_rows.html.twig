@@ -1,0 +1,51 @@
+{% set statusLabels = {
+    'scheduled': 'Programmée',
+    'active': 'Active',
+    'paused': 'En pause',
+    'expired': 'Expirée',
+} %}
+{% for row in adRows %}
+    {% set ad = row.ad %}
+    <tr>
+        <td>
+            {% if ad.imageName %}
+                <img src="{{ vich_uploader_asset(ad, 'imageFile') }}" style="width:60px;height:36px;object-fit:cover;border-radius:4px;">
+            {% else %}
+                <span class="text-muted">—</span>
+            {% endif %}
+        </td>
+        <td>{{ ad.title }}</td>
+        <td>
+            {% if row.width and row.height %}
+                {{ row.width }}×{{ row.height }}
+            {% else %}
+                <span class="text-muted">—</span>
+            {% endif %}
+        </td>
+        <td>
+            {% if ad.description %}
+                {{ ad.description|length > 60 ? ad.description|slice(0, 60) ~ '…' : ad.description }}
+            {% else %}
+                <span class="text-muted">—</span>
+            {% endif %}
+        </td>
+        <td>{{ row.sitePage }}</td>
+        <td><a href="{{ path('manage_ad_zone_show', {zoneKey: ad.zoneKey}) }}">{{ zoneKeys[ad.zoneKey].label ?? ad.zoneKey }}</a></td>
+        <td>{{ ad.position ?? '—' }}</td>
+        <td>{{ ad.targetSpace }}</td>
+        <td>{{ ad.startAt ? ad.startAt|date('d/m/Y') : '—' }} → {{ ad.endAt ? ad.endAt|date('d/m/Y') : 'Sans fin' }}</td>
+        <td>
+            <span class="admin-badge admin-badge--{{ ad.status == 'active' ? 'active' : 'disabled' }}">{{ statusLabels[ad.status] ?? ad.status }}</span>
+        </td>
+        <td>{{ row.totalClicks }}</td>
+        <td>{{ ad.isPaid ? (ad.priceAmountUsd ~ ' USD') : 'Non' }}</td>
+        <td class="admin-actions">
+            <a href="{{ path('manage_ads_edit', {id: ad.id}) }}" class="admin-btn admin-btn--outline"><i class="bi bi-pencil"></i></a>
+            <form action="{{ path('manage_ads_delete', {id: ad.id}) }}" method="post" onsubmit="return confirm('Supprimer cette publicité ?');">
+                <button type="submit" class="admin-btn admin-btn--outline"><i class="bi bi-trash"></i></button>
+            </form>
+        </td>
+    </tr>
+{% else %}
+    <tr><td colspan="13" class="text-muted">Aucune publicité.</td></tr>
+{% endfor %}

@@ -1,0 +1,32 @@
+{% for row in rows %}
+    <tr data-zone="{{ row.zoneKey }}">
+        <td><a href="{{ path('manage_ad_zone_show', {zoneKey: row.zoneKey}) }}">{{ row.zoneKey }}</a></td>
+        <td>{{ pageGroups[row.pageGroup] ?? row.pageGroup }}</td>
+        <td>{% if row.width and row.height %}{{ row.width }}×{{ row.height }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+        <td>{{ row.candidates|length }}</td>
+        <td>{{ row.totalImpressions }}</td>
+        <td>{{ row.totalClicks }}</td>
+        <td>
+            <div class="d-flex align-items-center gap-2 flex-wrap zone-controls">
+                <div class="form-check form-check-inline mb-0">
+                    <input type="radio" name="mode_{{ row.zoneKey }}" value="random" class="form-check-input zone-mode-radio" id="mode_random_{{ row.zoneKey }}" {{ row.mode == 'random' ? 'checked' : '' }}>
+                    <label class="form-check-label" for="mode_random_{{ row.zoneKey }}">Aléatoire</label>
+                </div>
+                <div class="form-check form-check-inline mb-0">
+                    <input type="radio" name="mode_{{ row.zoneKey }}" value="fixed" class="form-check-input zone-mode-radio" id="mode_fixed_{{ row.zoneKey }}" {{ row.mode == 'fixed' ? 'checked' : '' }} {{ row.candidates|length == 0 ? 'disabled' : '' }}>
+                    <label class="form-check-label" for="mode_fixed_{{ row.zoneKey }}">Fixe</label>
+                </div>
+            </div>
+            <select class="form-select form-select-sm zone-fixed-select mt-1" style="max-width:260px;display:{{ row.mode == 'fixed' ? 'block' : 'none' }};" {{ row.candidates|length == 0 ? 'disabled' : '' }}>
+                <option value="">— Choisir la bannière fixe —</option>
+                {% for ad in row.candidates %}
+                    <option value="{{ ad.id }}" {{ row.fixedAdvertisementId == ad.id ? 'selected' : '' }}>{{ ad.title }}</option>
+                {% endfor %}
+            </select>
+            <button type="button" class="btn btn-sm btn-success zone-save-btn mt-1" style="display:none;"><i class="bi bi-check-lg"></i> Enregistrer</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary zone-cancel-btn mt-1" style="display:none;"><i class="bi bi-x-lg"></i> Annuler</button>
+        </td>
+    </tr>
+{% else %}
+    <tr><td colspan="7" class="text-muted">Aucune zone ne correspond à ces critères.</td></tr>
+{% endfor %}

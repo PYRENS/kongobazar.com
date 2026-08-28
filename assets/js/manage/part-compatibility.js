@@ -13,6 +13,17 @@ window.initPartCompatibilityWidget = function () {
         textBlock.style.display = textBlock.style.display === 'none' ? 'block' : 'none';
     });
 
+    const toggleCompatListBtn = document.getElementById('toggleCompatListBtn');
+    if (toggleCompatListBtn) {
+        toggleCompatListBtn.addEventListener('click', function () {
+            const hidden = selectedList.style.display === 'none';
+            selectedList.style.display = hidden ? '' : 'none';
+            this.innerHTML = hidden
+                ? this.innerHTML.replace('Afficher', 'Masquer').replace('<i class="bi bi-chevron-down"></i>', '<i class="bi bi-chevron-up"></i>')
+                : this.innerHTML.replace('Masquer', 'Afficher').replace('<i class="bi bi-chevron-up"></i>', '<i class="bi bi-chevron-down"></i>');
+        });
+    }
+
     function post(url, data) {
         return fetch(url, {
             method: 'POST',

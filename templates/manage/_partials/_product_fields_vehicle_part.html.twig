@@ -6,6 +6,26 @@
     <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-gear text-primary me-2"></i>Détails pièce / accessoire</h6></div>
     <div class="card-body">
 
+    <div class="mb-3">
+        <label class="form-label">Lier à une pièce du catalogue (optionnel)</label>
+        <input type="text" id="catalogEntrySearchInput" class="form-control" style="max-width:420px;" placeholder="Rechercher par titre, EAN ou réf. fabricant..."
+            value="{{ pld and pld.partCatalogEntry ? pld.partCatalogEntry.name : '' }}" autocomplete="off">
+        <div id="catalogEntrySearchResults" class="list-group mt-1" style="max-width:420px;position:relative;z-index:10;"></div>
+        <input type="hidden" name="catalog_entry_id" id="catalogEntryIdInput" value="{{ pld and pld.partCatalogEntry ? pld.partCatalogEntry.id : '' }}">
+        <small class="text-muted d-block">Si liée, les infos de la fiche catalogue remplacent la saisie manuelle ci-dessous, et restent synchronisées si le catalogue est mis à jour plus tard.</small>
+        {% if pld and pld.partCatalogEntry %}
+            <button type="button" id="catalogEntryClearBtn" class="btn btn-sm btn-outline-danger mt-1"><i class="bi bi-x-lg"></i> Retirer le lien</button>
+        {% endif %}
+    </div>
+
+    <div id="catalogEntrySummaryWrap" style="{{ pld and pld.partCatalogEntry ? '' : 'display:none;' }}" class="mb-3">
+        {% if pld and pld.partCatalogEntry %}
+            {% include 'manage/_partials/_product_catalog_entry_summary.html.twig' with {entry: pld.partCatalogEntry} %}
+        {% endif %}
+    </div>
+
+    <div id="partManualFieldsWrap" style="{{ pld and pld.partCatalogEntry ? 'display:none;' : '' }}">
+
     <div class="mb-3 d-flex align-items-start gap-3">
         <div>
             <label class="form-label">Marque de la pièce</label>
@@ -60,15 +80,24 @@
             <div id="compatResult" class="mt-2"></div>
         </div>
 
-        <div id="compatSelectedList" class="mt-2">
-            {% for ec in existingEngineCompats %}
-                <span class="badge bg-secondary me-1 mb-1" data-compat-badge="{{ ec.vehicleEngine.id }}">
-                    {{ ec.vehicleEngine.brandNameCache }} {{ ec.vehicleEngine.modelNameCache }} {{ ec.vehicleEngine.variantNameCache }} {{ ec.vehicleEngine.label }}
-                    <button type="button" class="btn-close btn-close-white btn-sm" style="font-size:8px;" data-remove-compat="{{ ec.vehicleEngine.id }}"></button>
-                    <input type="hidden" name="compatible_engine_ids[]" value="{{ ec.vehicleEngine.id }}">
-                </span>
-            {% endfor %}
+        <div class="mt-2">
+            {% if existingEngineCompats|length > 0 %}
+                <button type="button" id="toggleCompatListBtn" class="btn btn-sm btn-outline-secondary mb-2">
+                    <i class="bi bi-chevron-down"></i> Afficher {{ existingEngineCompats|length }} motorisation{{ existingEngineCompats|length > 1 ? 's' : '' }} associée{{ existingEngineCompats|length > 1 ? 's' : '' }}
+                </button>
+            {% endif %}
+            <div id="compatSelectedList" style="{{ existingEngineCompats|length > 0 ? 'display:none;' : '' }}">
+                {% for ec in existingEngineCompats %}
+                    <span class="badge bg-secondary me-1 mb-1" data-compat-badge="{{ ec.vehicleEngine.id }}">
+                        {{ ec.vehicleEngine.brandNameCache }} {{ ec.vehicleEngine.modelNameCache }} {{ ec.vehicleEngine.variantNameCache }} {{ ec.vehicleEngine.label }}
+                        <button type="button" class="btn-close btn-close-white btn-sm" style="font-size:8px;" data-remove-compat="{{ ec.vehicleEngine.id }}"></button>
+                        <input type="hidden" name="compatible_engine_ids[]" value="{{ ec.vehicleEngine.id }}">
+                    </span>
+                {% endfor %}
+            </div>
         </div>
+    </div>
+
     </div>
     </div>
 </div>

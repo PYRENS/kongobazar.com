@@ -54,17 +54,8 @@
         </div>
     </div>
 
-    <form method="get" class="mb-2 d-flex align-items-center gap-2 flex-wrap">
+    <form method="get" id="productsFilterForm" class="d-flex align-items-center gap-2 flex-wrap">
         <input type="text" name="q" class="form-control" style="max-width: 240px;" placeholder="Titre ou référence..." value="{{ searchTerm }}">
-
-        <select name="category" class="form-select" style="max-width: 220px;">
-            <option value="">— Toutes catégories —</option>
-            {% for cat in categories %}
-                <option value="{{ cat.id }}" {{ currentCategory == cat.id ? 'selected' : '' }}>
-                    {{ cat.parent ? cat.parent.name ~ ' > ' : '' }}{{ cat.name }}
-                </option>
-            {% endfor %}
-        </select>
 
         <select name="status" class="form-select" style="max-width: 180px;">
             <option value="">— Tous statuts —</option>
@@ -90,11 +81,11 @@
         {% if searchTerm or currentCategory or currentStatus or currentCondition %}
             <a href="{{ path('manage_products_index') }}" class="btn btn-sm btn-outline-secondary">Réinitialiser</a>
         {% endif %}
-    </form>
 
-    <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
-        <small class="text-muted">Ou par cascade :</small>
-        <div class="category-picker" data-category-picker id="productListCategoryPicker">
+        <div class="w-100"></div>
+
+        <small class="text-muted">Par cascade :</small>
+        <div class="category-picker" data-category-picker id="productListCategoryPicker" style="flex-direction:row;gap:6px;">
             <select data-category-level="1" class="form-select" style="max-width:220px;">
                 <option value="">— Choisir —</option>
                 {% for root in rootCategories %}
@@ -102,7 +93,10 @@
                 {% endfor %}
             </select>
         </div>
-    </div>
+        <input type="hidden" name="category" id="productListCategoryFilterInput" data-category-final-value value="{{ currentCategory }}">
+    </form>
+
+    <div class="mb-4"></div>
 
     <div class="sw-card">
         <div class="card-body p-0">
@@ -118,82 +112,63 @@
                 <th>{{ self.sortLink('seller', 'Vendeur', currentSort, currentDir) }}</th>
                 <th>{{ self.sortLink('basePrice', 'Prix', currentSort, currentDir) }}</th>
                 <th>{{ self.sortLink('condition', 'État', currentSort, currentDir) }}</th>
-                <th>{{ self.sortLink('authenticityStatus', 'Authenticité', currentSort, currentDir) }}</th
+                <th>{{ self.sortLink('authenticityStatus', 'Authenticité', currentSort, currentDir) }}</th>
                 <th>{{ self.sortLink('status', 'Statut', currentSort, currentDir) }}</th>
                 <th>{{ self.sortLink('salesCount', 'Ventes', currentSort, currentDir) }}</th>
                 <th>{{ self.sortLink('createdAt', 'Créé le', currentSort, currentDir) }}</th>
                 <th>Actions</th>
             </tr>
         </thead>
-        <tbody>
-            {% for product in products %}
-                {% set firstImage = product.images.first %}
-                <tr>
-                    <td>
-                        {% if firstImage %}
-                            <img src="{{ vich_uploader_asset(firstImage, 'imageFile') }}" alt="" style="width:40px;height:40px;object-fit:cover;border-radius:4px;">
-                        {% else %}
-                            <span class="text-muted">—</span>
-                        {% endif %}
-                    </td>
-                    <td class="text-muted" style="font-size:12px;">{{ product.kongobazarReference }}</td>
-                    <td title="{{ product.title }}">{{ product.title|length > 50 ? product.title|slice(0, 50) ~ '…' : product.title }}</td>
-                    <td>{{ product.category ? (product.category.parent ? product.category.parent.name ~ ' / ' ~ product.category.name : product.category.name) : '—' }}</td>
-                    <td>{{ product.brand ? product.brand.name : '—' }}</td>
-                    <td>{{ product.sellerProfile ? product.sellerProfile.user.email : '—' }}</td>
-                    <td>{{ product.basePrice }} {{ product.currency }}</td>
-                    <td>{{ product.condition == 'new' ? 'Neuf' : 'Occasion' }}</td>
-                    <td>
-                        {% if product.authenticityStatus == 'original' %}
-                            <span class="ctb-status-badge ctb-status-active"><i class="bi bi-patch-check"></i> Original</span>
-                        {% elseif product.authenticityStatus == 'replica' %}
-                            <span class="ctb-status-badge ctb-status-pending"><i class="bi bi-info-circle"></i> Réplique</span>
-                        {% else %}<span class="text-muted">—</span>{% endif %}
-                    </td>
-                    <td>{{ product.status }}</td>
-                    <td>{{ product.salesCount }}</td>
-                    <td>{{ product.createdAt ? product.createdAt|date('d/m/Y') : '—' }}</td>
-                    <td class="admin-actions">
-                        <a href="{{ path('manage_products_show', {id: product.id}) }}" class="admin-btn admin-btn--outline" title="Voir détails (Dashboard)"><i class="bi bi-eye"></i></a>
-                        <a href="{{ path('catalog_product', {slug: product.slug}) }}" target="_blank" class="admin-btn admin-btn--outline" title="Voir sur le site"><i class="bi bi-box-arrow-up-right"></i></a>
-                        <a href="{{ path('manage_products_edit', {id: product.id}) }}" class="admin-btn admin-btn--outline" title="Modifier"><i class="bi bi-pencil"></i></a>
-                        <form action="{{ path('manage_products_delete', {id: product.id}) }}" method="post" onsubmit="return confirm('Supprimer ' ~ product.title ~ ' ?');">
-                            <button type="submit" class="admin-btn admin-btn--outline"><i class="bi bi-trash"></i></button>
-                        </form>
-                    </td>
-                </tr>
-            {% else %}
-                <tr><td colspan="12" class="text-muted">Aucun produit.</td></tr>
-        {% endfor %}
+        <tbody id="productsTableBody">
+            {% include 'manage/products/_index_rows.html.twig' %}
         </tbody>
     </table>
             </div>
         </div>
     </div>
 
-    <script>
-        (function () {
-            const picker = document.getElementById('productListCategoryPicker');
-            picker.addEventListener('change', function (e) {
-                if (e.target.tagName !== 'SELECT' || !e.target.value) return;
-                const url = new URL(window.location.href);
-                url.searchParams.set('category', e.target.value);
-                url.searchParams.delete('page');
-                window.location.href = url.toString();
-            });
-        })();
-    </script>
-
     <div class="ctb-table-footer">
-        <span class="ctb-footer-info">{{ total }} produit{{ total != 1 ? 's' : '' }} au total — page {{ page }} / {{ pages }}</span>
-        {% if pages > 1 %}
-            <div class="ctb-pagination">
-                <a href="{{ path('manage_products_index', app.request.query.all|merge({page: max(1, page - 1)})) }}" class="ctb-page-btn {{ page <= 1 ? 'disabled' : '' }}"><i class="bi bi-chevron-left"></i></a>
-                {% for p in max(1, page - 2)..min(pages, page + 2) %}
-                    <a href="{{ path('manage_products_index', app.request.query.all|merge({page: p})) }}" class="ctb-page-btn {{ p == page ? 'ctb-page-active' : '' }}">{{ p }}</a>
-                {% endfor %}
-                <a href="{{ path('manage_products_index', app.request.query.all|merge({page: min(pages, page + 1)})) }}" class="ctb-page-btn {{ page >= pages ? 'disabled' : '' }}"><i class="bi bi-chevron-right"></i></a>
-            </div>
-        {% endif %}
+        <span class="ctb-footer-info" id="productsFooterInfo">{{ total }} produit{{ total != 1 ? 's' : '' }} au total — page {{ page }} / {{ pages }}</span>
+        <div id="productsPaginationWrap">
+            {% include 'manage/products/_index_pagination.html.twig' %}
+        </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('productsFilterForm');
+            const tbody = document.getElementById('productsTableBody');
+            const footerInfo = document.getElementById('productsFooterInfo');
+            const paginationWrap = document.getElementById('productsPaginationWrap');
+            let currentPage = {{ page }};
+
+            function refreshList() {
+                const params = new URLSearchParams(new FormData(form));
+                params.set('page', currentPage);
+                fetch('{{ path("manage_products_index_fragment") }}?' + params.toString())
+                    .then((r) => r.json())
+                    .then((data) => {
+                        tbody.innerHTML = data.rowsHtml;
+                        footerInfo.textContent = data.footerInfo;
+                        paginationWrap.innerHTML = data.paginationHtml;
+                    });
+            }
+
+            // Cascade catégorie : actualise la liste en direct, sans recharger la page.
+            document.getElementById('productListCategoryPicker').addEventListener('change', function (e) {
+                if (e.target.tagName !== 'SELECT') return;
+                currentPage = 1;
+                refreshList();
+            });
+
+            // Pagination : déléguée (les liens sont régénérés à chaque actualisation).
+            paginationWrap.addEventListener('click', function (e) {
+                const link = e.target.closest('.ctb-page-btn');
+                if (!link || link.classList.contains('disabled')) return;
+                e.preventDefault();
+                currentPage = parseInt(link.dataset.page, 10);
+                refreshList();
+            });
+        });
+    </script>
 {% endblock %}

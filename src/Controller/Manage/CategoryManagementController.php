@@ -15,6 +15,10 @@ use Symfony\Component\String\Slugger\AsciiSlugger;
 
 class CategoryManagementController extends AbstractController
 {
+    public function __construct(
+        private readonly \App\Repository\CategoryAttributeRepository $categoryAttributeRepository,
+    ) {
+    }
     #[Route('/categories', name: 'manage_categories_index', host: 'manage.kongobazar.com', methods: ['GET'])]
     public function index(Request $request, CategoryRepository $repository): Response
     {
@@ -92,6 +96,7 @@ class CategoryManagementController extends AbstractController
             'category' => $cat,
             'childrenCount' => $repository->countChildrenOf($cat->getId()),
             'productCount' => $repository->countProductsIn(array_map(fn ($c) => $c->getId(), $cat->getDescendantCategories())),
+            'attributeCount' => count($this->categoryAttributeRepository->findByCategory($cat->getId())),
         ], $categories);
     }
 
@@ -191,6 +196,10 @@ class CategoryManagementController extends AbstractController
         $category->setIsVehiclePart((bool) $request->request->get('is_vehicle_part'));
         $category->setIsAutoPartRoot((bool) $request->request->get('is_auto_part_root'));
         $category->setIsMotoPartRoot((bool) $request->request->get('is_moto_part_root'));
+        $category->setIsAutoAccessoryRoot((bool) $request->request->get('is_auto_accessory_root'));
+        $category->setIsMotoAccessoryRoot((bool) $request->request->get('is_moto_accessory_root'));
+        $category->setIsAutoOfferRoot((bool) $request->request->get('is_auto_offer_root'));
+        $category->setIsMotoOfferRoot((bool) $request->request->get('is_moto_offer_root'));
 
         $imageFile = $request->files->get('image');
         if ($imageFile) {
