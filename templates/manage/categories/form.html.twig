@@ -1,378 +1,111 @@
 {% extends 'manage/base.html.twig' %}
 
-{% block title %}{{ category ? 'Modifier' : 'Ajouter' }} — Catégorie{% endblock %}
-{% block page_icon %}bi-tags{% endblock %}
-{% block page_title %}{{ category ? 'Modifier' : 'Ajouter' }} une catégorie{% endblock %}
+{% block title %}{{ attribute ? 'Modifier' : 'Nouvelle' }} caractéristique{% endblock %}
+{% block page_icon %}bi-sliders{% endblock %}
+{% block page_title %}{{ attribute ? 'Modifier' : 'Nouvelle' }} caractéristique — {{ category.name }}{% endblock %}
 
 {% block body %}
-    <div class="sw-card" style="max-width:560px;">
-        <div class="card-header">
-            <h6 class="mb-0 fw-bold">{{ category ? 'Modifier « ' ~ category.name ~ ' »' : 'Nouvelle catégorie' }}</h6>
-        </div>
-        <div class="card-body">
-            <form method="post" enctype="multipart/form-data" class="row g-3"
-                  action="{{ category ? path('manage_categories_update', { id: category.id }) : path('manage_categories_create') }}">
+    <a href="{{ path('manage_category_attributes_index', {categoryId: category.id}) }}" class="btn btn-outline-secondary btn-sm mb-3"><i class="bi bi-arrow-left me-1"></i>Retour à la liste</a>
 
-                {% if not category %}
-                    <div class="col-12">
-                        <label class="acc-form-label">Catégorie parente (laisser vide pour créer un rayon racine)</label>
-                        <div class="category-picker" data-category-picker>
-                            <select data-category-level="1" class="acc-form-select">
-                                <option value="">— Aucune (créer un rayon racine) —</option>
-                                {% for root in rootCategories %}
-                                    <option value="{{ root.id }}" {{ parent and parent.parent is null and parent.id == root.id ? 'selected' : '' }}>{{ root.name }}</option>
-                                {% endfor %}
-                            </select>
+    <form method="post" action="{{ attribute ? path('manage_category_attributes_update', {id: attribute.id}) : path('manage_category_attributes_create', {categoryId: category.id}) }}">
+        <div class="sw-card">
+            <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-info-circle text-primary me-2"></i>Informations générales</h6></div>
+            <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label">Nom</label>
+                <input type="text" name="name" class="form-control" value="{{ attribute ? attribute.name : '' }}" required>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Type</label>
+                    <select name="data_type" id="dataTypeSelect" class="form-select">
+                        <option value="text" {{ attribute and attribute.dataType == 'text' ? 'selected' : '' }}>Texte</option>
+                        <option value="number" {{ attribute and attribute.dataType == 'number' ? 'selected' : '' }}>Nombre</option>
+                        <option value="select" {{ attribute and attribute.dataType == 'select' ? 'selected' : '' }}>Liste (select)</option>
+                        <option value="boolean" {{ attribute and attribute.dataType == 'boolean' ? 'selected' : '' }}>Oui/Non</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Unité (optionnel, pour Nombre)</label>
+                    <input type="text" name="unit" class="form-control" value="{{ attribute ? attribute.unit : '' }}" placeholder="ex: cm, kg, m²">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Position</label>
+                    <input type="number" name="position" class="form-control" value="{{ attribute ? attribute.position : 0 }}">
+                </div>
+            </div>
+
+            <div class="mb-0">
+                <label class="form-label">Étiquette de regroupement (optionnel)</label>
+                <input type="text" name="group_tag" class="form-control" value="{{ attribute ? attribute.groupTag : '' }}" placeholder="ex: auto">
+            </div>
+            </div>
+        </div>
+
+        <div class="sw-card mt-3">
+            <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-toggles text-primary me-2"></i>Comportement</h6></div>
+            <div class="card-body">
+            <div class="mb-3 form-check">
+                <input type="checkbox" name="nullable" value="1" class="form-check-input" id="nullable" {{ attribute is null or attribute.nullable ? 'checked' : '' }}>
+                <label class="form-check-label" for="nullable">Peut rester vide (non obligatoire)</label>
+            </div>
+            <div class="mb-3 form-check">
+                <input type="checkbox" name="filterable" value="1" class="form-check-input" id="filterable" {{ attribute and attribute.filterable ? 'checked' : '' }}>
+                <label class="form-check-label" for="filterable">Utilisable comme filtre de recherche</label>
+            </div>
+            <div class="mb-0 form-check">
+                <input type="checkbox" name="show_on_card" value="1" class="form-check-input" id="showOnCard" {{ attribute and attribute.showOnCard ? 'checked' : '' }}>
+                <label class="form-check-label" for="showOnCard">Afficher en badge sur la carte produit</label>
+            </div>
+            </div>
+        </div>
+
+        <div class="sw-card mt-3" id="optionsCard" style="{{ attribute and attribute.dataType == 'select' ? '' : 'display:none;' }}">
+            <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-list-ul text-primary me-2"></i>Options (liste)</h6></div>
+            <div class="card-body">
+            <div id="optionsList">
+                {% if attribute %}
+                    {% for option in attribute.options %}
+                        <div class="input-group mb-2 option-row">
+                            <input type="hidden" name="option_id[]" value="{{ option.id }}">
+                            <input type="text" name="option_label[]" class="form-control" value="{{ option.label }}">
+                            <input type="color" name="option_color[]" class="form-control form-control-color" value="{{ option.colorHex ?: '#ffffff' }}" title="Couleur (optionnel)">
+                            <button type="button" class="btn btn-outline-danger remove-option-btn"><i class="bi bi-x"></i></button>
                         </div>
-                        <input type="hidden" name="parent_id" data-category-final-value value="{{ parent ? parent.id : '' }}">
-                        <small class="text-muted">Choisissez le niveau le plus profond auquel rattacher la nouvelle catégorie — par exemple, sélectionnez "Électronique" puis "Téléphones" pour ajouter une nouvelle sous-catégorie.</small>
-                    </div>
-                {% else %}
-                    <div class="col-12">
-                        <label class="acc-form-label">Catégorie parente</label>
-                        <div class="category-picker" data-category-picker data-category-exclude="{{ category.id }}" data-preselected-ancestors="{{ parentAncestorIds }}">
-                            <select data-category-level="1" class="acc-form-select">
-                                <option value="">— Aucune (rayon racine) —</option>
-                                {% for root in rootCategories %}
-                                    <option value="{{ root.id }}">{{ root.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <input type="hidden" name="parent_id" data-category-final-value value="{{ parent ? parent.id : '' }}">
-                        <small class="text-muted">Elle ne peut pas être rattachée à elle-même ni à l'une de ses sous-catégories.</small>
-                    </div>
+                    {% endfor %}
                 {% endif %}
-
-                <div class="col-md-8">
-                    <label class="acc-form-label">Nom</label>
-                    <input type="text" name="name" class="acc-form-input" value="{{ category ? category.name : '' }}" required>
-                </div>
-
-                <div class="col-md-4">
-                    <label class="acc-form-label">Position (ordre)</label>
-                    <input type="number" name="position" class="acc-form-input" value="{{ category ? category.position : 0 }}">
-                </div>
-
-                <div class="col-md-8">
-                    <label class="acc-form-label">Icône (classe Bootstrap Icons, ex: bi-cpu)</label>
-                    <div class="d-flex gap-2">
-                        <input type="text" name="icon" id="iconInput" class="acc-form-input" value="{{ category ? category.icon : '' }}" placeholder="bi-tag" readonly style="cursor:pointer;">
-                        <button type="button" class="btn btn-outline-secondary" id="openIconPicker" style="flex-shrink:0;">
-                            <i class="bi {{ category and category.icon ? category.icon : 'bi-grid-3x3-gap' }}" id="iconPreviewGlyph"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <label class="acc-form-label">Couleur de thème</label>
-                    <input type="color" name="theme_color" class="form-control form-control-color" value="{{ category and category.themeColor ? category.themeColor : '#2FA8E0' }}">
-                </div>
-
-                <div class="col-12 form-check form-switch">
-                    <input type="checkbox" name="requires_model" value="1" class="form-check-input" id="requiresModel"
-                        {{ category and category.requiresModel ? 'checked' : '' }}>
-                    <label class="form-check-label" for="requiresModel">Nécessite un modèle</label>
-                    <small class="text-muted d-block">À activer pour les catégories où les produits se déclinent par modèle (ex: Smartphones, Ordinateurs) — permettra plus tard d'afficher un champ "Modèle" sur la fiche produit pour cette catégorie.</small>
-                </div>
-
-                <div class="col-12 form-check form-switch">
-                    <input type="checkbox" name="authenticity_relevant" value="1" class="form-check-input" id="authenticityRelevant"
-                        {{ category and category.authenticityRelevant ? 'checked' : '' }}>
-                    <label class="form-check-label" for="authenticityRelevant">Authenticité pertinente</label>
-                    <small class="text-muted d-block">À activer pour les catégories exposées à la contrefaçon (électronique, mode, montres/bijoux, parfums, pièces auto...). Permet au vendeur de déclarer si son produit est original ou une réplique — c'est une déclaration du vendeur, pas une certification KongoBazar.</small>
-                </div>
-
-                <div class="col-12">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleVehicleSettingsBtn">
-                        <i class="bi bi-gear me-1"></i>Autres paramètres (Auto-Moto)
-                        <i class="bi bi-chevron-down ms-1" id="toggleVehicleSettingsIcon"></i>
-                    </button>
-                </div>
-
-                <div class="col-12" id="vehicleSettingsPanel" style="display:none;">
-                    <div class="row g-3 p-3 mt-1" style="background:#f8f9fb;border-radius:8px;">
-                        <div class="col-12 form-check form-switch">
-                            <input type="checkbox" name="is_vehicle_part" value="1" class="form-check-input" id="isVehiclePart"
-                                {{ category and category.isVehiclePart ? 'checked' : '' }}>
-                            <label class="form-check-label" for="isVehiclePart">Pièce détachée véhicule</label>
-                            <small class="text-muted d-block">À activer sur la catégorie "Pièce détachée" (et elle seule — ses sous-catégories héritent automatiquement). Fait apparaître le champ Fabricant spécifique aux pièces auto/moto sur la fiche catalogue.</small>
-                        </div>
-
-                        <div class="col-6 form-check form-switch">
-                            <input type="checkbox" name="is_auto_part_root" value="1" class="form-check-input" id="isAutoPartRoot"
-                                {{ category and category.isAutoPartRoot ? 'checked' : '' }}>
-                            <label class="form-check-label" for="isAutoPartRoot">Racine pièces Auto</label>
-                            <small class="text-muted d-block">Sur le nœud "Pièce de rechange" côté Auto — repère utilisé par le filtre catégorie et le filtre Auto/Moto du catalogue.</small>
-                        </div>
-                        <div class="col-6 form-check form-switch">
-                            <input type="checkbox" name="is_moto_part_root" value="1" class="form-check-input" id="isMotoPartRoot"
-                                {{ category and category.isMotoPartRoot ? 'checked' : '' }}>
-                            <label class="form-check-label" for="isMotoPartRoot">Racine pièces Moto</label>
-                            <small class="text-muted d-block">Même principe côté Moto.</small>
-                        </div>
-
-                        <div class="col-6 form-check form-switch">
-                            <input type="checkbox" name="is_auto_accessory_root" value="1" class="form-check-input" id="isAutoAccessoryRoot"
-                                {{ category and category.isAutoAccessoryRoot ? 'checked' : '' }}>
-                            <label class="form-check-label" for="isAutoAccessoryRoot">Racine accessoires Auto</label>
-                            <small class="text-muted d-block">Sur le nœud "Accessoire" côté Auto — sert au libellé affiché dans la liste Produits.</small>
-                        </div>
-                        <div class="col-6 form-check form-switch">
-                            <input type="checkbox" name="is_moto_accessory_root" value="1" class="form-check-input" id="isMotoAccessoryRoot"
-                                {{ category and category.isMotoAccessoryRoot ? 'checked' : '' }}>
-                            <label class="form-check-label" for="isMotoAccessoryRoot">Racine accessoires Moto</label>
-                            <small class="text-muted d-block">Même principe côté Moto.</small>
-                        </div>
-
-                        <div class="col-6 form-check form-switch">
-                            <input type="checkbox" name="is_auto_offer_root" value="1" class="form-check-input" id="isAutoOfferRoot"
-                                {{ category and category.isAutoOfferRoot ? 'checked' : '' }}>
-                            <label class="form-check-label" for="isAutoOfferRoot">Racine "Offres" Auto</label>
-                            <small class="text-muted d-block">Sur le nœud "Offres" côté Auto (annonces de vente du véhicule lui-même).</small>
-                        </div>
-                        <div class="col-6 form-check form-switch">
-                            <input type="checkbox" name="is_moto_offer_root" value="1" class="form-check-input" id="isMotoOfferRoot"
-                                {{ category and category.isMotoOfferRoot ? 'checked' : '' }}>
-                            <label class="form-check-label" for="isMotoOfferRoot">Racine "Offres" Moto</label>
-                            <small class="text-muted d-block">Même principe côté Moto.</small>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-12">
-                    <label class="acc-form-label">Image</label>
-                    <div class="admin-file-upload-group">
-                        <div class="admin-upload-thumb" id="newImagePreviewBox" style="display:none;">
-                            <span class="admin-upload-thumb-label">Nouvelle</span>
-                            <div class="admin-upload-thumb-inner">
-                                <img src="" id="newImagePreview" alt="Nouvelle image">
-                                <button type="button" class="admin-upload-remove" id="removeNewImage" aria-label="Retirer la nouvelle image">
-                                    <i class="bi bi-x"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="admin-upload-thumb">
-                            <span class="admin-upload-thumb-label">&nbsp;</span>
-                            <label class="admin-upload-dropzone" for="imageInput">
-                                <i class="bi bi-camera"></i>
-                                <span>Upload</span>
-                            </label>
-                        </div>
-                        <input type="file" name="image" id="imageInput" accept="image/*" class="admin-upload-input-hidden">
-
-                        {% if category and category.imageName %}
-                            <div class="admin-upload-thumb">
-                                <span class="admin-upload-thumb-label">Ancienne</span>
-                                <div class="admin-upload-thumb-inner">
-                                    <img src="{{ vich_uploader_asset(category, 'imageFile') }}" alt="Image actuelle">
-                                </div>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <div class="col-12">
-                    <button type="submit" class="btn btn-primary"><i class="bi bi-check2 me-2"></i>Enregistrer</button>
-                    <a href="{{ path('manage_categories_index', parent ? { parent: parent.id } : {}) }}" class="btn btn-outline-secondary ms-2">Annuler</a>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div class="custom-modal-overlay" id="iconPickerOverlay">
-        <div class="custom-modal-box">
-            <div class="custom-modal-header">
-                <h6 class="mb-0 fw-bold">Choisir une icône</h6>
-                <button type="button" class="btn-close" id="closeIconPicker" onclick="document.getElementById('iconPickerOverlay').classList.remove('active')"></button>
             </div>
-            <div class="custom-modal-body">
-                <input type="text" id="iconSearchInput" class="acc-form-input mb-3" placeholder="Rechercher une icône (ex: voiture, maison, panier...)">
-                <div id="iconGrid" class="icon-picker-grid"></div>
+            <button type="button" id="addOptionBtn" class="btn btn-sm btn-outline-secondary">+ Ajouter une option</button>
             </div>
         </div>
-    </div>
-{% endblock %}
-{% block javascripts %}
+
+        <div class="mt-3">
+            <button type="submit" class="btn btn-success">Enregistrer</button>
+            <a href="{{ path('manage_category_attributes_index', {categoryId: category.id}) }}" class="btn btn-outline-secondary">Annuler</a>
+        </div>
+    </form>
+
     <script>
-        const ICON_CHOICES = [
-            // Électronique / High-tech
-            ['bi-cpu', 'processeur'], ['bi-phone', 'téléphone'], ['bi-phone-flip', 'téléphone dos'], ['bi-laptop', 'ordinateur'],
-            ['bi-pc-display', 'ordinateur bureau'], ['bi-tablet', 'tablette'], ['bi-tv', 'télévision'], ['bi-display', 'écran'],
-            ['bi-camera', 'appareil photo'], ['bi-camera-fill', 'appareil photo plein'], ['bi-headphones', 'casque audio'],
-            ['bi-earbuds', 'écouteurs'], ['bi-speaker', 'enceinte'], ['bi-controller', 'jeux vidéo'], ['bi-printer', 'imprimante'],
-            ['bi-router', 'routeur'], ['bi-wifi', 'wifi'], ['bi-bluetooth', 'bluetooth'], ['bi-hdd', 'disque dur'],
-            ['bi-sd-card', 'carte mémoire'], ['bi-motherboard', 'carte mère'], ['bi-gpu-card', 'carte graphique'],
-            ['bi-keyboard', 'clavier'], ['bi-mouse', 'souris ordinateur'], ['bi-projector', 'projecteur'],
-            // Transport
-            ['bi-car-front', 'voiture'], ['bi-car-front-fill', 'voiture pleine'], ['bi-truck', 'camion'],
-            ['bi-truck-front', 'camionnette'], ['bi-bicycle', 'vélo'], ['bi-scooter', 'moto scooter'], ['bi-moped', 'mobylette'],
-            ['bi-bus-front', 'bus'], ['bi-taxi-front', 'taxi'], ['bi-fuel-pump', 'carburant'], ['bi-fuel-pump-diesel', 'diesel'],
-            ['bi-airplane', 'avion voyage'], ['bi-train-front', 'train'], ['bi-ev-station', 'borne électrique'],
-            ['bi-signpost-split', 'panneau route'], ['bi-cone-striped', 'cône chantier'],
-            // Maison / immobilier
-            ['bi-house', 'maison'], ['bi-house-door', 'porte maison'], ['bi-house-heart', 'maison coeur'],
-            ['bi-building', 'immeuble'], ['bi-buildings', 'immeubles'], ['bi-shop', 'boutique'], ['bi-shop-window', 'vitrine'],
-            ['bi-door-open', 'porte ouverte'], ['bi-window', 'fenêtre'], ['bi-stairs', 'escalier'], ['bi-lamp', 'lampe'],
-            ['bi-thermometer-half', 'chauffage clim'], ['bi-fan', 'ventilateur'], ['bi-brightness-high', 'luminosité'],
-            // Outils / bricolage
-            ['bi-tools', 'outils'], ['bi-wrench', 'clé outil'], ['bi-wrench-adjustable', 'clé réglable'],
-            ['bi-hammer', 'marteau'], ['bi-brush', 'peinture pinceau'], ['bi-lightbulb', 'ampoule lumière'],
-            ['bi-plug', 'prise électrique'], ['bi-plug-fill', 'prise pleine'], ['bi-nut', 'écrou boulon'],
-            ['bi-screwdriver', 'tournevis'], ['bi-ladder', 'échelle'], ['bi-paint-bucket', 'pot peinture'],
-            // Alimentation
-            ['bi-cup-hot', 'boisson chaude'], ['bi-cup-straw', 'boisson froide'], ['bi-egg-fried', 'nourriture'],
-            ['bi-basket', 'panier courses'], ['bi-basket2', 'panier alternatif'], ['bi-cart', 'panier achat'],
-            ['bi-cart-fill', 'panier plein'], ['bi-cart-plus', 'ajouter panier'], ['bi-bag', 'sac'], ['bi-bag-fill', 'sac plein'],
-            ['bi-bag-heart', 'sac coeur'], ['bi-apple', 'fruit'], ['bi-cake2', 'gâteau'], ['bi-cup', 'tasse'],
-            // Mode / accessoires
-            ['bi-gift', 'cadeau'], ['bi-shirt', 'vêtement'], ['bi-badge-tm', 'marque étiquette'], ['bi-tag', 'étiquette prix'],
-            ['bi-tags', 'étiquettes'], ['bi-gem', 'bijou'], ['bi-watch', 'montre'], ['bi-sunglasses', 'lunettes'],
-            ['bi-bag-check', 'sac vérifié'], ['bi-handbag', 'sac à main'],
-            // Santé
-            ['bi-heart-pulse', 'santé'], ['bi-capsule', 'médicament'], ['bi-thermometer', 'thermomètre'],
-            ['bi-bandaid', 'pansement'], ['bi-eyedropper', 'pipette'], ['bi-clipboard-pulse', 'suivi médical'],
-            // Nature
-            ['bi-flower1', 'fleur'], ['bi-flower2', 'fleur alternative'], ['bi-tree', 'arbre'], ['bi-tree-fill', 'arbre plein'],
-            ['bi-sun', 'soleil'], ['bi-moon', 'lune'], ['bi-moon-stars', 'nuit étoilée'], ['bi-cloud', 'nuage'],
-            ['bi-cloud-rain', 'pluie'], ['bi-droplet', 'goutte eau'], ['bi-fire', 'feu'], ['bi-snow', 'neige'],
-            ['bi-wind', 'vent'], ['bi-water', 'eau'],
-            // Loisirs / culture
-            ['bi-book', 'livre'], ['bi-book-half', 'livre ouvert'], ['bi-journal', 'carnet'], ['bi-pencil', 'crayon'],
-            ['bi-palette', 'palette peinture'], ['bi-brush-fill', 'brosse'], ['bi-music-note-beamed', 'musique'],
-            ['bi-vinyl', 'vinyle disque'], ['bi-film', 'film'], ['bi-camera-reels', 'vidéo caméra'],
-            ['bi-dice-5', 'jeu de dés'], ['bi-puzzle', 'puzzle'], ['bi-joystick', 'manette jeu'], ['bi-guitar', 'guitare'],
-            ['bi-piano', 'piano'], ['bi-easel', 'chevalet art'],
-            // Sport
-            ['bi-dumbbell', 'sport musculation'], ['bi-trophy', 'trophée'], ['bi-bullseye', 'cible'],
-            ['bi-basket3', 'basketball'], ['bi-bicycle', 'cyclisme'],
-            // Voyage
-            ['bi-globe', 'monde global'], ['bi-globe2', 'globe alternatif'], ['bi-map', 'carte plan'],
-            ['bi-geo-alt', 'localisation'], ['bi-compass', 'boussole'], ['bi-suitcase', 'valise'],
-            ['bi-suitcase2', 'valise alternative'], ['bi-umbrella', 'parapluie'], ['bi-binoculars', 'jumelles'],
-            // Récompenses / symboles
-            ['bi-heart', 'coeur'], ['bi-star', 'étoile'], ['bi-award', 'récompense'], ['bi-flag', 'drapeau'],
-            ['bi-flag-fill', 'drapeau plein'], ['bi-patch-check', 'vérifié badge'],
-            // Finance
-            ['bi-piggy-bank', 'épargne'], ['bi-cash-coin', 'argent'], ['bi-cash-stack', 'liasse argent'],
-            ['bi-credit-card', 'carte bancaire'], ['bi-credit-card-2-front', 'carte bancaire alternative'],
-            ['bi-wallet2', 'portefeuille'], ['bi-briefcase', 'travail bureau'], ['bi-calculator', 'calculatrice'],
-            ['bi-graph-up', 'graphique'], ['bi-graph-up-arrow', 'graphique hausse'], ['bi-bank', 'banque'],
-            ['bi-currency-exchange', 'change devise'], ['bi-receipt', 'reçu facture'],
-            // Bureau / communication
-            ['bi-clipboard', 'presse-papier'], ['bi-envelope', 'enveloppe courrier'], ['bi-telephone', 'appel téléphone'],
-            ['bi-chat', 'discussion message'], ['bi-chat-dots', 'messages'], ['bi-people', 'personnes groupe'],
-            ['bi-person', 'personne'], ['bi-person-badge', 'badge identité'], ['bi-folder', 'dossier'],
-            ['bi-file-earmark-text', 'document'], ['bi-inbox', 'boîte réception'],
-            // Divers utiles marketplace
-            ['bi-scissors', 'ciseaux'], ['bi-droplet-half', 'produit liquide'], ['bi-box-seam', 'boîte colis'],
-            ['bi-box', 'boîte'], ['bi-boxes', 'boîtes stock'], ['bi-recycle', 'recyclage'],
-            ['bi-lightning-charge', 'énergie éclair'], ['bi-battery-full', 'batterie'], ['bi-usb-plug', 'usb'],
-            ['bi-camera-video', 'caméra vidéo'], ['bi-mic', 'micro'], ['bi-key', 'clé'], ['bi-shield-check', 'sécurité bouclier'],
-            ['bi-lock', 'cadenas'], ['bi-unlock', 'déverrouillé'], ['bi-calendar-range', 'calendrier période'],
-            ['bi-alarm', 'alarme réveil'], ['bi-collection', 'collection'], ['bi-stars', 'étincelles'],
-            ['bi-baby-carriage', 'poussette bébé'], ['bi-controller', 'jouets jeux'], ['bi-emoji-smile', 'jouet enfant'],
-            ['bi-pc', 'informatique'], ['bi-diamond', 'luxe diamant'], ['bi-tools', 'services techniques'],
-            ['bi-truck-flatbed', 'transport marchandise'], ['bi-boombox', 'audio ancien'], ['bi-camera2', 'photographie'],
-        ];
-
-        const iconInput = document.getElementById('iconInput');
-        const iconPreviewGlyph = document.getElementById('iconPreviewGlyph');
-        const openIconPicker = document.getElementById('openIconPicker');
-        const iconGrid = document.getElementById('iconGrid');
-        const iconSearchInput = document.getElementById('iconSearchInput');
-        const iconOverlay = document.getElementById('iconPickerOverlay');
-        const closeIconPicker = document.getElementById('closeIconPicker');
-
-        // Déplace la fenêtre pour qu'elle soit un enfant direct de <body> —
-        // ça la sort de force de n'importe quel conteneur parent qui casserait
-        // son positionnement (transform, filter, contexte d'empilement, etc.).
-        document.body.appendChild(iconOverlay);
-
-        function renderIconGrid(filter) {
-            const term = (filter || '').toLowerCase();
-            iconGrid.innerHTML = '';
-            ICON_CHOICES
-                .filter(([cls, kw]) => !term || cls.includes(term) || kw.includes(term))
-                .forEach(([cls, kw]) => {
-                    const item = document.createElement('div');
-                    item.className = 'icon-picker-item';
-                    item.innerHTML = `<i class="bi ${cls}"></i><span>${kw}</span>`;
-                    item.addEventListener('click', () => {
-                        iconInput.value = cls;
-                        iconPreviewGlyph.className = 'bi ' + cls;
-                        iconOverlay.classList.remove('active');
-                    });
-                    iconGrid.appendChild(item);
-                });
-        }
-
-        function openOverlay() {
-            renderIconGrid('');
-            iconSearchInput.value = '';
-            iconOverlay.classList.add('active');
-            setTimeout(() => iconSearchInput.focus(), 50);
-        }
-        function closeOverlay() {
-            iconOverlay.classList.remove('active');
-        }
-
-        openIconPicker.addEventListener('click', openOverlay);
-        iconOverlay.addEventListener('click', (e) => {
-            if (e.target === iconOverlay || e.target.closest('#closeIconPicker')) closeOverlay();
-        });
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeOverlay();
-        });
-        iconSearchInput.addEventListener('input', () => renderIconGrid(iconSearchInput.value));
-
-        const imageInput = document.getElementById('imageInput');
-        const previewBox = document.getElementById('newImagePreviewBox');
-        const preview = document.getElementById('newImagePreview');
-        const removeBtn = document.getElementById('removeNewImage');
-
-        imageInput.addEventListener('change', function (e) {
-            const file = e.target.files[0];
-
-            if (!file) {
-                previewBox.style.display = 'none';
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function (ev) {
-                preview.src = ev.target.result;
-                previewBox.style.display = 'flex';
-            };
-            reader.readAsDataURL(file);
+        document.getElementById('dataTypeSelect').addEventListener('change', function () {
+            document.getElementById('optionsCard').style.display = this.value === 'select' ? 'block' : 'none';
         });
 
-        removeBtn.addEventListener('click', function () {
-            imageInput.value = '';
-            preview.src = '';
-            previewBox.style.display = 'none';
+        document.getElementById('addOptionBtn').addEventListener('click', function () {
+            const row = document.createElement('div');
+            row.className = 'input-group mb-2 option-row';
+            row.innerHTML = '<input type="hidden" name="option_id[]" value="0">' +
+                '<input type="text" name="option_label[]" class="form-control">' +
+                '<input type="color" name="option_color[]" class="form-control form-control-color" value="#ffffff" title="Couleur (optionnel)">' +
+                '<button type="button" class="btn btn-outline-danger remove-option-btn"><i class="bi bi-x"></i></button>';
+            document.getElementById('optionsList').appendChild(row);
+            row.querySelector('.remove-option-btn').addEventListener('click', () => row.remove());
         });
 
-        // --- Repli "Autres paramètres (Auto-Moto)" ---
-        const toggleVehicleSettingsBtn = document.getElementById('toggleVehicleSettingsBtn');
-        const vehicleSettingsPanel = document.getElementById('vehicleSettingsPanel');
-        const toggleVehicleSettingsIcon = document.getElementById('toggleVehicleSettingsIcon');
-        // Ouvert par défaut si une des cases est déjà cochée (édition d'une catégorie déjà configurée), sinon replié.
-        const hasVehicleSettings = document.getElementById('isVehiclePart').checked
-            || document.getElementById('isAutoPartRoot').checked
-            || document.getElementById('isMotoPartRoot').checked
-            || document.getElementById('isAutoAccessoryRoot').checked
-            || document.getElementById('isMotoAccessoryRoot').checked
-            || document.getElementById('isAutoOfferRoot').checked
-            || document.getElementById('isMotoOfferRoot').checked;
-        if (hasVehicleSettings) {
-            vehicleSettingsPanel.style.display = 'block';
-            toggleVehicleSettingsIcon.classList.replace('bi-chevron-down', 'bi-chevron-up');
-        }
-        toggleVehicleSettingsBtn.addEventListener('click', function () {
-            const isOpen = vehicleSettingsPanel.style.display !== 'none';
-            vehicleSettingsPanel.style.display = isOpen ? 'none' : 'block';
-            toggleVehicleSettingsIcon.classList.toggle('bi-chevron-down', isOpen);
-            toggleVehicleSettingsIcon.classList.toggle('bi-chevron-up', !isOpen);
+        document.querySelectorAll('.remove-option-btn').forEach((btn) => {
+            btn.addEventListener('click', function () {
+                this.closest('.option-row').remove();
+            });
         });
     </script>
 {% endblock %}

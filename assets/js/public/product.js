@@ -178,33 +178,84 @@ function initProductTabs() {
 }
 
 function initProductShare() {
-    const shareBtn = document.querySelector('[data-share-btn]');
-    if (!shareBtn) return;
+    initShareMenus();
+}
 
-    shareBtn.addEventListener('click', () => {
-        const shareData = {
-            title: shareBtn.dataset.shareTitle,
-            text: shareBtn.dataset.shareText,
-            url: window.location.href,
-        };
+function initShareMenus() {
+    document.querySelectorAll('[data-share-menu]').forEach((wrap) => {
+        const toggleBtn = wrap.querySelector('[data-share-toggle]');
+        const popover = wrap.querySelector('[data-share-popover]');
+        if (!toggleBtn || !popover) return;
 
-        if (navigator.share) {
-            navigator.share(shareData).catch(() => {
-                // L'utilisateur a annulé le partage, on ne fait rien de plus
-            });
-            return;
+        const url = window.location.href;
+        const title = popover.dataset.shareTitle || document.title;
+        const text = popover.dataset.shareText || title;
+
+        const nativeBtn = popover.querySelector('[data-native-only]');
+        if (nativeBtn && !navigator.share) {
+            nativeBtn.remove();
         }
 
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(window.location.href).then(() => {
-                showCopiedFeedback(shareBtn);
-            }).catch(() => {
-                fallbackCopy(window.location.href, shareBtn);
+        popover.querySelectorAll('[data-share-platform]').forEach((item) => {
+            const platform = item.dataset.sharePlatform;
+
+            if ('facebook' === platform) {
+                item.href = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url);
+            } else if ('whatsapp' === platform) {
+                item.href = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(text + ' ' + url);
+            } else if ('x' === platform) {
+                item.href = 'https://twitter.com/intent/tweet?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(text);
+            }
+
+            item.addEventListener('click', () => {
+                trackShare(popover, platform);
+
+                if ('copy_link' === platform) {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(url).then(() => showCopiedFeedback(item)).catch(() => fallbackCopy(url, item));
+                    } else {
+                        fallbackCopy(url, item);
+                    }
+                    closePopover();
+                } else if ('native' === platform) {
+                    navigator.share({ title, text, url }).catch(() => {});
+                    closePopover();
+                }
             });
-        } else {
-            fallbackCopy(window.location.href, shareBtn);
+        });
+
+        function openPopover() {
+            popover.hidden = false;
+            document.addEventListener('click', onOutsideClick);
         }
+        function closePopover() {
+            popover.hidden = true;
+            document.removeEventListener('click', onOutsideClick);
+        }
+        function onOutsideClick(e) {
+            if (!wrap.contains(e.target)) closePopover();
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            popover.hidden ? openPopover() : closePopover();
+        });
     });
+}
+
+function trackShare(popover, platform) {
+    const params = new URLSearchParams({
+        entity_type: popover.dataset.entityType || 'static_page',
+        entity_id: popover.dataset.entityId || '',
+        page_key: popover.dataset.pageKey || '',
+        admin_label: popover.dataset.adminLabel || '',
+        platform: platform,
+    });
+
+    if (navigator.sendBeacon) {
+        navigator.sendBeacon('/partage/enregistrer', params);
+    } else {
+        fetch('/partage/enregistrer', { method: 'POST', body: params, keepalive: true }).catch(() => {});
+    }
 }
 
 function fallbackCopy(text, btn) {

@@ -1,0 +1,57 @@
+{% set statusLabels = { 'active': 'Actif', 'scheduled': 'Programmé', 'expired': 'Expiré', 'cancelled': 'Annulé' } %}
+{% for campaign in campaigns %}
+    {% set percent = campaign.product.basePrice > 0 ? ((1 - (campaign.discountedPrice / campaign.product.basePrice)) * 100)|round : 0 %}
+    {% set firstImage = campaign.product.images.first %}
+    <tr>
+        <td>
+            {% if firstImage %}
+                <img src="{{ vich_uploader_asset(firstImage, 'imageFile') }}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;">
+            {% else %}
+                <span class="text-muted">—</span>
+            {% endif %}
+        </td>
+        <td class="text-muted" style="font-size:12px;">{{ campaign.product.kongobazarReference }}</td>
+        <td>{{ campaign.product.title }}</td>
+        <td>
+            {% if campaign.product.sellerProfile %}
+                <a href="{{ path('manage_users_show', { id: campaign.product.sellerProfile.user.id }) }}">{{ campaign.product.sellerProfile.displayName }}</a>
+            {% else %}
+                <span class="text-muted">—</span>
+            {% endif %}
+        </td>
+        <td>
+            {% if campaign.product.sellerProfile %}
+                {% set provinces = [] %}
+                {% for zone in campaign.product.sellerProfile.deliveryZones %}
+                    {% set province = zone.level == 1 ? zone : zone.getAncestorAtLevel(1) %}
+                    {% if province and province.name not in provinces %}
+                        {% set provinces = provinces|merge([province.name]) %}
+                    {% endif %}
+                {% endfor %}
+                {{ provinces|join(', ') ?: '—' }}
+            {% else %}—{% endif %}
+        </td>
+        <td>{{ campaign.product.basePrice }} {{ campaign.product.currency }}</td>
+        <td>{{ campaign.discountedPrice }} {{ campaign.product.currency }}</td>
+        <td><span class="badge bg-danger">-{{ percent }}%</span></td>
+        <td>{{ campaign.startAt|date('d/m/Y H:i') }}</td>
+        <td>{{ campaign.endAt|date('d/m/Y H:i') }}</td>
+        <td>
+            <span class="badge {{ campaign.status == 'active' ? 'bg-success' : (campaign.status == 'scheduled' ? 'bg-info' : (campaign.status == 'expired' ? 'bg-secondary' : 'bg-danger')) }}">
+                {{ statusLabels[campaign.status] ?? campaign.status }}
+            </span>
+        </td>
+        <td>{{ sold_during_campaign(campaign) }} unité(s)</td>
+        <td class="admin-actions" style="white-space:nowrap;">
+            <a href="{{ path('manage_products_show', { id: campaign.product.id }) }}" class="admin-btn admin-btn--outline" title="Voir la fiche produit"><i class="bi bi-eye"></i></a>
+            <a href="{{ path('manage_discount_campaigns_edit', { id: campaign.id }) }}" class="admin-btn admin-btn--outline" title="Modifier"><i class="bi bi-pencil"></i></a>
+            {% if campaign.status in ['scheduled', 'active'] %}
+                <form method="post" action="{{ path('manage_discount_campaigns_cancel', { id: campaign.id }) }}" style="display:inline;" onsubmit="return confirm('Annuler cette remise ?');">
+                    <button type="submit" class="admin-btn admin-btn--outline" title="Annuler"><i class="bi bi-x-lg"></i></button>
+                </form>
+            {% endif %}
+        </td>
+    </tr>
+{% else %}
+    <tr><td colspan="12" class="text-muted">Aucune remise.</td></tr>
+{% endfor %}

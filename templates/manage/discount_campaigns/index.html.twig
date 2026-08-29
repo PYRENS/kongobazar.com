@@ -5,51 +5,282 @@
 {% block page_title %}Ventes Flash{% endblock %}
 
 {% block body %}
-<a href="{{ path('manage_discount_campaigns_new') }}" class="admin-btn admin-btn--primary mb-3"><i class="bi bi-plus"></i> Nouvelle remise</a>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h4 mb-0">Ventes Flash</h1>
+        <a href="{{ path('manage_discount_campaigns_new') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Nouvelle remise</a>
+    </div>
 
-<div class="admin-card">
-    <table class="table admin-table">
+    <div class="row g-3 mb-4">
+        <div class="col-xl-4 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-blue h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-blue"><i class="bi bi-tag"></i></div>
+                <div class="ctb-stat-val">{{ stats.total }}</div>
+                <div class="ctb-stat-label">Remises au total</div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-green h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-green"><i class="bi bi-check-circle-fill"></i></div>
+                <div class="ctb-stat-val">{{ stats.active }}</div>
+                <div class="ctb-stat-label">Actives</div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-orange h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-orange"><i class="bi bi-clock-history"></i></div>
+                <div class="ctb-stat-val">{{ stats.scheduled }}</div>
+                <div class="ctb-stat-label">Programmées</div>
+            </div>
+        </div>
+    </div>
+
+    <form method="get" id="campaignsFilterForm" class="d-flex align-items-center gap-2 flex-wrap">
+        <div class="position-relative" style="max-width:280px;">
+            <input type="text" name="q" id="campaignsSearchInput" class="form-control" placeholder="Réf. KongoBazar ou titre..." value="{{ searchTerm }}" autocomplete="off">
+            <div id="campaignsSearchResults" class="list-group position-absolute w-100" style="z-index:20;"></div>
+        </div>
+
+        <div class="position-relative" style="max-width:280px;">
+            <input type="text" id="campaignsSellerSearchInput" class="form-control" placeholder="Vendeur..." value="{{ currentSellerName }}" autocomplete="off">
+            <div id="campaignsSellerSearchResults" class="list-group position-absolute w-100" style="z-index:20;"></div>
+            <input type="hidden" name="seller" id="campaignsSellerIdInput" value="{{ currentSeller }}">
+        </div>
+
+        <select name="perPage" id="campaignsPerPageSelect" class="form-select" style="max-width: 130px;">
+            {% for n in [10, 20, 50, 100] %}
+                <option value="{{ n }}" {{ perPage == n ? 'selected' : '' }}>{{ n }} / page</option>
+            {% endfor %}
+        </select>
+
+        <a href="{{ path('manage_discount_campaigns_index') }}" class="btn btn-sm btn-outline-secondary">Réinitialiser</a>
+
+        <div class="w-100"></div>
+
+        <small class="text-muted">Par catégorie :</small>
+        <div class="category-picker" data-category-picker id="campaignsCategoryPicker" style="flex-direction:row;gap:6px;">
+            <select data-category-level="1" class="form-select" style="max-width:220px;">
+                <option value="">— Choisir —</option>
+                {% for root in rootCategories %}
+                    <option value="{{ root.id }}">{{ root.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <input type="hidden" name="category" id="campaignsCategoryFilterInput" data-category-final-value value="{{ currentCategory }}">
+
+        <div class="w-100"></div>
+
+        <small class="text-muted">Par province :</small>
+        <div id="campaignsProvincePicker" style="display:flex;flex-direction:row;gap:6px;flex-wrap:wrap;"></div>
+        <input type="hidden" name="province" id="campaignsProvinceFilterInput" value="{{ currentProvince }}">
+    </form>
+
+    <div class="mb-4"></div>
+
+    {% macro sortLink(field, label, currentSort, currentDir, currentParams) %}
+        {% set nextDir = (currentSort == field and currentDir == 'ASC') ? 'DESC' : 'ASC' %}
+        {% set params = currentParams|merge({sort: field, dir: nextDir}) %}
+        <a href="?{{ params|url_encode(true) }}" class="admin-sort-link">
+            {{ label }}
+            {% if currentSort == field %}
+                <i class="bi bi-caret-{{ currentDir == 'ASC' ? 'up' : 'down' }}-fill"></i>
+            {% else %}
+                <i class="bi bi-arrow-down-up admin-sort-icon-idle"></i>
+            {% endif %}
+        </a>
+    {% endmacro %}
+    {% import _self as self %}
+
+    <div class="sw-card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+    <table class="table ctb-table mb-0">
         <thead>
             <tr>
-                <th>Produit</th>
-                <th>Prix initial</th>
-                <th>Prix remisé</th>
+                <th>Image</th>
+                <th>Réf. KongoBazar</th>
+                <th>{{ self.sortLink('product', 'Produit', currentSort, currentDir, app.request.query.all) }}</th>
+                <th>Vendeur</th>
+                <th>{{ self.sortLink('basePrice', 'Prix initial', currentSort, currentDir, app.request.query.all) }}</th>
+                <th>{{ self.sortLink('discountedPrice', 'Prix remisé', currentSort, currentDir, app.request.query.all) }}</th>
                 <th>Différence</th>
-                <th>Début</th>
-                <th>Fin</th>
-                <th>Statut</th>
+                <th>{{ self.sortLink('startAt', 'Début', currentSort, currentDir, app.request.query.all) }}</th>
+                <th>{{ self.sortLink('endAt', 'Fin', currentSort, currentDir, app.request.query.all) }}</th>
+                <th>{{ self.sortLink('status', 'Statut', currentSort, currentDir, app.request.query.all) }}</th>
                 <th>Ventes pendant boost</th>
-                <th></th>
+                <th>Actions</th>
             </tr>
         </thead>
-        <tbody>
-            {% for campaign in campaigns %}
-                {% set percent = campaign.product.basePrice > 0 ? ((1 - (campaign.discountedPrice / campaign.product.basePrice)) * 100)|round : 0 %}
-                <tr>
-                    <td>{{ campaign.product.title }}</td>
-                    <td>{{ campaign.product.basePrice }} {{ campaign.product.currency }}</td>
-                    <td>{{ campaign.discountedPrice }} {{ campaign.product.currency }}</td>
-                    <td><span class="badge bg-danger">-{{ percent }}%</span></td>
-                    <td>{{ campaign.startAt|date('d/m/Y H:i') }}</td>
-                    <td>{{ campaign.endAt|date('d/m/Y H:i') }}</td>
-                    <td>
-                        {% set statusLabels = { 'active': 'Actif', 'scheduled': 'Programmé', 'expired': 'Expiré', 'cancelled': 'Annulé' } %}
-                        <span class="badge {{ campaign.status == 'active' ? 'bg-success' : (campaign.status == 'scheduled' ? 'bg-info' : (campaign.status == 'expired' ? 'bg-secondary' : 'bg-danger')) }}">
-                            {{ statusLabels[campaign.status] ?? campaign.status }}
-                        </span>
-                    </td>
-                    <td>{{ sold_during_campaign(campaign) }} unité(s)</td>
-                    <td style="white-space:nowrap;">
-                        <a href="{{ path('manage_discount_campaigns_edit', { id: campaign.id }) }}" class="admin-btn admin-btn--outline">Modifier</a>
-                        {% if campaign.status in ['scheduled', 'active'] %}
-                            <form method="post" action="{{ path('manage_discount_campaigns_cancel', { id: campaign.id }) }}" style="display:inline;" onsubmit="return confirm('Annuler cette remise ?');">
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Annuler</button>
-                            </form>
-                        {% endif %}
-                    </td>
-                </tr>
-            {% endfor %}
+        <tbody id="campaignsTableBody">
+            {% include 'manage/discount_campaigns/_index_rows.html.twig' %}
         </tbody>
     </table>
-</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ctb-table-footer">
+        <span class="ctb-footer-info" id="campaignsFooterInfo">{{ total }} remise{{ total != 1 ? 's' : '' }} au total — page {{ page }} / {{ pages }}</span>
+        <div id="campaignsPaginationWrap">
+            {% include 'manage/advertisements/_index_pagination.html.twig' %}
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('campaignsFilterForm');
+            const tbody = document.getElementById('campaignsTableBody');
+            const footerInfo = document.getElementById('campaignsFooterInfo');
+            const paginationWrap = document.getElementById('campaignsPaginationWrap');
+            let currentPage = {{ page }};
+
+            function refreshList() {
+                const params = new URLSearchParams(new FormData(form));
+                params.set('page', currentPage);
+                fetch('{{ path("manage_discount_campaigns_index_fragment") }}?' + params.toString())
+                    .then((r) => r.json())
+                    .then((data) => {
+                        tbody.innerHTML = data.rowsHtml;
+                        footerInfo.textContent = data.footerInfo;
+                        paginationWrap.innerHTML = data.paginationHtml;
+                    });
+            }
+
+            document.getElementById('campaignsPerPageSelect').addEventListener('change', function () {
+                currentPage = 1;
+                refreshList();
+            });
+
+            // Cascade province (arbre AdministrativeUnit, même principe que la cascade catégorie).
+            const provincePicker = document.getElementById('campaignsProvincePicker');
+            const provinceFilterInput = document.getElementById('campaignsProvinceFilterInput');
+
+            function loadProvinceLevel(parentId, isRoot) {
+                const url = isRoot ? '/geo/enfants/0' : '/geo/enfants/' + parentId;
+                fetch(url)
+                    .then((r) => r.json())
+                    .then((data) => {
+                        if (data.results.length === 0) return;
+                        const select = document.createElement('select');
+                        select.className = 'form-select';
+                        select.style.maxWidth = '220px';
+                        select.dataset.level = isRoot ? '1' : 'next';
+                        select.innerHTML = '<option value="">— Choisir —</option>' +
+                            data.results.map((u) => '<option value="' + u.id + '">' + u.name + ' (' + u.typeLabel + ')</option>').join('');
+                        select.addEventListener('change', function () {
+                            let next = select.nextElementSibling;
+                            while (next) {
+                                const toRemove = next;
+                                next = next.nextElementSibling;
+                                toRemove.remove();
+                            }
+                            provinceFilterInput.value = this.value;
+                            if (this.value) {
+                                loadProvinceLevel(this.value, false);
+                                currentPage = 1;
+                                refreshList();
+                            }
+                        });
+                        provincePicker.appendChild(select);
+                    });
+            }
+            loadProvinceLevel(null, true);
+
+            // Recherche vendeur en autocomplétion.
+            const sellerSearchInput = document.getElementById('campaignsSellerSearchInput');
+            const sellerSearchResults = document.getElementById('campaignsSellerSearchResults');
+            const sellerIdInput = document.getElementById('campaignsSellerIdInput');
+            let sellerTimeout;
+            sellerSearchInput.addEventListener('input', function () {
+                clearTimeout(sellerTimeout);
+                sellerIdInput.value = '';
+                const term = this.value.trim();
+                if (term.length < 1) {
+                    sellerSearchResults.innerHTML = '';
+                    return;
+                }
+                sellerTimeout = setTimeout(() => {
+                    fetch('{{ path("manage_discount_campaigns_search_sellers") }}?q=' + encodeURIComponent(term))
+                        .then((r) => r.json())
+                        .then((data) => {
+                            sellerSearchResults.innerHTML = '';
+                            data.results.forEach((seller) => {
+                                const btn = document.createElement('button');
+                                btn.type = 'button';
+                                btn.className = 'list-group-item list-group-item-action';
+                                btn.textContent = seller.name;
+                                btn.addEventListener('click', () => {
+                                    sellerSearchInput.value = seller.name;
+                                    sellerIdInput.value = seller.id;
+                                    sellerSearchResults.innerHTML = '';
+                                    currentPage = 1;
+                                    refreshList();
+                                });
+                                sellerSearchResults.appendChild(btn);
+                            });
+                        });
+                }, 250);
+            });
+
+            document.getElementById('campaignsCategoryPicker').addEventListener('change', function (e) {
+                if (e.target.tagName !== 'SELECT') return;
+                currentPage = 1;
+                refreshList();
+            });
+
+            let searchTimeout;
+            const searchInput = document.getElementById('campaignsSearchInput');
+            searchInput.addEventListener('input', function () {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    currentPage = 1;
+                    refreshList();
+                }, 400);
+            });
+
+            const searchResults = document.getElementById('campaignsSearchResults');
+            let autocompleteTimeout;
+            searchInput.addEventListener('input', function () {
+                clearTimeout(autocompleteTimeout);
+                const term = this.value.trim();
+                if (term.length < 1) {
+                    searchResults.innerHTML = '';
+                    return;
+                }
+                autocompleteTimeout = setTimeout(() => {
+                    fetch('{{ path("manage_discount_campaigns_search_titles") }}?q=' + encodeURIComponent(term))
+                        .then((r) => r.json())
+                        .then((data) => {
+                            searchResults.innerHTML = '';
+                            data.results.forEach((item) => {
+                                const btn = document.createElement('button');
+                                btn.type = 'button';
+                                btn.className = 'list-group-item list-group-item-action';
+                                btn.textContent = item.title;
+                                btn.addEventListener('click', () => {
+                                    searchInput.value = item.title.replace(/\s*\(KBZ-\d+\)$/, '');
+                                    searchResults.innerHTML = '';
+                                    currentPage = 1;
+                                    refreshList();
+                                });
+                                searchResults.appendChild(btn);
+                            });
+                        });
+                }, 250);
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                    searchResults.innerHTML = '';
+                }
+            });
+
+            paginationWrap.addEventListener('click', function (e) {
+                const link = e.target.closest('.ctb-page-btn');
+                if (!link || link.classList.contains('disabled')) return;
+                e.preventDefault();
+                currentPage = parseInt(link.dataset.page, 10);
+                refreshList();
+            });
+        });
+    </script>
 {% endblock %}

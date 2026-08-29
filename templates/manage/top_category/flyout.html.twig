@@ -5,73 +5,80 @@
 {% block page_title %}Top Catégorie — Méga-menu de "{{ rayon.name }}"{% endblock %}
 
 {% block body %}
-<a href="{{ path('manage_top_category_index') }}" class="admin-btn admin-btn--outline mb-3"><i class="bi bi-arrow-left"></i> Retour à Top Catégorie</a>
+    <a href="{{ path('manage_top_category_index') }}" class="btn btn-outline-secondary btn-sm mb-3"><i class="bi bi-arrow-left me-1"></i>Retour à Top Catégorie</a>
 
-<div class="admin-card mb-3">
-    <h5 class="mb-3">Position de la pub dans ce méga-menu</h5>
-    <form method="post" action="{{ path('manage_top_category_flyout_ad_position', { id: rayon.id }) }}" class="d-flex gap-3 align-items-center">
-        <select name="flyout_ad_position" class="form-select" style="max-width: 220px;">
-            <option value="" {{ rayon.flyoutAdPosition is null ? 'selected' : '' }}>Aucune pub</option>
-            <option value="droite" {{ rayon.flyoutAdPosition == 'droite' ? 'selected' : '' }}>À droite</option>
-            <option value="bas" {{ rayon.flyoutAdPosition == 'bas' ? 'selected' : '' }}>En bas</option>
-        </select>
-        <button type="submit" class="admin-btn admin-btn--primary">Enregistrer</button>
-    </form>
-    {% if rayon.flyoutAdPosition == 'droite' %}
-        <small class="text-muted d-block mt-2">La pub se crée dans Publicités → zone "Flyout rayon — position droite" (220×400) → catégorie liée : "{{ rayon.name }}".</small>
-    {% elseif rayon.flyoutAdPosition == 'bas' %}
-        <small class="text-muted d-block mt-2">La pub se crée dans Publicités → zone "Flyout rayon — position bas" (480×120) → catégorie liée : "{{ rayon.name }}".</small>
-    {% endif %}
-</div>
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-megaphone text-primary me-2"></i>Position de la pub dans ce méga-menu</h6></div>
+        <div class="card-body">
+            <form method="post" action="{{ path('manage_top_category_flyout_ad_position', { id: rayon.id }) }}" class="d-flex gap-3 align-items-center">
+                <select name="flyout_ad_position" class="form-select" style="max-width: 220px;">
+                    <option value="" {{ rayon.flyoutAdPosition is null ? 'selected' : '' }}>Aucune pub</option>
+                    <option value="droite" {{ rayon.flyoutAdPosition == 'droite' ? 'selected' : '' }}>À droite</option>
+                    <option value="bas" {{ rayon.flyoutAdPosition == 'bas' ? 'selected' : '' }}>En bas</option>
+                </select>
+                <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+            </form>
+            {% if rayon.flyoutAdPosition == 'droite' %}
+                <small class="text-muted d-block mt-2">La pub se crée dans Publicités → zone "Flyout rayon — position droite" (220×400) → catégorie liée : "{{ rayon.name }}".</small>
+            {% elseif rayon.flyoutAdPosition == 'bas' %}
+                <small class="text-muted d-block mt-2">La pub se crée dans Publicités → zone "Flyout rayon — position bas" (480×120) → catégorie liée : "{{ rayon.name }}".</small>
+            {% endif %}
+        </div>
+    </div>
 
-<div class="admin-card">
-    <h5 class="mb-3">Colonnes épinglées <small class="text-muted">(affichées dans cet ordre — 4 max recommandé)</small></h5>
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-pin-angle text-primary me-2"></i>Colonnes épinglées <small class="text-muted fw-normal">(affichées dans cet ordre — 4 max recommandé)</small></h6></div>
+        <div class="card-body p-0">
+            {% if flyoutColumns|length == 0 %}
+                <p class="text-muted p-3 mb-0">Aucune colonne épinglée pour l'instant : le méga-menu affiche automatiquement les 4 premières sous-catégories de "{{ rayon.name }}" par défaut.</p>
+            {% else %}
+                <table class="table ctb-table mb-0">
+                    <tbody>
+                        {% for child in flyoutColumns %}
+                            <tr>
+                                <td style="width: 60px;">
+                                    <form method="post" action="{{ path('manage_top_category_flyout_column_move', { id: child.id, direction: 'up' }) }}" style="display:inline;">
+                                        <button type="submit" class="admin-btn admin-btn--outline"{{ loop.first ? ' disabled' }}><i class="bi bi-arrow-up"></i></button>
+                                    </form>
+                                    <form method="post" action="{{ path('manage_top_category_flyout_column_move', { id: child.id, direction: 'down' }) }}" style="display:inline;">
+                                        <button type="submit" class="admin-btn admin-btn--outline"{{ loop.last ? ' disabled' }}><i class="bi bi-arrow-down"></i></button>
+                                    </form>
+                                </td>
+                                <td>{{ child.name }}</td>
+                                <td style="width: 120px;">
+                                    <form method="post" action="{{ path('manage_top_category_flyout_column_toggle', { id: child.id }) }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Retirer</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+    </div>
 
-    {% if flyoutColumns|length == 0 %}
-        <p class="text-muted">Aucune colonne épinglée pour l'instant : le méga-menu affiche automatiquement les 4 premières sous-catégories de "{{ rayon.name }}" par défaut.</p>
-    {% endif %}
-
-    <table class="table admin-table">
-        <tbody>
-            {% for child in flyoutColumns %}
-                <tr>
-                    <td style="width: 60px;">
-                        <form method="post" action="{{ path('manage_top_category_flyout_column_move', { id: child.id, direction: 'up' }) }}" style="display:inline;">
-                            <button type="submit" class="btn btn-sm btn-light"{{ loop.first ? ' disabled' }}><i class="bi bi-arrow-up"></i></button>
-                        </form>
-                        <form method="post" action="{{ path('manage_top_category_flyout_column_move', { id: child.id, direction: 'down' }) }}" style="display:inline;">
-                            <button type="submit" class="btn btn-sm btn-light"{{ loop.last ? ' disabled' }}><i class="bi bi-arrow-down"></i></button>
-                        </form>
-                    </td>
-                    <td>{{ child.name }}</td>
-                    <td style="width: 120px;">
-                        <form method="post" action="{{ path('manage_top_category_flyout_column_toggle', { id: child.id }) }}">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Retirer</button>
-                        </form>
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <hr class="my-4">
-
-    <h6>Toutes les sous-catégories de "{{ rayon.name }}"</h6>
-    <table class="table admin-table">
-        <tbody>
-            {% for child in children %}
-                {% if not child.flyoutColumnFeatured %}
-                    <tr>
-                        <td>{{ child.name }}</td>
-                        <td style="width: 120px;">
-                            <form method="post" action="{{ path('manage_top_category_flyout_column_toggle', { id: child.id }) }}">
-                                <button type="submit" class="btn btn-sm btn-primary">Épingler</button>
-                            </form>
-                        </td>
-                    </tr>
-                {% endif %}
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+    <div class="sw-card">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-list-ul text-primary me-2"></i>Toutes les sous-catégories de "{{ rayon.name }}"</h6></div>
+        <div class="card-body p-0">
+            <table class="table ctb-table mb-0">
+                <tbody>
+                    {% for child in children %}
+                        {% if not child.flyoutColumnFeatured %}
+                            <tr>
+                                <td>{{ child.name }}</td>
+                                <td style="width: 120px;">
+                                    <form method="post" action="{{ path('manage_top_category_flyout_column_toggle', { id: child.id }) }}">
+                                        <button type="submit" class="btn btn-sm btn-primary">Épingler</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    {% else %}
+                        <tr><td class="text-muted">Aucune sous-catégorie.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 {% endblock %}

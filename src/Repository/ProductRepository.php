@@ -169,9 +169,9 @@ class ProductRepository extends ServiceEntityRepository
     }
 
     /** @return Product[] */
-    public function findFiltered(?string $term, ?array $categoryIds, ?string $status, ?string $condition, string $sort, string $dir, int $page, int $perPage, ?int $sellerProfileId = null): array
+    public function findFiltered(?string $term, ?array $categoryIds, ?string $status, ?string $condition, string $sort, string $dir, int $page, int $perPage, ?int $sellerProfileId = null, ?array $unitIds = null): array
     {
-        $qb = $this->buildFilterQuery($term, $categoryIds, $status, $condition, $sellerProfileId);
+        $qb = $this->buildFilterQuery($term, $categoryIds, $status, $condition, $sellerProfileId, $unitIds);
         $dirSql = strtoupper($dir) === 'ASC' ? 'ASC' : 'DESC';
 
         // leftJoin + addSelect : précharge la 1ère image en une seule requête,
@@ -215,10 +215,10 @@ class ProductRepository extends ServiceEntityRepository
         return iterator_to_array(new \Doctrine\ORM\Tools\Pagination\Paginator($query, true));
     }
 
-    public function countFiltered(?string $term, ?array $categoryIds, ?string $status, ?string $condition, ?int $sellerProfileId = null): int
+    public function countFiltered(?string $term, ?array $categoryIds, ?string $status, ?string $condition, ?int $sellerProfileId = null, ?array $unitIds = null): int
     {
-        return (int) $this->buildFilterQuery($term, $categoryIds, $status, $condition, $sellerProfileId)
-            ->select('COUNT(p.id)')
+        return (int) $this->buildFilterQuery($term, $categoryIds, $status, $condition, $sellerProfileId, $unitIds)
+            ->select('COUNT(DISTINCT p.id)')
             ->getQuery()
             ->getSingleScalarResult();
     }
@@ -251,12 +251,26 @@ class ProductRepository extends ServiceEntityRepository
         return $map;
     }
 
-    private function buildFilterQuery(?string $term, ?array $categoryIds, ?string $status, ?string $condition, ?int $sellerProfileId = null)
+    private function buildFilterQuery(?string $term, ?array $categoryIds, ?string $status, ?string $condition, ?int $sellerProfileId = null, ?array $unitIds = null)
     {
         $qb = $this->createQueryBuilder('p');
 
         if ($term) {
-            $qb->andWhere('p.title LIKE :term OR p.reference LIKE :term')->setParameter('term', '%' . $term . '%');
+            $conditions = $qb->expr()->orX(
+                $qb->expr()->like('p.title', ':term'),
+                $qb->expr()->like('p.reference', ':term'),
+            );
+            $qb->setParameter('term', '%' . $term . '%');
+
+            if (preg_match('/(\d+)/', $term, $m)) {
+                $kbzId = (int) ltrim($m[1], '0');
+                if ($kbzId > 0) {
+                    $conditions->add($qb->expr()->eq('p.id', ':kbzId'));
+                    $qb->setParameter('kbzId', $kbzId);
+                }
+            }
+
+            $qb->andWhere($conditions);
         }
         if ($categoryIds) {
             $qb->andWhere('p.category IN (:categoryIds)')->setParameter('categoryIds', $categoryIds);
@@ -269,6 +283,11 @@ class ProductRepository extends ServiceEntityRepository
         }
         if ($sellerProfileId) {
             $qb->andWhere('p.sellerProfile = :sellerProfileId')->setParameter('sellerProfileId', $sellerProfileId);
+        }
+        if ($unitIds) {
+            $qb->join('p.sellerProfile', 'spu')
+                ->join('spu.deliveryZones', 'dz')
+                ->andWhere('dz.id IN (:unitIds)')->setParameter('unitIds', $unitIds);
         }
 
         return $qb;
@@ -571,13 +590,25 @@ class ProductRepository extends ServiceEntityRepository
 
     public function searchInStockByTerm(string $term, int $limit = 15): array
     {
-        return $this->createQueryBuilder('p')
-            ->andWhere('p.title LIKE :term')
-            ->andWhere('p.quantity > 0')
-            ->setParameter('term', '%' . $term . '%')
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
+        $qb = $this->createQueryBuilder('p')
+            ->andWhere('p.quantity > 0');
+
+        $conditions = $qb->expr()->orX(
+            $qb->expr()->like('p.title', ':term'),
+        );
+        $qb->setParameter('term', '%' . $term . '%');
+
+        if (preg_match('/(\d+)/', $term, $m)) {
+            $kbzId = (int) ltrim($m[1], '0');
+            if ($kbzId > 0) {
+                $conditions->add($qb->expr()->eq('p.id', ':kbzId'));
+                $qb->setParameter('kbzId', $kbzId);
+            }
+        }
+
+        $qb->andWhere($conditions)->setMaxResults($limit);
+
+        return $qb->getQuery()->getResult();
     }
 
 

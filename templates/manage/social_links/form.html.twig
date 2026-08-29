@@ -5,31 +5,144 @@
 {% block page_title %}{{ link ? 'Modifier' : 'Ajouter' }} un réseau social{% endblock %}
 
 {% block body %}
-<div class="admin-card" style="max-width:500px;">
-    <form method="post">
-        <div class="mb-3">
-            <label class="form-label">Nom (ex. Facebook, TikTok, WhatsApp...)</label>
-            <input type="text" name="platform" class="form-control" value="{{ link ? link.platform : '' }}" required>
+    <a href="{{ path('manage_social_links_index') }}" class="btn btn-outline-secondary btn-sm mb-3"><i class="bi bi-arrow-left me-1"></i>Retour à la liste</a>
+
+    <div class="row g-3">
+        <div class="col-xl-6">
+            <form method="post">
+                <div class="sw-card">
+                    <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-info-circle text-primary me-2"></i>Informations</h6></div>
+                    <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nom (ex. Facebook, TikTok, WhatsApp...)</label>
+                        <input type="text" name="platform" class="form-control" value="{{ link ? link.platform : '' }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Classe d'icône Bootstrap Icons</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <span id="iconPreview" style="display:inline-flex;width:40px;height:40px;align-items:center;justify-content:center;border-radius:6px;background:{{ link ? link.colorHex : '#3b5998' }};color:#fff;font-size:20px;flex-shrink:0;">
+                                <i class="{{ link ? link.iconClass : 'bi bi-facebook' }}" id="iconPreviewIcon"></i>
+                            </span>
+                            <input type="text" name="icon_class" id="iconClassInput" class="form-control" value="{{ link ? link.iconClass : 'bi bi-facebook' }}" required>
+                        </div>
+                        <small class="text-muted">Choisis une icône ci-dessous, ou tape une classe manuellement. Liste complète : <a href="https://icons.getbootstrap.com" target="_blank">icons.getbootstrap.com</a></small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Couleur de fond</label>
+                        <input type="color" name="color_hex" id="colorHexInput" class="form-control form-control-color" value="{{ link ? link.colorHex : '#3b5998' }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Lien</label>
+                        <input type="url" name="url" class="form-control" placeholder="https://..." value="{{ link ? link.url : '' }}" required>
+                    </div>
+
+                    <div class="mb-0 form-check">
+                        <input type="checkbox" name="active" value="1" class="form-check-input" id="linkActive" {{ not link or link.active ? 'checked' : '' }}>
+                        <label class="form-check-label" for="linkActive">Actif</label>
+                    </div>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-success">Enregistrer</button>
+                    <a href="{{ path('manage_social_links_index') }}" class="btn btn-outline-secondary">Annuler</a>
+                </div>
+            </form>
         </div>
-        <div class="mb-3">
-            <label class="form-label">Classe d'icône Bootstrap Icons (ex. bi bi-facebook)</label>
-            <input type="text" name="icon_class" class="form-control" value="{{ link ? link.iconClass : 'bi bi-facebook' }}" required>
-            <small class="text-muted">Liste complète : <a href="https://icons.getbootstrap.com" target="_blank">icons.getbootstrap.com</a></small>
+
+        <div class="col-xl-6">
+            <div class="sw-card">
+                <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-grid-3x3-gap text-primary me-2"></i>Icônes réseaux sociaux disponibles</h6></div>
+                <div class="card-body">
+                    <input type="text" id="iconSearchInput" class="form-control mb-3" placeholder="Filtrer (ex: insta, you...)">
+                    <div id="iconGrid" class="d-flex flex-wrap gap-2"></div>
+                </div>
+            </div>
         </div>
-        <div class="mb-3">
-            <label class="form-label">Couleur de fond</label>
-            <input type="color" name="color_hex" class="form-control form-control-color" value="{{ link ? link.colorHex : '#3b5998' }}">
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Lien</label>
-            <input type="url" name="url" class="form-control" placeholder="https://..." value="{{ link ? link.url : '' }}" required>
-        </div>
-        <div class="mb-3 form-check">
-            <input type="checkbox" name="active" value="1" class="form-check-input" id="linkActive" {{ not link or link.active ? 'checked' : '' }}>
-            <label class="form-check-label" for="linkActive">Actif</label>
-        </div>
-        <button type="submit" class="admin-btn admin-btn--primary">Enregistrer</button>
-        <a href="{{ path('manage_social_links_index') }}" class="admin-btn admin-btn--outline">Annuler</a>
-    </form>
-</div>
+    </div>
+
+    <script>
+        const socialIcons = [
+            { name: 'Facebook', class: 'bi bi-facebook', color: '#1877F2' },
+            { name: 'Instagram', class: 'bi bi-instagram', color: '#E1306C' },
+            { name: 'Twitter / X', class: 'bi bi-twitter-x', color: '#000000' },
+            { name: 'Twitter (ancien)', class: 'bi bi-twitter', color: '#1DA1F2' },
+            { name: 'LinkedIn', class: 'bi bi-linkedin', color: '#0A66C2' },
+            { name: 'YouTube', class: 'bi bi-youtube', color: '#FF0000' },
+            { name: 'TikTok', class: 'bi bi-tiktok', color: '#000000' },
+            { name: 'WhatsApp', class: 'bi bi-whatsapp', color: '#25D366' },
+            { name: 'Pinterest', class: 'bi bi-pinterest', color: '#BD081C' },
+            { name: 'Snapchat', class: 'bi bi-snapchat', color: '#FFFC00' },
+            { name: 'Telegram', class: 'bi bi-telegram', color: '#26A5E4' },
+            { name: 'Discord', class: 'bi bi-discord', color: '#5865F2' },
+            { name: 'Reddit', class: 'bi bi-reddit', color: '#FF4500' },
+            { name: 'GitHub', class: 'bi bi-github', color: '#181717' },
+            { name: 'Spotify', class: 'bi bi-spotify', color: '#1DB954' },
+            { name: 'Twitch', class: 'bi bi-twitch', color: '#9146FF' },
+            { name: 'Vimeo', class: 'bi bi-vimeo', color: '#1AB7EA' },
+            { name: 'Behance', class: 'bi bi-behance', color: '#1769FF' },
+            { name: 'Dribbble', class: 'bi bi-dribbble', color: '#EA4C89' },
+            { name: 'Google', class: 'bi bi-google', color: '#4285F4' },
+            { name: 'Mastodon', class: 'bi bi-mastodon', color: '#6364FF' },
+            { name: 'Skype', class: 'bi bi-skype', color: '#00AFF0' },
+            { name: 'Messenger', class: 'bi bi-messenger', color: '#00B2FF' },
+            { name: 'Slack', class: 'bi bi-slack', color: '#4A154B' },
+            { name: 'Stack Overflow', class: 'bi bi-stack-overflow', color: '#F58025' },
+            { name: 'WordPress', class: 'bi bi-wordpress', color: '#21759B' },
+            { name: 'Yelp', class: 'bi bi-yelp', color: '#D32323' },
+            { name: 'Amazon', class: 'bi bi-amazon', color: '#FF9900' },
+            { name: 'Apple', class: 'bi bi-apple', color: '#000000' },
+            { name: 'Android', class: 'bi bi-android2', color: '#3DDC84' },
+            { name: 'Microsoft', class: 'bi bi-microsoft', color: '#5E5E5E' },
+            { name: 'PayPal', class: 'bi bi-paypal', color: '#003087' },
+            { name: 'Xbox', class: 'bi bi-xbox', color: '#107C10' },
+            { name: 'PlayStation', class: 'bi bi-playstation', color: '#003791' },
+            { name: 'Threads', class: 'bi bi-threads', color: '#000000' },
+            { name: 'Unity', class: 'bi bi-unity', color: '#000000' },
+        ];
+
+        const grid = document.getElementById('iconGrid');
+        const iconClassInput = document.getElementById('iconClassInput');
+        const colorHexInput = document.getElementById('colorHexInput');
+        const iconPreview = document.getElementById('iconPreview');
+        const iconPreviewIcon = document.getElementById('iconPreviewIcon');
+        const searchInput = document.getElementById('iconSearchInput');
+
+        function renderGrid(filter) {
+            grid.innerHTML = '';
+            socialIcons
+                .filter((icon) => !filter || icon.name.toLowerCase().includes(filter.toLowerCase()) || icon.class.toLowerCase().includes(filter.toLowerCase()))
+                .forEach((icon) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.title = icon.name;
+                    btn.className = 'btn btn-outline-secondary d-flex flex-column align-items-center justify-content-center';
+                    btn.style.width = '72px';
+                    btn.style.height = '64px';
+                    btn.innerHTML = '<i class="' + icon.class + '" style="font-size:22px;"></i><small style="font-size:9px;margin-top:4px;">' + icon.name + '</small>';
+                    btn.addEventListener('click', () => {
+                        iconClassInput.value = icon.class;
+                        colorHexInput.value = icon.color;
+                        iconPreview.style.background = icon.color;
+                        iconPreviewIcon.className = icon.class;
+                    });
+                    grid.appendChild(btn);
+                });
+        }
+        renderGrid('');
+
+        searchInput.addEventListener('input', function () {
+            renderGrid(this.value.trim());
+        });
+
+        iconClassInput.addEventListener('input', function () {
+            iconPreviewIcon.className = this.value;
+        });
+        colorHexInput.addEventListener('input', function () {
+            iconPreview.style.background = this.value;
+        });
+    </script>
 {% endblock %}

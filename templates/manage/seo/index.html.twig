@@ -1,0 +1,93 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Référencement (SEO){% endblock %}
+{% block page_icon %}bi-search{% endblock %}
+{% block page_title %}Référencement (SEO){% endblock %}
+
+{% block body %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h4 mb-0">Référencement (SEO)</h1>
+        <div class="d-flex gap-2">
+            <a href="{{ path('manage_share_stats') }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-share"></i> Statistiques de partage</a>
+            <a href="{{ path('manage_seo_new') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Nouvelle fiche SEO</a>
+        </div>
+    </div>
+    <p class="text-muted">
+        Une fiche SEO ici <strong>remplace</strong> le titre/description générés automatiquement pour cette page précise.
+        Sans fiche, chaque page (produit, catégorie...) garde son titre/description généré par défaut — rien à configurer pour que le site reste indexable.
+    </p>
+
+    <div class="row g-3 mb-4">
+        <div class="col-xl-4 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-blue h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-blue"><i class="bi bi-search"></i></div>
+                <div class="ctb-stat-val">{{ stats.total }}</div>
+                <div class="ctb-stat-label">Fiches SEO au total</div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-green h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-green"><i class="bi bi-house"></i></div>
+                <div class="ctb-stat-val">{{ stats.staticPages }}</div>
+                <div class="ctb-stat-label">Pages statiques configurées</div>
+            </div>
+        </div>
+    </div>
+
+    <form method="get" class="mb-3 d-flex align-items-center gap-2 flex-wrap">
+        <input type="text" name="q" class="form-control" style="max-width: 260px;" placeholder="Rechercher..." value="{{ searchTerm }}">
+        <select name="type" class="form-select" style="max-width: 220px;" onchange="this.form.submit()">
+            <option value="">— Tous types —</option>
+            {% for key, label in entityTypes %}
+                <option value="{{ key }}" {{ currentType == key ? 'selected' : '' }}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-search"></i> Filtrer</button>
+        <a href="{{ path('manage_seo_index') }}" class="btn btn-sm btn-outline-secondary">Réinitialiser</a>
+    </form>
+
+    <div class="sw-card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+    <table class="table ctb-table mb-0">
+        <thead>
+            <tr>
+                <th>Page / Fiche</th>
+                <th>Type</th>
+                <th>Titre SEO</th>
+                <th>Description</th>
+                <th>Indexation</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for override in overrides %}
+                <tr>
+                    <td>{{ override.adminLabel ?: (override.pageKey ?: ('#' ~ override.entityId)) }}</td>
+                    <td>{{ entityTypes[override.entityType] ?? override.entityType }}</td>
+                    <td>{{ override.metaTitle ?: '—' }}</td>
+                    <td>{{ override.metaDescription ? (override.metaDescription|length > 60 ? override.metaDescription|slice(0, 60) ~ '…' : override.metaDescription) : '—' }}</td>
+                    <td>
+                        {% if override.noIndex %}
+                            <span class="badge bg-danger">Non indexée</span>
+                        {% else %}
+                            <span class="badge bg-success">Indexée</span>
+                        {% endif %}
+                    </td>
+                    <td class="admin-actions">
+                        <a href="{{ path('manage_seo_show', {id: override.id}) }}" class="admin-btn admin-btn--outline"><i class="bi bi-eye"></i></a>
+                        <a href="{{ path('manage_seo_edit', {id: override.id}) }}" class="admin-btn admin-btn--outline"><i class="bi bi-pencil"></i></a>
+                        <form action="{{ path('manage_seo_delete', {id: override.id}) }}" method="post" onsubmit="return confirm('Supprimer cette fiche SEO ?');">
+                            <button type="submit" class="admin-btn admin-btn--outline"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="6" class="text-muted">Aucune fiche SEO pour l'instant.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

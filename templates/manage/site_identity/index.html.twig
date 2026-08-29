@@ -1,0 +1,127 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Identité visuelle{% endblock %}
+{% block page_icon %}bi-badge-hd{% endblock %}
+{% block page_title %}Identité visuelle — Favicon & icônes d'appli{% endblock %}
+
+{% block body %}
+    <p class="text-muted">
+        Upload une seule image (idéalement carrée, 512×512 minimum, fond transparent recommandé) — toutes les tailles de favicon
+        et d'icônes (navigateur, iOS, Android/PWA) sont générées automatiquement à partir de celle-ci.
+    </p>
+
+    <div class="row g-3">
+        <div class="col-xl-6">
+            <div class="sw-card">
+                <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-upload text-primary me-2"></i>Image source</h6></div>
+                <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">Nouvelle image source</label>
+
+                        <div class="admin-file-upload-group">
+                            <div class="admin-upload-thumb" id="sourceImageThumb" style="display:none;">
+                                <span class="admin-upload-thumb-label">Aperçu</span>
+                                <div class="admin-upload-thumb-inner">
+                                    <img id="sourceImagePreview" src="">
+                                    <button type="button" id="sourceImageRemoveBtn" class="admin-upload-remove"><i class="bi bi-x"></i></button>
+                                </div>
+                            </div>
+
+                            <div class="admin-upload-thumb">
+                                <span class="admin-upload-thumb-label">&nbsp;</span>
+                                <label class="admin-upload-dropzone" for="sourceImageInput">
+                                    <i class="bi bi-camera"></i>
+                                    <span>Upload</span>
+                                </label>
+                            </div>
+                            <input type="file" name="source_image_file" id="sourceImageInput" accept="image/png,image/jpeg,image/webp" class="admin-upload-input-hidden">
+                        </div>
+                        <small class="text-muted d-block mt-1">PNG, JPG ou WEBP. Le centre sera recadré en carré si l'image n'est pas déjà carrée.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Couleur de thème (barre d'adresse mobile, manifeste PWA)</label>
+                        <input type="color" name="theme_color" class="form-control form-control-color" value="{{ setting.themeColor }}">
+                    </div>
+                    <button type="submit" class="btn btn-success">Enregistrer et régénérer</button>
+                </form>
+
+                {% if setting.generatedAt %}
+                    <p class="text-muted small mt-3 mb-0">Dernière génération : {{ setting.generatedAt|date('d/m/Y H:i') }}</p>
+                {% endif %}
+                </div>
+            </div>
+
+            <div class="sw-card mt-3">
+                <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-exclamation-triangle text-primary me-2"></i>Non couvert par la génération auto</h6></div>
+                <div class="card-body">
+                    <p class="mb-0 small text-muted">
+                        <code>safari-pinned-tab.svg</code> (onglets épinglés Safari, quasi obsolète) doit être créé manuellement en SVG monochrome
+                        vectoriel et déposé dans <code>public/</code> si tu veux le couvrir — un favicon ne peut pas être converti automatiquement en vecteur.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-6">
+            <div class="sw-card">
+                <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-eye text-primary me-2"></i>Aperçus (taille réelle)</h6></div>
+                <div class="card-body">
+                    {% if setting.generatedAt %}
+                        <div class="mb-4">
+                            <div class="text-muted small mb-2">Onglet navigateur (16×16 / 32×32)</div>
+                            <div style="display:inline-flex;align-items:center;gap:6px;background:#dee1e6;border-radius:8px 8px 0 0;padding:8px 16px;">
+                                <img src="{{ asset('favicon-32x32.png') }}?v={{ setting.generatedAt.timestamp }}" style="width:16px;height:16px;">
+                                <span style="font-size:13px;color:#3c4043;">KongoBazar</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="text-muted small mb-2">iOS — écran d'accueil (180×180)</div>
+                            <img src="{{ asset('apple-touch-icon.png') }}?v={{ setting.generatedAt.timestamp }}" style="width:80px;height:80px;border-radius:18px;box-shadow:0 2px 8px rgba(0,0,0,0.15);">
+                        </div>
+
+                        <div class="mb-0">
+                            <div class="text-muted small mb-2">Android / PWA (192×192 et 512×512)</div>
+                            <div class="d-flex gap-3 align-items-end">
+                                <img src="{{ asset('android-chrome-192x192.png') }}?v={{ setting.generatedAt.timestamp }}" style="width:64px;height:64px;border-radius:14px;">
+                                <img src="{{ asset('android-chrome-512x512.png') }}?v={{ setting.generatedAt.timestamp }}" style="width:96px;height:96px;border-radius:20px;">
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">Aucune image générée pour l'instant — upload une image source pour voir les aperçus ici.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        (function () {
+            const input = document.getElementById('sourceImageInput');
+            const thumb = document.getElementById('sourceImageThumb');
+            const preview = document.getElementById('sourceImagePreview');
+            const removeBtn = document.getElementById('sourceImageRemoveBtn');
+
+            input.addEventListener('change', function () {
+                const file = this.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    preview.src = e.target.result;
+                    thumb.style.display = '';
+                };
+                reader.readAsDataURL(file);
+            });
+
+            removeBtn.addEventListener('click', function () {
+                input.value = '';
+                preview.src = '';
+                thumb.style.display = 'none';
+            });
+        })();
+    </script>
+{% endblock %}

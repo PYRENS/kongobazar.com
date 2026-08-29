@@ -14,6 +14,16 @@ class SellerProfileRepository extends ServiceEntityRepository
         parent::__construct($registry, SellerProfile::class);
     }
 
+    public function searchByName(string $term, int $limit = 15): array
+    {
+        return $this->createQueryBuilder('s')
+            ->andWhere('s.displayName LIKE :term')->setParameter('term', '%' . $term . '%')
+            ->orderBy('s.displayName', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
     public function findTopVendors(int $limit = 4): array
     {
         return $this->createQueryBuilder('s')

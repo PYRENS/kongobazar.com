@@ -1,0 +1,142 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Statistiques de partage{% endblock %}
+{% block page_icon %}bi-share{% endblock %}
+{% block page_title %}Statistiques de partage{% endblock %}
+
+{% block body %}
+    {% set platformLabels = {'facebook': 'Facebook', 'whatsapp': 'WhatsApp', 'x': 'X', 'copy_link': 'Lien copié', 'native': 'Autre (menu natif)'} %}
+    {% set platformColors = {'facebook': '#1877F2', 'whatsapp': '#25D366', 'x': '#000000', 'copy_link': '#5D87FF', 'native': '#94a3b8'} %}
+
+    <a href="{{ path('manage_seo_index') }}" class="btn btn-outline-secondary btn-sm mb-3"><i class="bi bi-arrow-left me-1"></i>Retour au référencement</a>
+
+    <div class="row g-3 mb-4">
+        <div class="col-xl-4 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-blue h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-blue"><i class="bi bi-share"></i></div>
+                <div class="ctb-stat-val">{{ totalShares }}</div>
+                <div class="ctb-stat-label">Partages au total</div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-green h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-green"><i class="bi bi-file-earmark-text"></i></div>
+                <div class="ctb-stat-val">{{ byPage|length }}</div>
+                <div class="ctb-stat-label">Pages partagées au moins une fois</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-xl-4">
+            <div class="sw-card h-100">
+                <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-pie-chart text-primary me-2"></i>Répartition par plateforme</h6></div>
+                <div class="card-body">
+                    {% if byPlatform|length > 0 %}
+                        <div class="chart-box-sm"><canvas id="platformChart"></canvas></div>
+                    {% else %}
+                        <p class="text-muted mb-0">Aucun partage enregistré pour l'instant.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-8">
+            <div class="sw-card h-100">
+                <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-bar-chart text-primary me-2"></i>Top pages partagées</h6></div>
+                <div class="card-body">
+                    {% if byPage|length > 0 %}
+                        <div class="chart-box"><canvas id="topPagesChart"></canvas></div>
+                    {% else %}
+                        <p class="text-muted mb-0">Aucun partage enregistré pour l'instant.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sw-card">
+        <div class="card-header"><h6 class="mb-0 fw-bold">Détail par page</h6></div>
+        <div class="card-body p-0">
+            <table class="table ctb-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Image</th>
+                        <th>Réf. KBZ</th>
+                        <th>Page</th>
+                        <th>Vendeur</th>
+                        <th>Province</th>
+                        <th>Facebook</th>
+                        <th>WhatsApp</th>
+                        <th>X</th>
+                        <th>Lien copié</th>
+                        <th>Autre</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in byPage %}
+                        <tr>
+                            <td>
+                                {% if row.image %}
+                                    <img src="{{ vich_uploader_asset(row.image, 'imageFile') }}" style="width:40px;height:40px;object-fit:cover;border-radius:4px;">
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-muted" style="font-size:12px;">{{ row.kbzReference ?: '—' }}</td>
+                            <td>
+                                {% if row.articleUrl %}
+                                    <a href="{{ row.articleUrl }}">{{ row.label }}</a>
+                                {% else %}
+                                    {{ row.label }}
+                                {% endif %}
+                            </td>
+                            <td>{{ row.sellerName ?: '—' }}</td>
+                            <td>{{ row.province ?: '—' }}</td>
+                            <td>{{ row.platforms.facebook|default(0) }}</td>
+                            <td>{{ row.platforms.whatsapp|default(0) }}</td>
+                            <td>{{ row.platforms.x|default(0) }}</td>
+                            <td>{{ row.platforms.copy_link|default(0) }}</td>
+                            <td>{{ row.platforms.native|default(0) }}</td>
+                            <td><strong>{{ row.total }}</strong></td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="11" class="text-muted">Aucun partage enregistré pour l'instant.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script>
+        {% if byPlatform|length > 0 %}
+            new Chart(document.getElementById('platformChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: [{% for row in byPlatform %}'{{ platformLabels[row.platform]|default(row.platform)|e('js') }}',{% endfor %}],
+                    datasets: [{
+                        data: [{% for row in byPlatform %}{{ row.total }},{% endfor %}],
+                        backgroundColor: [{% for row in byPlatform %}'{{ platformColors[row.platform]|default('#ccc') }}',{% endfor %}],
+                    }],
+                },
+                options: { maintainAspectRatio: false },
+            });
+        {% endif %}
+
+        {% if byPage|length > 0 %}
+            new Chart(document.getElementById('topPagesChart'), {
+                type: 'bar',
+                data: {
+                    labels: [{% for row in byPage|slice(0, 10) %}'{{ row.label|e('js') }}',{% endfor %}],
+                    datasets: [{
+                        label: 'Partages',
+                        data: [{% for row in byPage|slice(0, 10) %}{{ row.total }},{% endfor %}],
+                        backgroundColor: '#5D87FF',
+                    }],
+                },
+                options: { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } } },
+            });
+        {% endif %}
+    </script>
+{% endblock %}

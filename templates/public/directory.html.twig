@@ -1,7 +1,7 @@
 {% extends 'public/base.html.twig' %}
 
-{% block title %}Notre Réseau — KongoBazar{% endblock %}
-{% block meta_description %}Trouvez les vendeurs Pro, boutiques vérifiées et points relais KongoBazar près de chez vous, à Kinshasa et bientôt dans toute la RDC.{% endblock %}
+{% block title %}{{ seoData and seoData.metaTitle ? seoData.metaTitle : 'Notre Réseau — KongoBazar' }}{% endblock %}
+{% block meta_description %}{{ seoData and seoData.metaDescription ? seoData.metaDescription : 'Trouvez les vendeurs Pro, boutiques vérifiées et points relais KongoBazar près de chez vous, à Kinshasa et bientôt dans toute la RDC.' }}{% endblock %}
 
 {% block body %}
 <div class="container-kb" style="padding: 30px 0;">

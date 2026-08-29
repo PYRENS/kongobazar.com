@@ -32,3 +32,13 @@ vich_uploader:
             uri_prefix: /media/part_catalog_images
             upload_destination: '%env(UPLOADS_PUBLIC_PATH)%/part_catalog_images'
             namer: Vich\UploaderBundle\Naming\SmartUniqueNamer
+
+        seo_og_images:
+            uri_prefix: /media/seo_og
+            upload_destination: '%env(UPLOADS_PUBLIC_PATH)%/seo_og'
+            namer: Vich\UploaderBundle\Naming\SmartUniqueNamer
+    
+        site_identity_source:
+            uri_prefix: /media/site_identity
+            upload_destination: '%env(UPLOADS_PUBLIC_PATH)%/site_identity'
+            namer: Vich\UploaderBundle\Naming\SmartUniqueNamer

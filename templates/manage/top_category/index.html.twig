@@ -5,14 +5,41 @@
 {% block page_title %}Top Catégorie — sidebar "Les Rayons"{% endblock %}
 
 {% block body %}
-<div class="admin-card">
-    <p class="text-muted mb-3">
-        Coche/décoche pour afficher ou masquer un rayon dans la sidebar "Top Rayons" (page d'accueil), et utilise les flèches pour changer son ordre.
-        Clique sur "Méga-menu" pour configurer le flyout qui s'ouvre au survol de ce rayon.
-    </p>
-
-    <div id="topCategoryTable" data-live-table>
-        {% include 'manage/top_category/_table.html.twig' %}
+    <div class="row g-3 mb-4">
+        <div class="col-xl-4 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-blue h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-blue"><i class="bi bi-diagram-3"></i></div>
+                <div class="ctb-stat-val">{{ stats.total }}</div>
+                <div class="ctb-stat-label">Rayons au total</div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-green h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-green"><i class="bi bi-star-fill"></i></div>
+                <div class="ctb-stat-val">{{ stats.inTop }}</div>
+                <div class="ctb-stat-label">Dans "Top Rayons"</div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-purple h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-purple"><i class="bi bi-megaphone"></i></div>
+                <div class="ctb-stat-val">{{ stats.withAd }}</div>
+                <div class="ctb-stat-label">Avec une pub configurée</div>
+            </div>
+        </div>
     </div>
-</div>
+
+    <div class="sw-card">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-star text-primary me-2"></i>Rayons — sidebar "Top Rayons"</h6></div>
+        <div class="card-body p-0">
+            <p class="text-muted p-3 mb-0">
+                Coche/décoche pour afficher ou masquer un rayon dans la sidebar "Top Rayons" (page d'accueil), et utilise les flèches pour changer son ordre.
+                Clique sur "Méga-menu" pour configurer le flyout qui s'ouvre au survol de ce rayon.
+            </p>
+
+            <div id="topCategoryTable" data-live-table>
+                {% include 'manage/top_category/_table.html.twig' %}
+            </div>
+        </div>
+    </div>
 {% endblock %}

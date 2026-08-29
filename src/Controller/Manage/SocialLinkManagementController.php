@@ -17,9 +17,15 @@ class SocialLinkManagementController extends AbstractController
     #[Route('/reseaux-sociaux', name: 'manage_social_links_index', host: 'manage.kongobazar.com', methods: ['GET'])]
     public function index(SocialLinkRepository $repository, SocialFloatSettingRepository $settingRepository): Response
     {
+        $links = $repository->findAllOrdered();
+
         return $this->render('manage/social_links/index.html.twig', [
-            'links' => $repository->findAllOrdered(),
+            'links' => $links,
             'setting' => $settingRepository->getSingleton(),
+            'stats' => [
+                'total' => count($links),
+                'active' => count(array_filter($links, fn ($l) => $l->isActive())),
+            ],
         ]);
     }
 

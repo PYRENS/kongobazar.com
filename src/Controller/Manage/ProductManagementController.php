@@ -36,13 +36,14 @@ class ProductManagementController extends AbstractController
     }
 
     #[Route('/produits', name: 'manage_products_index', host: 'manage.kongobazar.com', methods: ['GET'])]
-    public function index(Request $request, ProductRepository $repository, CategoryRepository $categoryRepository, SellerProfileRepository $sellerProfileRepository): Response
+    public function index(Request $request, ProductRepository $repository, CategoryRepository $categoryRepository, SellerProfileRepository $sellerProfileRepository, EntityManagerInterface $em): Response
     {
         $term = $request->query->get('q') ?: null;
         $categoryId = $request->query->get('category') ? (int) $request->query->get('category') : null;
         $status = $request->query->get('status') ?: null;
         $condition = $request->query->get('condition') ?: null;
         $sellerProfileId = $request->query->get('sellerProfile') ? (int) $request->query->get('sellerProfile') : null;
+        $provinceId = $request->query->get('province') ? (int) $request->query->get('province') : null;
         $sort = $request->query->get('sort', 'createdAt');
         $dir = $request->query->get('dir', 'DESC');
         $page = max(1, (int) $request->query->get('page', 1));
@@ -50,8 +51,9 @@ class ProductManagementController extends AbstractController
             ? (int) $request->query->get('perPage', 20) : 20;
 
         $categoryIds = $this->resolveCategoryIdsWithDescendants($categoryId, $categoryRepository);
+        $unitIds = $this->resolveAdministrativeUnitIdsWithDescendants($provinceId, $em);
 
-        $total = $repository->countFiltered($term, $categoryIds, $status, $condition, $sellerProfileId);
+        $total = $repository->countFiltered($term, $categoryIds, $status, $condition, $sellerProfileId, $unitIds);
 
         $stats = [
             'total' => $repository->countFiltered(null, null, null, null),
@@ -63,7 +65,7 @@ class ProductManagementController extends AbstractController
         return $this->render('manage/products/index.html.twig', [
             'stats' => $stats,
             'vehicleSectionLabels' => $categoryRepository->findVehicleSectionLabelMap(),
-            'products' => $repository->findFiltered($term, $categoryIds, $status, $condition, $sort, $dir, $page, $perPage, $sellerProfileId),
+            'products' => $repository->findFiltered($term, $categoryIds, $status, $condition, $sort, $dir, $page, $perPage, $sellerProfileId, $unitIds),
             'categories' => $categoryRepository->findBy([], ['name' => 'ASC']),
             'rootCategories' => $categoryRepository->findChildrenOf(null),
             'searchTerm' => $term,
@@ -72,6 +74,7 @@ class ProductManagementController extends AbstractController
             'currentCondition' => $condition,
             'currentSellerProfile' => $sellerProfileId,
             'currentSellerName' => $sellerProfileId ? ($sellerProfileRepository->find($sellerProfileId)?->getDisplayName()) : null,
+            'currentProvince' => $provinceId,
             'currentSort' => $sort,
             'currentDir' => $dir,
             'page' => $page,
@@ -82,12 +85,14 @@ class ProductManagementController extends AbstractController
     }
 
     #[Route('/produits/liste-fragment', name: 'manage_products_index_fragment', host: 'manage.kongobazar.com', methods: ['GET'])]
-    public function indexFragment(Request $request, ProductRepository $repository, CategoryRepository $categoryRepository): Response
+    public function indexFragment(Request $request, ProductRepository $repository, CategoryRepository $categoryRepository, EntityManagerInterface $em): Response
     {
         $term = $request->query->get('q') ?: null;
         $categoryId = $request->query->get('category') ? (int) $request->query->get('category') : null;
         $status = $request->query->get('status') ?: null;
         $condition = $request->query->get('condition') ?: null;
+        $sellerProfileId = $request->query->get('sellerProfile') ? (int) $request->query->get('sellerProfile') : null;
+        $provinceId = $request->query->get('province') ? (int) $request->query->get('province') : null;
         $sort = $request->query->get('sort', 'createdAt');
         $dir = $request->query->get('dir', 'DESC');
         $page = max(1, (int) $request->query->get('page', 1));
@@ -95,13 +100,14 @@ class ProductManagementController extends AbstractController
             ? (int) $request->query->get('perPage', 20) : 20;
 
         $categoryIds = $this->resolveCategoryIdsWithDescendants($categoryId, $categoryRepository);
+        $unitIds = $this->resolveAdministrativeUnitIdsWithDescendants($provinceId, $em);
 
-        $total = $repository->countFiltered($term, $categoryIds, $status, $condition, null);
+        $total = $repository->countFiltered($term, $categoryIds, $status, $condition, $sellerProfileId, $unitIds);
         $pages = max(1, (int) ceil($total / $perPage));
 
         return $this->json([
             'rowsHtml' => $this->renderView('manage/products/_index_rows.html.twig', [
-                'products' => $repository->findFiltered($term, $categoryIds, $status, $condition, $sort, $dir, $page, $perPage, null),
+                'products' => $repository->findFiltered($term, $categoryIds, $status, $condition, $sort, $dir, $page, $perPage, $sellerProfileId, $unitIds),
                 'vehicleSectionLabels' => $categoryRepository->findVehicleSectionLabelMap(),
             ]),
             'footerInfo' => $total . ' produit' . ($total != 1 ? 's' : '') . ' au total — page ' . $page . ' / ' . $pages,
@@ -125,6 +131,17 @@ class ProductManagementController extends AbstractController
         }
 
         return $categoryIds;
+    }
+
+    private function resolveAdministrativeUnitIdsWithDescendants(?int $unitId, EntityManagerInterface $em): ?array
+    {
+        if (!$unitId) {
+            return null;
+        }
+
+        $unit = $em->getRepository(\App\Entity\AdministrativeUnit::class)->find($unitId);
+
+        return $unit ? array_map(fn ($u) => $u->getId(), $unit->getDescendantUnits()) : [$unitId];
     }
 
     #[Route('/produits/nouveau', name: 'manage_products_new', host: 'manage.kongobazar.com', methods: ['GET'])]

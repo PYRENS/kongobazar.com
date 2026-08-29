@@ -86,7 +86,15 @@ class AdministrativeUnitRepository extends ServiceEntityRepository
             $qb->andWhere('a.parent IS NULL');
         }
 
-        return $qb->getQuery()->getResult();
+        $results = $qb->getQuery()->getResult();
+
+        // Kinshasa toujours en tête de liste au niveau racine (province la plus utilisée).
+        if (!$parentId) {
+            usort($results, fn ($a, $b) => (str_starts_with(mb_strtolower($a->getName()), 'kinshasa') ? -1 : 0)
+                <=> (str_starts_with(mb_strtolower($b->getName()), 'kinshasa') ? -1 : 0));
+        }
+
+        return $results;
     }
 
     public function countChildrenOf(int $unitId): int

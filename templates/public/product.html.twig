@@ -1,9 +1,11 @@
 {% extends 'public/base.html.twig' %}
 
-{% block title %}{{ product.title }} — KongoBazar{% endblock %}
-{% block meta_description %}{{ product.description|striptags|slice(0, 155) }}{% endblock %}
+{% block title %}{{ seoData and seoData.metaTitle ? seoData.metaTitle : (product.title ~ ' — KongoBazar') }}{% endblock %}
+{% block meta_description %}{{ seoData and seoData.metaDescription ? seoData.metaDescription : (product.description|striptags|slice(0, 155)) }}{% endblock %}
 {% block og_image %}
-    {% if product.images|length > 0 %}
+    {% if seoData and seoData.ogImageUrl %}
+        {{ app.request.schemeAndHttpHost ~ seoData.ogImageUrl }}
+    {% elseif product.images|length > 0 %}
         {{ app.request.schemeAndHttpHost ~ vich_uploader_asset(product.images|first, 'imageFile') }}
     {% else %}
         {{ app.request.schemeAndHttpHost ~ asset('images/og-default.jpg') }}
@@ -165,11 +167,35 @@
                 </span>
             </div>
 
-            <button type="button" class="product-share-btn" data-share-btn
-                    data-share-title="{{ product.title }}"
-                    data-share-text="{{ product.title }} — {{ product.basePrice }} {{ product.currency }} sur KongoBazar">
-                <i class="bi bi-share"></i> {{ 'product.share'|trans }}
-            </button>
+            <div class="share-menu-wrap" data-share-menu>
+                <button type="button" class="product-share-btn" data-share-toggle>
+                    <i class="bi bi-share"></i> {{ 'product.share'|trans }}
+                </button>
+                <div class="share-menu-popover" data-share-popover hidden
+                     data-entity-type="product"
+                     data-entity-id="{{ product.id }}"
+                     data-admin-label="{{ product.title }}"
+                     data-share-title="{{ product.title }}"
+                     data-share-text="{{ product.title }} — {{ product.basePrice }} {{ product.currency }} sur KongoBazar">
+                    <a class="share-menu-item" data-share-platform="facebook" target="_blank" rel="noopener">
+                        <i class="bi bi-facebook"></i> Facebook
+                    </a>
+                    <a class="share-menu-item" data-share-platform="whatsapp" target="_blank" rel="noopener">
+                        <i class="bi bi-whatsapp"></i> WhatsApp
+                    </a>
+                    <a class="share-menu-item" data-share-platform="x" target="_blank" rel="noopener">
+                        <i class="bi bi-twitter-x"></i> X
+                    </a>
+                    <button type="button" class="share-menu-item" data-share-platform="copy_link">
+                        <i class="bi bi-link-45deg"></i> Copier le lien
+                    </button>
+                    {% if is_native_share_available is not defined %}
+                    <button type="button" class="share-menu-item share-menu-item--native" data-share-platform="native" data-native-only>
+                        <i class="bi bi-three-dots"></i> Plus d'options
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
             {% if product.sellerProfile %}
                 <a href="{{ path('partner_show', { slug: product.sellerProfile.slug }) }}" class="product-seller-card">
                     {% if product.sellerProfile.logoName %}

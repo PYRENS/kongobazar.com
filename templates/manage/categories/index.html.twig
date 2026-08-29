@@ -158,6 +158,7 @@
                                         </td>
                                         <td>
                                             <div class="ctb-act-row">
+                                                <a href="{{ path('manage_categories_show', { id: cat.id }) }}" class="ctb-act-btn" title="Voir"><i class="bi bi-eye"></i></a>
                                                 <a href="{{ path('manage_categories_edit', { id: cat.id }) }}" class="ctb-act-btn" title="Modifier"><i class="bi bi-pencil"></i></a>
                                                 <form action="{{ path('manage_categories_delete', { id: cat.id }) }}" method="post"
                                                       onsubmit="return confirm('Supprimer {{ cat.name }} et toutes ses sous-catégories ? Irréversible.');">

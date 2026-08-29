@@ -15,17 +15,44 @@
 
     <div class="d-flex justify-content-between align-items-center mb-3 mt-2">
         <h1 class="h4 mb-0">Caractéristiques de {{ category.name }}</h1>
-        <div>
-            <a href="{{ path('manage_category_attributes_duplicate_form', {categoryId: category.id}) }}" class="admin-btn admin-btn--outline">
+        <div class="d-flex gap-2">
+            <a href="{{ path('manage_category_attributes_duplicate_form', {categoryId: category.id}) }}" class="btn btn-outline-primary btn-sm">
                 <i class="bi bi-files"></i> Dupliquer depuis une autre catégorie
             </a>
-            <a href="{{ path('manage_category_attributes_new', {categoryId: category.id}) }}" class="admin-btn admin-btn--primary">
+            <a href="{{ path('manage_category_attributes_new', {categoryId: category.id}) }}" class="btn btn-primary btn-sm">
                 <i class="bi bi-plus-lg"></i> Nouvelle caractéristique
             </a>
         </div>
     </div>
 
-    <table class="admin-table">
+    <div class="row g-3 mb-4">
+        <div class="col-xl-4 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-blue h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-blue"><i class="bi bi-sliders"></i></div>
+                <div class="ctb-stat-val">{{ stats.total }}</div>
+                <div class="ctb-stat-label">Caractéristiques au total</div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-orange h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-orange"><i class="bi bi-exclamation-circle"></i></div>
+                <div class="ctb-stat-val">{{ stats.required }}</div>
+                <div class="ctb-stat-label">Obligatoires</div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-green h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-green"><i class="bi bi-funnel"></i></div>
+                <div class="ctb-stat-val">{{ stats.filterable }}</div>
+                <div class="ctb-stat-label">Utilisables comme filtre</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sw-card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+    <table class="table ctb-table mb-0">
         <thead>
             <tr>
                 <th>Nom</th>
@@ -71,4 +98,7 @@
             {% endfor %}
         </tbody>
     </table>
+            </div>
+        </div>
+    </div>
 {% endblock %}

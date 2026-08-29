@@ -1,7 +1,8 @@
 {% extends 'public/base.html.twig' %}
 
-{% block title %}{{ title }} — KongoBazar{% endblock %}
-{% block meta_description %}{{ description|default(title ~ ' sur KongoBazar, la marketplace de référence en RDC.') }}{% endblock %}
+{% set seoData = seoData ?? {'noIndex': true, 'noFollow': false} %}
+{% block title %}{{ seoData.metaTitle ?? (title ~ ' — KongoBazar') }}{% endblock %}
+{% block meta_description %}{{ seoData.metaDescription ?? description|default(title ~ ' sur KongoBazar, la marketplace de référence en RDC.') }}{% endblock %}
 
 {% block body %}
     <div class="container-kb" style="padding: 40px 0;">

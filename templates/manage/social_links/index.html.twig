@@ -5,32 +5,53 @@
 {% block page_title %}Réseaux sociaux flottants{% endblock %}
 
 {% block body %}
-<div class="admin-card mb-3">
-    <h5 class="mb-3">Visibilité selon la résolution</h5>
-    <form method="post" action="{{ path('manage_social_links_visibility') }}" class="d-flex gap-4 align-items-center flex-wrap">
-        <div class="form-check">
-            <input type="checkbox" name="show_desktop" value="1" class="form-check-input" id="showDesktop" {{ setting.showOnDesktop ? 'checked' : '' }}>
-            <label class="form-check-label" for="showDesktop">Desktop</label>
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-blue h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-blue"><i class="bi bi-share"></i></div>
+                <div class="ctb-stat-val">{{ stats.total }}</div>
+                <div class="ctb-stat-label">Réseaux configurés</div>
+            </div>
         </div>
-        <div class="form-check">
-            <input type="checkbox" name="show_tablet" value="1" class="form-check-input" id="showTablet" {{ setting.showOnTablet ? 'checked' : '' }}>
-            <label class="form-check-label" for="showTablet">Tablette</label>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-green h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-green"><i class="bi bi-check-circle-fill"></i></div>
+                <div class="ctb-stat-val">{{ stats.active }}</div>
+                <div class="ctb-stat-label">Actifs</div>
+            </div>
         </div>
-        <div class="form-check">
-            <input type="checkbox" name="show_mobile" value="1" class="form-check-input" id="showMobile" {{ setting.showOnMobile ? 'checked' : '' }}>
-            <label class="form-check-label" for="showMobile">Mobile</label>
-        </div>
-        <button type="submit" class="admin-btn admin-btn--primary">Enregistrer</button>
-    </form>
-</div>
+    </div>
 
-<div class="admin-card">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="mb-0">Icônes</h5>
-        <a href="{{ path('manage_social_links_new') }}" class="admin-btn admin-btn--primary"><i class="bi bi-plus"></i> Ajouter</a>
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-display text-primary me-2"></i>Visibilité selon la résolution</h6></div>
+        <div class="card-body">
+            <form method="post" action="{{ path('manage_social_links_visibility') }}" class="d-flex gap-4 align-items-center flex-wrap">
+                <div class="form-check">
+                    <input type="checkbox" name="show_desktop" value="1" class="form-check-input" id="showDesktop" {{ setting.showOnDesktop ? 'checked' : '' }}>
+                    <label class="form-check-label" for="showDesktop">Desktop</label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" name="show_tablet" value="1" class="form-check-input" id="showTablet" {{ setting.showOnTablet ? 'checked' : '' }}>
+                    <label class="form-check-label" for="showTablet">Tablette</label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" name="show_mobile" value="1" class="form-check-input" id="showMobile" {{ setting.showOnMobile ? 'checked' : '' }}>
+                    <label class="form-check-label" for="showMobile">Mobile</label>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
+            </form>
+        </div>
     </div>
-    <div id="socialLinksTable" data-live-table>
-        {% include 'manage/social_links/_table.html.twig' %}
+
+    <div class="sw-card">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <h6 class="mb-0 fw-bold"><i class="bi bi-share text-primary me-2"></i>Icônes</h6>
+            <a href="{{ path('manage_social_links_new') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg"></i> Ajouter</a>
+        </div>
+        <div class="card-body p-0">
+            <div id="socialLinksTable" data-live-table>
+                {% include 'manage/social_links/_table.html.twig' %}
+            </div>
+        </div>
     </div>
-</div>
 {% endblock %}

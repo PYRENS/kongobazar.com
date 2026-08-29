@@ -2,9 +2,13 @@
 
 namespace App\Controller\Manage;
 
+use App\Entity\AdministrativeUnit;
+use App\Entity\Category;
 use App\Entity\DiscountCampaign;
 use App\Repository\DiscountCampaignRepository;
+use App\Repository\CategoryRepository;
 use App\Repository\ProductRepository;
+use App\Repository\SellerProfileRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -16,11 +20,143 @@ use Symfony\Component\Routing\Attribute\Route;
 class DiscountCampaignManagementController extends AbstractController
 {
     #[Route('/remises', name: 'manage_discount_campaigns_index', host: 'manage.kongobazar.com', methods: ['GET'])]
-    public function index(DiscountCampaignRepository $repository): Response
+    public function index(Request $request, DiscountCampaignRepository $repository, CategoryRepository $categoryRepository, EntityManagerInterface $em): Response
     {
+        $built = $this->buildFilteredCampaigns($request, $repository, $categoryRepository, $em);
+
         return $this->render('manage/discount_campaigns/index.html.twig', [
-            'campaigns' => $repository->findAllForAdmin(),
+            'stats' => $built['stats'],
+            'campaigns' => $built['campaigns'],
+            'searchTerm' => $built['term'],
+            'currentSort' => $built['sort'],
+            'currentDir' => $built['dir'],
+            'currentCategory' => $built['categoryId'],
+            'currentProvince' => $built['unitId'],
+            'currentSeller' => $built['sellerId'],
+            'currentSellerName' => $built['sellerName'],
+            'rootCategories' => $categoryRepository->findChildrenOf(null),
+            'page' => $built['page'],
+            'pages' => $built['pages'],
+            'perPage' => $built['perPage'],
+            'total' => $built['total'],
         ]);
+    }
+
+    #[Route('/remises/liste-fragment', name: 'manage_discount_campaigns_index_fragment', host: 'manage.kongobazar.com', methods: ['GET'])]
+    public function indexFragment(Request $request, DiscountCampaignRepository $repository, CategoryRepository $categoryRepository, EntityManagerInterface $em): Response
+    {
+        $built = $this->buildFilteredCampaigns($request, $repository, $categoryRepository, $em);
+
+        return $this->json([
+            'rowsHtml' => $this->renderView('manage/discount_campaigns/_index_rows.html.twig', [
+                'campaigns' => $built['campaigns'],
+            ]),
+            'footerInfo' => $built['total'] . ' remise' . ($built['total'] != 1 ? 's' : '') . ' au total — page ' . $built['page'] . ' / ' . $built['pages'],
+            'paginationHtml' => $this->renderView('manage/advertisements/_index_pagination.html.twig', ['page' => $built['page'], 'pages' => $built['pages']]),
+        ]);
+    }
+
+    #[Route('/remises/rechercher-vendeurs', name: 'manage_discount_campaigns_search_sellers', host: 'manage.kongobazar.com', methods: ['GET'])]
+    public function searchSellers(Request $request, SellerProfileRepository $sellerProfileRepository): Response
+    {
+        $term = trim((string) $request->query->get('q', ''));
+        $results = mb_strlen($term) >= 1 ? $sellerProfileRepository->searchByName($term) : [];
+
+        return $this->json(['results' => array_map(fn ($s) => [
+            'id' => $s->getId(),
+            'name' => $s->getDisplayName(),
+        ], $results)]);
+    }
+
+    #[Route('/remises/rechercher-titres', name: 'manage_discount_campaigns_search_titles', host: 'manage.kongobazar.com', methods: ['GET'])]
+    public function searchTitles(Request $request, ProductRepository $productRepository): Response
+    {
+        $term = trim((string) $request->query->get('q', ''));
+        if (mb_strlen($term) < 1) {
+            return $this->json(['results' => []]);
+        }
+
+        $qb = $productRepository->createQueryBuilder('p')
+            ->andWhere('p.title LIKE :term')->setParameter('term', '%' . $term . '%')
+            ->setMaxResults(15);
+
+        if (preg_match('/(\d+)/', $term, $m)) {
+            $kbzId = (int) ltrim($m[1], '0');
+            if ($kbzId > 0) {
+                $qb->orWhere('p.id = :kbzId')->setParameter('kbzId', $kbzId);
+            }
+        }
+
+        $results = $qb->getQuery()->getResult();
+
+        return $this->json(['results' => array_map(fn ($p) => [
+            'id' => $p->getId(),
+            'title' => $p->getTitle() . ' (' . $p->getKongobazarReference() . ')',
+        ], $results)]);
+    }
+
+    /** Centralise filtrage/tri/pagination, réutilisé par la page complète et le fragment AJAX. */
+    private function buildFilteredCampaigns(Request $request, DiscountCampaignRepository $repository, CategoryRepository $categoryRepository, EntityManagerInterface $em): array
+    {
+        $term = $request->query->get('q') ?: null;
+        $sort = $request->query->get('sort', 'createdAt');
+        $dir = strtoupper($request->query->get('dir', 'DESC')) === 'ASC' ? 'ASC' : 'DESC';
+
+        $categoryId = $request->query->get('category') ? (int) $request->query->get('category') : null;
+        $categoryIds = null;
+        if ($categoryId) {
+            $category = $categoryRepository->find($categoryId);
+            $categoryIds = [$categoryId];
+            if ($category) {
+                foreach ($category->getDescendantCategories() as $descendant) {
+                    $categoryIds[] = $descendant->getId();
+                }
+            }
+        }
+
+        $unitId = $request->query->get('province') ? (int) $request->query->get('province') : null;
+        $unitIds = null;
+        if ($unitId) {
+            $unit = $em->getRepository(AdministrativeUnit::class)->find($unitId);
+            $unitIds = $unit ? array_map(fn ($u) => $u->getId(), $unit->getDescendantUnits()) : [$unitId];
+        }
+
+        $sellerId = $request->query->get('seller') ? (int) $request->query->get('seller') : null;
+        $sellerName = null;
+        if ($sellerId) {
+            $seller = $em->getRepository(\App\Entity\SellerProfile::class)->find($sellerId);
+            $sellerName = $seller ? $seller->getDisplayName() : null;
+        }
+
+        $campaigns = $repository->findFiltered($term, $categoryIds, $unitIds, $sellerId, $sort, $dir);
+
+        $stats = [
+            'total' => count($campaigns),
+            'active' => count(array_filter($campaigns, fn ($c) => 'active' === $c->getStatus())),
+            'scheduled' => count(array_filter($campaigns, fn ($c) => 'scheduled' === $c->getStatus())),
+        ];
+
+        $perPage = in_array((int) $request->query->get('perPage', 20), [10, 20, 50, 100], true)
+            ? (int) $request->query->get('perPage', 20) : 20;
+        $page = max(1, (int) $request->query->get('page', 1));
+        $total = count($campaigns);
+        $campaigns = array_slice($campaigns, ($page - 1) * $perPage, $perPage);
+
+        return [
+            'campaigns' => $campaigns,
+            'stats' => $stats,
+            'term' => $term,
+            'sort' => $sort,
+            'dir' => $dir,
+            'categoryId' => $categoryId,
+            'unitId' => $unitId,
+            'sellerId' => $sellerId,
+            'sellerName' => $sellerName,
+            'page' => $page,
+            'pages' => max(1, (int) ceil($total / $perPage)),
+            'perPage' => $perPage,
+            'total' => $total,
+        ];
     }
 
     #[Route('/remises/produits-recherche-json', name: 'manage_discount_campaigns_product_search', host: 'manage.kongobazar.com', methods: ['GET'])]

@@ -43,6 +43,10 @@ class AdminSidebarThemeController extends AbstractController
 
         return $this->render('manage/sidebar_themes/index.html.twig', [
             'rows' => $rows,
+            'stats' => [
+                'total' => count($themes),
+                'inUse' => count(array_filter($rows, fn ($r) => $r['usageCount'] > 0)),
+            ],
             'currentSort' => $sortField,
             'currentDir' => $sortDir,
             'searchTerm' => $request->query->get('q', ''),

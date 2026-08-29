@@ -33,6 +33,7 @@ class HomeController extends AbstractController
         CategoryViewLogRepository $categoryViewLogRepository,
         ProductViewLogRepository $productViewLogRepository,
         CartRepository $cartRepository,
+        \App\Service\SeoResolver $seoResolver,
     ): Response {
         $rootCategories = $categoryRepository->findRootCategories();
 
@@ -123,7 +124,13 @@ class HomeController extends AbstractController
         $footerCallUsPhoto = $adZonePicker->pick('footer_callus_photo', 'public');
         $footerBottomLinks = $customMenuItemRepository->findByLocationAndSpace('footer_bottom_links', 'public');
 
+        $seoData = $seoResolver->resolve('static_page', null, 'homepage', [
+            'metaTitle' => 'KongoBazar — La marketplace de référence en RDC',
+            'metaDescription' => 'KongoBazar — la marketplace de référence en RDC',
+        ]);
+
         return $this->render('public/home.html.twig', [
+            'seoData' => $seoData,
             'heroSlides' => $heroSlides,
             'sideAdTop' => $sideAdTop,
             'sideAdBottom' => $sideAdBottom,

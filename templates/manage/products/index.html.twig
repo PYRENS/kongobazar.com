@@ -55,9 +55,15 @@
     </div>
 
     <form method="get" id="productsFilterForm" class="d-flex align-items-center gap-2 flex-wrap">
-        <input type="text" name="q" class="form-control" style="max-width: 240px;" placeholder="Titre ou référence..." value="{{ searchTerm }}">
+        <input type="text" name="q" id="productsSearchInput" class="form-control" style="max-width: 240px;" placeholder="Titre, référence ou KBZ..." value="{{ searchTerm }}">
 
-        <select name="status" class="form-select" style="max-width: 180px;">
+        <div class="position-relative" style="max-width:240px;">
+            <input type="text" id="productsSellerSearchInput" class="form-control" placeholder="Vendeur..." value="{{ currentSellerName }}" autocomplete="off">
+            <div id="productsSellerSearchResults" class="list-group position-absolute w-100" style="z-index:20;"></div>
+            <input type="hidden" name="sellerProfile" id="productsSellerIdInput" value="{{ currentSellerProfile }}">
+        </div>
+
+        <select name="status" id="productsStatusSelect" class="form-select" style="max-width: 180px;">
             <option value="">— Tous statuts —</option>
             <option value="active" {{ currentStatus == 'active' ? 'selected' : '' }}>Actif</option>
             <option value="draft" {{ currentStatus == 'draft' ? 'selected' : '' }}>Brouillon</option>
@@ -65,22 +71,19 @@
             <option value="suspended" {{ currentStatus == 'suspended' ? 'selected' : '' }}>Suspendu</option>
         </select>
 
-        <select name="condition" class="form-select" style="max-width: 160px;">
+        <select name="condition" id="productsConditionSelect" class="form-select" style="max-width: 160px;">
             <option value="">— Neuf/Occasion —</option>
             <option value="new" {{ currentCondition == 'new' ? 'selected' : '' }}>Neuf</option>
             <option value="used" {{ currentCondition == 'used' ? 'selected' : '' }}>Occasion</option>
         </select>
 
-        <select name="perPage" class="form-select" style="max-width: 130px;" onchange="this.form.submit()">
+        <select name="perPage" id="productsPerPageSelect" class="form-select" style="max-width: 130px;">
             {% for n in [10, 20, 50, 100] %}
                 <option value="{{ n }}" {{ perPage == n ? 'selected' : '' }}>{{ n }} / page</option>
             {% endfor %}
         </select>
 
-        <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-search"></i> Filtrer</button>
-        {% if searchTerm or currentCategory or currentStatus or currentCondition %}
-            <a href="{{ path('manage_products_index') }}" class="btn btn-sm btn-outline-secondary">Réinitialiser</a>
-        {% endif %}
+        <a href="{{ path('manage_products_index') }}" class="btn btn-sm btn-outline-secondary">Réinitialiser</a>
 
         <div class="w-100"></div>
 
@@ -94,6 +97,12 @@
             </select>
         </div>
         <input type="hidden" name="category" id="productListCategoryFilterInput" data-category-final-value value="{{ currentCategory }}">
+
+        <div class="w-100"></div>
+
+        <small class="text-muted">Par province :</small>
+        <div id="productsProvincePicker" style="display:flex;flex-direction:row;gap:6px;flex-wrap:wrap;"></div>
+        <input type="hidden" name="province" id="productsProvinceFilterInput" value="{{ currentProvince }}">
     </form>
 
     <div class="mb-4"></div>
@@ -110,6 +119,7 @@
                 <th>{{ self.sortLink('category', 'Catégorie', currentSort, currentDir) }}</th>
                 <th>{{ self.sortLink('brand', 'Marque', currentSort, currentDir) }}</th>
                 <th>{{ self.sortLink('seller', 'Vendeur', currentSort, currentDir) }}</th>
+                <th>Province</th>
                 <th>{{ self.sortLink('basePrice', 'Prix', currentSort, currentDir) }}</th>
                 <th>{{ self.sortLink('condition', 'État', currentSort, currentDir) }}</th>
                 <th>{{ self.sortLink('authenticityStatus', 'Authenticité', currentSort, currentDir) }}</th>
@@ -160,6 +170,94 @@
                 currentPage = 1;
                 refreshList();
             });
+
+            ['productsStatusSelect', 'productsConditionSelect', 'productsPerPageSelect'].forEach((id) => {
+                document.getElementById(id).addEventListener('change', function () {
+                    currentPage = 1;
+                    refreshList();
+                });
+            });
+
+            let searchTimeout;
+            document.getElementById('productsSearchInput').addEventListener('input', function () {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    currentPage = 1;
+                    refreshList();
+                }, 400);
+            });
+
+            const sellerSearchInput = document.getElementById('productsSellerSearchInput');
+            const sellerSearchResults = document.getElementById('productsSellerSearchResults');
+            const sellerIdInput = document.getElementById('productsSellerIdInput');
+            let sellerTimeout;
+            sellerSearchInput.addEventListener('input', function () {
+                clearTimeout(sellerTimeout);
+                sellerIdInput.value = '';
+                const term = this.value.trim();
+                if (term.length < 1) {
+                    sellerSearchResults.innerHTML = '';
+                    return;
+                }
+                sellerTimeout = setTimeout(() => {
+                    fetch('/remises/rechercher-vendeurs?q=' + encodeURIComponent(term))
+                        .then((r) => r.json())
+                        .then((data) => {
+                            sellerSearchResults.innerHTML = '';
+                            data.results.forEach((seller) => {
+                                const btn = document.createElement('button');
+                                btn.type = 'button';
+                                btn.className = 'list-group-item list-group-item-action';
+                                btn.textContent = seller.name;
+                                btn.addEventListener('click', () => {
+                                    sellerSearchInput.value = seller.name;
+                                    sellerIdInput.value = seller.id;
+                                    sellerSearchResults.innerHTML = '';
+                                    currentPage = 1;
+                                    refreshList();
+                                });
+                                sellerSearchResults.appendChild(btn);
+                            });
+                        });
+                }, 250);
+            });
+            document.addEventListener('click', function (e) {
+                if (!sellerSearchInput.contains(e.target) && !sellerSearchResults.contains(e.target)) {
+                    sellerSearchResults.innerHTML = '';
+                }
+            });
+
+            const provincePicker = document.getElementById('productsProvincePicker');
+            const provinceFilterInput = document.getElementById('productsProvinceFilterInput');
+            function loadProvinceLevel(parentId, isRoot) {
+                const url = isRoot ? '/geo/enfants/0' : '/geo/enfants/' + parentId;
+                fetch(url)
+                    .then((r) => r.json())
+                    .then((data) => {
+                        if (data.results.length === 0) return;
+                        const select = document.createElement('select');
+                        select.className = 'form-select';
+                        select.style.maxWidth = '220px';
+                        select.innerHTML = '<option value="">— Choisir —</option>' +
+                            data.results.map((u) => '<option value="' + u.id + '">' + u.name + ' (' + u.typeLabel + ')</option>').join('');
+                        select.addEventListener('change', function () {
+                            let next = select.nextElementSibling;
+                            while (next) {
+                                const toRemove = next;
+                                next = next.nextElementSibling;
+                                toRemove.remove();
+                            }
+                            provinceFilterInput.value = this.value;
+                            if (this.value) {
+                                loadProvinceLevel(this.value, false);
+                                currentPage = 1;
+                                refreshList();
+                            }
+                        });
+                        provincePicker.appendChild(select);
+                    });
+            }
+            loadProvinceLevel(null, true);
 
             // Pagination : déléguée (les liens sont régénérés à chaque actualisation).
             paginationWrap.addEventListener('click', function (e) {

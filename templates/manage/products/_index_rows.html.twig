@@ -19,6 +19,18 @@
         </td>
         <td>{{ product.brand ? product.brand.name : '—' }}</td>
         <td>{{ product.sellerProfile ? product.sellerProfile.user.email : '—' }}</td>
+        <td>
+            {% if product.sellerProfile %}
+                {% set provinces = [] %}
+                {% for zone in product.sellerProfile.deliveryZones %}
+                    {% set province = zone.level == 1 ? zone : zone.getAncestorAtLevel(1) %}
+                    {% if province and province.name not in provinces %}
+                        {% set provinces = provinces|merge([province.name]) %}
+                    {% endif %}
+                {% endfor %}
+                {{ provinces|join(', ') ?: '—' }}
+            {% else %}—{% endif %}
+        </td>
         <td>{{ product.basePrice }} {{ product.currency }}</td>
         <td>{{ product.condition == 'new' ? 'Neuf' : 'Occasion' }}</td>
         <td>

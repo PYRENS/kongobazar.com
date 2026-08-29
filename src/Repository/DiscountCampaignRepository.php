@@ -16,6 +16,64 @@ class DiscountCampaignRepository extends ServiceEntityRepository
         parent::__construct($registry, DiscountCampaign::class);
     }
 
+    /** @return DiscountCampaign[] */
+    public function findFiltered(?string $term, ?array $categoryIds = null, ?array $unitIds = null, ?int $sellerId = null, string $sort = 'createdAt', string $dir = 'DESC'): array
+    {
+        $qb = $this->createQueryBuilder('d')
+            ->join('d.product', 'p');
+
+        if ($term) {
+            $conditions = $qb->expr()->orX(
+                $qb->expr()->like('p.title', ':term'),
+            );
+            $qb->setParameter('term', '%' . $term . '%');
+
+            if (preg_match('/(\d+)/', $term, $m)) {
+                $kbzId = (int) ltrim($m[1], '0');
+                if ($kbzId > 0) {
+                    $conditions->add($qb->expr()->eq('p.id', ':kbzId'));
+                    $qb->setParameter('kbzId', $kbzId);
+                }
+            }
+
+            $qb->andWhere($conditions);
+        }
+
+        if ($categoryIds) {
+            $qb->andWhere('p.category IN (:categoryIds)')->setParameter('categoryIds', $categoryIds);
+        }
+
+        if ($unitIds || $sellerId) {
+            $qb->join('p.sellerProfile', 'sp');
+
+            if ($unitIds) {
+                $qb->join('sp.deliveryZones', 'dz')
+                    ->andWhere('dz.id IN (:unitIds)')->setParameter('unitIds', $unitIds);
+            }
+            if ($sellerId) {
+                $qb->andWhere('sp.id = :sellerId')->setParameter('sellerId', $sellerId);
+            }
+        }
+
+        $sortMap = [
+            'product' => 'p.title',
+            'basePrice' => 'p.basePrice',
+            'discountedPrice' => 'd.discountedPrice',
+            'startAt' => 'd.startAt',
+            'endAt' => 'd.endAt',
+            'status' => 'd.status',
+            'createdAt' => 'd.createdAt',
+        ];
+
+        if (isset($sortMap[$sort])) {
+            $qb->orderBy($sortMap[$sort], $dir);
+        } else {
+            $qb->orderBy('d.createdAt', 'DESC');
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
     public function countByStatus(string $status): int
     {
         return (int) $this->createQueryBuilder('c')

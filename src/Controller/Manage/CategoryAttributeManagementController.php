@@ -20,10 +20,16 @@ class CategoryAttributeManagementController extends AbstractController
     public function index(int $categoryId, EntityManagerInterface $em, CategoryAttributeRepository $repository): Response
     {
         $category = $em->getRepository(Category::class)->find($categoryId) ?? throw $this->createNotFoundException();
+        $attributes = $repository->findByCategory($categoryId);
 
         return $this->render('manage/category_attributes/index.html.twig', [
             'category' => $category,
-            'attributes' => $repository->findByCategory($categoryId),
+            'attributes' => $attributes,
+            'stats' => [
+                'total' => count($attributes),
+                'required' => count(array_filter($attributes, fn ($a) => !$a->isNullable())),
+                'filterable' => count(array_filter($attributes, fn ($a) => $a->isFilterable())),
+            ],
         ]);
     }
 

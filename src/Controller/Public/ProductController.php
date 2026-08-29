@@ -4,6 +4,7 @@ namespace App\Controller\Public;
 
 use App\Repository\ProductRecommendationRepository;
 use App\Repository\ProductRepository;
+use App\Service\SeoResolver;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -11,7 +12,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class ProductController extends AbstractController
 {
     #[Route('/produit/{slug}', name: 'catalog_product', host: 'kongobazar.com')]
-    public function show(string $slug, ProductRepository $productRepository, ProductRecommendationRepository $recommendationRepository): Response
+    public function show(string $slug, ProductRepository $productRepository, ProductRecommendationRepository $recommendationRepository, SeoResolver $seoResolver, \Vich\UploaderBundle\Storage\StorageInterface $storage): Response
     {
         $product = $productRepository->findOneBy(['slug' => $slug]);
 
@@ -44,7 +45,18 @@ class ProductController extends AbstractController
 
         $recommendations = $product ? $recommendationRepository->findRecommendedProductsFor($product) : [];
 
+        $priceLabel = $product->getBasePrice() . ' ' . $product->getCurrency();
+        $firstImage = $product->getImages()->first();
+        $seoData = $seoResolver->resolve('product', $product->getId(), null, [
+            'metaTitle' => $product->getTitle() . ' — ' . $priceLabel . ' | KongoBazar',
+            'metaDescription' => $product->getDescription()
+                ? mb_substr(strip_tags($product->getDescription()), 0, 160)
+                : ($product->getTitle() . ' à ' . $priceLabel . ' sur KongoBazar.'),
+            'ogImageUrl' => $firstImage ? $storage->resolveUri($firstImage, 'imageFile') : null,
+        ]);
+
         return $this->render('public/product.html.twig', [
+            'seoData' => $seoData,
             'product' => $product,
             'colors' => array_values($colors),
             'sizes' => array_values($sizes),

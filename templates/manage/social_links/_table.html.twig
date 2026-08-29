@@ -1,14 +1,14 @@
-<table class="table admin-table">
+<table class="table ctb-table mb-0">
     <tbody>
         {% for link in links %}
             <tr class="{{ not link.active ? 'text-muted' : '' }}">
                 <td style="width: 50px; text-align:center; font-weight:600;">{{ loop.index }}</td>
                 <td style="width: 60px;">
                     <form method="post" action="{{ path('manage_social_links_move', { id: link.id, direction: 'up' }) }}" style="display:inline;">
-                        <button type="submit" class="btn btn-sm btn-light"{{ loop.first ? ' disabled' }}><i class="bi bi-arrow-up"></i></button>
+                        <button type="submit" class="admin-btn admin-btn--outline"{{ loop.first ? ' disabled' }}><i class="bi bi-arrow-up"></i></button>
                     </form>
                     <form method="post" action="{{ path('manage_social_links_move', { id: link.id, direction: 'down' }) }}" style="display:inline;">
-                        <button type="submit" class="btn btn-sm btn-light"{{ loop.last ? ' disabled' }}><i class="bi bi-arrow-down"></i></button>
+                        <button type="submit" class="admin-btn admin-btn--outline"{{ loop.last ? ' disabled' }}><i class="bi bi-arrow-down"></i></button>
                     </form>
                 </td>
                 <td style="width: 40px;">
@@ -32,6 +32,8 @@
                     </form>
                 </td>
             </tr>
+        {% else %}
+            <tr><td colspan="7" class="text-muted">Aucun réseau social configuré.</td></tr>
         {% endfor %}
     </tbody>
 </table>

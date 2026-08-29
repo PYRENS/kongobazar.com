@@ -15,8 +15,15 @@ class TopCategoryManagementController extends AbstractController
     #[Route('/top-categorie', name: 'manage_top_category_index', host: 'manage.kongobazar.com', methods: ['GET'])]
     public function index(CategoryRepository $repository): Response
     {
+        $rayons = $repository->findAllRootCategoriesForTopCategoryAdmin();
+
         return $this->render('manage/top_category/index.html.twig', [
-            'rayons' => $repository->findAllRootCategoriesForTopCategoryAdmin(),
+            'rayons' => $rayons,
+            'stats' => [
+                'total' => count($rayons),
+                'inTop' => count(array_filter($rayons, fn ($r) => $r->isTopRayon())),
+                'withAd' => count(array_filter($rayons, fn ($r) => $r->getFlyoutAdPosition())),
+            ],
         ]);
     }
 

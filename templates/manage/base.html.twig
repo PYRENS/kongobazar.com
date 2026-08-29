@@ -186,13 +186,19 @@
                 <li>
                     <a href="{{ path('manage_seller_attr_test_index') }}"><i class="bi bi-person-gear"></i> <span class="hide-menu">Test — Caractéristiques vendeur</span></a>
                 </li>
-                <li class="admin-nav-group {{ app.request.attributes.get('_route') starts with 'manage_settings' or app.request.attributes.get('_route') starts with 'manage_sidebar_themes' ? 'open' : '' }}">
+                <li class="admin-nav-group {{ app.request.attributes.get('_route') starts with 'manage_settings' or app.request.attributes.get('_route') starts with 'manage_sidebar_themes' or app.request.attributes.get('_route') starts with 'manage_seo' or app.request.attributes.get('_route') starts with 'manage_site_identity' ? 'open' : '' }}">
                     <button type="button" class="admin-nav-group-toggle">
                         <i class="bi bi-gear"></i> <span class="hide-menu">Paramètres</span> <i class="bi bi-chevron-down admin-nav-group-arrow"></i>
                     </button>
                     <ul class="admin-nav-submenu">
                         <li class="{{ app.request.attributes.get('_route') == 'manage_settings' ? 'active' : '' }}">
                             <a href="{{ path('manage_settings') }}"><i class="bi bi-palette"></i> <span class="hide-menu">Interface</span></a>
+                        </li>
+                        <li class="{{ app.request.attributes.get('_route') starts with 'manage_seo' ? 'active' : '' }}">
+                            <a href="{{ path('manage_seo_index') }}"><i class="bi bi-search"></i> <span class="hide-menu">Référencement (SEO)</span></a>
+                        </li>
+                        <li class="{{ app.request.attributes.get('_route') starts with 'manage_site_identity' ? 'active' : '' }}">
+                            <a href="{{ path('manage_site_identity') }}"><i class="bi bi-badge-hd"></i> <span class="hide-menu">Identité visuelle</span></a>
                         </li>
                     </ul>
                 </li>

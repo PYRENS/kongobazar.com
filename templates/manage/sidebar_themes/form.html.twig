@@ -10,74 +10,90 @@
         activeBgColor: '#4F6EF7', activeTextColor: '#FFFFFF', iconColor: '#7C8DB5'
     } %}
 
-    <div class="admin-form-grid" style="grid-template-columns: 1fr 260px;">
-        <div class="admin-card">
+    <a href="{{ path('manage_sidebar_themes_index') }}" class="btn btn-outline-secondary btn-sm mb-3"><i class="bi bi-arrow-left me-1"></i>Retour à la liste</a>
+
+    <div class="row g-3">
+        <div class="col-xl-8">
             <form method="post" id="themeForm">
-                <div class="mb-3">
-                    <label class="form-label">Nom du thème</label>
-                    <input type="text" name="name" class="form-control" required value="{{ theme ? theme.name : '' }}">
-                </div>
-
-                <div class="row g-3">
-                    <div class="col-6">
-                        <label class="form-label">Fond de la sidebar</label>
-                        <input type="color" name="bgColor" data-preview-var="--tp-bg" class="form-control form-control-color w-100" value="{{ theme ? theme.bgColor : defaults.bgColor }}">
+                <div class="sw-card">
+                    <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-info-circle text-primary me-2"></i>Nom</h6></div>
+                    <div class="card-body">
+                    <div class="mb-0">
+                        <label class="form-label">Nom du thème</label>
+                        <input type="text" name="name" class="form-control" style="max-width:320px;" required value="{{ theme ? theme.name : '' }}">
                     </div>
-                    <div class="col-6">
-                        <label class="form-label">Texte au repos</label>
-                        <input type="color" name="textColor" data-preview-var="--tp-text" class="form-control form-control-color w-100" value="{{ theme ? theme.textColor : defaults.textColor }}">
-                    </div>
-                    <div class="col-6">
-                        <label class="form-label">Fond au survol</label>
-                        <input type="color" name="hoverBgColor" data-preview-var="--tp-hover-bg" class="form-control form-control-color w-100" value="{{ theme ? theme.hoverBgColor : defaults.hoverBgColor }}">
-                    </div>
-                    <div class="col-6">
-                        <label class="form-label">Texte au survol</label>
-                        <input type="color" name="hoverTextColor" data-preview-var="--tp-hover-text" class="form-control form-control-color w-100" value="{{ theme ? theme.hoverTextColor : defaults.hoverTextColor }}">
-                    </div>
-                    <div class="col-6">
-                        <label class="form-label">Fond actif / ouvert</label>
-                        <input type="color" name="activeBgColor" data-preview-var="--tp-active-bg" class="form-control form-control-color w-100" value="{{ theme ? theme.activeBgColor : defaults.activeBgColor }}">
-                    </div>
-                    <div class="col-6">
-                        <label class="form-label">Texte actif / ouvert</label>
-                        <input type="color" name="activeTextColor" data-preview-var="--tp-active-text" class="form-control form-control-color w-100" value="{{ theme ? theme.activeTextColor : defaults.activeTextColor }}">
-                    </div>
-                    <div class="col-6">
-                        <label class="form-label">Couleur des icônes (au repos)</label>
-                        <input type="color" name="iconColor" data-preview-var="--tp-icon" class="form-control form-control-color w-100" value="{{ theme ? theme.iconColor : defaults.iconColor }}">
                     </div>
                 </div>
 
-                <div class="mt-4 d-flex gap-2">
-                    <button type="submit" class="admin-btn admin-btn--primary">{{ theme ? 'Enregistrer' : 'Créer le thème' }}</button>
-                    <a href="{{ path('manage_sidebar_themes_index') }}" class="admin-btn admin-btn--outline">Annuler</a>
+                <div class="sw-card mt-3">
+                    <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-palette text-primary me-2"></i>Couleurs</h6></div>
+                    <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="form-label">Fond de la sidebar</label>
+                            <input type="color" name="bgColor" data-preview-var="--tp-bg" class="form-control form-control-color w-100" value="{{ theme ? theme.bgColor : defaults.bgColor }}">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Texte au repos</label>
+                            <input type="color" name="textColor" data-preview-var="--tp-text" class="form-control form-control-color w-100" value="{{ theme ? theme.textColor : defaults.textColor }}">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Fond au survol</label>
+                            <input type="color" name="hoverBgColor" data-preview-var="--tp-hover-bg" class="form-control form-control-color w-100" value="{{ theme ? theme.hoverBgColor : defaults.hoverBgColor }}">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Texte au survol</label>
+                            <input type="color" name="hoverTextColor" data-preview-var="--tp-hover-text" class="form-control form-control-color w-100" value="{{ theme ? theme.hoverTextColor : defaults.hoverTextColor }}">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Fond actif / ouvert</label>
+                            <input type="color" name="activeBgColor" data-preview-var="--tp-active-bg" class="form-control form-control-color w-100" value="{{ theme ? theme.activeBgColor : defaults.activeBgColor }}">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Texte actif / ouvert</label>
+                            <input type="color" name="activeTextColor" data-preview-var="--tp-active-text" class="form-control form-control-color w-100" value="{{ theme ? theme.activeTextColor : defaults.activeTextColor }}">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Couleur des icônes (au repos)</label>
+                            <input type="color" name="iconColor" data-preview-var="--tp-icon" class="form-control form-control-color w-100" value="{{ theme ? theme.iconColor : defaults.iconColor }}">
+                        </div>
+                    </div>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-success">{{ theme ? 'Enregistrer' : 'Créer le thème' }}</button>
+                    <a href="{{ path('manage_sidebar_themes_index') }}" class="btn btn-outline-secondary">Annuler</a>
                 </div>
             </form>
         </div>
 
-        <div>
-            <p class="text-muted small mb-2">Aperçu en direct</p>
-            <div class="theme-preview" id="livePreview" style="
-                --tp-bg:{{ theme ? theme.bgColor : defaults.bgColor }};
-                --tp-text:{{ theme ? theme.textColor : defaults.textColor }};
-                --tp-hover-bg:{{ theme ? theme.hoverBgColor : defaults.hoverBgColor }};
-                --tp-hover-text:{{ theme ? theme.hoverTextColor : defaults.hoverTextColor }};
-                --tp-active-bg:{{ theme ? theme.activeBgColor : defaults.activeBgColor }};
-                --tp-active-text:{{ theme ? theme.activeTextColor : defaults.activeTextColor }};
-                --tp-icon:{{ theme ? theme.iconColor : defaults.iconColor }};
-            ">
-                <div class="theme-preview-row">
-                    <span class="theme-preview-icon"><i class="bi bi-calendar3"></i></span> Calendrier
+        <div class="col-xl-4">
+            <div class="sw-card">
+                <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-eye text-primary me-2"></i>Aperçu en direct</h6></div>
+                <div class="card-body">
+                <div class="theme-preview" id="livePreview" style="
+                    --tp-bg:{{ theme ? theme.bgColor : defaults.bgColor }};
+                    --tp-text:{{ theme ? theme.textColor : defaults.textColor }};
+                    --tp-hover-bg:{{ theme ? theme.hoverBgColor : defaults.hoverBgColor }};
+                    --tp-hover-text:{{ theme ? theme.hoverTextColor : defaults.hoverTextColor }};
+                    --tp-active-bg:{{ theme ? theme.activeBgColor : defaults.activeBgColor }};
+                    --tp-active-text:{{ theme ? theme.activeTextColor : defaults.activeTextColor }};
+                    --tp-icon:{{ theme ? theme.iconColor : defaults.iconColor }};
+                ">
+                    <div class="theme-preview-row">
+                        <span class="theme-preview-icon"><i class="bi bi-calendar3"></i></span> Calendrier
+                    </div>
+                    <div class="theme-preview-row theme-preview-row--hover">
+                        <span class="theme-preview-icon"><i class="bi bi-kanban"></i></span> Kanban
+                    </div>
+                    <div class="theme-preview-row theme-preview-row--active">
+                        <span class="theme-preview-icon"><i class="bi bi-person-lines-fill"></i></span> Contact
+                    </div>
+                    <div class="theme-preview-row theme-preview-row--child">
+                        <span class="theme-preview-dot"></span> Contact Table
+                    </div>
                 </div>
-                <div class="theme-preview-row theme-preview-row--hover">
-                    <span class="theme-preview-icon"><i class="bi bi-kanban"></i></span> Kanban
-                </div>
-                <div class="theme-preview-row theme-preview-row--active">
-                    <span class="theme-preview-icon"><i class="bi bi-person-lines-fill"></i></span> Contact
-                </div>
-                <div class="theme-preview-row theme-preview-row--child">
-                    <span class="theme-preview-dot"></span> Contact Table
                 </div>
             </div>
         </div>

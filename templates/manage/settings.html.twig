@@ -5,27 +5,28 @@
 {% block page_title %}Paramètres d'affichage{% endblock %}
 
 {% block body %}
-    <div class="mb-4">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <label class="form-label mb-0">Thème de la barre latérale</label>
-            <a href="{{ path('manage_sidebar_themes_index') }}" class="admin-btn admin-btn--outline btn-sm"><i class="bi bi-palette2"></i> Gérer les thèmes</a>
+    <div class="sw-card">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <h6 class="mb-0 fw-bold"><i class="bi bi-palette2 text-primary me-2"></i>Thème de la barre latérale</h6>
+            <a href="{{ path('manage_sidebar_themes_index') }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-palette2"></i> Gérer les thèmes</a>
         </div>
-        <div class="d-flex flex-wrap gap-3">
-            {% for theme in themes %}
-                {% set isCurrent = app.user.adminSidebarTheme and app.user.adminSidebarTheme.id == theme.id %}
-                <form method="post" action="{{ path('manage_sidebar_themes_choose', {id: theme.id}) }}">
-                    <button type="submit" class="theme-vignette {{ isCurrent ? 'theme-vignette--selected' : '' }}" title="{{ theme.name }}">
-                        <span class="theme-vignette-preview" style="--tp-bg:{{ theme.bgColor }};--tp-active-bg:{{ theme.activeBgColor }};--tp-hover-bg:{{ theme.hoverBgColor }};">
-                            <span class="theme-vignette-row" style="background:var(--tp-hover-bg);"></span>
-                            <span class="theme-vignette-row" style="background:var(--tp-active-bg);"></span>
-                        </span>
-                        <span class="theme-vignette-label">{{ theme.name }}{{ isCurrent ? ' ✓' : '' }}</span>
-                    </button>
-                </form>
-            {% else %}
-                <p class="text-muted">Aucun thème disponible — <a href="{{ path('manage_sidebar_themes_new') }}">en créer un</a>.</p>
-            {% endfor %}
+        <div class="card-body">
+            <div class="d-flex flex-wrap gap-3">
+                {% for theme in themes %}
+                    {% set isCurrent = app.user.adminSidebarTheme and app.user.adminSidebarTheme.id == theme.id %}
+                    <form method="post" action="{{ path('manage_sidebar_themes_choose', {id: theme.id}) }}">
+                        <button type="submit" class="theme-vignette {{ isCurrent ? 'theme-vignette--selected' : '' }}" title="{{ theme.name }}">
+                            <span class="theme-vignette-preview" style="--tp-bg:{{ theme.bgColor }};--tp-active-bg:{{ theme.activeBgColor }};--tp-hover-bg:{{ theme.hoverBgColor }};">
+                                <span class="theme-vignette-row" style="background:var(--tp-hover-bg);"></span>
+                                <span class="theme-vignette-row" style="background:var(--tp-active-bg);"></span>
+                            </span>
+                            <span class="theme-vignette-label">{{ theme.name }}{{ isCurrent ? ' ✓' : '' }}</span>
+                        </button>
+                    </form>
+                {% else %}
+                    <p class="text-muted mb-0">Aucun thème disponible — <a href="{{ path('manage_sidebar_themes_new') }}">en créer un</a>.</p>
+                {% endfor %}
+            </div>
         </div>
     </div>
-
 {% endblock %}

@@ -1,6 +1,6 @@
 {% extends 'public/base.html.twig' %}
 
-{% block title %}KongoBazar — La marketplace de référence en RDC{% endblock %}
+{% block title %}{{ seoData and seoData.metaTitle ? seoData.metaTitle : 'KongoBazar — La marketplace de référence en RDC' }}{% endblock %}
 
 {% block body %}
     {% include 'public/_partials/_hero.html.twig' %}
