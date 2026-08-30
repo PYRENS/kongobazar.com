@@ -142,6 +142,16 @@
         endInput.min = startInput.value;
     });
 
+    // Bascule "Maintenant" / "Programmée" : le champ date de début n'est requis et visible que si programmée.
+    document.querySelectorAll('[name="start_mode"]').forEach((radio) => {
+        radio.addEventListener('change', function () {
+            const isScheduled = this.value === 'scheduled';
+            startInput.style.display = isScheduled ? 'block' : 'none';
+            startInput.required = isScheduled;
+            if (!isScheduled) startInput.value = '';
+        });
+    });
+
     loadCategoryLevel(null, cascadeContainer);
 
 </script>

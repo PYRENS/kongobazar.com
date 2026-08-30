@@ -105,6 +105,11 @@
                         <a href="{{ path('manage_users_activity', { id: targetUser.id }) }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-graph-up me-1"></i>Activité</a>
                         {% if sellerProfile %}
                             <a href="{{ path('partner_show', { slug: sellerProfile.slug }) }}" target="_blank" class="btn btn-outline-secondary btn-sm"><i class="bi bi-box-arrow-up-right me-1"></i>Voir la page publique</a>
+                            <form method="post" action="{{ path('manage_users_toggle_kbz', { id: user.id }) }}" style="display:inline;">
+                                <button type="submit" class="btn btn-sm {{ sellerProfile.isKbz ? 'btn-primary' : 'btn-outline-primary' }}">
+                                    <i class="bi bi-patch-check{{ sellerProfile.isKbz ? '-fill' : '' }} me-1"></i>{{ sellerProfile.isKbz ? 'Boutique KBZ' : 'Marquer comme boutique KBZ' }}
+                                </button>
+                            </form>
                         {% endif %}
                     </div>
                 </div>

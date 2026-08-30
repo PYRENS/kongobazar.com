@@ -186,7 +186,7 @@
                 <li>
                     <a href="{{ path('manage_seller_attr_test_index') }}"><i class="bi bi-person-gear"></i> <span class="hide-menu">Test — Caractéristiques vendeur</span></a>
                 </li>
-                <li class="admin-nav-group {{ app.request.attributes.get('_route') starts with 'manage_settings' or app.request.attributes.get('_route') starts with 'manage_sidebar_themes' or app.request.attributes.get('_route') starts with 'manage_seo' or app.request.attributes.get('_route') starts with 'manage_site_identity' ? 'open' : '' }}">
+                <li class="admin-nav-group {{ app.request.attributes.get('_route') starts with 'manage_settings' or app.request.attributes.get('_route') starts with 'manage_sidebar_themes' or app.request.attributes.get('_route') starts with 'manage_seo' or app.request.attributes.get('_route') starts with 'manage_site_identity' or app.request.attributes.get('_route') starts with 'manage_home_deals_setting' ? 'open' : '' }}">
                     <button type="button" class="admin-nav-group-toggle">
                         <i class="bi bi-gear"></i> <span class="hide-menu">Paramètres</span> <i class="bi bi-chevron-down admin-nav-group-arrow"></i>
                     </button>
@@ -199,6 +199,9 @@
                         </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_site_identity' ? 'active' : '' }}">
                             <a href="{{ path('manage_site_identity') }}"><i class="bi bi-badge-hd"></i> <span class="hide-menu">Identité visuelle</span></a>
+                        </li>
+                        <li class="{{ app.request.attributes.get('_route') starts with 'manage_home_deals_setting' ? 'active' : '' }}">
+                            <a href="{{ path('manage_home_deals_setting') }}"><i class="bi bi-lightning-charge"></i> <span class="hide-menu">Ventes flash accueil</span></a>
                         </li>
                     </ul>
                 </li>

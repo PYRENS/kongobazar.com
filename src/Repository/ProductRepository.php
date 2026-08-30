@@ -169,6 +169,16 @@ class ProductRepository extends ServiceEntityRepository
     }
 
     /** @return Product[] */
+    /** @return Product[] — léger, pour le sitemap (produits actifs uniquement). */
+    public function findAllActiveForSitemap(): array
+    {
+        return $this->createQueryBuilder('p')
+            ->andWhere('p.status = :status')->setParameter('status', 'active')
+            ->orderBy('p.updatedAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function findFiltered(?string $term, ?array $categoryIds, ?string $status, ?string $condition, string $sort, string $dir, int $page, int $perPage, ?int $sellerProfileId = null, ?array $unitIds = null): array
     {
         $qb = $this->buildFilterQuery($term, $categoryIds, $status, $condition, $sellerProfileId, $unitIds);
@@ -471,7 +481,8 @@ class ProductRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function findActiveDeals(int $limit = 4): array
+    /** @return Product[] — toutes les ventes flash actives (par date réelle), sans limite ni mélange. Base pour HomeDealsSelector. */
+    public function findAllActiveDeals(): array
     {
         $now = new \DateTimeImmutable();
         return $this->createQueryBuilder('p')
@@ -481,9 +492,26 @@ class ProductRepository extends ServiceEntityRepository
             ->andWhere('d.endAt > :now')
             ->setParameter('status', 'active')
             ->setParameter('now', $now)
-            ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
+    }
+
+    public function findActiveDeals(int $limit = 10): array
+    {
+        $now = new \DateTimeImmutable();
+        $results = $this->createQueryBuilder('p')
+            ->join('p.discountCampaigns', 'd')
+            ->andWhere('d.status = :status')
+            ->andWhere('d.startAt <= :now')
+            ->andWhere('d.endAt > :now')
+            ->setParameter('status', 'active')
+            ->setParameter('now', $now)
+            ->getQuery()
+            ->getResult();
+
+        shuffle($results);
+
+        return array_slice($results, 0, $limit);
     }
 
    /* public function findByCategorySort(Category $category, string $sort, int $limit = 4): array

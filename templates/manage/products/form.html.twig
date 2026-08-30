@@ -72,6 +72,16 @@
                     data-ancestor-ids="{{ product and product.category ? product.category.ancestors|map(a => a.id)|join(',') : '' }}">
             </div>
 
+            <div class="mb-3 position-relative" id="genericBrandFieldWrap">
+                <label class="form-label">Marque (optionnel)</label>
+                <input type="text" id="partBrandSearchInput" class="form-control" style="max-width:400px;" placeholder="Rechercher une marque..."
+                    value="{{ product and product.brand ? product.brand.name : '' }}" autocomplete="off">
+                <div id="partBrandSearchResults" class="list-group mt-1" style="max-width:400px;position:relative;z-index:10;"></div>
+                <input type="hidden" name="brand_id" id="partBrandIdInput" value="{{ product and product.brand ? product.brand.id : '' }}">
+                <img id="partBrandLogoPreview" src="{{ product and product.brand and product.brand.logoName ? vich_uploader_asset(product.brand, 'logoFile') : '' }}"
+                    style="max-height:32px;margin-top:6px;{{ product and product.brand and product.brand.logoName ? '' : 'display:none;' }}">
+            </div>
+
             <div class="mb-3">
                 <label class="form-label">Vendeur</label>
                 <input type="text" id="sellerSearchInput" class="form-control" style="max-width:400px;" placeholder="Rechercher par email..."
@@ -209,6 +219,14 @@
                     .then((r) => r.text())
                     .then((html) => {
                         container.innerHTML = html;
+
+                        // La cascade Marque→Modèle→Variante→Motorisation (Auto-Moto → Offre) gère déjà "Marque"
+                        // à sa façon : on masque le champ Marque générique dans ce cas précis pour éviter le doublon.
+                        const brandFieldWrap = document.getElementById('genericBrandFieldWrap');
+                        if (brandFieldWrap) {
+                            brandFieldWrap.style.display = container.querySelector('[data-vehicle-brand-select]') ? 'none' : '';
+                        }
+
                         if (window.initVehicleModelPicker) window.initVehicleModelPicker();
                         if (window.initVehicleTypeToggle) window.initVehicleTypeToggle();
                         if (window.initPartCompatibilityWidget) window.initPartCompatibilityWidget();
@@ -223,6 +241,9 @@
             }
 
             window.onProductCategoryChange = loadCategoryFields;
+
+            // La Marque est toujours visible (Classification), donc on branche son autocomplétion dès le chargement de la page.
+            if (window.initPartBrandAutocomplete) window.initPartBrandAutocomplete();
 
             function wireEngineLoading() {
                 const engineSelect = document.getElementById('vehicleEngineSelect');

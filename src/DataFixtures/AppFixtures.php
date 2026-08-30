@@ -23,12 +23,19 @@ use App\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\String\Slugger\AsciiSlugger;
 
 class AppFixtures extends Fixture
 {
     public function __construct(
         private readonly UserPasswordHasherInterface $passwordHasher,
     ) {
+    }
+
+    /** Translittère les accents en ASCII pour des slugs propres (ex: "Robe imprimée été" → "robe-imprimee-ete"). */
+    private function slugify(string $text): string
+    {
+        return strtolower((string) (new AsciiSlugger())->slug($text));
     }
 
     public function load(ObjectManager $manager): void

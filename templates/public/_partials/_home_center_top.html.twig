@@ -1,57 +1,68 @@
 {# ==========================================================================
    Haut de la colonne centrale : Deals + bannière pub
    Contexte attendu :
-     - dealsProducts: Product[] avec DiscountCampaign active
+     - dealsProducts: Product[] avec DiscountCampaign active (jusqu'à 10, tirés au hasard)
      - centerAdBanner: Advertisement|null (zoneKey homepage_center_banner)
    ========================================================================== #}
 
-<section class="home-deals" data-mini-carousel data-per-page="2">
+{% if dealsEnabled %}
+<section class="home-deals" data-deals-carousel>
     <div class="home-deals-head">
         <span class="home-section-badge">{{ 'home.deals_of_week'|trans }}</span>
+        <span class="home-deals-head-line"></span>
         <div class="home-carousel-nav">
+            <a href="{{ path('offers_discount') }}" class="see-all-link">{{ 'home.see_all'|trans }}</a>
             <button type="button" class="carousel-arrow" data-carousel-prev aria-label="{{ 'home.prev'|trans }}"><i class="bi bi-chevron-left"></i></button>
             <button type="button" class="carousel-arrow" data-carousel-next aria-label="{{ 'home.next'|trans }}"><i class="bi bi-chevron-right"></i></button>
         </div>
     </div>
-    <div class="home-deals-track">
-        {% for deal in dealsProducts|default([]) %}
-            <div class="home-deal-card">
-                <div class="home-deal-image">
-                    <img src="{{ deal.images|length > 0 ? vich_uploader_asset(deal.images|first, 'imageFile') : '' }}" alt="{{ deal.title }}" loading="lazy">
-                    {% if deal.activeDiscountPercent is defined %}
-                        <span class="badge-discount">-{{ deal.activeDiscountPercent }}%</span>
-                    {% endif %}
-                </div>
-                <div class="home-deal-info">
-                    <h5>{{ deal.title }}</h5>
-                    <div class="home-deal-rating">★★★★☆</div>
-                    <p class="home-deal-desc">{{ deal.description|striptags|slice(0, 90) }}…</p>
-                    {% if deal.getShippingDelayLabel() %}
-                        <p class="home-deal-shipping">
-                            <i class="bi bi-truck"></i>
-                            {{ 'home.ships_in'|trans({'%range%': deal.getShippingDelayLabel()}) }}
-                        </p>
-                    {% endif %}
-                    <div class="home-deal-price">
-                        <span class="price-now">{{ deal.currentDiscountedPrice|default(deal.basePrice) }} {{ deal.currency }}</span>
+    <div class="home-deals-viewport">
+        <div class="home-deals-track">
+            {% for deal in dealsProducts|default([]) %}
+                <div class="home-deal-card">
+                    <div class="home-deal-image">
+                        <img src="{{ deal.images|length > 0 ? vich_uploader_asset(deal.images|first, 'imageFile') : '' }}" alt="{{ deal.title }}" loading="lazy">
                         {% if deal.activeDiscountPercent is defined %}
-                            <span class="price-old">{{ deal.basePrice }} {{ deal.currency }}</span>
+                            <span class="badge-discount">-{{ deal.activeDiscountPercent }}%</span>
                         {% endif %}
                     </div>
-                    <div class="home-deal-countdown" data-countdown-end="{{ deal.activeDiscountEndAt|default('')|date('c') }}">
-                        <span class="hurry-up">{{ 'home.hurry_up'|trans }}</span>
-                        <div class="countdown-boxes">
-                            <div><span data-cd-days>--</span><small>{{ 'home.days'|trans }}</small></div>
-                            <div><span data-cd-hours>--</span><small>{{ 'home.hours'|trans }}</small></div>
-                            <div><span data-cd-mins>--</span><small>{{ 'home.mins'|trans }}</small></div>
-                            <div><span data-cd-secs>--</span><small>{{ 'home.secs'|trans }}</small></div>
+                    <div class="home-deal-info">
+                        <h5>{{ deal.title }}</h5>
+                        <div class="home-deal-rating">★★★★☆</div>
+                        <p class="home-deal-desc">{{ deal.description|striptags|slice(0, 90) }}…</p>
+                        {% if deal.getShippingDelayLabel() %}
+                            <p class="home-deal-shipping">
+                                <i class="bi bi-truck"></i>
+                                {{ 'home.ships_in'|trans({'%range%': deal.getShippingDelayLabel()}) }}
+                            </p>
+                        {% endif %}
+                        <div class="home-deal-price">
+                            <span class="price-now">{{ deal.currentDiscountedPrice|default(deal.basePrice) }} {{ deal.currency }}</span>
+                            {% if deal.activeDiscountPercent is defined %}
+                                <span class="price-old">{{ deal.basePrice }} {{ deal.currency }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="home-deal-countdown-row">
+                            <div class="home-deal-countdown" data-countdown-end="{{ deal.activeDiscountEndAt|default('')|date('c') }}">
+                                <span class="hurry-up">{{ 'home.hurry_up'|trans }}</span>
+                                <div class="countdown-boxes">
+                                    <div><span data-cd-days>--</span><small>{{ 'home.days'|trans }}</small></div>
+                                    <div><span data-cd-hours>--</span><small>{{ 'home.hours'|trans }}</small></div>
+                                    <div><span data-cd-mins>--</span><small>{{ 'home.mins'|trans }}</small></div>
+                                    <div><span data-cd-secs>--</span><small>{{ 'home.secs'|trans }}</small></div>
+                                </div>
+                            </div>
+                            {% if deal.brand and deal.brand.logoName %}
+                                <img src="{{ vich_uploader_asset(deal.brand, 'logoFile') }}" alt="{{ deal.brand.name }}" class="home-deal-brand-logo">
+                            {% endif %}
                         </div>
                     </div>
                 </div>
-            </div>
-        {% endfor %}
+            {% endfor %}
+        </div>
     </div>
 </section>
+{% endif %}
 
 {% if centerAdBanner is defined and centerAdBanner and centerAdBanner.imageName %}
     <a {% if centerAdBanner.targetUrl %}href="{{ path('ads_click', { id: centerAdBanner.id, zoneKey: 'homepage_center_banner' }) }}"{% endif %}{% if centerAdBanner.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="home-center-banner{{ centerAdBanner.targetUrl ? ' ad-clickable' : '' }}">

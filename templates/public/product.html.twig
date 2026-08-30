@@ -13,6 +13,31 @@
 {% endblock %}
 
 {% block body %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org/",
+    "@type": "Product",
+    "name": {{ product.title|json_encode|raw }},
+    {% if product.description %}"description": {{ product.description|striptags|slice(0, 500)|json_encode|raw }},{% endif %}
+    {% if product.images|length > 0 %}
+    "image": [
+        {% for image in product.images %}
+            {{ (app.request.schemeAndHttpHost ~ vich_uploader_asset(image, 'imageFile'))|json_encode|raw }}{{ not loop.last ? ',' : '' }}
+        {% endfor %}
+    ],
+    {% endif %}
+    {% if product.brand %}"brand": { "@type": "Brand", "name": {{ product.brand.name|json_encode|raw }} },{% endif %}
+    "sku": "{{ product.kongobazarReference }}",
+    "offers": {
+        "@type": "Offer",
+        "url": {{ (app.request.schemeAndHttpHost ~ path('catalog_product', {slug: product.slug}))|json_encode|raw }},
+        "priceCurrency": {{ product.currency|json_encode|raw }},
+        "price": "{{ product.basePrice }}",
+        "availability": "{{ product.quantity > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock' }}",
+        "itemCondition": "{{ product.condition == 'new' ? 'https://schema.org/NewCondition' : 'https://schema.org/UsedCondition' }}"
+    }
+}
+</script>
 <div class="product-page-layout">
     {% include 'public/_partials/_product_sidebar.html.twig' %}
 

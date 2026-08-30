@@ -116,6 +116,18 @@ class UserManagementController extends AbstractController
         ]);
     }
 
+    #[Route('/utilisateurs/{id}/basculer-kbz', name: 'manage_users_toggle_kbz', host: 'manage.kongobazar.com', methods: ['POST'])]
+    public function toggleKbz(User $user, SellerProfileRepository $sellerProfileRepository, \Doctrine\ORM\EntityManagerInterface $em): \Symfony\Component\HttpFoundation\RedirectResponse
+    {
+        $sellerProfile = $sellerProfileRepository->findOneByUser($user);
+        if ($sellerProfile) {
+            $sellerProfile->setIsKbz(!$sellerProfile->isKbz());
+            $em->flush();
+        }
+
+        return $this->redirectToRoute('manage_users_show', ['id' => $user->getId()]);
+    }
+
     #[Route('/utilisateurs/{id}', name: 'manage_users_show', host: 'manage.kongobazar.com')]
     public function show(
         User $user,

@@ -21,7 +21,17 @@
         </div>
         <div class="mb-3">
             <label class="form-label">Début de la remise</label>
-            <input type="datetime-local" name="start_at" class="form-control" value="{{ campaign.startAt|date('Y-m-d\\TH:i') }}" required>
+            <div class="d-flex gap-3 mb-2">
+                <div class="form-check">
+                    <input type="radio" name="start_mode" value="now" class="form-check-input" id="startModeNow">
+                    <label class="form-check-label" for="startModeNow">Redémarrer maintenant</label>
+                </div>
+                <div class="form-check">
+                    <input type="radio" name="start_mode" value="scheduled" class="form-check-input" id="startModeScheduled" checked>
+                    <label class="form-check-label" for="startModeScheduled">Programmée</label>
+                </div>
+            </div>
+            <input type="datetime-local" name="start_at" id="startAtInput" class="form-control" style="max-width:280px;" value="{{ campaign.startAt|date('Y-m-d\\TH:i') }}">
         </div>
         <div class="mb-3">
             <label class="form-label">Fin de la remise</label>
@@ -38,6 +48,12 @@
     endInput.min = startInput.value;
     startInput.addEventListener('change', () => {
         endInput.min = startInput.value;
+    });
+
+    document.querySelectorAll('[name="start_mode"]').forEach((radio) => {
+        radio.addEventListener('change', function () {
+            startInput.disabled = this.value === 'now';
+        });
     });
 </script>
 

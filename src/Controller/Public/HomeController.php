@@ -34,6 +34,8 @@ class HomeController extends AbstractController
         ProductViewLogRepository $productViewLogRepository,
         CartRepository $cartRepository,
         \App\Service\SeoResolver $seoResolver,
+        \App\Service\HomeDealsSelector $homeDealsSelector,
+        \App\Repository\HomeDealsSettingRepository $homeDealsSettingRepository,
     ): Response {
         $rootCategories = $categoryRepository->findRootCategories();
 
@@ -57,7 +59,8 @@ class HomeController extends AbstractController
 
         // --- Centre : promo + deals ---
         $promoStrip = $adZonePicker->pick('homepage_promo_strip', 'public');
-        $dealsProducts = $productRepository->findActiveDeals(4);
+        $homeDealsSettings = $homeDealsSettingRepository->getSingleton();
+        $dealsProducts = $homeDealsSelector->select($homeDealsSettings);
         $centerAdBanner = $adZonePicker->pick('homepage_center_banner', 'public');
 
         // --- Articles tendances ---
@@ -131,6 +134,7 @@ class HomeController extends AbstractController
 
         return $this->render('public/home.html.twig', [
             'seoData' => $seoData,
+            'dealsEnabled' => $homeDealsSettings->isEnabled(),
             'heroSlides' => $heroSlides,
             'sideAdTop' => $sideAdTop,
             'sideAdBottom' => $sideAdBottom,

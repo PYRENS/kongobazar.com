@@ -4,12 +4,87 @@
    ========================================================================== */
 document.addEventListener('DOMContentLoaded', () => {
     initMiniCarousels();
+    initDealsCarousel();
     initTrendingTabs();
     initCategoryBlockSortTabs();
     initGalleryThumbSwap();
     initCountdowns();
     initAddToCartButtons();
 });
+/* --------------------------------------------------------------------------
+   Carrousel "Ventes flash" — glissement carte par carte (pas page par page),
+   pour ne jamais laisser de case vide même avec un nombre impair d'articles.
+   Mécanisme dédié, séparé de initMiniCarousels() qui reste page-par-page
+   pour les autres carrousels de la page.
+   -------------------------------------------------------------------------- */
+function initDealsCarousel() {
+    const AUTOPLAY_DELAY = 4000;
+    const GAP = 20;
+
+    document.querySelectorAll('[data-deals-carousel]').forEach((carousel) => {
+        const viewport = carousel.querySelector('.home-deals-viewport');
+        const track = carousel.querySelector('.home-deals-track');
+        const prevBtn = carousel.querySelector('[data-carousel-prev]');
+        const nextBtn = carousel.querySelector('[data-carousel-next]');
+        if (!viewport || !track) return;
+
+        const cards = Array.from(track.children);
+        if (cards.length === 0) return;
+
+        let itemsPerView = 2;
+        let cardWidth = 0;
+        let currentIndex = 0;
+        let timer = null;
+
+        function layout() {
+            itemsPerView = Math.min(cards.length, viewport.offsetWidth < 500 ? 1 : 2);
+            cardWidth = (viewport.offsetWidth - GAP * (itemsPerView - 1)) / itemsPerView;
+            cards.forEach((card) => {
+                card.style.width = cardWidth + 'px';
+            });
+            currentIndex = Math.min(currentIndex, Math.max(0, cards.length - itemsPerView));
+            applyPosition(false);
+        }
+
+        function applyPosition(animate) {
+            track.style.transition = animate ? 'margin-left 0.4s ease' : 'none';
+            track.style.marginLeft = `-${currentIndex * (cardWidth + GAP)}px`;
+        }
+
+        function totalPositions() {
+            return Math.max(1, cards.length - itemsPerView + 1);
+        }
+
+        function goTo(index) {
+            const total = totalPositions();
+            currentIndex = ((index % total) + total) % total;
+            applyPosition(true);
+        }
+
+        function next() { goTo(currentIndex + 1); }
+        function prev() { goTo(currentIndex - 1); }
+
+        function startAutoplay() {
+            clearInterval(timer);
+            if (totalPositions() > 1) timer = setInterval(next, AUTOPLAY_DELAY);
+        }
+
+        if (prevBtn) prevBtn.addEventListener('click', () => { prev(); startAutoplay(); });
+        if (nextBtn) nextBtn.addEventListener('click', () => { next(); startAutoplay(); });
+
+        carousel.addEventListener('mouseenter', () => clearInterval(timer));
+        carousel.addEventListener('mouseleave', startAutoplay);
+
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(layout, 150);
+        });
+
+        layout();
+        startAutoplay();
+    });
+}
 /* --------------------------------------------------------------------------
    Mini-carousels (colonne gauche : Meilleures ventes / Nouveaux articles,
    et Top Catégories) — pagination par point ou par flèche, glissement

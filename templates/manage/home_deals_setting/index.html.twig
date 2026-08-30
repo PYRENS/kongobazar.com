@@ -1,0 +1,295 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Ventes flash — Accueil{% endblock %}
+{% block page_icon %}bi-lightning-charge{% endblock %}
+{% block page_title %}Affichage "Ventes flash" — Accueil{% endblock %}
+
+{% block body %}
+    <div class="row g-3 mb-4">
+        <div class="col-xl-4 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-blue h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-blue"><i class="bi bi-lightning-charge"></i></div>
+                <div class="ctb-stat-val">{{ activeDealsCount }}</div>
+                <div class="ctb-stat-label">Ventes flash actives en ce moment</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-toggle-on text-primary me-2"></i>Visibilité</h6></div>
+        <div class="card-body">
+            <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="dealsEnabledSwitch" role="switch" {{ setting.enabled ? 'checked' : '' }} data-toggle-url="{{ path('manage_home_deals_toggle_enabled') }}">
+                <label class="form-check-label" for="dealsEnabledSwitch">Afficher la section "Ventes flash" sur la page d'accueil</label>
+            </div>
+            <small id="dealsEnabledFeedback" class="text-muted"></small>
+        </div>
+    </div>
+
+    <form method="post" id="dealsSettingForm">
+        <div class="sw-card mb-3">
+            <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-sliders text-primary me-2"></i>Nombre affiché</h6></div>
+            <div class="card-body">
+                <label class="form-label">Nombre de produits dans le carrousel</label>
+                <input type="number" name="display_count" class="form-control" style="max-width:160px;" min="1" value="{{ setting.displayCount }}">
+            </div>
+        </div>
+
+        <div class="sw-card mb-3">
+            <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-shuffle text-primary me-2"></i>Mode d'affichage</h6></div>
+            <div class="card-body">
+                <div class="d-flex flex-column gap-2">
+                    {% for key, label in modes %}
+                        <div class="form-check">
+                            <input type="radio" name="display_mode" value="{{ key }}" class="form-check-input" id="mode_{{ key }}" {{ setting.displayMode == key ? 'checked' : '' }}>
+                            <label class="form-check-label" for="mode_{{ key }}">{{ label }}</label>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div id="modeMixedFields" class="mt-3 p-3" style="background:var(--body-bg,#f5f5f5);border-radius:6px;display:{{ setting.displayMode == 'mixed' ? 'block' : 'none' }};">
+                    <p class="text-muted small mb-2">Répartition programmée. Si un des deux groupes manque de produits, l'autre compense automatiquement pour atteindre le total.</p>
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label">Nombre issu des boutiques KBZ</label>
+                            <input type="number" name="mixed_kbz_count" class="form-control" min="0" value="{{ setting.mixedKbzCount }}">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label">Nombre issu des autres boutiques/pro</label>
+                            <input type="number" name="mixed_other_count" class="form-control" min="0" value="{{ setting.mixedOtherCount }}">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="modeTargetedStoresFields" class="mt-3 p-3" style="background:var(--body-bg,#f5f5f5);border-radius:6px;display:{{ setting.displayMode == 'targeted_stores' ? 'block' : 'none' }};">
+                    <label class="form-label">Boutiques/pro ciblés (leurs ventes flash actives seront affichées)</label>
+                    <input type="text" id="targetedSellerSearchInput" class="form-control" placeholder="Rechercher une boutique/pro..." autocomplete="off">
+                    <div id="targetedSellerSearchResults" class="list-group mt-1" style="max-width:400px;"></div>
+                    <div id="targetedSellerList" class="d-flex flex-wrap gap-2 mt-2">
+                        {% for seller in setting.targetedSellers %}
+                            <span class="badge bg-primary d-flex align-items-center gap-1" data-seller-badge data-id="{{ seller.id }}">
+                                {{ seller.displayName }}{{ seller.isKbz ? ' (KBZ)' : '' }}
+                                <input type="hidden" name="targeted_seller_ids[]" value="{{ seller.id }}">
+                                <button type="button" class="btn-close btn-close-white btn-sm" data-remove-badge></button>
+                            </span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div id="modeTargetedProductsFields" class="mt-3 p-3" style="background:var(--body-bg,#f5f5f5);border-radius:6px;display:{{ setting.displayMode == 'targeted_products' ? 'block' : 'none' }};">
+                    <label class="form-label">Produits ciblés (parmi les ventes flash actuellement actives)</label>
+                    <input type="text" id="targetedProductSearchInput" class="form-control" placeholder="Rechercher par titre ou réf. KongoBazar..." autocomplete="off">
+                    <div id="targetedProductSearchResults" class="list-group mt-1" style="max-width:400px;"></div>
+                    <div id="targetedProductList" class="d-flex flex-wrap gap-2 mt-2">
+                        {% for product in setting.targetedProducts %}
+                            <span class="badge bg-primary d-flex align-items-center gap-1" data-product-badge data-id="{{ product.id }}">
+                                {{ product.title }}
+                                <input type="hidden" name="targeted_product_ids[]" value="{{ product.id }}">
+                                <button type="button" class="btn-close btn-close-white btn-sm" data-remove-badge></button>
+                            </span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div id="modeCategoryFields" class="mt-3 p-3" style="background:var(--body-bg,#f5f5f5);border-radius:6px;display:{{ setting.displayMode == 'category' ? 'block' : 'none' }};">
+                    <label class="form-label">Catégories ciblées (produits en vente flash active de ces catégories, sous-catégories incluses)</label>
+                    <div class="category-picker" data-category-picker id="dealsCategoryPicker" style="flex-direction:row;gap:6px;">
+                        <select data-category-level="1" class="form-select" style="max-width:260px;">
+                            <option value="">— Choisir —</option>
+                            {% for root in rootCategories %}
+                                <option value="{{ root.id }}">{{ root.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <input type="hidden" id="dealsCategoryFinalValue" data-category-final-value value="">
+                    <button type="button" id="addTargetedCategoryBtn" class="btn btn-sm btn-outline-primary mt-2">+ Ajouter cette catégorie</button>
+                    <div id="targetedCategoryList" class="d-flex flex-wrap gap-2 mt-2">
+                        {% for category in setting.targetedCategories %}
+                            <span class="badge bg-primary d-flex align-items-center gap-1" data-category-badge data-id="{{ category.id }}">
+                                {{ category.name }}
+                                <input type="hidden" name="targeted_category_ids[]" value="{{ category.id }}">
+                                <button type="button" class="btn-close btn-close-white btn-sm" data-remove-badge></button>
+                            </span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sw-card mb-3">
+            <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-funnel text-primary me-2"></i>Exclusions</h6></div>
+            <div class="card-body">
+                <p class="text-muted small">S'applique aux modes Aléatoire, Boutique KBZ et Mixte (les modes ciblés sont des choix explicites de l'admin, non filtrés ici — sauf exclusion nominative ci-dessous, qui s'applique toujours).</p>
+                <div class="d-flex gap-4 mb-3">
+                    <div class="form-check">
+                        <input type="checkbox" name="exclude_boutique" value="1" class="form-check-input" id="excludeBoutique" {{ setting.excludeBoutique ? 'checked' : '' }}>
+                        <label class="form-check-label" for="excludeBoutique">Exclure toutes les Boutiques</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="exclude_pro" value="1" class="form-check-input" id="excludePro" {{ setting.excludePro ? 'checked' : '' }}>
+                        <label class="form-check-label" for="excludePro">Exclure tous les Pro</label>
+                    </div>
+                </div>
+
+                <label class="form-label">Exclure une boutique/pro précis par son nom</label>
+                <input type="text" id="excludedSellerSearchInput" class="form-control" placeholder="Rechercher une boutique/pro à exclure..." autocomplete="off">
+                <div id="excludedSellerSearchResults" class="list-group mt-1" style="max-width:400px;"></div>
+                <div id="excludedSellerList" class="d-flex flex-wrap gap-2 mt-2">
+                    {% for seller in setting.excludedSellers %}
+                        <span class="badge bg-danger d-flex align-items-center gap-1" data-seller-badge data-id="{{ seller.id }}">
+                            {{ seller.displayName }}{{ seller.isKbz ? ' (KBZ)' : '' }}
+                            <input type="hidden" name="excluded_seller_ids[]" value="{{ seller.id }}">
+                            <button type="button" class="btn-close btn-close-white btn-sm" data-remove-badge></button>
+                        </span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-success">Enregistrer</button>
+    </form>
+
+    <script>
+        (function () {
+            // Switch "Afficher la section" — en direct, indépendant du formulaire principal.
+            const enabledSwitch = document.getElementById('dealsEnabledSwitch');
+            const feedback = document.getElementById('dealsEnabledFeedback');
+            enabledSwitch.addEventListener('change', function () {
+                const wasChecked = this.checked;
+                fetch(this.dataset.toggleUrl, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        this.checked = data.enabled;
+                        feedback.textContent = data.enabled ? 'Activé.' : 'Désactivé.';
+                        setTimeout(() => { feedback.textContent = ''; }, 2000);
+                    })
+                    .catch(() => {
+                        this.checked = !wasChecked;
+                        feedback.textContent = 'Erreur — réessaie.';
+                    });
+            });
+        })();
+
+        (function () {
+            // Bascule la section de champs propre à chaque mode.
+            const modeBlocks = {
+                mixed: document.getElementById('modeMixedFields'),
+                targeted_stores: document.getElementById('modeTargetedStoresFields'),
+                targeted_products: document.getElementById('modeTargetedProductsFields'),
+                category: document.getElementById('modeCategoryFields'),
+            };
+            document.querySelectorAll('[name="display_mode"]').forEach((radio) => {
+                radio.addEventListener('change', function () {
+                    Object.values(modeBlocks).forEach((el) => el.style.display = 'none');
+                    if (modeBlocks[this.value]) modeBlocks[this.value].style.display = 'block';
+                });
+            });
+
+            // Générique : recherche + liste de badges retirables (utilisé 3 fois : ciblage vendeur, ciblage produit, exclusion vendeur).
+            function initSearchableBadgeList(inputId, resultsId, listId, endpoint, inputName, badgeAttr) {
+                const input = document.getElementById(inputId);
+                const results = document.getElementById(resultsId);
+                const list = document.getElementById(listId);
+                if (!input) return;
+
+                const selectedIds = new Set(
+                    Array.from(list.querySelectorAll(`[${badgeAttr}]`)).map((b) => b.dataset.id)
+                );
+
+                let timeout;
+                input.addEventListener('input', function () {
+                    clearTimeout(timeout);
+                    const term = this.value.trim();
+                    if (term.length < 1) { results.innerHTML = ''; return; }
+                    timeout = setTimeout(() => {
+                        fetch(endpoint + '?q=' + encodeURIComponent(term))
+                            .then((r) => r.json())
+                            .then((data) => {
+                                results.innerHTML = '';
+                                data.results.forEach((item) => {
+                                    if (selectedIds.has(String(item.id))) return;
+                                    const btn = document.createElement('button');
+                                    btn.type = 'button';
+                                    btn.className = 'list-group-item list-group-item-action';
+                                    btn.textContent = item.name;
+                                    btn.addEventListener('click', () => {
+                                        addBadge(item);
+                                        input.value = '';
+                                        results.innerHTML = '';
+                                    });
+                                    results.appendChild(btn);
+                                });
+                            });
+                    }, 250);
+                });
+
+                function addBadge(item) {
+                    if (selectedIds.has(String(item.id))) return;
+                    selectedIds.add(String(item.id));
+                    const badge = document.createElement('span');
+                    badge.className = 'badge ' + (badgeAttr === 'data-seller-badge' && inputName === 'excluded_seller_ids[]' ? 'bg-danger' : 'bg-primary') + ' d-flex align-items-center gap-1';
+                    badge.setAttribute(badgeAttr, '');
+                    badge.dataset.id = item.id;
+                    badge.innerHTML = item.name + ' <input type="hidden" name="' + inputName + '" value="' + item.id + '"> <button type="button" class="btn-close btn-close-white btn-sm" data-remove-badge></button>';
+                    badge.querySelector('[data-remove-badge]').addEventListener('click', () => {
+                        selectedIds.delete(String(item.id));
+                        badge.remove();
+                    });
+                    list.appendChild(badge);
+                }
+
+                list.querySelectorAll('[data-remove-badge]').forEach((btn) => {
+                    btn.addEventListener('click', function () {
+                        const badge = this.closest(`[${badgeAttr}]`);
+                        selectedIds.delete(badge.dataset.id);
+                        badge.remove();
+                    });
+                });
+            }
+
+            initSearchableBadgeList('targetedSellerSearchInput', 'targetedSellerSearchResults', 'targetedSellerList', '{{ path("manage_home_deals_search_sellers") }}', 'targeted_seller_ids[]', 'data-seller-badge');
+            initSearchableBadgeList('targetedProductSearchInput', 'targetedProductSearchResults', 'targetedProductList', '{{ path("manage_home_deals_search_products") }}', 'targeted_product_ids[]', 'data-product-badge');
+            initSearchableBadgeList('excludedSellerSearchInput', 'excludedSellerSearchResults', 'excludedSellerList', '{{ path("manage_home_deals_search_sellers") }}', 'excluded_seller_ids[]', 'data-seller-badge');
+
+            // Catégories ciblées : ajout par bouton (cascade), pas par recherche texte.
+            (function () {
+                const addBtn = document.getElementById('addTargetedCategoryBtn');
+                const finalValueInput = document.getElementById('dealsCategoryFinalValue');
+                const list = document.getElementById('targetedCategoryList');
+                if (!addBtn) return;
+
+                const selectedIds = new Set(
+                    Array.from(list.querySelectorAll('[data-category-badge]')).map((b) => b.dataset.id)
+                );
+
+                addBtn.addEventListener('click', function () {
+                    const id = finalValueInput.value;
+                    if (!id || selectedIds.has(id)) return;
+                    const picker = document.getElementById('dealsCategoryPicker');
+                    const lastSelect = picker.querySelector('select:last-of-type');
+                    const label = lastSelect.options[lastSelect.selectedIndex].textContent;
+
+                    selectedIds.add(id);
+                    const badge = document.createElement('span');
+                    badge.className = 'badge bg-primary d-flex align-items-center gap-1';
+                    badge.setAttribute('data-category-badge', '');
+                    badge.dataset.id = id;
+                    badge.innerHTML = label + ' <input type="hidden" name="targeted_category_ids[]" value="' + id + '"> <button type="button" class="btn-close btn-close-white btn-sm" data-remove-badge></button>';
+                    badge.querySelector('[data-remove-badge]').addEventListener('click', () => {
+                        selectedIds.delete(id);
+                        badge.remove();
+                    });
+                    list.appendChild(badge);
+                });
+
+                list.querySelectorAll('[data-remove-badge]').forEach((btn) => {
+                    btn.addEventListener('click', function () {
+                        const badge = this.closest('[data-category-badge]');
+                        selectedIds.delete(badge.dataset.id);
+                        badge.remove();
+                    });
+                });
+            })();
+        })();
+    </script>
+{% endblock %}

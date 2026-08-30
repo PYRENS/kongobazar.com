@@ -222,7 +222,9 @@ class DiscountCampaignManagementController extends AbstractController
                 return $this->redirectToRoute('manage_discount_campaigns_new');
             }
 
-            $startAt = new \DateTimeImmutable($request->request->get('start_at'));
+            $startAt = 'now' === $request->request->get('start_mode', 'now')
+                ? new \DateTimeImmutable()
+                : new \DateTimeImmutable($request->request->get('start_at'));
             $endAt = new \DateTimeImmutable($request->request->get('end_at'));
             $now = new \DateTimeImmutable();
 

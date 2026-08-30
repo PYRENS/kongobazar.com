@@ -41,6 +41,10 @@ abstract class SellerProfile
     #[ORM\Column(length: 20)]
     private string $status = 'pending'; // pending | active | expired | deserteur
 
+    /** Boutique/vendeur officiellement lié à ou appartenant à KongoBazar (par opposition aux boutiques/pro tiers). */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $isKbz = false;
+
     /** @var Collection<int, AdministrativeUnit> */
     #[ORM\ManyToMany(targetEntity: AdministrativeUnit::class)]
     #[ORM\JoinTable(name: 'seller_profile_delivery_zone')]
@@ -105,6 +109,17 @@ abstract class SellerProfile
     public function setStatus(string $status): static
     {
         $this->status = $status;
+        return $this;
+    }
+
+    public function isKbz(): bool
+    {
+        return $this->isKbz;
+    }
+
+    public function setIsKbz(bool $isKbz): static
+    {
+        $this->isKbz = $isKbz;
         return $this;
     }
 

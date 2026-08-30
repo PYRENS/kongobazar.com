@@ -26,20 +26,7 @@
 
     <div id="partManualFieldsWrap" style="{{ pld and pld.partCatalogEntry ? 'display:none;' : '' }}">
 
-    <div class="mb-3 d-flex align-items-start gap-3">
-        <div>
-            <label class="form-label">Marque de la pièce</label>
-            <input type="text" id="partBrandSearchInput" class="form-control" style="max-width:300px;" placeholder="Rechercher une marque..."
-                value="{{ product and product.brand ? product.brand.name : '' }}" autocomplete="off">
-            <div id="partBrandSearchResults" class="list-group mt-1" style="max-width:300px;position:relative;z-index:10;"></div>
-            <input type="hidden" name="brand_id" id="partBrandIdInput" value="{{ product and product.brand ? product.brand.id : '' }}">
-            <small class="text-muted">Le fabricant de la pièce elle-même (ex: GATES), pas la marque du véhicule compatible.</small>
-        </div>
-        <div>
-            <img id="partBrandLogoPreview" src="{{ product and product.brand and product.brand.logoName ? '/media/logos_brands/' ~ product.brand.logoName : '' }}"
-                style="max-width:70px;max-height:70px;object-fit:contain;{{ product and product.brand and product.brand.logoName ? '' : 'display:none;' }}">
-        </div>
-    </div>
+    <p class="text-muted small mb-3"><i class="bi bi-info-circle"></i> Le champ "Marque" est maintenant dans la carte "Classification" en haut du formulaire (le fabricant de la pièce elle-même, ex: GATES — pas la marque du véhicule compatible).</p>
 
     <div class="row">
         <div class="col-md-4 mb-3">
