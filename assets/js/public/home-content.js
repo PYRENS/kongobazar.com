@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initCategoryBlockSortTabs();
     initGalleryThumbSwap();
     initCountdowns();
-    initAddToCartButtons();
+    // initAddToCartButtons() retiré : géré désormais globalement (toutes pages) par cart-added-modal.js
 });
 /* --------------------------------------------------------------------------
    Carrousel "Ventes flash" — glissement carte par carte (pas page par page),

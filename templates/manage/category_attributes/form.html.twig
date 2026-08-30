@@ -5,52 +5,65 @@
 {% block page_title %}{{ attribute ? 'Modifier' : 'Nouvelle' }} caractéristique — {{ category.name }}{% endblock %}
 
 {% block body %}
+    <a href="{{ path('manage_category_attributes_index', {categoryId: category.id}) }}" class="btn btn-outline-secondary btn-sm mb-3"><i class="bi bi-arrow-left me-1"></i>Retour à la liste</a>
+
     <form method="post" action="{{ attribute ? path('manage_category_attributes_update', {id: attribute.id}) : path('manage_category_attributes_create', {categoryId: category.id}) }}">
-        <div class="mb-3">
-            <label class="form-label">Nom</label>
-            <input type="text" name="name" class="form-control" value="{{ attribute ? attribute.name : '' }}" required>
-        </div>
-
-        <div class="row">
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Type</label>
-                <select name="data_type" id="dataTypeSelect" class="form-select">
-                    <option value="text" {{ attribute and attribute.dataType == 'text' ? 'selected' : '' }}>Texte</option>
-                    <option value="number" {{ attribute and attribute.dataType == 'number' ? 'selected' : '' }}>Nombre</option>
-                    <option value="select" {{ attribute and attribute.dataType == 'select' ? 'selected' : '' }}>Liste (select)</option>
-                    <option value="boolean" {{ attribute and attribute.dataType == 'boolean' ? 'selected' : '' }}>Oui/Non</option>
-                </select>
+        <div class="sw-card">
+            <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-info-circle text-primary me-2"></i>Informations générales</h6></div>
+            <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label">Nom</label>
+                <input type="text" name="name" class="form-control" value="{{ attribute ? attribute.name : '' }}" required>
             </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Unité (optionnel, pour Nombre)</label>
-                <input type="text" name="unit" class="form-control" value="{{ attribute ? attribute.unit : '' }}" placeholder="ex: cm, kg, m²">
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Type</label>
+                    <select name="data_type" id="dataTypeSelect" class="form-select">
+                        <option value="text" {{ attribute and attribute.dataType == 'text' ? 'selected' : '' }}>Texte</option>
+                        <option value="number" {{ attribute and attribute.dataType == 'number' ? 'selected' : '' }}>Nombre</option>
+                        <option value="select" {{ attribute and attribute.dataType == 'select' ? 'selected' : '' }}>Liste (select)</option>
+                        <option value="boolean" {{ attribute and attribute.dataType == 'boolean' ? 'selected' : '' }}>Oui/Non</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Unité (optionnel, pour Nombre)</label>
+                    <input type="text" name="unit" class="form-control" value="{{ attribute ? attribute.unit : '' }}" placeholder="ex: cm, kg, m²">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Position</label>
+                    <input type="number" name="position" class="form-control" value="{{ attribute ? attribute.position : 0 }}">
+                </div>
             </div>
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Position</label>
-                <input type="number" name="position" class="form-control" value="{{ attribute ? attribute.position : 0 }}">
+
+            <div class="mb-0">
+                <label class="form-label">Étiquette de regroupement (optionnel)</label>
+                <input type="text" name="group_tag" class="form-control" value="{{ attribute ? attribute.groupTag : '' }}" placeholder="ex: auto">
+            </div>
             </div>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label">Étiquette de regroupement (optionnel)</label>
-            <input type="text" name="group_tag" class="form-control" value="{{ attribute ? attribute.groupTag : '' }}" placeholder="ex: auto">
+        <div class="sw-card mt-3">
+            <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-toggles text-primary me-2"></i>Comportement</h6></div>
+            <div class="card-body">
+            <div class="mb-3 form-check">
+                <input type="checkbox" name="nullable" value="1" class="form-check-input" id="nullable" {{ attribute is null or attribute.nullable ? 'checked' : '' }}>
+                <label class="form-check-label" for="nullable">Peut rester vide (non obligatoire)</label>
+            </div>
+            <div class="mb-3 form-check">
+                <input type="checkbox" name="filterable" value="1" class="form-check-input" id="filterable" {{ attribute and attribute.filterable ? 'checked' : '' }}>
+                <label class="form-check-label" for="filterable">Utilisable comme filtre de recherche</label>
+            </div>
+            <div class="mb-0 form-check">
+                <input type="checkbox" name="show_on_card" value="1" class="form-check-input" id="showOnCard" {{ attribute and attribute.showOnCard ? 'checked' : '' }}>
+                <label class="form-check-label" for="showOnCard">Afficher en badge sur la carte produit</label>
+            </div>
+            </div>
         </div>
 
-        <div class="mb-3 form-check">
-            <input type="checkbox" name="nullable" value="1" class="form-check-input" id="nullable" {{ attribute is null or attribute.nullable ? 'checked' : '' }}>
-            <label class="form-check-label" for="nullable">Peut rester vide (non obligatoire)</label>
-        </div>
-        <div class="mb-3 form-check">
-            <input type="checkbox" name="filterable" value="1" class="form-check-input" id="filterable" {{ attribute and attribute.filterable ? 'checked' : '' }}>
-            <label class="form-check-label" for="filterable">Utilisable comme filtre de recherche</label>
-        </div>
-        <div class="mb-3 form-check">
-            <input type="checkbox" name="show_on_card" value="1" class="form-check-input" id="showOnCard" {{ attribute and attribute.showOnCard ? 'checked' : '' }}>
-            <label class="form-check-label" for="showOnCard">Afficher en badge sur la carte produit</label>
-        </div>
-
-        <div id="optionsBlock" style="{{ attribute and attribute.dataType == 'select' ? '' : 'display:none;' }}">
-            <label class="form-label d-block">Options</label>
+        <div class="sw-card mt-3" id="optionsCard" style="{{ attribute and attribute.dataType == 'select' ? '' : 'display:none;' }}">
+            <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-list-ul text-primary me-2"></i>Options (liste)</h6></div>
+            <div class="card-body">
             <div id="optionsList">
                 {% if attribute %}
                     {% for option in attribute.options %}
@@ -64,6 +77,7 @@
                 {% endif %}
             </div>
             <button type="button" id="addOptionBtn" class="btn btn-sm btn-outline-secondary">+ Ajouter une option</button>
+            </div>
         </div>
 
         <div class="mt-3">
@@ -74,7 +88,7 @@
 
     <script>
         document.getElementById('dataTypeSelect').addEventListener('change', function () {
-            document.getElementById('optionsBlock').style.display = this.value === 'select' ? 'block' : 'none';
+            document.getElementById('optionsCard').style.display = this.value === 'select' ? 'block' : 'none';
         });
 
         document.getElementById('addOptionBtn').addEventListener('click', function () {

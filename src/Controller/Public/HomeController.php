@@ -36,6 +36,13 @@ class HomeController extends AbstractController
         \App\Service\SeoResolver $seoResolver,
         \App\Service\HomeDealsSelector $homeDealsSelector,
         \App\Repository\HomeDealsSettingRepository $homeDealsSettingRepository,
+        \App\Service\TrendingTabSelector $trendingTabSelector,
+        \App\Repository\TrendingTabSettingRepository $trendingTabSettingRepository,
+        \App\Repository\TrendingSectionSettingRepository $trendingSectionSettingRepository,
+        \App\Repository\HomeCategoryBlockSettingRepository $homeCategoryBlockSettingRepository,
+        \App\Repository\HomeCategoryBlockSectionSettingRepository $homeCategoryBlockSectionSettingRepository,
+        \App\Repository\TopCategoryItemRepository $topCategoryItemRepository,
+        \App\Repository\TopCategorySectionSettingRepository $topCategorySectionSettingRepository,
     ): Response {
         $rootCategories = $categoryRepository->findRootCategories();
 
@@ -64,33 +71,48 @@ class HomeController extends AbstractController
         $centerAdBanner = $adZonePicker->pick('homepage_center_banner', 'public');
 
         // --- Articles tendances ---
-        $trendingTabCategories = $categoryRepository->findFeaturedHomepageTabs();
+        $trendingSectionSettings = $trendingSectionSettingRepository->getSingleton();
+        $trendingTabs = $trendingTabSettingRepository->findAllOrdered();
+        $trendingTabCategories = array_map(fn ($tab) => $tab->getCategory(), $trendingTabs);
         $trendingProductsByCategory = [];
-        foreach ($trendingTabCategories as $category) {
-            $trendingProductsByCategory[$category->getSlug()] = $productRepository->findByCategoryForTrending($category->getDescendantCategories(), 5);
+        foreach ($trendingTabs as $tab) {
+            $trendingProductsByCategory[$tab->getCategory()->getSlug()] = $trendingTabSelector->select($tab);
         }
 
         // --- Blocs catégorie complets ---
-        $blockColors = ['#2FA8E0', '#e91e63', '#43a047', '#f57c00'];
+        $categoryBlockSectionSettings = $homeCategoryBlockSectionSettingRepository->getSingleton();
         $blockIcons = ['bi-cpu', 'bi-bag-heart', 'bi-house-door', 'bi-collection'];
-        $featuredBlockCategories = $categoryRepository->findFeaturedHomepageBlocks();
+        $categoryBlocks = $homeCategoryBlockSettingRepository->findAllOrdered();
         $featuredBlocks = [];
-        foreach ($featuredBlockCategories as $i => $category) {
+        foreach ($categoryBlocks as $i => $block) {
+            $category = $block->getCategory();
+            $sortTabs = $block->getSortTabs();
+            $firstVisibleTab = null;
+            foreach ($sortTabs as $tab) {
+                if ($tab->isVisible()) {
+                    $firstVisibleTab = $tab;
+                    break;
+                }
+            }
+            $initialSort = $firstVisibleTab ? $firstVisibleTab->getSortKey() : 'best_sellers';
+            $initialCount = $firstVisibleTab ? $firstVisibleTab->getProductCount() : 4;
+            $firstSubcategoryItem = $block->getSubcategoryItems()->first();
+            $initialScopeCategory = $firstSubcategoryItem ? $firstSubcategoryItem->getCategory() : $category;
+
             $featuredBlocks[] = [
+                'block' => $block,
                 'category' => $category,
-                'color' => $blockColors[$i % count($blockColors)],
                 'icon' => $blockIcons[$i % count($blockIcons)],
-                'productsBySort' => [
-                    'best_sellers' => $productRepository->findByCategorySort($category->getDescendantCategories(), 'best_sellers', 4),
-                    'new_arrivals' => $productRepository->findByCategorySort($category->getDescendantCategories(), 'new_arrivals', 4),
-                    'featured' => $productRepository->findByCategorySort($category->getDescendantCategories(), 'featured', 4),
-                ],
+                'subcategories' => $block->getSubcategoryItems(),
+                'sortTabs' => $sortTabs,
+                'initialProducts' => $productRepository->findByCategorySort($initialScopeCategory->getDescendantCategories(), $initialSort, $initialCount),
                 'banner' => $advertisementRepository->findOneActiveByZoneAndCategory('category_block_banner', $category, 'public'),
             ];
         }
 
         // --- Top Catégories / Top Vendeur ---
-        $topCategories = $categoryRepository->findTopCategoriesIllustrated(8);
+        $topCategorySectionSettings = $topCategorySectionSettingRepository->getSingleton();
+        $topCategories = $topCategoryItemRepository->findAllOrdered();
         $topVendorsRaw = $sellerProfileRepository->findTopVendors(4);
         $topVendors = array_map(function ($vendor) use ($productRepository, $reviewRepository) {
             $vendor->averageRating = $reviewRepository->getAverageRatingForSeller($vendor);
@@ -135,6 +157,9 @@ class HomeController extends AbstractController
         return $this->render('public/home.html.twig', [
             'seoData' => $seoData,
             'dealsEnabled' => $homeDealsSettings->isEnabled(),
+            'trendingEnabled' => $trendingSectionSettings->isEnabled(),
+            'categoryBlocksEnabled' => $categoryBlockSectionSettings->isEnabled(),
+            'topCategoriesEnabled' => $topCategorySectionSettings->isEnabled(),
             'heroSlides' => $heroSlides,
             'sideAdTop' => $sideAdTop,
             'sideAdBottom' => $sideAdBottom,

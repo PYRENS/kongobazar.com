@@ -13,18 +13,19 @@
             {% include 'public/_partials/_home_center_top.html.twig' %}
             {% include 'public/_partials/_home_trending_tabs.html.twig' %}
 
-            {# Un bloc par catégorie sélectionnée (Category.featuredHomepageBlock),
-               le contrôleur fournira une liste "featuredBlocks" avec, pour chacune,
-               les variables attendues par _home_category_block.html.twig #}
-            {% for block in featuredBlocks|default([]) %}
-                {% include 'public/_partials/_home_category_block.html.twig' with {
-                    category: block.category,
-                    blockColor: block.color,
-                    blockIcon: block.icon,
-                    productsBySort: block.productsBySort,
-                    blockBanner: block.banner
-                } %}
-            {% endfor %}
+            {% if categoryBlocksEnabled %}
+                {% for row in featuredBlocks|default([]) %}
+                    {% include 'public/_partials/_home_category_block.html.twig' with {
+                        block: row.block,
+                        category: row.category,
+                        blockIcon: row.icon,
+                        subcategories: row.subcategories,
+                        sortTabs: row.sortTabs,
+                        initialProducts: row.initialProducts,
+                        blockBanner: row.banner
+                    } %}
+                {% endfor %}
+            {% endif %}
 
             {% include 'public/_partials/_home_top_categories_vendors.html.twig' %}
             {% include 'public/_partials/_home_popular_tags.html.twig' %}

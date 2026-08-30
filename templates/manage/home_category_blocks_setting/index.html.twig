@@ -1,0 +1,275 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Blocs catégorie — Accueil{% endblock %}
+{% block page_icon %}bi-grid-3x3-gap-fill{% endblock %}
+{% block page_title %}Affichage "Blocs catégorie" — Accueil{% endblock %}
+
+{% block body %}
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-toggle-on text-primary me-2"></i>Visibilité</h6></div>
+        <div class="card-body">
+            <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="blocksEnabledSwitch" role="switch" {{ sectionSetting.enabled ? 'checked' : '' }} data-toggle-url="{{ path('manage_home_category_blocks_toggle_enabled') }}">
+                <label class="form-check-label" for="blocksEnabledSwitch">Afficher la section "Blocs catégorie" sur la page d'accueil</label>
+            </div>
+            <small id="blocksEnabledFeedback" class="text-muted"></small>
+        </div>
+    </div>
+
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-plus-circle text-primary me-2"></i>Ajouter un bloc</h6></div>
+        <div class="card-body">
+            <p class="text-muted small">Choisis la catégorie du bloc à n'importe quel niveau de l'arbre — un rayon entier ("Mode") ou une sous-catégorie précise.</p>
+            <form method="post" action="{{ path('manage_home_category_blocks_add') }}">
+                <div class="cascade-picker" id="addBlockCascade" data-children-url="{{ path('manage_home_category_blocks_children') }}"></div>
+                <input type="hidden" name="category_id" id="addBlockCategoryId" required>
+                <button type="submit" class="btn btn-primary btn-sm mt-2" id="addBlockSubmitBtn" disabled>Ajouter comme bloc</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="sw-card">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-list-ol text-primary me-2"></i>Blocs configurés</h6></div>
+        <div class="card-body p-0">
+            {% for block in blocks %}
+                <div class="border-bottom p-3">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <form method="post" action="{{ path('manage_home_category_blocks_move', {id: block.id, direction: 'up'}) }}" style="display:inline;">
+                                <button type="submit" class="admin-btn admin-btn--outline"{{ loop.first ? ' disabled' }}><i class="bi bi-arrow-up"></i></button>
+                            </form>
+                            <form method="post" action="{{ path('manage_home_category_blocks_move', {id: block.id, direction: 'down'}) }}" style="display:inline;">
+                                <button type="submit" class="admin-btn admin-btn--outline"{{ loop.last ? ' disabled' }}><i class="bi bi-arrow-down"></i></button>
+                            </form>
+                            <strong>{{ block.category.name }}</strong>
+                            <span class="badge" style="background:{{ block.category.effectiveThemeColor|default('#2FA8E0') }};">{{ block.category.effectiveThemeColor|default('bleu du site (par défaut)') }}</span>
+                        </div>
+                        <form method="post" action="{{ path('manage_home_category_blocks_remove', {id: block.id}) }}" onsubmit="return confirm('Retirer ce bloc ?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Retirer</button>
+                        </form>
+                    </div>
+
+                    <label class="form-label small">Sous-catégories affichées dans le menu de gauche de ce bloc</label>
+
+                    <table class="table table-sm mb-2" style="max-width:500px;">
+                        <tbody>
+                            {% for item in block.subcategoryItems %}
+                                <tr>
+                                    <td style="width:70px;">
+                                        <form method="post" action="{{ path('manage_home_category_blocks_move_subcategory', {id: item.id, direction: 'up'}) }}" style="display:inline;">
+                                            <button type="submit" class="admin-btn admin-btn--outline"{{ loop.first ? ' disabled' }}><i class="bi bi-arrow-up"></i></button>
+                                        </form>
+                                        <form method="post" action="{{ path('manage_home_category_blocks_move_subcategory', {id: item.id, direction: 'down'}) }}" style="display:inline;">
+                                            <button type="submit" class="admin-btn admin-btn--outline"{{ loop.last ? ' disabled' }}><i class="bi bi-arrow-down"></i></button>
+                                        </form>
+                                    </td>
+                                    <td>{{ item.category.name }}</td>
+                                    <td style="width:90px;">
+                                        <form method="post" action="{{ path('manage_home_category_blocks_remove_subcategory', {id: item.id}) }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Retirer</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr><td class="text-muted">Aucune sous-catégorie — "Voir tout" s'affichera seul.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <form method="post" action="{{ path('manage_home_category_blocks_add_subcategory', {id: block.id}) }}" class="add-subcategory-form">
+                        <div class="cascade-picker subcategory-cascade" data-children-url="{{ path('manage_home_category_blocks_children') }}" data-parent-id="{{ block.category.id }}"></div>
+                        <input type="hidden" name="category_id" class="subcategory-pending-id">
+                        <button type="submit" class="btn btn-sm btn-outline-primary mt-2 add-subcategory-btn" disabled>+ Ajouter cette sous-catégorie</button>
+                    </form>
+
+                    <label class="form-label small mt-3">Onglets de tri — ordre et nombre de produits affichés</label>
+
+                    {% if block.sortTabs|length == 0 %}
+                        <form method="post" action="{{ path('manage_home_category_blocks_generate_sort_tabs', {id: block.id}) }}">
+                            <p class="text-muted small mb-2">Ce bloc n'a pas encore d'onglets (créé avant l'ajout de cette fonctionnalité).</p>
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Générer les 4 onglets par défaut</button>
+                        </form>
+                    {% endif %}
+
+                    <table class="table table-sm mb-0" style="max-width:600px;">
+                        <tbody>
+                            {% for tab in block.sortTabs %}
+                                <tr>
+                                    <td style="width:70px;">
+                                        <form method="post" action="{{ path('manage_home_category_blocks_move_sort_tab', {id: tab.id, direction: 'up'}) }}" style="display:inline;">
+                                            <button type="submit" class="admin-btn admin-btn--outline"{{ loop.first ? ' disabled' }}><i class="bi bi-arrow-up"></i></button>
+                                        </form>
+                                        <form method="post" action="{{ path('manage_home_category_blocks_move_sort_tab', {id: tab.id, direction: 'down'}) }}" style="display:inline;">
+                                            <button type="submit" class="admin-btn admin-btn--outline"{{ loop.last ? ' disabled' }}><i class="bi bi-arrow-down"></i></button>
+                                        </form>
+                                    </td>
+                                    <td>{{ tab.label }}</td>
+                                    <td style="width:280px;">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="form-check form-switch mb-0 d-flex align-items-center gap-1">
+                                                <input type="checkbox" class="form-check-input mt-0" id="tabVisible{{ tab.id }}" role="switch" {{ tab.visible ? 'checked' : '' }} data-toggle-url="{{ path('manage_home_category_blocks_toggle_sort_tab', {id: tab.id}) }}">
+                                                <label class="form-check-label small mb-0" for="tabVisible{{ tab.id }}">Visible</label>
+                                            </div>
+                                            <form method="post" action="{{ path('manage_home_category_blocks_update_sort_tab', {id: tab.id}) }}" class="d-flex align-items-center gap-2 mb-0">
+                                                <input type="number" name="product_count" class="form-control form-control-sm" style="max-width:70px;" min="1" value="{{ tab.productCount }}">
+                                                <button type="submit" class="btn btn-sm btn-success">Enregistrer</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted p-3 mb-0">Aucun bloc configuré — ajoute une catégorie ci-dessus.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const enabledSwitch = document.getElementById('blocksEnabledSwitch');
+            const feedback = document.getElementById('blocksEnabledFeedback');
+            enabledSwitch.addEventListener('change', function () {
+                const wasChecked = this.checked;
+                fetch(this.dataset.toggleUrl, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        this.checked = data.enabled;
+                        feedback.textContent = data.enabled ? 'Activé.' : 'Désactivé.';
+                        setTimeout(() => { feedback.textContent = ''; }, 2000);
+                    })
+                    .catch(() => {
+                        this.checked = !wasChecked;
+                        feedback.textContent = 'Erreur — réessaie.';
+                    });
+            });
+        })();
+
+        // Switch "Visible" par onglet de tri — en direct, indépendant du bouton "Enregistrer" (qui ne gère que le nombre de produits).
+        document.querySelectorAll('[id^="tabVisible"]').forEach((sw) => {
+            sw.addEventListener('change', function () {
+                const wasChecked = this.checked;
+                fetch(this.dataset.toggleUrl, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => { this.checked = data.visible; })
+                    .catch(() => { this.checked = !wasChecked; });
+            });
+        });
+
+        /* Cascade "n'importe quel niveau" : à chaque niveau, un select + un bouton "Choisir ce niveau"
+           qui valide immédiatement (pas besoin d'atteindre une feuille de l'arbre). */
+        function initLevelPickCascade(container, onPick) {
+            const childrenUrl = container.dataset.childrenUrl;
+
+            function loadLevel(parentId) {
+                fetch(childrenUrl + '?parent_id=' + (parentId || ''))
+                    .then((r) => r.json())
+                    .then((data) => {
+                        if (data.results.length === 0) return;
+
+                        const row = document.createElement('div');
+                        row.className = 'd-flex align-items-center gap-2 mb-2';
+
+                        const select = document.createElement('select');
+                        select.className = 'form-select';
+                        select.style.maxWidth = '240px';
+                        select.innerHTML = '<option value="">— Choisir —</option>' +
+                            data.results.map((c) => `<option value="${c.id}" data-name="${c.name}" data-has-children="${c.hasChildren}">${c.name}</option>`).join('');
+
+                        const pickBtn = document.createElement('button');
+                        pickBtn.type = 'button';
+                        pickBtn.className = 'btn btn-sm btn-outline-secondary';
+                        pickBtn.textContent = 'Choisir ce niveau';
+                        pickBtn.disabled = true;
+
+                        select.addEventListener('change', function () {
+                            let next = row.nextElementSibling;
+                            while (next) {
+                                const toRemove = next;
+                                next = next.nextElementSibling;
+                                toRemove.remove();
+                            }
+                            pickBtn.disabled = !this.value;
+                            if (this.value) {
+                                const opt = this.options[this.selectedIndex];
+                                if (opt.dataset.hasChildren === 'true') {
+                                    loadLevel(this.value);
+                                }
+                            }
+                        });
+
+                        pickBtn.addEventListener('click', function () {
+                            const opt = select.options[select.selectedIndex];
+                            onPick(select.value, opt.dataset.name);
+                        });
+
+                        row.appendChild(select);
+                        row.appendChild(pickBtn);
+                        container.appendChild(row);
+                    });
+            }
+
+            loadLevel(null);
+        }
+
+        // Ajout d'un bloc : sélection unique.
+        const addBlockCascade = document.getElementById('addBlockCascade');
+        const addBlockCategoryId = document.getElementById('addBlockCategoryId');
+        const addBlockSubmitBtn = document.getElementById('addBlockSubmitBtn');
+        initLevelPickCascade(addBlockCascade, function (id, name) {
+            addBlockCategoryId.value = id;
+            addBlockSubmitBtn.disabled = false;
+            addBlockSubmitBtn.textContent = 'Ajouter "' + name + '" comme bloc';
+        });
+
+        // Sous-catégories par bloc : sélection unique, soumission classique (chaque ajout = un vrai enregistrement en base, réordonnable ensuite par flèches).
+        document.querySelectorAll('.subcategory-cascade').forEach((cascade) => {
+            const form = cascade.closest('form');
+            const addBtn = form.querySelector('.add-subcategory-btn');
+            const pendingIdInput = form.querySelector('.subcategory-pending-id');
+            const childrenUrl = cascade.dataset.childrenUrl;
+            const rootParentId = cascade.dataset.parentId;
+
+            function loadLevel(parentId) {
+                fetch(childrenUrl + '?parent_id=' + parentId)
+                    .then((r) => r.json())
+                    .then((data) => {
+                        if (data.results.length === 0) return;
+                        const row = document.createElement('div');
+                        row.className = 'd-flex align-items-center gap-2 mb-2';
+                        const select = document.createElement('select');
+                        select.className = 'form-select';
+                        select.style.maxWidth = '240px';
+                        select.innerHTML = '<option value="">— Choisir —</option>' +
+                            data.results.map((c) => `<option value="${c.id}" data-name="${c.name}" data-has-children="${c.hasChildren}">${c.name}</option>`).join('');
+
+                        select.addEventListener('change', function () {
+                            let next = row.nextElementSibling;
+                            while (next) {
+                                const toRemove = next;
+                                next = next.nextElementSibling;
+                                toRemove.remove();
+                            }
+                            if (this.value) {
+                                pendingIdInput.value = this.value;
+                                addBtn.disabled = false;
+                                const opt = this.options[this.selectedIndex];
+                                if (opt.dataset.hasChildren === 'true') {
+                                    loadLevel(this.value);
+                                }
+                            } else {
+                                pendingIdInput.value = '';
+                                addBtn.disabled = true;
+                            }
+                        });
+
+                        row.appendChild(select);
+                        cascade.appendChild(row);
+                    });
+            }
+            loadLevel(rootParentId);
+        });
+    </script>
+{% endblock %}

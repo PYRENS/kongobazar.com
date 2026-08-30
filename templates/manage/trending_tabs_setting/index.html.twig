@@ -1,0 +1,177 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Articles tendances — Accueil{% endblock %}
+{% block page_icon %}bi-graph-up{% endblock %}
+{% block page_title %}Affichage "Articles tendances" — Accueil{% endblock %}
+
+{% block body %}
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-toggle-on text-primary me-2"></i>Visibilité</h6></div>
+        <div class="card-body">
+            <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="trendingEnabledSwitch" role="switch" {{ sectionSetting.enabled ? 'checked' : '' }} data-toggle-url="{{ path('manage_home_trending_tabs_toggle_enabled') }}">
+                <label class="form-check-label" for="trendingEnabledSwitch">Afficher la section "Articles tendances" sur la page d'accueil</label>
+            </div>
+            <small id="trendingEnabledFeedback" class="text-muted"></small>
+        </div>
+    </div>
+
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-plus-circle text-primary me-2"></i>Ajouter un onglet</h6></div>
+        <div class="card-body">
+            <form method="post" action="{{ path('manage_home_trending_tabs_add') }}" class="d-flex gap-2 align-items-end">
+                <div>
+                    <label class="form-label">Catégorie</label>
+                    <select name="category_id" class="form-select" style="max-width:280px;" required>
+                        <option value="">— Choisir —</option>
+                        {% for root in rootCategories %}
+                            {% if root.id not in usedCategoryIds %}
+                                <option value="{{ root.id }}">{{ root.name }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">Ajouter comme onglet</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="sw-card">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-list-ol text-primary me-2"></i>Onglets configurés</h6></div>
+        <div class="card-body p-0">
+            {% for tab in tabs %}
+                <div class="border-bottom p-3">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <form method="post" action="{{ path('manage_home_trending_tabs_move', {id: tab.id, direction: 'up'}) }}" style="display:inline;">
+                                <button type="submit" class="admin-btn admin-btn--outline"{{ loop.first ? ' disabled' }}><i class="bi bi-arrow-up"></i></button>
+                            </form>
+                            <form method="post" action="{{ path('manage_home_trending_tabs_move', {id: tab.id, direction: 'down'}) }}" style="display:inline;">
+                                <button type="submit" class="admin-btn admin-btn--outline"{{ loop.last ? ' disabled' }}><i class="bi bi-arrow-down"></i></button>
+                            </form>
+                            <strong>{{ tab.category.name }}</strong>
+                        </div>
+                        <form method="post" action="{{ path('manage_home_trending_tabs_remove', {id: tab.id}) }}" onsubmit="return confirm('Retirer cet onglet ?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Retirer</button>
+                        </form>
+                    </div>
+
+                    <form method="post" action="{{ path('manage_home_trending_tabs_update', {id: tab.id}) }}" class="trending-tab-form" data-category-id="{{ tab.category.id }}">
+                        <div class="d-flex gap-3 align-items-end flex-wrap">
+                            <div>
+                                <label class="form-label small">Mode</label>
+                                <select name="mode" class="form-select form-select-sm trending-mode-select">
+                                    {% for key, label in modes %}
+                                        <option value="{{ key }}" {{ tab.mode == key ? 'selected' : '' }}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label small">Nombre de produits</label>
+                                <input type="number" name="product_count" class="form-control form-control-sm" style="max-width:100px;" min="1" value="{{ tab.productCount }}">
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-success">Enregistrer</button>
+                        </div>
+
+                        <div class="trending-targeted-fields mt-2" style="display:{{ tab.mode == 'targeted' ? 'block' : 'none' }};">
+                            <label class="form-label small">Produits ciblés (catégorie "{{ tab.category.name }}")</label>
+                            <input type="text" class="form-control form-control-sm trending-targeted-search" style="max-width:320px;" placeholder="Rechercher par titre..." autocomplete="off">
+                            <div class="list-group trending-targeted-results mt-1" style="max-width:320px;"></div>
+                            <div class="d-flex flex-wrap gap-2 mt-2 trending-targeted-list">
+                                {% for product in tab.targetedProducts %}
+                                    <span class="badge bg-primary d-flex align-items-center gap-1" data-product-badge data-id="{{ product.id }}">
+                                        {{ product.title }}
+                                        <input type="hidden" name="targeted_product_ids[]" value="{{ product.id }}">
+                                        <button type="button" class="btn-close btn-close-white btn-sm" data-remove-badge></button>
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            {% else %}
+                <p class="text-muted p-3 mb-0">Aucun onglet configuré — ajoute une catégorie ci-dessus.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const enabledSwitch = document.getElementById('trendingEnabledSwitch');
+            const feedback = document.getElementById('trendingEnabledFeedback');
+            enabledSwitch.addEventListener('change', function () {
+                const wasChecked = this.checked;
+                fetch(this.dataset.toggleUrl, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        this.checked = data.enabled;
+                        feedback.textContent = data.enabled ? 'Activé.' : 'Désactivé.';
+                        setTimeout(() => { feedback.textContent = ''; }, 2000);
+                    })
+                    .catch(() => {
+                        this.checked = !wasChecked;
+                        feedback.textContent = 'Erreur — réessaie.';
+                    });
+            });
+        })();
+
+        document.querySelectorAll('.trending-tab-form').forEach((form) => {
+            const modeSelect = form.querySelector('.trending-mode-select');
+            const targetedFields = form.querySelector('.trending-targeted-fields');
+            modeSelect.addEventListener('change', function () {
+                targetedFields.style.display = this.value === 'targeted' ? 'block' : 'none';
+            });
+
+            const searchInput = form.querySelector('.trending-targeted-search');
+            const results = form.querySelector('.trending-targeted-results');
+            const list = form.querySelector('.trending-targeted-list');
+            const categoryId = form.dataset.categoryId;
+            const selectedIds = new Set(Array.from(list.querySelectorAll('[data-product-badge]')).map((b) => b.dataset.id));
+
+            let timeout;
+            searchInput.addEventListener('input', function () {
+                clearTimeout(timeout);
+                const term = this.value.trim();
+                if (term.length < 1) { results.innerHTML = ''; return; }
+                timeout = setTimeout(() => {
+                    fetch('{{ path("manage_home_trending_tabs_search_products") }}?q=' + encodeURIComponent(term) + '&category_id=' + categoryId)
+                        .then((r) => r.json())
+                        .then((data) => {
+                            results.innerHTML = '';
+                            data.results.forEach((item) => {
+                                if (selectedIds.has(String(item.id))) return;
+                                const btn = document.createElement('button');
+                                btn.type = 'button';
+                                btn.className = 'list-group-item list-group-item-action';
+                                btn.textContent = item.name;
+                                btn.addEventListener('click', () => {
+                                    selectedIds.add(String(item.id));
+                                    const badge = document.createElement('span');
+                                    badge.className = 'badge bg-primary d-flex align-items-center gap-1';
+                                    badge.setAttribute('data-product-badge', '');
+                                    badge.dataset.id = item.id;
+                                    badge.innerHTML = item.name + ' <input type="hidden" name="targeted_product_ids[]" value="' + item.id + '"> <button type="button" class="btn-close btn-close-white btn-sm" data-remove-badge></button>';
+                                    badge.querySelector('[data-remove-badge]').addEventListener('click', () => {
+                                        selectedIds.delete(String(item.id));
+                                        badge.remove();
+                                    });
+                                    list.appendChild(badge);
+                                    searchInput.value = '';
+                                    results.innerHTML = '';
+                                });
+                                results.appendChild(btn);
+                            });
+                        });
+                }, 250);
+            });
+
+            list.querySelectorAll('[data-remove-badge]').forEach((btn) => {
+                btn.addEventListener('click', function () {
+                    const badge = this.closest('[data-product-badge]');
+                    selectedIds.delete(badge.dataset.id);
+                    badge.remove();
+                });
+            });
+        });
+    </script>
+{% endblock %}

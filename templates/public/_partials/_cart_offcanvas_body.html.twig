@@ -5,7 +5,7 @@
             {% set item = line.item %}
             {% set variant = item.variant %}
             <div class="cart-item">
-                <img src="{{ variant.imageName ? vich_uploader_asset(variant, 'imageFile') : '' }}" alt="{{ variant.product.title }}">
+                <img src="{{ variant.imageName ? vich_uploader_asset(variant, 'imageFile') : (variant.product.images|length > 0 ? vich_uploader_asset(variant.product.images|first, 'imageFile') : '') }}" alt="{{ variant.product.title }}">
                 <div class="cart-item-info">
                     <span class="cart-item-name">{{ variant.product.title }}</span>
                     {% if variant.color or variant.size %}

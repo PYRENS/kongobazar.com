@@ -61,6 +61,62 @@ class CartController extends AbstractController
         ]);
     }
 
+    #[Route('/panier/ajouter-produit-ajax/{id}', name: 'cart_add_product_ajax', host: 'kongobazar.com', methods: ['POST'])]
+    public function addProductAjax(int $id, Request $request, \App\Repository\ProductRepository $productRepository, CartService $cartService, \Vich\UploaderBundle\Storage\StorageInterface $storage): JsonResponse
+    {
+        $product = $productRepository->find($id);
+        if (!$product) {
+            return new JsonResponse(['success' => false, 'error' => 'Produit introuvable.'], 404);
+        }
+
+        // Résolution automatique de la variante : le seul variant s'il n'y en a qu'un, sinon le premier disponible en stock.
+        $variant = null;
+        foreach ($product->getVariants() as $candidate) {
+            if ($candidate->isInStock()) {
+                $variant = $candidate;
+                break;
+            }
+        }
+        if (!$variant && $product->getVariants()->count() > 0) {
+            $variant = $product->getVariants()->first();
+        }
+
+        if (!$variant) {
+            return new JsonResponse(['success' => false, 'error' => 'Ce produit nécessite de choisir une option avant de l\'ajouter au panier.', 'redirect' => $this->generateUrl('catalog_product', ['slug' => $product->getSlug()])], 422);
+        }
+
+        $quantity = max(1, (int) $request->request->get('quantity', 1));
+        $cartService->addItem($variant, $quantity);
+
+        $cart = $cartService->getCurrentCart();
+        $summary = $cartService->getSummary($cart);
+
+        // Quantité totale de CE produit précis dans le panier (toutes variantes confondues), pour la modale de confirmation.
+        $productQuantityInCart = 0;
+        foreach ($summary['lines'] ?? [] as $line) {
+            if ($line['item']->getVariant()->getProduct()->getId() === $product->getId()) {
+                $productQuantityInCart += $line['item']->getQuantity();
+            }
+        }
+
+        $firstImage = $product->getImages()->first();
+
+        return new JsonResponse([
+            'success' => true,
+            'itemCount' => $summary['itemCount'],
+            'subtotalUsd' => $summary['subtotalUsd'],
+            'product' => [
+                'title' => $product->getTitle(),
+                'price' => $product->getCurrentDiscountedPrice() ?? $product->getBasePrice(),
+                'currency' => $product->getCurrency(),
+                'imageUrl' => $firstImage ? $storage->resolveUri($firstImage, 'imageFile') : null,
+                'url' => $this->generateUrl('catalog_product', ['slug' => $product->getSlug()]),
+                'quantityAdded' => $quantity,
+                'quantityInCart' => $productQuantityInCart,
+            ],
+        ]);
+    }
+
     #[Route('/panier/retirer/{id}', name: 'cart_remove', host: 'kongobazar.com', methods: ['POST'])]
     public function remove(int $id, Request $request, CartItemRepository $itemRepository, CartService $cartService): RedirectResponse
     {

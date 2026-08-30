@@ -66,6 +66,9 @@ class Category
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $icon = null; // classe Bootstrap Icons, ex. "bi-bag-heart"
 
+    #[ORM\Column(length: 7, nullable: true)]
+    private ?string $color = null; // couleur hex propre à cette catégorie (optionnel — voir getEffectiveColor())
+
     #[ORM\Column(options: ['default' => false])]
     private bool $topRayon = false;
 
@@ -352,6 +355,31 @@ class Category
     public function getIcon(): ?string
     {
         return $this->icon;
+    }
+
+    public function getColor(): ?string
+    {
+        return $this->color;
+    }
+
+    public function setColor(?string $color): static
+    {
+        $this->color = $color;
+        return $this;
+    }
+
+    /** Couleur à utiliser réellement : la sienne, sinon celle du parent direct, sinon en remontant jusqu'à la racine, sinon le bleu du site par défaut. */
+    public function getEffectiveColor(): string
+    {
+        $category = $this;
+        while ($category) {
+            if ($category->getColor()) {
+                return $category->getColor();
+            }
+            $category = $category->getParent();
+        }
+
+        return '#2FA8E0';
     }
 
     public function setIcon(?string $icon): static

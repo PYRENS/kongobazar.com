@@ -1,0 +1,32 @@
+{# Fragment réutilisable : juste la grille produits d'un bloc catégorie — inclus au chargement initial ET renvoyé tel quel par l'endpoint AJAX de changement d'onglet/sous-catégorie. #}
+<div class="home-product-grid home-product-grid--4">
+    {% for product in products %}
+        <div class="product-card product-card--compact">
+            <div class="product-card-media">
+                <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" data-main-image loading="lazy">
+                {% if product.compareAtPrice %}
+                    <span class="badge-discount">
+                        -{{ ((1 - (product.basePrice / product.compareAtPrice)) * 100)|round }}%
+                    </span>
+                {% endif %}
+                <div class="product-card-actions-left">
+                    <button type="button" class="card-action" data-add-to-cart="{{ product.id }}"><i class="bi bi-cart3"></i></button>
+                    <button type="button" class="card-action" data-quick-view="{{ product.id }}"><i class="bi bi-search"></i></button>
+                    <button type="button" class="card-action" data-add-to-wishlist="{{ product.id }}"><i class="bi bi-heart"></i></button>
+                </div>
+            </div>
+            <div class="product-card-body">
+                <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="product-card-title">{{ product.title }}</a>
+                <div class="product-card-rating">★★★★☆</div>
+                <div class="product-card-price">
+                    <span class="price-now">{{ product.basePrice }} {{ product.currency }}</span>
+                    {% if product.compareAtPrice %}
+                        <span class="price-old">{{ product.compareAtPrice }} {{ product.currency }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <p class="text-muted">Aucun produit pour ce choix.</p>
+    {% endfor %}
+</div>

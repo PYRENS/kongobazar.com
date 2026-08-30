@@ -1,0 +1,163 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Top Catégorie — Accueil{% endblock %}
+{% block page_icon %}bi-circle-square{% endblock %}
+{% block page_title %}Affichage "Top Catégorie" — Accueil{% endblock %}
+
+{% block body %}
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-toggle-on text-primary me-2"></i>Visibilité</h6></div>
+        <div class="card-body">
+            <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="topCatEnabledSwitch" role="switch" {{ sectionSetting.enabled ? 'checked' : '' }} data-toggle-url="{{ path('manage_top_category_items_toggle_enabled') }}">
+                <label class="form-check-label" for="topCatEnabledSwitch">Afficher la section "Top Catégorie" sur la page d'accueil</label>
+            </div>
+            <small id="topCatEnabledFeedback" class="text-muted"></small>
+        </div>
+    </div>
+
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-plus-circle text-primary me-2"></i>Ajouter une catégorie</h6></div>
+        <div class="card-body">
+            <p class="text-muted small">Choisis n'importe quel niveau de l'arbre — un rayon entier ou une sous-catégorie précise.</p>
+            <form method="post" action="{{ path('manage_top_category_items_add') }}">
+                <div class="cascade-picker" id="addTopCatCascade" data-children-url="{{ path('manage_top_category_items_children') }}"></div>
+                <input type="hidden" name="category_id" id="addTopCatCategoryId" required>
+                <button type="submit" class="btn btn-primary btn-sm mt-2" id="addTopCatSubmitBtn" disabled>Ajouter au carrousel</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="sw-card">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-list-ol text-primary me-2"></i>Catégories du carrousel</h6></div>
+        <div class="card-body p-0">
+            <table class="table ctb-table mb-0">
+                <thead>
+                    <tr>
+                        <th style="width:80px;">Ordre</th>
+                        <th>Catégorie</th>
+                        <th>Couleur</th>
+                        <th style="width:100px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                        <tr>
+                            <td>
+                                <form method="post" action="{{ path('manage_top_category_items_move', {id: item.id, direction: 'up'}) }}" style="display:inline;">
+                                    <button type="submit" class="admin-btn admin-btn--outline"{{ loop.first ? ' disabled' }}><i class="bi bi-arrow-up"></i></button>
+                                </form>
+                                <form method="post" action="{{ path('manage_top_category_items_move', {id: item.id, direction: 'down'}) }}" style="display:inline;">
+                                    <button type="submit" class="admin-btn admin-btn--outline"{{ loop.last ? ' disabled' }}><i class="bi bi-arrow-down"></i></button>
+                                </form>
+                            </td>
+                            <td>{{ item.category.name }}</td>
+                            <td>
+                                <form method="post" action="{{ path('manage_top_category_items_update_color', {id: item.id}) }}" class="d-flex align-items-center gap-2">
+                                    <input type="color" name="background_color" class="form-control form-control-color" value="{{ item.effectiveBackgroundColor }}">
+                                    <button type="submit" class="btn btn-sm btn-success">OK</button>
+                                    {% if item.backgroundColor %}
+                                        <span class="text-muted small">(choisie manuellement)</span>
+                                    {% else %}
+                                        <span class="text-muted small">(héritée de la catégorie)</span>
+                                    {% endif %}
+                                </form>
+                            </td>
+                            <td>
+                                <form method="post" action="{{ path('manage_top_category_items_remove', {id: item.id}) }}" onsubmit="return confirm('Retirer cette catégorie ?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Retirer</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="4" class="text-muted">Aucune catégorie dans le carrousel — ajoute-en une ci-dessus.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const enabledSwitch = document.getElementById('topCatEnabledSwitch');
+            const feedback = document.getElementById('topCatEnabledFeedback');
+            enabledSwitch.addEventListener('change', function () {
+                const wasChecked = this.checked;
+                fetch(this.dataset.toggleUrl, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        this.checked = data.enabled;
+                        feedback.textContent = data.enabled ? 'Activé.' : 'Désactivé.';
+                        setTimeout(() => { feedback.textContent = ''; }, 2000);
+                    })
+                    .catch(() => {
+                        this.checked = !wasChecked;
+                        feedback.textContent = 'Erreur — réessaie.';
+                    });
+            });
+        })();
+
+        function initLevelPickCascade(container, onPick) {
+            const childrenUrl = container.dataset.childrenUrl;
+
+            function loadLevel(parentId) {
+                fetch(childrenUrl + '?parent_id=' + (parentId || ''))
+                    .then((r) => r.json())
+                    .then((data) => {
+                        if (data.results.length === 0) return;
+
+                        const row = document.createElement('div');
+                        row.className = 'd-flex align-items-center gap-2 mb-2';
+
+                        const select = document.createElement('select');
+                        select.className = 'form-select';
+                        select.style.maxWidth = '240px';
+                        select.innerHTML = '<option value="">— Choisir —</option>' +
+                            data.results.map((c) => `<option value="${c.id}" data-name="${c.name}" data-has-children="${c.hasChildren}">${c.name}</option>`).join('');
+
+                        const pickBtn = document.createElement('button');
+                        pickBtn.type = 'button';
+                        pickBtn.className = 'btn btn-sm btn-outline-secondary';
+                        pickBtn.textContent = 'Choisir ce niveau';
+                        pickBtn.disabled = true;
+
+                        select.addEventListener('change', function () {
+                            let next = row.nextElementSibling;
+                            while (next) {
+                                const toRemove = next;
+                                next = next.nextElementSibling;
+                                toRemove.remove();
+                            }
+                            pickBtn.disabled = !this.value;
+                            if (this.value) {
+                                const opt = this.options[this.selectedIndex];
+                                if (opt.dataset.hasChildren === 'true') {
+                                    loadLevel(this.value);
+                                }
+                            }
+                        });
+
+                        pickBtn.addEventListener('click', function () {
+                            const opt = select.options[select.selectedIndex];
+                            onPick(select.value, opt.dataset.name);
+                        });
+
+                        row.appendChild(select);
+                        row.appendChild(pickBtn);
+                        container.appendChild(row);
+                    });
+            }
+
+            loadLevel(null);
+        }
+
+        const addTopCatCascade = document.getElementById('addTopCatCascade');
+        const addTopCatCategoryId = document.getElementById('addTopCatCategoryId');
+        const addTopCatSubmitBtn = document.getElementById('addTopCatSubmitBtn');
+        initLevelPickCascade(addTopCatCascade, function (id, name) {
+            addTopCatCategoryId.value = id;
+            addTopCatSubmitBtn.disabled = false;
+            addTopCatSubmitBtn.textContent = 'Ajouter "' + name + '" au carrousel';
+        });
+    </script>
+{% endblock %}

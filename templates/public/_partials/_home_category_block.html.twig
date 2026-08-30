@@ -1,34 +1,33 @@
 {# ==========================================================================
-   Bloc catégorie complet et autonome, inclus une fois par catégorie
-   sélectionnée (Category.featuredHomepageBlock).
+   Bloc catégorie complet et autonome, géré depuis l'admin (HomeCategoryBlockSetting).
    Contexte attendu à l'inclusion :
-     - category        : Category
-     - blockColor      : couleur CSS du bandeau (ex. '#2FA8E0')
-     - blockIcon       : classe bi bi-* pour l'icône du bandeau
-     - productsBySort  : { best_sellers: Product[], new_arrivals: Product[], featured: Product[] }
-     - blockBanner     : Advertisement|null (relatedCategory = category)
-   Usage : {% include 'public/_partials/_home_category_block.html.twig' with {
-       category: cat, blockColor: '#2FA8E0', blockIcon: 'bi-cpu',
-       productsBySort: data, blockBanner: banner
-   } %}
+     - block          : HomeCategoryBlockSetting (pour l'id, utilisé par l'AJAX)
+     - category       : Category (celle du bloc, choisie par cascade en admin)
+     - blockIcon      : classe bi bi-* pour l'icône du bandeau
+     - subcategories  : HomeCategoryBlockSubcategory[] (réordonnables en admin)
+     - initialProducts: Product[] (premier onglet "Meilleures ventes" par défaut)
+     - blockBanner    : Advertisement|null (relatedCategory = category)
    ========================================================================== #}
-<section class="home-category-block">
+<section class="home-category-block" data-block-id="{{ block.id }}" data-root-category-id="{{ category.id }}">
     <div class="category-block-grid">
-        <aside class="category-block-sidebar" style="background:{{ blockColor|default('#2FA8E0') }}">
+        <aside class="category-block-sidebar" style="background:{{ category.effectiveThemeColor|default('#2FA8E0') }}; --block-color:{{ category.effectiveThemeColor|default('#2FA8E0') }};">
             <h5><i class="bi {{ blockIcon|default('bi-grid') }}"></i> {{ category.name|upper }}</h5>
             <ul>
-                {% for child in category.children|slice(0, 8) %}
-                    <li><a href="{{ path('catalog_category', { slug: child.slug }) }}">{{ child.name }}</a></li>
+                {% for item in subcategories|default([]) %}
+                    <li><a href="#" class="category-block-subcat-link{{ loop.first ? ' active' : '' }}" data-subcategory-id="{{ item.category.id }}">{{ item.category.name }}</a></li>
                 {% endfor %}
+                <li>
+                    <a href="#" class="category-block-subcat-link category-block-view-all{{ subcategories|default([])|length == 0 ? ' active' : '' }}" data-subcategory-id="{{ category.id }}">{{ 'home.see_all'|trans }}</a>
+                </li>
             </ul>
         </aside>
 
         <div class="category-block-main">
             <div class="category-block-head">
                 <div class="category-block-sort-tabs" role="tablist">
-                    <button type="button" class="sort-tab active" data-sort-target="sort-{{ category.id }}-best">{{ 'home.best_sellers_short'|trans }}</button>
-                    <button type="button" class="sort-tab" data-sort-target="sort-{{ category.id }}-new">{{ 'home.new_arrivals_short'|trans }}</button>
-                    <button type="button" class="sort-tab" data-sort-target="sort-{{ category.id }}-featured">{{ 'home.featured'|trans }}</button>
+                    {% for tab in sortTabs|default([])|filter(t => t.visible) %}
+                        <button type="button" class="sort-tab{{ loop.first ? ' active' : '' }}" data-sort="{{ tab.sortKey }}">{{ ('home.sort_' ~ tab.sortKey)|trans }}</button>
+                    {% endfor %}
                 </div>
                 <div class="home-carousel-nav">
                     <button type="button" class="carousel-arrow" aria-label="{{ 'home.prev'|trans }}"><i class="bi bi-chevron-left"></i></button>
@@ -36,39 +35,9 @@
                 </div>
             </div>
 
-            {% for sortKey, products in productsBySort|default({}) %}
-                <div class="sort-panel{{ loop.first ? ' active' : '' }}" id="sort-{{ category.id }}-{{ sortKey == 'best_sellers' ? 'best' : (sortKey == 'new_arrivals' ? 'new' : 'featured') }}">
-                    <div class="home-product-grid home-product-grid--4">
-                        {% for product in products %}
-                            <div class="product-card product-card--compact">
-                                <div class="product-card-media">
-                                    <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" data-main-image loading="lazy">
-                                    {% if product.compareAtPrice %}
-                                        <span class="badge-discount">
-                                            -{{ ((1 - (product.basePrice / product.compareAtPrice)) * 100)|round }}%
-                                        </span>
-                                    {% endif %}
-                                    <div class="product-card-actions-left">
-                                        <button type="button" class="card-action" data-add-to-cart="{{ product.id }}"><i class="bi bi-cart3"></i></button>
-                                        <button type="button" class="card-action" data-quick-view="{{ product.id }}"><i class="bi bi-search"></i></button>
-                                        <button type="button" class="card-action" data-add-to-wishlist="{{ product.id }}"><i class="bi bi-heart"></i></button>
-                                    </div>
-                                </div>
-                                <div class="product-card-body">
-                                    <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="product-card-title">{{ product.title }}</a>
-                                    <div class="product-card-rating">★★★★☆</div>
-                                    <div class="product-card-price">
-                                        <span class="price-now">{{ product.basePrice }} {{ product.currency }}</span>
-                                        {% if product.compareAtPrice %}
-                                            <span class="price-old">{{ product.compareAtPrice }} {{ product.currency }}</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            {% endfor %}
+            <div class="category-block-products" data-products-url="{{ path('public_home_category_block_products', {blockId: block.id}) }}">
+                {% include 'public/_partials/_home_category_block_products.html.twig' with {products: initialProducts|default([])} %}
+            </div>
 
             {% if blockBanner is defined and blockBanner %}
                 <a {% if blockBanner.targetUrl %}href="{{ path('ads_click', { id: blockBanner.id, zoneKey: blockBanner.zoneKey }) }}"{% endif %}{% if blockBanner.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="category-block-banner{{ blockBanner.targetUrl ? ' ad-clickable' : '' }}">

@@ -8,9 +8,11 @@
      - trendingTabCategories : Category[] (featuredHomepageTab = true, triées par featuredHomepagePosition)
      - trendingProductsByCategory : { categorySlug: Product[] } — un tableau de produits par catégorie
    ========================================================================== #}
+{% if trendingEnabled %}
 <section class="home-trending">
     <div class="home-trending-head">
         <span class="home-section-badge">{{ 'home.trending_articles'|trans }}</span>
+        <span class="home-trending-head-line"></span>
         <div class="home-trending-tabs" role="tablist">
             {% for category in trendingTabCategories|default([]) %}
                 <button type="button"
@@ -91,3 +93,4 @@
         {% endfor %}
     </div>
 </section>
+{% endif %}

@@ -1,0 +1,27 @@
+{# Modale globale "Ajouté au panier" — vide au chargement, remplie en JS après un ajout réussi. #}
+<div id="cartAddedModalOverlay" class="cart-added-overlay" hidden>
+    <div class="cart-added-modal">
+        <div class="cart-added-modal-header">
+            <span>{{ 'cart.added_title'|trans }}</span>
+            <button type="button" class="cart-added-close" id="cartAddedCloseBtn" aria-label="Fermer">&times;</button>
+        </div>
+        <div class="cart-added-modal-body">
+            <div class="cart-added-image">
+                <img id="cartAddedImage" src="" alt="">
+            </div>
+            <div class="cart-added-info">
+                <h5 id="cartAddedTitle"></h5>
+                <p class="cart-added-qty" id="cartAddedQtyLine"></p>
+                <p class="cart-added-total-qty" id="cartAddedTotalQtyLine"></p>
+            </div>
+            <div class="cart-added-summary">
+                <a href="{{ path('checkout_index') }}" class="cart-added-checkout-btn">{{ 'cart.checkout'|trans }}</a>
+                <p class="cart-added-summary-label">{{ 'cart.subtotal'|trans }} :</p>
+                <p class="cart-added-summary-amount" id="cartAddedSubtotal"></p>
+                <p class="cart-added-summary-count" id="cartAddedItemCount"></p>
+                <button type="button" class="cart-added-secondary-btn" id="cartAddedContinueBtn">{{ 'cart.continue_shopping'|trans }}</button>
+                <a href="{{ path('cart_index') }}" class="cart-added-secondary-btn" id="cartAddedViewCartLink">{{ 'cart.view_cart'|trans }}</a>
+            </div>
+        </div>
+    </div>
+</div>

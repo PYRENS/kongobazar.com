@@ -291,13 +291,13 @@ class ProductRepository extends ServiceEntityRepository
         if ($condition) {
             $qb->andWhere('p.condition = :condition')->setParameter('condition', $condition);
         }
-        if ($sellerProfileId) {
-            $qb->andWhere('p.sellerProfile = :sellerProfileId')->setParameter('sellerProfileId', $sellerProfileId);
-        }
         if ($unitIds) {
             $qb->join('p.sellerProfile', 'spu')
                 ->join('spu.deliveryZones', 'dz')
                 ->andWhere('dz.id IN (:unitIds)')->setParameter('unitIds', $unitIds);
+        }
+        if ($sellerProfileId) {
+            $qb->andWhere('p.sellerProfile = :sellerProfileId')->setParameter('sellerProfileId', $sellerProfileId);
         }
 
         return $qb;
@@ -532,8 +532,24 @@ class ProductRepository extends ServiceEntityRepository
         return $qb->getQuery()->getResult();
     }*/
 
+    /** @return Product[] — produits actifs des catégories données (par ID, descendants déjà inclus par l'appelant). */
+    public function findActiveByCategoryIds(array $categoryIds): array
+    {
+        return $this->createQueryBuilder('p')
+            ->andWhere('p.category IN (:categoryIds)')
+            ->andWhere('p.status = :status')
+            ->setParameter('categoryIds', $categoryIds)
+            ->setParameter('status', 'active')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function findByCategorySort(array $categories, string $sort, int $limit = 4): array
     {
+        if ('trending' === $sort) {
+            return $this->findTrendingByCategory($categories, $limit);
+        }
+
         $qb = $this->createQueryBuilder('p')
             ->andWhere('p.category IN (:categories)')
             ->andWhere('p.status = :status')
@@ -548,6 +564,47 @@ class ProductRepository extends ServiceEntityRepository
         };
 
         return $qb->getQuery()->getResult();
+    }
+
+    /** @return Product[] — les plus vus (7 derniers jours) dans les catégories données. */
+    public function findTrendingByCategory(array $categories, int $limit = 4, int $days = 7): array
+    {
+        $categoryIds = array_map(fn ($c) => $c->getId(), $categories);
+        $since = new \DateTimeImmutable("-{$days} days");
+
+        $rows = $this->getEntityManager()->createQueryBuilder()
+            ->select('IDENTITY(v.product) AS productId', 'COUNT(v.id) AS visitCount')
+            ->from(\App\Entity\ProductViewLog::class, 'v')
+            ->join('v.product', 'p')
+            ->andWhere('p.category IN (:categoryIds)')
+            ->andWhere('p.status = :status')
+            ->andWhere('v.viewedAt >= :since')
+            ->setParameter('categoryIds', $categoryIds)
+            ->setParameter('status', 'active')
+            ->setParameter('since', $since)
+            ->groupBy('v.product')
+            ->orderBy('visitCount', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+
+        if (!$rows) {
+            return [];
+        }
+
+        $productIds = array_column($rows, 'productId');
+        $products = $this->createQueryBuilder('p')
+            ->andWhere('p.id IN (:ids)')
+            ->setParameter('ids', $productIds)
+            ->getQuery()
+            ->getResult();
+
+        // Remet dans l'ordre de popularité (la requête IN ne garantit pas l'ordre).
+        $byId = [];
+        foreach ($products as $product) {
+            $byId[$product->getId()] = $product;
+        }
+        return array_values(array_filter(array_map(fn ($id) => $byId[$id] ?? null, $productIds)));
     }
 
 

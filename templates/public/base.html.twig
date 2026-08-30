@@ -59,6 +59,7 @@
 
     {% include 'public/_partials/_header.html.twig' %}
     {% include 'public/_partials/_cart_offcanvas.html.twig' %}
+    {% include 'public/_partials/_cart_added_modal.html.twig' %}
     {% include 'public/_partials/_breadcrumb.html.twig' %}
     {% include 'public/_partials/_cookie_consent.html.twig' %}
 
@@ -79,10 +80,13 @@
     {# --- Scripts propres au projet --- #}
     <script src="{{ asset('js/public/main.js') }}" defer></script>
     <script src="{{ asset('js/public/home-content.js') }}" defer></script>
+    <script src="{{ asset('js/public/home-category-blocks.js') }}" defer></script>
+    <script src="{{ asset('js/public/home-top-categories-scroll.js') }}" defer></script>
     <script src="{{ asset('js/public/search.js') }}" defer></script>
     <script src="{{ asset('js/public/geo-cascade.js') }}" defer></script>
     <script src="{{ asset('js/public/product.js') }}" defer></script>
     <script src="{{ asset('js/public/cart-page.js') }}" defer></script>
+    <script src="{{ asset('js/public/cart-added-modal.js') }}" defer></script>
     <script src="{{ asset('js/public/cookie-consent.js') }}" defer></script>
     <script src="{{ asset('js/public/offers.js') }}" defer></script>
 
