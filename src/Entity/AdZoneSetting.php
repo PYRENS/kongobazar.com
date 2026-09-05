@@ -24,6 +24,9 @@ class AdZoneSetting
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?Advertisement $fixedAdvertisement = null;
 
+    #[ORM\Column(options: ['default' => true])]
+    private bool $enabled = true;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -59,6 +62,17 @@ class AdZoneSetting
     public function setFixedAdvertisement(?Advertisement $fixedAdvertisement): static
     {
         $this->fixedAdvertisement = $fixedAdvertisement;
+        return $this;
+    }
+
+    public function isEnabled(): bool
+    {
+        return $this->enabled;
+    }
+
+    public function setEnabled(bool $enabled): static
+    {
+        $this->enabled = $enabled;
         return $this;
     }
 }

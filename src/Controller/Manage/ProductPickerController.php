@@ -35,11 +35,11 @@ class ProductPickerController extends AbstractController
     public function searchSellers(Request $request, \App\Repository\SellerProfileRepository $repository): Response
     {
         $term = trim((string) $request->query->get('q', ''));
-        $results = mb_strlen($term) >= 2 ? $repository->searchDirectory($term, null, null) : [];
+        $results = mb_strlen($term) >= 2 ? $repository->searchByName($term) : [];
 
         return $this->json(['results' => array_map(fn (\App\Entity\SellerProfile $s) => [
             'id' => $s->getId(),
-            'label' => $s->getUser()->getEmail(),
+            'label' => $s->getDisplayName() . ($s->getReferenceNumber() ? ' (' . $s->getReferenceNumber() . ')' : ''),
         ], $results)]);
     }
 

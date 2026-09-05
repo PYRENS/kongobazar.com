@@ -13,26 +13,29 @@
             <a href="{{ path('catalog_index') }}" class="see-all-link">{{ 'home.see_all'|trans }}</a>
         </div>
     </div>
-    <div class="home-top-categories-track" data-scroll-track>
+    <div class="home-top-categories-wrap">
         <button type="button" class="carousel-arrow carousel-arrow--edge left" data-carousel-prev aria-label="{{ 'home.prev'|trans }}"><i class="bi bi-chevron-left"></i></button>
-        {% for item in topCategories|default([]) %}
-            {% set category = item.category %}
-            <a href="{{ path('catalog_category', { slug: category.slug }) }}" class="top-category-item">
-                <span class="top-category-circle" style="background:{{ item.effectiveBackgroundColor }};">
-                    {% if category.imageName %}
-                        <img src="{{ vich_uploader_asset(category, 'imageFile') }}" alt="{{ category.name }}" loading="lazy">
-                    {% else %}
-                        <i class="bi {{ category.icon|default('bi-tag') }}"></i>
-                    {% endif %}
-                </span>
-                <span class="top-category-label">{{ category.name }}</span>
-            </a>
-        {% endfor %}
+        <div class="home-top-categories-track" data-scroll-track>
+            {% for item in topCategories|default([]) %}
+                {% set category = item.category %}
+                <a href="{{ path('catalog_category', { slug: category.slug }) }}" class="top-category-item">
+                    <span class="top-category-circle" style="background:{{ item.effectiveBackgroundColor }};">
+                        {% if category.imageName %}
+                            <img src="{{ vich_uploader_asset(category, 'imageFile') }}" alt="{{ category.name }}" loading="lazy">
+                        {% else %}
+                            <i class="bi {{ category.icon|default('bi-tag') }}"></i>
+                        {% endif %}
+                    </span>
+                    <span class="top-category-label">{{ category.name }}</span>
+                </a>
+            {% endfor %}
+        </div>
         <button type="button" class="carousel-arrow carousel-arrow--edge right" data-carousel-next aria-label="{{ 'home.next'|trans }}"><i class="bi bi-chevron-right"></i></button>
     </div>
 </section>
 {% endif %}
 
+{% if topVendorEnabled %}
 <section class="home-top-vendors">
     <div class="home-top-vendors-head">
         <h4>{{ 'home.top_vendors'|trans }}</h4>
@@ -48,7 +51,7 @@
                         <span class="vendor-logo-placeholder"><i class="bi bi-shop"></i></span>
                     {% endif %}
                     <div class="vendor-card-info">
-                        <strong>{{ vendor.storeName|default(vendor.user.email) }}</strong>
+                        <strong><a href="{{ path('partner_show', { slug: vendor.slug }) }}" class="vendor-name-link">{{ vendor.storeName|default(vendor.user.email) }}</a></strong>
                         <span class="vendor-product-count">{{ vendor.products|default([])|length }} {{ 'home.products'|trans }}</span>
                         <span class="vendor-rating">
                             {% for i in 1..5 %}
@@ -69,3 +72,4 @@
         {% endfor %}
     </div>
 </section>
+{% endif %}

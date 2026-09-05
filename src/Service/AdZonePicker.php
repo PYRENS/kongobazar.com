@@ -20,13 +20,16 @@ class AdZonePicker
 
     public function pick(string $zoneKey, string $targetSpace = 'public'): ?Advertisement
     {
+        $setting = $this->settingRepository->findOneByZoneKey($zoneKey);
+        if ($setting && !$setting->isEnabled()) {
+            return null;
+        }
+
         // Toujours limité aux pubs actives et dans leur période — quel que soit le mode.
         $activeCandidates = $this->advertisementRepository->findActiveByZone($zoneKey, $targetSpace);
         if (empty($activeCandidates)) {
             return null;
         }
-
-        $setting = $this->settingRepository->findOneByZoneKey($zoneKey);
 
         if ($setting && 'fixed' === $setting->getMode() && $setting->getFixedAdvertisement()) {
             $fixed = $setting->getFixedAdvertisement();

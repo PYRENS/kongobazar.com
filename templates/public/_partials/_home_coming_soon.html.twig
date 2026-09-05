@@ -1,0 +1,63 @@
+{# ==========================================================================
+   "Prochainement" — titre libre (pas une catégorie), onglets par cascade + "Voir tous"
+   toujours en dernier, bannière publicitaire en bas.
+   Contexte attendu :
+     - comingSoonEnabled : bool
+     - comingSoonTitle : string
+     - comingSoonTabs : ComingSoonTab[]
+     - comingSoonProductsByTab : { tabId: Product[] }
+     - comingSoonAllProducts : Product[] ("Voir tous")
+     - comingSoonBanner : Advertisement|null
+   ========================================================================== #}
+{% if comingSoonEnabled and comingSoonAllProducts|default([])|length > 0 %}
+<section class="home-coming-soon">
+    <div class="home-deals-head">
+        <span class="home-section-badge">{{ comingSoonTitle }}</span>
+        <span class="home-deals-head-line"></span>
+        <div class="coming-soon-tabs" role="tablist">
+            {% for tab in comingSoonTabs %}
+                <button type="button" class="trending-tab{{ loop.first ? ' active' : '' }}" data-tab-target="coming-soon-panel-{{ tab.id }}">{{ tab.category.name }}</button>
+            {% endfor %}
+            <button type="button" class="trending-tab{{ comingSoonTabs|length == 0 ? ' active' : '' }}" data-tab-target="coming-soon-panel-all">{{ 'menu.voir_tout'|trans }}</button>
+        </div>
+    </div>
+
+    {% for tab in comingSoonTabs %}
+        <div class="coming-soon-panel{{ loop.first ? ' active' : '' }}" id="coming-soon-panel-{{ tab.id }}">
+            <div class="coming-soon-grid">
+                {% for product in comingSoonProductsByTab[tab.id] %}
+                    <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="coming-soon-card">
+                        <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
+                        <div class="coming-soon-card-info">
+                            <p class="coming-soon-card-title">{{ product.title }}</p>
+                            <span class="price-now">{{ product.basePrice }} {{ product.currency }}</span>
+                        </div>
+                    </a>
+                {% else %}
+                    <p class="text-muted">Aucun produit pour cet onglet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    {% endfor %}
+
+    <div class="coming-soon-panel{{ comingSoonTabs|length == 0 ? ' active' : '' }}" id="coming-soon-panel-all">
+        <div class="coming-soon-grid">
+            {% for product in comingSoonAllProducts %}
+                <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="coming-soon-card">
+                    <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
+                    <div class="coming-soon-card-info">
+                        <p class="coming-soon-card-title">{{ product.title }}</p>
+                        <span class="price-now">{{ product.basePrice }} {{ product.currency }}</span>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if comingSoonBanner and comingSoonBanner.imageName %}
+        <a {% if comingSoonBanner.targetUrl %}href="{{ path('ads_click', { id: comingSoonBanner.id, zoneKey: 'futur_section_banner' }) }}"{% endif %}{% if comingSoonBanner.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="home-center-banner{{ comingSoonBanner.targetUrl ? ' ad-clickable' : '' }}">
+            <img src="{{ vich_uploader_asset(comingSoonBanner, 'imageFile') }}" alt="{{ comingSoonBanner.title }}" loading="lazy">
+        </a>
+    {% endif %}
+</section>
+{% endif %}

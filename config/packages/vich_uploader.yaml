@@ -28,6 +28,16 @@ vich_uploader:
             upload_destination: '%env(UPLOADS_PUBLIC_PATH)%/logos_brands'
             namer: Vich\UploaderBundle\Naming\SmartUniqueNamer
 
+        sponsor_logos:
+            uri_prefix: /media/sponsor_logos
+            upload_destination: '%env(UPLOADS_PUBLIC_PATH)%/sponsor_logos'
+            namer: Vich\UploaderBundle\Naming\SmartUniqueNamer
+
+        partner_logos:
+            uri_prefix: /media/partner_logos
+            upload_destination: '%env(UPLOADS_PUBLIC_PATH)%/partner_logos'
+            namer: Vich\UploaderBundle\Naming\SmartUniqueNamer
+
         part_catalog_images:
             uri_prefix: /media/part_catalog_images
             upload_destination: '%env(UPLOADS_PUBLIC_PATH)%/part_catalog_images'

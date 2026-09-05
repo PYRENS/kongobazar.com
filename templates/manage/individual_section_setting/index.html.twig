@@ -1,0 +1,222 @@
+{% extends 'manage/base.html.twig' %}
+{% block title %}Particulier — Accueil{% endblock %}
+{% block page_icon %}bi-person{% endblock %}
+{% block page_title %}Affichage "Particulier" — Accueil{% endblock %}
+{% block body %}
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-toggle-on text-primary me-2"></i>Visibilité</h6></div>
+        <div class="card-body">
+            <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="individualEnabledSwitch" role="switch" {{ sectionSetting.enabled ? 'checked' : '' }} data-toggle-url="{{ path('manage_individual_section_toggle_enabled') }}">
+                <label class="form-check-label">Afficher la section "Particulier" sur la page d'accueil</label>
+            </div>
+            <small id="individualEnabledFeedback" class="text-muted"></small>
+        </div>
+    </div>
+
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-plus-circle text-primary me-2"></i>Ajouter une catégorie</h6></div>
+        <div class="card-body">
+            <p class="text-muted small">Choisis n'importe quel niveau de l'arbre. "Voir tout" s'affiche toujours en dernier automatiquement.</p>
+            <form method="post" action="{{ path('manage_individual_section_add_category') }}">
+                <div class="cascade-picker" id="addIndividualCategoryCascade" data-children-url="{{ path('manage_individual_section_children_cascade') }}"></div>
+                <input type="hidden" name="category_id" id="addIndividualCategoryId" required>
+                <button type="submit" class="btn btn-primary btn-sm mt-2" id="addIndividualCategorySubmitBtn" disabled>Ajouter</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="sw-card">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-list-ol text-primary me-2"></i>Catégories configurées</h6></div>
+        <div class="card-body p-0" data-remove-product-url-template="{{ path('manage_individual_section_remove_priority_product', {id: 999999}) }}">
+            {% for sc in categories %}
+                <div class="border-bottom p-3">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <form method="post" action="{{ path('manage_individual_section_move_category', {id: sc.id, direction: 'up'}) }}" style="display:inline;">
+                                <button type="submit" class="admin-btn admin-btn--outline"{{ loop.first ? ' disabled' }}><i class="bi bi-arrow-up"></i></button>
+                            </form>
+                            <form method="post" action="{{ path('manage_individual_section_move_category', {id: sc.id, direction: 'down'}) }}" style="display:inline;">
+                                <button type="submit" class="admin-btn admin-btn--outline"{{ loop.last ? ' disabled' }}><i class="bi bi-arrow-down"></i></button>
+                            </form>
+                            <strong>{{ sc.category.name }}</strong>
+                        </div>
+                        <form method="post" action="{{ path('manage_individual_section_remove_category', {id: sc.id}) }}" onsubmit="return confirm('Retirer cette catégorie ?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Retirer</button>
+                        </form>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label small">Nombre de cartes affichées</label>
+                        <input type="number" class="form-control form-control-sm individual-card-count" style="max-width:100px;" min="1" value="{{ sc.cardCount }}" data-update-url="{{ path('manage_individual_section_update_count', {id: sc.id}) }}">
+                    </div>
+
+                    <label class="form-label small">Produits prioritaires (le reste se complète automatiquement)</label>
+                    <div class="d-flex flex-wrap gap-2 mb-2 individual-priority-list">
+                        {% for item in sc.priorityProducts %}
+                            <span class="badge bg-primary d-flex align-items-center gap-1" data-item-id="{{ item.id }}">
+                                {{ item.product.title }}
+                                <button type="button" class="btn-close btn-close-white btn-sm individual-remove-btn" style="border:none;background-color:transparent;"></button>
+                            </span>
+                        {% endfor %}
+                    </div>
+
+                    <form method="post" action="{{ path('manage_individual_section_add_priority_product', {id: sc.id}) }}" class="individual-add-form">
+                        <input type="text" class="form-control form-control-sm individual-search" style="max-width:320px;" placeholder="Rechercher un produit d'un particulier..." autocomplete="off">
+                        <div class="list-group individual-results mt-1" style="max-width:320px;position:relative;z-index:10;"></div>
+                        <input type="hidden" name="product_id" class="individual-pending-id">
+                        <button type="submit" class="btn btn-sm btn-outline-primary mt-2 individual-add-btn" disabled>+ Ajouter en priorité</button>
+                    </form>
+                </div>
+            {% else %}
+                <p class="text-muted p-3 mb-0">Aucune catégorie configurée — ajoute-en une ci-dessus.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const sw = document.getElementById('individualEnabledSwitch');
+            const feedback = document.getElementById('individualEnabledFeedback');
+            sw.addEventListener('change', function () {
+                const wasChecked = this.checked;
+                fetch(this.dataset.toggleUrl, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        this.checked = data.enabled;
+                        feedback.textContent = data.enabled ? 'Activé.' : 'Désactivé.';
+                        setTimeout(() => { feedback.textContent = ''; }, 2000);
+                    })
+                    .catch(() => { this.checked = !wasChecked; });
+            });
+        })();
+
+        function initLevelPickCascade(container, onPick) {
+            const childrenUrl = container.dataset.childrenUrl;
+            function loadLevel(parentId) {
+                fetch(childrenUrl + '?parent_id=' + (parentId || ''))
+                    .then((r) => r.json())
+                    .then((data) => {
+                        if (data.results.length === 0) return;
+                        const row = document.createElement('div');
+                        row.className = 'd-flex align-items-center gap-2 mb-2';
+                        const select = document.createElement('select');
+                        select.className = 'form-select';
+                        select.style.maxWidth = '240px';
+                        select.innerHTML = '<option value="">— Choisir —</option>' +
+                            data.results.map((c) => `<option value="${c.id}" data-name="${c.name}" data-has-children="${c.hasChildren}">${c.name}</option>`).join('');
+                        const pickBtn = document.createElement('button');
+                        pickBtn.type = 'button';
+                        pickBtn.className = 'btn btn-sm btn-outline-secondary';
+                        pickBtn.textContent = 'Choisir ce niveau';
+                        pickBtn.disabled = true;
+                        select.addEventListener('change', function () {
+                            let next = row.nextElementSibling;
+                            while (next) { const toRemove = next; next = next.nextElementSibling; toRemove.remove(); }
+                            pickBtn.disabled = !this.value;
+                            if (this.value) {
+                                const opt = this.options[this.selectedIndex];
+                                if (opt.dataset.hasChildren === 'true') loadLevel(this.value);
+                            }
+                        });
+                        pickBtn.addEventListener('click', function () {
+                            const opt = select.options[select.selectedIndex];
+                            onPick(select.value, opt.dataset.name);
+                        });
+                        row.appendChild(select);
+                        row.appendChild(pickBtn);
+                        container.appendChild(row);
+                    });
+            }
+            loadLevel(null);
+        }
+
+        const addCascade = document.getElementById('addIndividualCategoryCascade');
+        const addCategoryId = document.getElementById('addIndividualCategoryId');
+        const addSubmitBtn = document.getElementById('addIndividualCategorySubmitBtn');
+        initLevelPickCascade(addCascade, function (id, name) {
+            addCategoryId.value = id;
+            addSubmitBtn.disabled = false;
+            addSubmitBtn.textContent = 'Ajouter "' + name + '"';
+        });
+
+        // Nombre de cartes — en direct.
+        document.querySelectorAll('.individual-card-count').forEach((input) => {
+            let timeout;
+            input.addEventListener('input', function () {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    fetch(this.dataset.updateUrl, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'card_count=' + this.value });
+                }, 500);
+            });
+        });
+
+        const removeUrlTemplate = document.querySelector('[data-remove-product-url-template]').dataset.removeProductUrlTemplate;
+
+        function wireRemoveBtn(btn) {
+            btn.addEventListener('click', function () {
+                if (!confirm('Retirer ce produit prioritaire ?')) return;
+                const badge = btn.closest('[data-item-id]');
+                const url = removeUrlTemplate.replace('999999', badge.dataset.itemId);
+                fetch(url, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => { if (data.ok) badge.remove(); });
+            });
+        }
+        document.querySelectorAll('.individual-remove-btn').forEach(wireRemoveBtn);
+
+        document.querySelectorAll('.individual-add-form').forEach((form) => {
+            const searchInput = form.querySelector('.individual-search');
+            const results = form.querySelector('.individual-results');
+            const pendingIdInput = form.querySelector('.individual-pending-id');
+            const addBtn = form.querySelector('.individual-add-btn');
+            let timeout;
+
+            searchInput.addEventListener('input', function () {
+                clearTimeout(timeout);
+                const term = this.value.trim();
+                if (term.length < 1) { results.innerHTML = ''; return; }
+                timeout = setTimeout(() => {
+                    fetch('{{ path("manage_individual_section_search_products") }}?q=' + encodeURIComponent(term))
+                        .then((r) => r.json())
+                        .then((data) => {
+                            results.innerHTML = '';
+                            data.results.forEach((item) => {
+                                const btn = document.createElement('button');
+                                btn.type = 'button';
+                                btn.className = 'list-group-item list-group-item-action';
+                                btn.textContent = item.name;
+                                btn.addEventListener('click', () => {
+                                    pendingIdInput.value = item.id;
+                                    addBtn.disabled = false;
+                                    searchInput.value = item.name;
+                                    results.innerHTML = '';
+                                });
+                                results.appendChild(btn);
+                            });
+                        });
+                }, 250);
+            });
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                if (!pendingIdInput.value) return;
+                fetch(form.action, { method: 'POST', body: new FormData(form) })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        if (!data.ok) { alert(data.error || 'Erreur.'); return; }
+                        const list = form.closest('.border-bottom').querySelector('.individual-priority-list');
+                        const badge = document.createElement('span');
+                        badge.className = 'badge bg-primary d-flex align-items-center gap-1';
+                        badge.dataset.itemId = data.itemId;
+                        badge.innerHTML = data.productTitle + ' <button type="button" class="btn-close btn-close-white btn-sm individual-remove-btn" style="border:none;background-color:transparent;"></button>';
+                        wireRemoveBtn(badge.querySelector('.individual-remove-btn'));
+                        list.appendChild(badge);
+                        searchInput.value = '';
+                        pendingIdInput.value = '';
+                        addBtn.disabled = true;
+                    });
+            });
+        });
+    </script>
+{% endblock %}

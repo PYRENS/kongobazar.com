@@ -17,11 +17,78 @@ class SellerProfileRepository extends ServiceEntityRepository
     public function searchByName(string $term, int $limit = 15): array
     {
         return $this->createQueryBuilder('s')
-            ->andWhere('s.displayName LIKE :term')->setParameter('term', '%' . $term . '%')
+            ->join('s.user', 'u')
+            ->andWhere('s.displayName LIKE :term OR s.referenceNumber LIKE :term OR u.email LIKE :term')->setParameter('term', '%' . $term . '%')
             ->orderBy('s.displayName', 'ASC')
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
+    }
+
+    /** Dernier numéro attribué pour un préfixe donné (ex: "BTQ"), ou null si aucun. */
+    public function findLastReferenceNumberByPrefix(string $prefix): ?string
+    {
+        return $this->createQueryBuilder('s')
+            ->select('s.referenceNumber')
+            ->andWhere('s.referenceNumber LIKE :prefix')
+            ->setParameter('prefix', $prefix . '-%')
+            ->orderBy('s.referenceNumber', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult()['referenceNumber'] ?? null;
+    }
+
+    /** Meilleurs vendeurs par ventes cumulées de leurs produits, avec exclusions de type optionnelles. */
+    public function findAutoTopVendors(int $limit, bool $excludePro = false, bool $excludeBoutique = false): array
+    {
+        $rows = $this->getEntityManager()->createQueryBuilder()
+            ->select('IDENTITY(p.sellerProfile) AS sellerId', 'SUM(p.salesCount) AS totalSales')
+            ->from(\App\Entity\Product::class, 'p')
+            ->andWhere('p.status = :status')
+            ->setParameter('status', 'active')
+            ->groupBy('p.sellerProfile')
+            ->orderBy('totalSales', 'DESC')
+            ->setMaxResults($limit * 4) // marge pour compenser les exclusions de type ci-dessous
+            ->getQuery()
+            ->getResult();
+
+        $sellerIds = array_column($rows, 'sellerId');
+        if (!$sellerIds) {
+            return $this->findTopVendors($limit);
+        }
+
+        $sellers = $this->createQueryBuilder('s')
+            ->andWhere('s.id IN (:ids)')
+            ->andWhere('s.status = :status')
+            ->setParameter('ids', $sellerIds)
+            ->setParameter('status', 'active')
+            ->getQuery()
+            ->getResult();
+
+        $byId = [];
+        foreach ($sellers as $seller) {
+            $byId[$seller->getId()] = $seller;
+        }
+
+        $result = [];
+        foreach ($sellerIds as $id) {
+            $seller = $byId[$id] ?? null;
+            if (!$seller) {
+                continue;
+            }
+            if ($excludePro && $seller instanceof \App\Entity\ProProfile) {
+                continue;
+            }
+            if ($excludeBoutique && $seller instanceof \App\Entity\StoreProfile) {
+                continue;
+            }
+            $result[] = $seller;
+            if (count($result) >= $limit) {
+                break;
+            }
+        }
+
+        return $result;
     }
 
     public function findTopVendors(int $limit = 4): array

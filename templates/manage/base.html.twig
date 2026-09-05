@@ -149,7 +149,7 @@
                     <a href="{{ path('manage_products_index') }}"><i class="bi bi-box-seam"></i> <span class="hide-menu">Produits</span></a>
                 </li>
 
-                {% set adsGroupActive = app.request.attributes.get('_route') starts with 'manage_ads' or app.request.attributes.get('_route') starts with 'manage_ad_zones' or app.request.attributes.get('_route') starts with 'manage_trending' or app.request.attributes.get('_route') starts with 'manage_mega_menu' or app.request.attributes.get('_route') starts with 'manage_top_category' or app.request.attributes.get('_route') starts with 'manage_social_links' or app.request.attributes.get('_route') starts with 'manage_hero_side_ads_setting' or app.request.attributes.get('_route') starts with 'manage_discount_campaigns' %}
+                {% set adsGroupActive = app.request.attributes.get('_route') starts with 'manage_ads' or app.request.attributes.get('_route') starts with 'manage_ad_zones' or app.request.attributes.get('_route') starts with 'manage_trending' or app.request.attributes.get('_route') starts with 'manage_mega_menu' or app.request.attributes.get('_route') starts with 'manage_top_category_index' or app.request.attributes.get('_route') starts with 'manage_top_category_toggle' or app.request.attributes.get('_route') starts with 'manage_top_category_move' or app.request.attributes.get('_route') starts with 'manage_top_category_flyout' or app.request.attributes.get('_route') starts with 'manage_social_links' or app.request.attributes.get('_route') starts with 'manage_hero_side_ads_setting' or app.request.attributes.get('_route') starts with 'manage_discount_campaigns' %}
 
                 <li class="admin-nav-group {{ adsGroupActive ? 'open' : '' }}">
                     <button type="button" class="admin-nav-group-toggle">
@@ -168,8 +168,8 @@
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_mega_menu' ? 'active' : '' }}">
                             <a href="{{ path('manage_mega_menu_index') }}"><i class="bi bi-grid-3x3-gap"></i> <span class="hide-menu">Méga-menu (header)</span></a>
                         </li>
-                        <li class="{{ app.request.attributes.get('_route') starts with 'manage_top_category' ? 'active' : '' }}">
-                            <a href="{{ path('manage_top_category_index') }}"><i class="bi bi-star"></i> <span class="hide-menu">Top Catégorie</span></a>
+                        <li class="{{ app.request.attributes.get('_route') starts with 'manage_top_category_index' or app.request.attributes.get('_route') starts with 'manage_top_category_toggle' or app.request.attributes.get('_route') starts with 'manage_top_category_move' or app.request.attributes.get('_route') starts with 'manage_top_category_flyout' ? 'active' : '' }}">
+                            <a href="{{ path('manage_top_category_index') }}"><i class="bi bi-star"></i> <span class="hide-menu">Top Rayons</span></a>
                         </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_social_links' ? 'active' : '' }}">
                             <a href="{{ path('manage_social_links_index') }}"><i class="bi bi-share"></i> <span class="hide-menu">Réseaux sociaux</span></a>
@@ -186,7 +186,7 @@
                 <li>
                     <a href="{{ path('manage_seller_attr_test_index') }}"><i class="bi bi-person-gear"></i> <span class="hide-menu">Test — Caractéristiques vendeur</span></a>
                 </li>
-                <li class="admin-nav-group {{ app.request.attributes.get('_route') starts with 'manage_settings' or app.request.attributes.get('_route') starts with 'manage_sidebar_themes' or app.request.attributes.get('_route') starts with 'manage_seo' or app.request.attributes.get('_route') starts with 'manage_site_identity' or app.request.attributes.get('_route') starts with 'manage_home_deals_setting' or app.request.attributes.get('_route') starts with 'manage_home_trending_tabs' or app.request.attributes.get('_route') starts with 'manage_home_category_blocks' or app.request.attributes.get('_route') starts with 'manage_top_category_items' ? 'open' : '' }}">
+                <li class="admin-nav-group {{ app.request.attributes.get('_route') starts with 'manage_settings' or app.request.attributes.get('_route') starts with 'manage_sidebar_themes' or app.request.attributes.get('_route') starts with 'manage_seo' or app.request.attributes.get('_route') starts with 'manage_site_identity' or app.request.attributes.get('_route') starts with 'manage_home_deals_setting' or app.request.attributes.get('_route') starts with 'manage_home_trending_tabs' or app.request.attributes.get('_route') starts with 'manage_home_category_blocks' or app.request.attributes.get('_route') starts with 'manage_top_category_items' or app.request.attributes.get('_route') starts with 'manage_top_vendor' ? 'open' : '' }}">
                     <button type="button" class="admin-nav-group-toggle">
                         <i class="bi bi-gear"></i> <span class="hide-menu">Paramètres</span> <i class="bi bi-chevron-down admin-nav-group-arrow"></i>
                     </button>
@@ -211,6 +211,27 @@
                         </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_top_category_items' ? 'active' : '' }}">
                             <a href="{{ path('manage_top_category_items_setting') }}"><i class="bi bi-circle-square"></i> <span class="hide-menu">Top Catégorie accueil</span></a>
+                        </li>
+                        <li class="{{ app.request.attributes.get('_route') starts with 'manage_top_vendor' ? 'active' : '' }}">
+                            <a href="{{ path('manage_top_vendor_setting') }}"><i class="bi bi-award"></i> <span class="hide-menu">Top Vendeur accueil</span></a>
+                        </li>
+                        <li class="{{ app.request.attributes.get('_route') starts with 'manage_new_items' ? 'active' : '' }}">
+                            <a href="{{ path('manage_new_items_setting') }}"><i class="bi bi-stars"></i> <span class="hide-menu">Nouveauté accueil</span></a>
+                        </li>
+                        <li class="{{ app.request.attributes.get('_route') starts with 'manage_most_viewed' ? 'active' : '' }}">
+                            <a href="{{ path('manage_most_viewed_setting') }}"><i class="bi bi-eye"></i> <span class="hide-menu">Plus consultés accueil</span></a>
+                        </li>
+                        <li class="{{ app.request.attributes.get('_route') starts with 'manage_coming_soon' ? 'active' : '' }}">
+                            <a href="{{ path('manage_coming_soon_setting') }}"><i class="bi bi-hourglass-split"></i> <span class="hide-menu">Prochainement accueil</span></a>
+                        </li>
+                        <li class="{{ app.request.attributes.get('_route') starts with 'manage_individual_section' ? 'active' : '' }}">
+                            <a href="{{ path('manage_individual_section_setting') }}"><i class="bi bi-person"></i> <span class="hide-menu">Particulier accueil</span></a>
+                        </li>
+                        <li class="{{ app.request.attributes.get('_route') starts with 'manage_sponsor_brands' ? 'active' : '' }}">
+                            <a href="{{ path('manage_sponsor_brands') }}"><i class="bi bi-award"></i> <span class="hide-menu">Marques sponsors</span></a>
+                        </li>
+                        <li class="{{ app.request.attributes.get('_route') starts with 'manage_partners' ? 'active' : '' }}">
+                            <a href="{{ path('manage_partners') }}"><i class="bi bi-people"></i> <span class="hide-menu">Partenaires</span></a>
                         </li>
                     </ul>
                 </li>
@@ -263,6 +284,7 @@
 <script src="{{ asset('js/manage/seller-attribute-widget.js') }}"></script>
 <script src="{{ asset('js/manage/part-brand-autocomplete.js') }}"></script>
 <script src="{{ asset('js/manage/part-catalog-entry-link.js') }}"></script>
+<script src="{{ asset('js/manage/ad-category-autocomplete.js') }}"></script>
 <script>
     (function () {
         const burger = document.getElementById('sidebarBurgerToggle');

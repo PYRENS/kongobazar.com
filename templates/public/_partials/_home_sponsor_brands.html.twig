@@ -1,0 +1,21 @@
+{# ==========================================================================
+   "Marques sponsors" — bande sobre, logos en niveaux de gris, couleur au survol.
+   ========================================================================== #}
+{% if sponsorBrands|default([])|length > 0 %}
+<section class="home-sponsors">
+    <p class="home-sponsors-label">{{ 'home.sponsors'|trans }}</p>
+    <div class="home-sponsors-strip">
+        {% for sponsor in sponsorBrands %}
+            {% if sponsor.url %}
+                <a href="{{ sponsor.url }}" target="_blank" rel="noopener" class="home-sponsor-item" title="{{ sponsor.name }}">
+                    <img src="{{ vich_uploader_asset(sponsor, 'logoFile') }}" alt="{{ sponsor.name }}" loading="lazy">
+                </a>
+            {% else %}
+                <span class="home-sponsor-item" title="{{ sponsor.name }}">
+                    <img src="{{ vich_uploader_asset(sponsor, 'logoFile') }}" alt="{{ sponsor.name }}" loading="lazy">
+                </span>
+            {% endif %}
+        {% endfor %}
+    </div>
+</section>
+{% endif %}

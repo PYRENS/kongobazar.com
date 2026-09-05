@@ -24,17 +24,21 @@
                         <div class="rayon-flyout{{ flyoutData.ad and flyoutData.adPosition == 'bas' ? ' rayon-flyout--ad-bas' : '' }}{{ flyoutData.ad and flyoutData.adPosition == 'droite' ? ' rayon-flyout--ad-droite' : '' }}">
                             <div class="rayon-flyout-main">
                                 <div class="rayon-flyout-columns">
-                                    {% for child in flyoutData.columns %}
-                                        <div class="rayon-flyout-col">
-                                            <h6>{{ child.name|upper }}</h6>
-                                            <ul>
-                                                {% for grandchild in child.children|slice(0, 6) %}
-                                                    <li><a href="{{ path('catalog_category', { slug: grandchild.slug }) }}">{{ grandchild.name }}</a></li>
-                                                {% else %}
-                                                    <li><a href="{{ path('catalog_category', { slug: child.slug }) }}">{{ 'menu.voir_tout'|trans }}</a></li>
-                                                {% endfor %}
-                                            </ul>
-                                        </div>
+                                    {% for col in flyoutData.columns %}
+                                        {% if col.items|length > 0 %}
+                                            <div class="rayon-flyout-col">
+                                                <h6 style="border-bottom-color:{{ flyoutData.backgroundColor }};">{{ col.category.name|upper }}</h6>
+                                                <ul>
+                                                    {% for item in col.items %}
+                                                        <li><a href="{{ path('catalog_category', { slug: item.slug }) }}">{{ item.name }}</a></li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                        {% else %}
+                                            <div class="rayon-flyout-col rayon-flyout-col--link-only">
+                                                <a href="{{ path('catalog_category', { slug: col.category.slug }) }}" class="rayon-flyout-standalone-link">{{ col.category.name }}</a>
+                                            </div>
+                                        {% endif %}
                                     {% endfor %}
                                 </div>
                                 <a href="{{ path('catalog_rayon', { slug: rayon.slug }) }}" class="rayon-flyout-see-all">

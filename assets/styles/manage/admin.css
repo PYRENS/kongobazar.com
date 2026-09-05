@@ -257,7 +257,7 @@ body.admin-body {
     overflow: hidden;
     transition: max-height 0.25s ease;
 }
-.admin-nav-group.open .admin-nav-submenu { max-height: 500px; }
+.admin-nav-group.open .admin-nav-submenu { max-height: 2000px; }
 .admin-nav-submenu li a {
     padding: 10px 20px 10px 44px;
     font-size: 13px;
@@ -1036,3 +1036,6 @@ body.admin-body {
     color: var(--muted, #8592a6);
 }
 .sidebar-overlay { display: none; }
+/* --- Cascade picker (choix d'une catégorie niveau par niveau) — réutilisé sur plusieurs écrans admin --- */
+.cascade-picker { display: flex; flex-direction: column; }
+.cascade-picker .btn { white-space: nowrap; flex-shrink: 0; }

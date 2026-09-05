@@ -73,6 +73,7 @@
                 <th>Nbre de bannière</th>
                 <th>Affichages</th>
                 <th>Clics</th>
+                <th>Activée</th>
                 <th>Configuration</th>
             </tr>
         </thead>
@@ -107,6 +108,17 @@
                     const fixedSelect = tr.querySelector('.zone-fixed-select');
                     const saveBtn = tr.querySelector('.zone-save-btn');
                     const cancelBtn = tr.querySelector('.zone-cancel-btn');
+
+                    const enabledSwitch = tr.querySelector('.zone-enabled-switch');
+                    if (enabledSwitch) {
+                        enabledSwitch.addEventListener('change', function () {
+                            const wasChecked = this.checked;
+                            fetch(this.dataset.toggleUrl, { method: 'POST' })
+                                .then((r) => r.json())
+                                .then((data) => { this.checked = data.enabled; })
+                                .catch(() => { this.checked = !wasChecked; });
+                        });
+                    }
 
                     // Mémorise l'état d'origine (au chargement de la ligne) pour pouvoir y revenir avec "Annuler".
                     const originalChecked = controls.querySelector('.zone-mode-radio:checked');

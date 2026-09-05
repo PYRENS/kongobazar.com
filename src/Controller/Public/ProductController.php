@@ -12,13 +12,20 @@ use Symfony\Component\Routing\Attribute\Route;
 class ProductController extends AbstractController
 {
     #[Route('/produit/{slug}', name: 'catalog_product', host: 'kongobazar.com')]
-    public function show(string $slug, ProductRepository $productRepository, ProductRecommendationRepository $recommendationRepository, SeoResolver $seoResolver, \Vich\UploaderBundle\Storage\StorageInterface $storage): Response
+    public function show(string $slug, ProductRepository $productRepository, ProductRecommendationRepository $recommendationRepository, SeoResolver $seoResolver, \Vich\UploaderBundle\Storage\StorageInterface $storage, \Doctrine\ORM\EntityManagerInterface $em): Response
     {
         $product = $productRepository->findOneBy(['slug' => $slug]);
 
         if (!$product) {
             throw $this->createNotFoundException('Produit introuvable.');
         }
+
+        // Enregistre la vue, pour alimenter "Les plus consultés" et les stats de la fiche produit.
+        $viewLog = new \App\Entity\ProductViewLog();
+        $viewLog->setProduct($product);
+        $viewLog->setViewedAt(new \DateTimeImmutable());
+        $em->persist($viewLog);
+        $em->flush();
 
         // Couleurs et tailles distinctes réellement disponibles sur ce produit
         $colors = [];

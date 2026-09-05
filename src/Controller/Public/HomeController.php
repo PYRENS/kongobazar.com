@@ -32,6 +32,7 @@ class HomeController extends AbstractController
         ReviewRepository $reviewRepository,
         CategoryViewLogRepository $categoryViewLogRepository,
         ProductViewLogRepository $productViewLogRepository,
+        \App\Repository\MostViewedSettingRepository $mostViewedSettingRepository,
         CartRepository $cartRepository,
         \App\Service\SeoResolver $seoResolver,
         \App\Service\HomeDealsSelector $homeDealsSelector,
@@ -43,6 +44,20 @@ class HomeController extends AbstractController
         \App\Repository\HomeCategoryBlockSectionSettingRepository $homeCategoryBlockSectionSettingRepository,
         \App\Repository\TopCategoryItemRepository $topCategoryItemRepository,
         \App\Repository\TopCategorySectionSettingRepository $topCategorySectionSettingRepository,
+        \App\Service\TopVendorSelector $topVendorSelector,
+        \App\Repository\TopVendorSettingRepository $topVendorSettingRepository,
+        \App\Service\NewItemsTabSelector $newItemsTabSelector,
+        \App\Repository\NewItemsTabRepository $newItemsTabRepository,
+        \App\Repository\NewItemsSectionSettingRepository $newItemsSectionSettingRepository,
+        \App\Repository\ComingSoonSectionSettingRepository $comingSoonSectionSettingRepository,
+        \App\Repository\ComingSoonTabRepository $comingSoonTabRepository,
+        \App\Repository\IndividualSectionSettingRepository $individualSectionSettingRepository,
+        \App\Repository\IndividualSectionCategoryRepository $individualSectionCategoryRepository,
+        \App\Service\IndividualSectionSelector $individualSectionSelector,
+        \App\Repository\SponsorBrandRepository $sponsorBrandRepository,
+        \App\Repository\PartnerRepository $partnerRepository,
+        \App\Repository\SponsorSectionSettingRepository $sponsorSectionSettingRepository,
+        \App\Repository\PartnerSectionSettingRepository $partnerSectionSettingRepository,
     ): Response {
         $rootCategories = $categoryRepository->findRootCategories();
 
@@ -82,7 +97,7 @@ class HomeController extends AbstractController
         // --- Blocs catégorie complets ---
         $categoryBlockSectionSettings = $homeCategoryBlockSectionSettingRepository->getSingleton();
         $blockIcons = ['bi-cpu', 'bi-bag-heart', 'bi-house-door', 'bi-collection'];
-        $categoryBlocks = $homeCategoryBlockSettingRepository->findAllOrdered();
+        $categoryBlocks = array_filter($homeCategoryBlockSettingRepository->findAllOrdered(), fn ($block) => $block->isEnabled());
         $featuredBlocks = [];
         foreach ($categoryBlocks as $i => $block) {
             $category = $block->getCategory();
@@ -105,7 +120,7 @@ class HomeController extends AbstractController
                 'icon' => $blockIcons[$i % count($blockIcons)],
                 'subcategories' => $block->getSubcategoryItems(),
                 'sortTabs' => $sortTabs,
-                'initialProducts' => $productRepository->findByCategorySort($initialScopeCategory->getDescendantCategories(), $initialSort, $initialCount),
+                'initialProducts' => $productRepository->findByCategorySort($initialScopeCategory->getDescendantCategories(), $initialSort, $initialCount, $block->isIndividualSellersOnly()),
                 'banner' => $advertisementRepository->findOneActiveByZoneAndCategory('category_block_banner', $category, 'public'),
             ];
         }
@@ -113,16 +128,51 @@ class HomeController extends AbstractController
         // --- Top Catégories / Top Vendeur ---
         $topCategorySectionSettings = $topCategorySectionSettingRepository->getSingleton();
         $topCategories = $topCategoryItemRepository->findAllOrdered();
-        $topVendorsRaw = $sellerProfileRepository->findTopVendors(4);
-        $topVendors = array_map(function ($vendor) use ($productRepository, $reviewRepository) {
-            $vendor->averageRating = $reviewRepository->getAverageRatingForSeller($vendor);
-            $vendor->salesCount = array_sum(array_map(
-                fn ($p) => $p->getSalesCount(),
-                $vendor->getProducts()->toArray()
-            ));
-            $vendor->topProducts = $productRepository->findTopSellingBySeller($vendor, 4);
+        $topVendorSettings = $topVendorSettingRepository->getSingleton();
+        $topVendorRows = $topVendorSelector->select($topVendorSettings);
+        $topVendors = array_map(function ($row) {
+            $vendor = $row['seller'];
+            $vendor->averageRating = $row['averageRating'];
+            $vendor->salesCount = $row['salesCount'];
+            $vendor->topProducts = $row['topProducts'];
             return $vendor;
-        }, $topVendorsRaw);
+        }, $topVendorRows);
+
+        // --- Nouveauté ---
+        $newItemsSectionSettings = $newItemsSectionSettingRepository->getSingleton();
+        $newItemsTabs = $newItemsTabRepository->findAllOrdered();
+        $newItemsByTab = [];
+        foreach ($newItemsTabs as $tab) {
+            $newItemsByTab[$tab->getId()] = $newItemsTabSelector->select($tab);
+        }
+
+        // --- Prochainement ---
+        $comingSoonSectionSettings = $comingSoonSectionSettingRepository->getSingleton();
+        $comingSoonTabs = $comingSoonTabRepository->findAllOrdered();
+        $comingSoonProductsByTab = [];
+        $comingSoonAllProducts = [];
+        foreach ($comingSoonTabs as $tab) {
+            $products = array_map(fn ($item) => $item->getProduct(), $tab->getProducts()->toArray());
+            $products = array_values(array_filter($products, fn ($p) => 'futur' === $p->getStatus()));
+            $comingSoonProductsByTab[$tab->getId()] = $products;
+            $comingSoonAllProducts = array_merge($comingSoonAllProducts, $products);
+        }
+        $comingSoonAllProducts = array_values(array_unique($comingSoonAllProducts, SORT_REGULAR));
+        $comingSoonBanner = $adZonePicker->pick('futur_section_banner', 'public');
+
+        // --- Particulier ---
+        $individualSectionSettings = $individualSectionSettingRepository->getSingleton();
+        $individualCategories = $individualSectionCategoryRepository->findAllOrdered();
+        $individualProductsByCategory = [];
+        $individualAllProducts = [];
+        foreach ($individualCategories as $sc) {
+            $products = $individualSectionSelector->select($sc);
+            $individualProductsByCategory[$sc->getId()] = $products;
+            $individualAllProducts = array_merge($individualAllProducts, $products);
+        }
+        $individualAllProducts = array_values(array_unique($individualAllProducts, SORT_REGULAR));
+        $sponsorBrands = $sponsorSectionSettingRepository->getSingleton()->isEnabled() ? $sponsorBrandRepository->findActiveOrdered() : [];
+        $partners = $partnerSectionSettingRepository->getSingleton()->isEnabled() ? $partnerRepository->findActiveOrdered() : [];
 
         // --- Popular Tags ---
         $featuredBrands = $brandRepository->findFeaturedHomepage();
@@ -131,7 +181,13 @@ class HomeController extends AbstractController
         $adLifestyleRight = $adZonePicker->pick('homepage_lifestyle_right', 'public');
 
         // --- Most Viewed ---
-        $mostViewedProducts = $productViewLogRepository->findMostVisited(7, 8);
+        $mostViewedSettings = $mostViewedSettingRepository->getSingleton();
+        $mostViewedProducts = $productViewLogRepository->findMostVisited(7, $mostViewedSettings->getDisplayCount(), [
+            'kbz' => $mostViewedSettings->isIncludeKbz(),
+            'store' => $mostViewedSettings->isIncludeStore(),
+            'pro' => $mostViewedSettings->isIncludePro(),
+            'individual' => $mostViewedSettings->isIncludeIndividual(),
+        ]);
 
         // --- Tendances (bandeau du header) ---
         $trendingCategories = $categoryViewLogRepository->findMostVisited(7, 8);
@@ -160,6 +216,22 @@ class HomeController extends AbstractController
             'trendingEnabled' => $trendingSectionSettings->isEnabled(),
             'categoryBlocksEnabled' => $categoryBlockSectionSettings->isEnabled(),
             'topCategoriesEnabled' => $topCategorySectionSettings->isEnabled(),
+            'topVendorEnabled' => $topVendorSettings->isEnabled(),
+            'newItemsEnabled' => $newItemsSectionSettings->isEnabled(),
+            'newItemsTabs' => $newItemsTabs,
+            'newItemsByTab' => $newItemsByTab,
+            'comingSoonEnabled' => $comingSoonSectionSettings->isEnabled(),
+            'comingSoonTitle' => $comingSoonSectionSettings->getTitle(),
+            'comingSoonTabs' => $comingSoonTabs,
+            'comingSoonProductsByTab' => $comingSoonProductsByTab,
+            'comingSoonAllProducts' => $comingSoonAllProducts,
+            'comingSoonBanner' => $comingSoonBanner,
+            'individualSectionEnabled' => $individualSectionSettings->isEnabled(),
+            'individualCategories' => $individualCategories,
+            'individualProductsByCategory' => $individualProductsByCategory,
+            'individualAllProducts' => $individualAllProducts,
+            'sponsorBrands' => $sponsorBrands,
+            'partners' => $partners,
             'heroSlides' => $heroSlides,
             'sideAdTop' => $sideAdTop,
             'sideAdBottom' => $sideAdBottom,
@@ -181,6 +253,7 @@ class HomeController extends AbstractController
             'adLifestyleCenter' => $adLifestyleCenter,
             'adLifestyleRight' => $adLifestyleRight,
             'mostViewedProducts' => $mostViewedProducts,
+            'mostViewedEnabled' => $mostViewedSettings->isEnabled(),
             'footerColumns' => $footerColumns,
             'footerSocialAd' => $footerSocialAd,
             'footerBrands' => $footerBrands,

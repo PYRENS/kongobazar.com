@@ -43,10 +43,35 @@
                             </form>
                             <strong>{{ block.category.name }}</strong>
                             <span class="badge" style="background:{{ block.category.effectiveThemeColor|default('#2FA8E0') }};">{{ block.category.effectiveThemeColor|default('bleu du site (par défaut)') }}</span>
+                            <div class="form-check form-switch mb-0 ms-2">
+                                <input type="checkbox" class="form-check-input block-enabled-switch" role="switch" {{ block.enabled ? 'checked' : '' }} data-toggle-url="{{ path('manage_home_category_blocks_toggle_block', {id: block.id}) }}">
+                            </div>
+                            <div class="form-check form-switch mb-0 ms-2">
+                                <input type="checkbox" class="form-check-input individual-only-switch" role="switch" {{ block.individualSellersOnly ? 'checked' : '' }} data-toggle-url="{{ path('manage_home_category_blocks_toggle_individual', {id: block.id}) }}">
+                                <label class="form-check-label small">Particuliers uniquement</label>
+                                <label class="form-check-label small">Bloc actif</label>
+                            </div>
                         </div>
                         <form method="post" action="{{ path('manage_home_category_blocks_remove', {id: block.id}) }}" onsubmit="return confirm('Retirer ce bloc ?');">
                             <button type="submit" class="btn btn-sm btn-outline-danger">Retirer</button>
                         </form>
+                    </div>
+
+                    <div class="p-3 mb-2" style="background:var(--body-bg,#f5f5f5);border-radius:6px;">
+                        <div class="form-check form-switch mb-2">
+                            <input type="checkbox" class="form-check-input banner-enabled-switch" role="switch" {{ block.bannerEnabled ? 'checked' : '' }} data-toggle-url="{{ path('manage_home_category_blocks_toggle_banner', {id: block.id}) }}">
+                            <label class="form-check-label small">Afficher la bannière publicitaire sous ce bloc</label>
+                        </div>
+                        {% set banner = bannersByBlockId[block.id] ?? null %}
+                        {% if banner and banner.imageName %}
+                            <img src="{{ vich_uploader_asset(banner, 'imageFile') }}" alt="{{ banner.title }}" style="max-width:260px;border-radius:4px;border:1px solid var(--kb-border);display:block;">
+                            <a href="{{ path('manage_ads_edit', {id: banner.id}) }}" class="btn btn-sm btn-outline-primary mt-2">Modifier cette bannière</a>
+                        {% else %}
+                            <p class="small text-muted mb-2">Aucune bannière active pour l'instant (1044×180).</p>
+                            <a href="{{ path('manage_ads_new', {zone_key: 'category_block_banner', category_id: block.category.id}) }}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-plus-circle me-1"></i>Créer la bannière pour "{{ block.category.name }}"
+                            </a>
+                        {% endif %}
                     </div>
 
                     <label class="form-label small">Sous-catégories affichées dans le menu de gauche de ce bloc</label>
@@ -147,7 +172,26 @@
             });
         })();
 
-        // Switch "Visible" par onglet de tri — en direct, indépendant du bouton "Enregistrer" (qui ne gère que le nombre de produits).
+        document.querySelectorAll('.block-enabled-switch, .individual-only-switch').forEach((sw) => {
+            sw.addEventListener('change', function () {
+                const wasChecked = this.checked;
+                fetch(this.dataset.toggleUrl, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => { this.checked = data.enabled; })
+                    .catch(() => { this.checked = !wasChecked; });
+            });
+        });
+
+        document.querySelectorAll('.banner-enabled-switch').forEach((sw) => {
+            sw.addEventListener('change', function () {
+                const wasChecked = this.checked;
+                fetch(this.dataset.toggleUrl, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => { this.checked = data.enabled; })
+                    .catch(() => { this.checked = !wasChecked; });
+            });
+        });
+
         document.querySelectorAll('[id^="tabVisible"]').forEach((sw) => {
             sw.addEventListener('change', function () {
                 const wasChecked = this.checked;

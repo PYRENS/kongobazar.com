@@ -82,12 +82,12 @@
             </div>
 
             <div class="product-price-block">
+                <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+                {% if product.displayOldPrice %}
+                    <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
+                {% endif %}
                 {% if product.getCurrentDiscountedPrice() %}
-                    <span class="price-now">{{ product.getCurrentDiscountedPrice() }} {{ product.currency }}</span>
-                    <span class="price-old">{{ product.basePrice }} {{ product.currency }}</span>
                     <span class="badge-discount-inline">-{{ product.getActiveDiscountPercent() }}%</span>
-                {% else %}
-                    <span class="price-now">{{ product.basePrice }} {{ product.currency }}</span>
                 {% endif %}
             </div>
 

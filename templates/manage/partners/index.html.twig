@@ -1,0 +1,129 @@
+{% extends 'manage/base.html.twig' %}
+{% block title %}Partenaires{% endblock %}
+{% block page_icon %}bi-people{% endblock %}
+{% block page_title %}Partenaires — Accueil{% endblock %}
+{% block body %}
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-toggle-on text-primary me-2"></i>Visibilité</h6></div>
+        <div class="card-body">
+            <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="partnerSectionEnabledSwitch" role="switch" {{ sectionSetting.enabled ? 'checked' : '' }} data-toggle-url="{{ path('manage_partners_toggle_section') }}">
+                <label class="form-check-label">Afficher la section "Partenaires" sur la page d'accueil</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-plus-circle text-primary me-2"></i>Ajouter</h6></div>
+        <div class="card-body">
+            <form method="post" action="{{ path('manage_partners_add') }}" enctype="multipart/form-data" class="d-flex gap-3 align-items-end flex-wrap">
+                <div>
+                    <label class="form-label small">Nom</label>
+                    <input type="text" name="name" class="form-control" required>
+                </div>
+                <div>
+                    <label class="form-label small">Lien (optionnel)</label>
+                    <input type="url" name="url" class="form-control" placeholder="https://...">
+                </div>
+                <div>
+                    <label class="form-label small">Logo</label>
+                    <div class="admin-file-upload-group" id="partnerLogoUploadGroup">
+                        <div class="admin-upload-thumb" id="partnerLogoDropzoneThumb">
+                            <span class="admin-upload-thumb-label">&nbsp;</span>
+                            <label class="admin-upload-dropzone" for="partnerLogoInput">
+                                <i class="bi bi-camera"></i>
+                                <span>Upload</span>
+                            </label>
+                        </div>
+                        <input type="file" name="logo" id="partnerLogoInput" accept="image/*" class="admin-upload-input-hidden">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">Ajouter</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="sw-card">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-list-ol text-primary me-2"></i>Partenaires configurés</h6></div>
+        <div class="card-body p-0">
+            <table class="table ctb-table mb-0">
+                <thead><tr><th style="width:80px;">Ordre</th><th style="width:80px;">Logo</th><th>Nom</th><th>Lien</th><th style="width:90px;">Actif</th><th style="width:100px;">Actions</th></tr></thead>
+                <tbody>
+                    {% for partner in partners %}
+                        <tr>
+                            <td>
+                                <form method="post" action="{{ path('manage_partners_move', {id: partner.id, direction: 'up'}) }}" style="display:inline;">
+                                    <button type="submit" class="admin-btn admin-btn--outline"{{ loop.first ? ' disabled' }}><i class="bi bi-arrow-up"></i></button>
+                                </form>
+                                <form method="post" action="{{ path('manage_partners_move', {id: partner.id, direction: 'down'}) }}" style="display:inline;">
+                                    <button type="submit" class="admin-btn admin-btn--outline"{{ loop.last ? ' disabled' }}><i class="bi bi-arrow-down"></i></button>
+                                </form>
+                            </td>
+                            <td>{% if partner.logoName %}<img src="{{ vich_uploader_asset(partner, 'logoFile') }}" style="max-width:50px;max-height:30px;object-fit:contain;">{% endif %}</td>
+                            <td>{{ partner.name }}</td>
+                            <td>{{ partner.url ?: '—' }}</td>
+                            <td>
+                                <input type="checkbox" class="form-check-input partner-toggle" role="switch" {{ partner.active ? 'checked' : '' }} data-toggle-url="{{ path('manage_partners_toggle', {id: partner.id}) }}">
+                            </td>
+                            <td>
+                                <form method="post" action="{{ path('manage_partners_remove', {id: partner.id}) }}" onsubmit="return confirm('Retirer ?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Retirer</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="6" class="text-muted">Aucun élément configuré.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const sw = document.getElementById('partnerSectionEnabledSwitch');
+            sw.addEventListener('change', function () {
+                const wasChecked = this.checked;
+                fetch(this.dataset.toggleUrl, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => { this.checked = data.enabled; })
+                    .catch(() => { this.checked = !wasChecked; });
+            });
+        })();
+
+        document.querySelectorAll('.partner-toggle').forEach((sw) => {
+            sw.addEventListener('change', function () {
+                const wasChecked = this.checked;
+                fetch(this.dataset.toggleUrl, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => { this.checked = data.active; })
+                    .catch(() => { this.checked = !wasChecked; });
+            });
+        });
+
+        const partnerLogoInput = document.getElementById('partnerLogoInput');
+        const partnerLogoUploadGroup = document.getElementById('partnerLogoUploadGroup');
+        const partnerLogoDropzoneThumb = document.getElementById('partnerLogoDropzoneThumb');
+
+        partnerLogoInput.addEventListener('change', function () {
+            const file = this.files[0];
+            partnerLogoUploadGroup.querySelectorAll('[data-kind="new"]').forEach((el) => el.remove());
+            if (!file) return;
+
+            const div = document.createElement('div');
+            div.className = 'admin-upload-thumb';
+            div.dataset.kind = 'new';
+            div.innerHTML =
+                '<span class="admin-upload-thumb-label">&nbsp;</span>' +
+                '<div class="admin-upload-thumb-inner">' +
+                '<img src="' + URL.createObjectURL(file) + '" class="admin-zoomable-thumb">' +
+                '<button type="button" class="admin-upload-remove"><i class="bi bi-x"></i></button>' +
+                '</div>';
+            div.querySelector('.admin-upload-remove').addEventListener('click', () => {
+                partnerLogoInput.value = '';
+                div.remove();
+            });
+            partnerLogoDropzoneThumb.after(div);
+        });
+    </script>
+{% endblock %}

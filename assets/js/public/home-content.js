@@ -6,6 +6,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initMiniCarousels();
     initDealsCarousel();
     initTrendingTabs();
+    initNewItemsTabs();
+    initComingSoonTabs();
+    initIndividualSectionTabs();
     initCategoryBlockSortTabs();
     initGalleryThumbSwap();
     initCountdowns();
@@ -104,20 +107,22 @@ function initMiniCarousels() {
         let currentPage = 0;
         let timer = null;
         const totalPages = dots.length || 1;
-        const pageWidth = carousel.offsetWidth;
 
+        // Chaque page occupe 100% de la largeur du track (pas de pixels figés, pas de risque
+        // de valeur qui dérape) ; on fait glisser avec un pourcentage, toujours relatif à la
+        // largeur réelle du moment.
         pages.forEach((page) => {
-            page.style.flex = `0 0 ${pageWidth}px`;
-            page.style.width = pageWidth + 'px';
+            page.style.flex = '0 0 100%';
+            page.style.width = '100%';
         });
-        track.style.width = (pageWidth * totalPages) + 'px';
+        track.style.width = '100%';
         track.style.display = 'flex';
-        track.style.transition = 'margin-left 0.4s ease';
+        track.style.transition = 'transform 0.4s ease';
         carousel.style.overflow = 'hidden';
 
         function goToPage(index) {
             currentPage = index;
-            track.style.marginLeft = `-${currentPage * pageWidth}px`;
+            track.style.transform = `translateX(-${currentPage * 100}%)`;
             dots.forEach((dot, i) => dot.classList.toggle('active', i === currentPage));
         }
 
@@ -172,6 +177,52 @@ function initTrendingTabs() {
             container.querySelectorAll('.trending-panel').forEach((p) => p.classList.remove('active'));
             tab.classList.add('active');
             tab.setAttribute('aria-selected', 'true');
+            const target = document.getElementById(tab.dataset.tabTarget);
+            if (target) target.classList.add('active');
+        });
+    });
+}
+/* --------------------------------------------------------------------------
+   Onglets "Nouveauté" — même principe que "Articles tendances" (tout préchargé,
+   simple bascule d'affichage, pas d'AJAX).
+   -------------------------------------------------------------------------- */
+function initNewItemsTabs() {
+    document.querySelectorAll('.home-new-items .trending-tab').forEach((tab) => {
+        tab.addEventListener('click', () => {
+            const container = tab.closest('.home-new-items');
+            if (!container) return;
+            container.querySelectorAll('.new-items-tabs .trending-tab').forEach((t) => t.classList.remove('active'));
+            container.querySelectorAll('.new-items-panel').forEach((p) => p.classList.remove('active'));
+            tab.classList.add('active');
+            const target = document.getElementById(tab.dataset.tabTarget);
+            if (target) target.classList.add('active');
+        });
+    });
+}
+/* --------------------------------------------------------------------------
+   Onglets "Prochainement" — même principe, "Voir tous" inclus dans le même groupe.
+   -------------------------------------------------------------------------- */
+function initComingSoonTabs() {
+    document.querySelectorAll('.home-coming-soon .trending-tab').forEach((tab) => {
+        tab.addEventListener('click', () => {
+            const container = tab.closest('.home-coming-soon');
+            if (!container) return;
+            container.querySelectorAll('.coming-soon-tabs .trending-tab').forEach((t) => t.classList.remove('active'));
+            container.querySelectorAll('.coming-soon-panel').forEach((p) => p.classList.remove('active'));
+            tab.classList.add('active');
+            const target = document.getElementById(tab.dataset.tabTarget);
+            if (target) target.classList.add('active');
+        });
+    });
+}
+function initIndividualSectionTabs() {
+    document.querySelectorAll('.home-individual-section .trending-tab').forEach((tab) => {
+        tab.addEventListener('click', () => {
+            const container = tab.closest('.home-individual-section');
+            if (!container) return;
+            container.querySelectorAll('.individual-tabs .trending-tab').forEach((t) => t.classList.remove('active'));
+            container.querySelectorAll('.individual-panel').forEach((p) => p.classList.remove('active'));
+            tab.classList.add('active');
             const target = document.getElementById(tab.dataset.tabTarget);
             if (target) target.classList.add('active');
         });

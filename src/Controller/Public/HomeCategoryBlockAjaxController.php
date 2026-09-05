@@ -40,7 +40,7 @@ class HomeCategoryBlockAjaxController extends AbstractController
 
         $categories = $scopeCategory->getDescendantCategories();
 
-        $products = $productRepository->findByCategorySort($categories, $sort, $count);
+        $products = $productRepository->findByCategorySort($categories, $sort, $count, $block->isIndividualSellersOnly());
 
         return $this->render('public/_partials/_home_category_block_products.html.twig', [
             'products' => $products,

@@ -21,12 +21,47 @@ use Symfony\Component\Routing\Attribute\Route;
 class HomeCategoryBlockSettingController extends AbstractController
 {
     #[Route('/parametres/blocs-categorie-accueil', name: 'manage_home_category_blocks_setting', host: 'manage.kongobazar.com', methods: ['GET'])]
-    public function index(HomeCategoryBlockSettingRepository $repository, HomeCategoryBlockSectionSettingRepository $sectionRepository): Response
+    public function index(HomeCategoryBlockSettingRepository $repository, HomeCategoryBlockSectionSettingRepository $sectionRepository, \App\Repository\AdvertisementRepository $advertisementRepository): Response
     {
+        $blocks = $repository->findAllOrdered();
+
+        $bannersByBlockId = [];
+        foreach ($blocks as $block) {
+            $bannersByBlockId[$block->getId()] = $advertisementRepository->findOneActiveByZoneAndCategory('category_block_banner', $block->getCategory(), 'public');
+        }
+
         return $this->render('manage/home_category_blocks_setting/index.html.twig', [
-            'blocks' => $repository->findAllOrdered(),
+            'blocks' => $blocks,
             'sectionSetting' => $sectionRepository->getSingleton(),
+            'bannersByBlockId' => $bannersByBlockId,
         ]);
+    }
+
+    #[Route('/parametres/blocs-categorie-accueil/{id}/basculer-bloc', name: 'manage_home_category_blocks_toggle_block', host: 'manage.kongobazar.com', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function toggleBlock(HomeCategoryBlockSetting $block, EntityManagerInterface $em): Response
+    {
+        $block->setEnabled(!$block->isEnabled());
+        $em->flush();
+
+        return $this->json(['ok' => true, 'enabled' => $block->isEnabled()]);
+    }
+
+    #[Route('/parametres/blocs-categorie-accueil/{id}/particuliers-basculer', name: 'manage_home_category_blocks_toggle_individual', host: 'manage.kongobazar.com', methods: ['POST'], requirements: ['id' => '\\d+'])]
+    public function toggleIndividualOnly(HomeCategoryBlockSetting $block, EntityManagerInterface $em): Response
+    {
+        $block->setIndividualSellersOnly(!$block->isIndividualSellersOnly());
+        $em->flush();
+
+        return $this->json(['ok' => true, 'enabled' => $block->isIndividualSellersOnly()]);
+    }
+
+    #[Route('/parametres/blocs-categorie-accueil/{id}/banniere-basculer', name: 'manage_home_category_blocks_toggle_banner', host: 'manage.kongobazar.com', methods: ['POST'], requirements: ['id' => '\\d+'])]
+    public function toggleBanner(HomeCategoryBlockSetting $block, EntityManagerInterface $em): Response
+    {
+        $block->setBannerEnabled(!$block->isBannerEnabled());
+        $em->flush();
+
+        return $this->json(['ok' => true, 'enabled' => $block->isBannerEnabled()]);
     }
 
     #[Route('/parametres/blocs-categorie-accueil/basculer', name: 'manage_home_category_blocks_toggle_enabled', host: 'manage.kongobazar.com', methods: ['POST'])]

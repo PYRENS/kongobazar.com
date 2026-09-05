@@ -5,6 +5,15 @@
 {% block page_title %}{{ product ? 'Modifier' : 'Nouveau' }} produit{% endblock %}
 
 {% block body %}
+    {% if product and product.status == 'futur' %}
+        <div class="alert alert-info d-flex justify-content-between align-items-center">
+            <span>Ce produit est marqué "Futur" — il n'est pas visible sur le catalogue, mais réservable via la section "Prochainement".</span>
+            <form method="post" action="{{ path('manage_products_mark_available', {id: product.id}) }}" onsubmit="return confirm('Marquer ce produit comme disponible à la vente maintenant ?');">
+                <button type="submit" class="btn btn-sm btn-success">Marquer disponible en magasin</button>
+            </form>
+        </div>
+    {% endif %}
+
     <form method="post" enctype="multipart/form-data" action="{{ product ? path('manage_products_update', {id: product.id}) : path('manage_products_new') }}">
 
     <div class="admin-form-grid">
@@ -84,8 +93,8 @@
 
             <div class="mb-3">
                 <label class="form-label">Vendeur</label>
-                <input type="text" id="sellerSearchInput" class="form-control" style="max-width:400px;" placeholder="Rechercher par email..."
-                    value="{{ product and product.sellerProfile ? product.sellerProfile.user.email : '' }}" autocomplete="off">
+                <input type="text" id="sellerSearchInput" class="form-control" style="max-width:400px;" placeholder="Rechercher par nom, référence ou email..."
+                    value="{{ product and product.sellerProfile ? product.sellerProfile.displayName ~ (product.sellerProfile.referenceNumber ? ' (' ~ product.sellerProfile.referenceNumber ~ ')' : '') : '' }}" autocomplete="off">
                 <div id="sellerSearchResults" class="list-group mt-1" style="max-width:400px;position:relative;z-index:10;"></div>
                 <input type="hidden" name="seller_profile_id" id="sellerIdInput" value="{{ product and product.sellerProfile ? product.sellerProfile.id : '' }}" required>
             </div>
@@ -140,6 +149,8 @@
                 <label class="form-label">Statut</label>
                 <select name="status" class="form-select">
                     <option value="draft" {{ product and product.status == 'draft' ? 'selected' : '' }}>Brouillon</option>
+                    <option value="futur" {{ product and product.status == 'futur' ? 'selected' : '' }}>Futur (accueil "Prochainement", avec réservation 40%)</option>
+                    <option value="coming_soon" {{ product and product.status == 'coming_soon' ? 'selected' : '' }}>Prochainement en rayon (bandeau "Me prévenir", sur la fiche produit)</option>
                     <option value="active" {{ product and product.status == 'active' ? 'selected' : '' }}>Actif</option>
                     <option value="suspended" {{ product and product.status == 'suspended' ? 'selected' : '' }}>Suspendu</option>
                 </select>

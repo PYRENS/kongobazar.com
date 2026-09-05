@@ -548,6 +548,26 @@ class Product
         return $this->getActiveDiscountCampaign()?->getDiscountedPrice();
     }
 
+    /** Prix affiché en avant (le prix vente flash s'il y en a une active, sinon le prix de base). */
+    public function getDisplayCurrentPrice(): string
+    {
+        return $this->getCurrentDiscountedPrice() ?? $this->basePrice;
+    }
+
+    /**
+     * Prix barré affiché à côté, selon la règle : le prix comparé (compareAtPrice) s'il existe,
+     * sinon le prix de base — mais seulement s'il y a effectivement quelque chose à barrer
+     * (une vente flash active OU un prix comparé renseigné). Retourne null sinon.
+     */
+    public function getDisplayOldPrice(): ?string
+    {
+        if ($this->getActiveDiscountCampaign()) {
+            return $this->isOnSale() ? $this->compareAtPrice : $this->basePrice;
+        }
+
+        return $this->isOnSale() ? $this->compareAtPrice : null;
+    }
+
     public function isRecent(): bool
     {
         $twoWeeksAgo = new \DateTimeImmutable('-14 days');

@@ -4,7 +4,9 @@
         <div class="product-card product-card--compact">
             <div class="product-card-media">
                 <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" data-main-image loading="lazy">
-                {% if product.compareAtPrice %}
+                {% if product.activeDiscountPercent %}
+                    <span class="badge-discount">-{{ product.activeDiscountPercent }}%</span>
+                {% elseif product.compareAtPrice %}
                     <span class="badge-discount">
                         -{{ ((1 - (product.basePrice / product.compareAtPrice)) * 100)|round }}%
                     </span>
@@ -19,9 +21,9 @@
                 <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="product-card-title">{{ product.title }}</a>
                 <div class="product-card-rating">★★★★☆</div>
                 <div class="product-card-price">
-                    <span class="price-now">{{ product.basePrice }} {{ product.currency }}</span>
-                    {% if product.compareAtPrice %}
-                        <span class="price-old">{{ product.compareAtPrice }} {{ product.currency }}</span>
+                    <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+                    {% if product.displayOldPrice %}
+                        <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
                     {% endif %}
                 </div>
             </div>

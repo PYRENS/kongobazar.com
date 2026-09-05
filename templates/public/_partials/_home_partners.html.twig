@@ -1,0 +1,26 @@
+{# ==========================================================================
+   "Partenaires" — cartes bordées, logo + nom, design distinct des sponsors.
+   ========================================================================== #}
+{% if partners|default([])|length > 0 %}
+<section class="home-partners">
+    <div class="home-deals-head">
+        <span class="home-section-badge">{{ 'home.partners'|trans }}</span>
+        <span class="home-deals-head-line"></span>
+    </div>
+    <div class="home-partners-grid">
+        {% for partner in partners %}
+            {% if partner.url %}
+                <a href="{{ partner.url }}" target="_blank" rel="noopener" class="home-partner-card">
+                    <img src="{{ vich_uploader_asset(partner, 'logoFile') }}" alt="{{ partner.name }}" loading="lazy">
+                    <span class="home-partner-name">{{ partner.name }}</span>
+                </a>
+            {% else %}
+                <div class="home-partner-card">
+                    <img src="{{ vich_uploader_asset(partner, 'logoFile') }}" alt="{{ partner.name }}" loading="lazy">
+                    <span class="home-partner-name">{{ partner.name }}</span>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+</section>
+{% endif %}

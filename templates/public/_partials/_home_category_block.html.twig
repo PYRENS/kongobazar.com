@@ -39,7 +39,7 @@
                 {% include 'public/_partials/_home_category_block_products.html.twig' with {products: initialProducts|default([])} %}
             </div>
 
-            {% if blockBanner is defined and blockBanner %}
+            {% if block.bannerEnabled and blockBanner is defined and blockBanner %}
                 <a {% if blockBanner.targetUrl %}href="{{ path('ads_click', { id: blockBanner.id, zoneKey: blockBanner.zoneKey }) }}"{% endif %}{% if blockBanner.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="category-block-banner{{ blockBanner.targetUrl ? ' ad-clickable' : '' }}">
                     <img src="{{ vich_uploader_asset(blockBanner, 'imageFile') }}" alt="{{ blockBanner.title }}" loading="lazy">
                 </a>

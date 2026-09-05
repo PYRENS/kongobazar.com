@@ -1,0 +1,157 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Top Vendeur — Accueil{% endblock %}
+{% block page_icon %}bi-award{% endblock %}
+{% block page_title %}Affichage "Top Vendeur" — Accueil{% endblock %}
+
+{% block body %}
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-toggle-on text-primary me-2"></i>Visibilité</h6></div>
+        <div class="card-body">
+            <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="topVendorEnabledSwitch" role="switch" {{ setting.enabled ? 'checked' : '' }} data-toggle-url="{{ path('manage_top_vendor_toggle_enabled') }}">
+                <label class="form-check-label" for="topVendorEnabledSwitch">Afficher la section "Top Vendeur" sur la page d'accueil</label>
+            </div>
+            <small id="topVendorEnabledFeedback" class="text-muted"></small>
+        </div>
+    </div>
+
+    <form method="post" action="{{ path('manage_top_vendor_setting_update') }}">
+        <div class="sw-card mb-3">
+            <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-sliders text-primary me-2"></i>Nombre affiché</h6></div>
+            <div class="card-body">
+                <label class="form-label">Nombre de vendeurs affichés</label>
+                <input type="number" name="display_count" class="form-control" style="max-width:160px;" min="1" value="{{ setting.displayCount }}">
+            </div>
+        </div>
+
+        <div class="sw-card mb-3">
+            <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-shuffle text-primary me-2"></i>Mode d'affichage</h6></div>
+            <div class="card-body">
+                <div class="d-flex flex-column gap-2">
+                    {% for key, label in modes %}
+                        <div class="form-check">
+                            <input type="radio" name="display_mode" value="{{ key }}" class="form-check-input" id="mode_{{ key }}" {{ setting.displayMode == key ? 'checked' : '' }}>
+                            <label class="form-check-label" for="mode_{{ key }}">{{ label }}</label>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div id="modeAutoFields" class="mt-3 p-3" style="background:var(--body-bg,#f5f5f5);border-radius:6px;display:{{ setting.displayMode == 'auto' ? 'block' : 'none' }};">
+                    <p class="text-muted small mb-2">Classement par ventes cumulées des produits actifs.</p>
+                    <div class="d-flex gap-4">
+                        <div class="form-check">
+                            <input type="checkbox" name="exclude_pro" value="1" class="form-check-input" id="excludePro" {{ setting.excludePro ? 'checked' : '' }}>
+                            <label class="form-check-label" for="excludePro">Exclure les vendeurs "Pro"</label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" name="exclude_boutique" value="1" class="form-check-input" id="excludeBoutique" {{ setting.excludeBoutique ? 'checked' : '' }}>
+                            <label class="form-check-label" for="excludeBoutique">Exclure les "Boutiques"</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-success">Enregistrer</button>
+    </form>
+
+    <div id="modeTargetedSection" class="sw-card mt-3" style="display:{{ setting.displayMode == 'targeted' ? 'block' : 'none' }};">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-people text-primary me-2"></i>Vendeurs ciblés</h6></div>
+        <div class="card-body">
+            <form method="post" action="{{ path('manage_top_vendor_add_seller') }}" class="mb-3">
+                <label class="form-label small">Ajouter un vendeur</label>
+                <input type="text" id="targetedSellerSearchInput" class="form-control" style="max-width:320px;" placeholder="Rechercher une boutique/pro..." autocomplete="off">
+                <div id="targetedSellerSearchResults" class="list-group mt-1" style="max-width:320px;position:relative;z-index:10;"></div>
+                <input type="hidden" name="seller_id" id="targetedSellerPendingId">
+                <button type="submit" class="btn btn-sm btn-outline-primary mt-2" id="targetedSellerAddBtn" disabled>+ Ajouter</button>
+            </form>
+
+            <table class="table table-sm mb-0">
+                <tbody>
+                    {% for item in targetedSellers %}
+                        <tr>
+                            <td style="width:70px;">
+                                <form method="post" action="{{ path('manage_top_vendor_move_seller', {id: item.id, direction: 'up'}) }}" style="display:inline;">
+                                    <button type="submit" class="admin-btn admin-btn--outline"{{ loop.first ? ' disabled' }}><i class="bi bi-arrow-up"></i></button>
+                                </form>
+                                <form method="post" action="{{ path('manage_top_vendor_move_seller', {id: item.id, direction: 'down'}) }}" style="display:inline;">
+                                    <button type="submit" class="admin-btn admin-btn--outline"{{ loop.last ? ' disabled' }}><i class="bi bi-arrow-down"></i></button>
+                                </form>
+                            </td>
+                            <td>{{ item.seller.displayName }}</td>
+                            <td style="width:100px;">
+                                <form method="post" action="{{ path('manage_top_vendor_remove_seller', {id: item.id}) }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Retirer</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td class="text-muted">Aucun vendeur ciblé.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const enabledSwitch = document.getElementById('topVendorEnabledSwitch');
+            const feedback = document.getElementById('topVendorEnabledFeedback');
+            enabledSwitch.addEventListener('change', function () {
+                const wasChecked = this.checked;
+                fetch(this.dataset.toggleUrl, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        this.checked = data.enabled;
+                        feedback.textContent = data.enabled ? 'Activé.' : 'Désactivé.';
+                        setTimeout(() => { feedback.textContent = ''; }, 2000);
+                    })
+                    .catch(() => {
+                        this.checked = !wasChecked;
+                        feedback.textContent = 'Erreur — réessaie.';
+                    });
+            });
+        })();
+
+        const modeAutoFields = document.getElementById('modeAutoFields');
+        const modeTargetedSection = document.getElementById('modeTargetedSection');
+        document.querySelectorAll('[name="display_mode"]').forEach((radio) => {
+            radio.addEventListener('change', function () {
+                modeAutoFields.style.display = this.value === 'auto' ? 'block' : 'none';
+                modeTargetedSection.style.display = this.value === 'targeted' ? 'block' : 'none';
+            });
+        });
+
+        const searchInput = document.getElementById('targetedSellerSearchInput');
+        const results = document.getElementById('targetedSellerSearchResults');
+        const pendingIdInput = document.getElementById('targetedSellerPendingId');
+        const addBtn = document.getElementById('targetedSellerAddBtn');
+        let timeout;
+        searchInput.addEventListener('input', function () {
+            clearTimeout(timeout);
+            const term = this.value.trim();
+            if (term.length < 1) { results.innerHTML = ''; return; }
+            timeout = setTimeout(() => {
+                fetch('{{ path("manage_top_vendor_search_sellers") }}?q=' + encodeURIComponent(term))
+                    .then((r) => r.json())
+                    .then((data) => {
+                        results.innerHTML = '';
+                        data.results.forEach((item) => {
+                            const btn = document.createElement('button');
+                            btn.type = 'button';
+                            btn.className = 'list-group-item list-group-item-action';
+                            btn.textContent = item.name;
+                            btn.addEventListener('click', () => {
+                                pendingIdInput.value = item.id;
+                                addBtn.disabled = false;
+                                searchInput.value = item.name;
+                                results.innerHTML = '';
+                            });
+                            results.appendChild(btn);
+                        });
+                    });
+            }, 250);
+        });
+    </script>
+{% endblock %}

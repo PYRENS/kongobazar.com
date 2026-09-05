@@ -1,0 +1,91 @@
+{# ==========================================================================
+   "Nouveauté" — un onglet par catégorie, 4 petites | grande carte | 4 petites (9 au total).
+   Contexte attendu :
+     - newItemsEnabled : bool
+     - newItemsTabs     : NewItemsTab[]
+     - newItemsByTab    : { tabId: {bigCard: Product|null, smallCards: Product[]} }
+   ========================================================================== #}
+{% if newItemsEnabled and newItemsTabs|default([])|length > 0 %}
+<section class="home-new-items">
+    <div class="home-deals-head">
+        <span class="home-section-badge">{{ 'home.new_items'|trans }}</span>
+        <span class="home-deals-head-line"></span>
+        <div class="home-carousel-nav">
+            <div class="new-items-tabs" role="tablist">
+                {% for tab in newItemsTabs %}
+                    <button type="button" class="trending-tab{{ loop.first ? ' active' : '' }}" data-tab-target="new-items-panel-{{ tab.id }}">{{ tab.category.name }}</button>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    {% macro productCard(product) %}
+        <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="new-items-small-card">
+            <div class="new-items-small-badges">
+                <span class="badge-new">{{ 'home.new'|trans }}</span>
+                {% if product.activeDiscountPercent %}
+                    <span class="badge-discount">-{{ product.activeDiscountPercent }}%</span>
+                {% elseif product.compareAtPrice %}
+                    <span class="badge-discount">-{{ ((1 - (product.basePrice / product.compareAtPrice)) * 100)|round }}%</span>
+                {% endif %}
+            </div>
+            <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
+            <div class="new-items-small-info">
+                <p class="new-items-small-title">{{ product.title }}</p>
+                <div class="new-items-price">
+                    <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+                    {% if product.displayOldPrice %}
+                        <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </a>
+    {% endmacro %}
+
+    {% for tab in newItemsTabs %}
+        {% set data = newItemsByTab[tab.id] %}
+        <div class="new-items-panel{{ loop.first ? ' active' : '' }}" id="new-items-panel-{{ tab.id }}">
+            {% if data.bigCard %}
+                {% set leftCards = data.smallCards|slice(0, 4) %}
+                {% set rightCards = data.smallCards|slice(4, 4) %}
+                <div class="new-items-grid">
+                    <div class="new-items-small-grid">
+                        {% for product in leftCards %}
+                            {{ _self.productCard(product) }}
+                        {% endfor %}
+                    </div>
+
+                    <a href="{{ path('catalog_product', { slug: data.bigCard.slug }) }}" class="new-items-big-card">
+                        <div class="new-items-big-badges">
+                            <span class="badge-new">{{ 'home.new'|trans }}</span>
+                            {% if data.bigCard.activeDiscountPercent %}
+                                <span class="badge-discount">-{{ data.bigCard.activeDiscountPercent }}%</span>
+                            {% elseif data.bigCard.compareAtPrice %}
+                                <span class="badge-discount">-{{ ((1 - (data.bigCard.basePrice / data.bigCard.compareAtPrice)) * 100)|round }}%</span>
+                            {% endif %}
+                        </div>
+                        <img src="{{ data.bigCard.images|length > 0 ? vich_uploader_asset(data.bigCard.images|first, 'imageFile') : '' }}" alt="{{ data.bigCard.title }}" loading="lazy">
+                        <div class="new-items-big-info">
+                            <h5>{{ data.bigCard.title }}</h5>
+                            <div class="new-items-price">
+                                <span class="price-now">{{ data.bigCard.displayCurrentPrice }} {{ data.bigCard.currency }}</span>
+                                {% if data.bigCard.displayOldPrice %}
+                                    <span class="price-old">{{ data.bigCard.displayOldPrice }} {{ data.bigCard.currency }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </a>
+
+                    <div class="new-items-small-grid">
+                        {% for product in rightCards %}
+                            {{ _self.productCard(product) }}
+                        {% endfor %}
+                    </div>
+                </div>
+            {% else %}
+                <p class="text-muted">Aucun produit pour cet onglet.</p>
+            {% endif %}
+        </div>
+    {% endfor %}
+</section>
+{% endif %}

@@ -1,29 +1,37 @@
 {# ==========================================================================
-   "Most Viewed" — produits les plus consultés (ProductViewLog, tendance 7 jours)
+   "Les plus consultés" — ProductViewLog, tendance 7 jours, filtré par type de vendeur
    Contexte attendu :
+     - mostViewedEnabled : bool
      - mostViewedProducts : résultat de ProductViewLogRepository::findMostVisited()
    ========================================================================== #}
-<section class="home-most-viewed">
-    <div class="most-viewed-head">
-        <span>{{ 'home.most_viewed'|trans }}</span>
+{% if mostViewedEnabled and mostViewedProducts|default([])|length > 0 %}
+<section class="home-most-viewed home-top-categories">
+    <div class="home-deals-head">
+        <span class="home-section-badge">{{ 'home.most_viewed'|trans }}</span>
+        <span class="home-deals-head-line"></span>
     </div>
-    <div class="home-product-grid home-product-grid--4">
-        {% for item in mostViewedProducts|default([]) %}
-            {% set product = item.product %}
-            <div class="product-card product-card--compact">
-                <div class="product-card-media">
-                    <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
-                </div>
-                <div class="product-card-body">
-                    <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="product-card-title">{{ product.title }}</a>
-                    <div class="product-card-price">
-                        <span class="price-now">{{ product.basePrice }} {{ product.currency }}</span>
-                        {% if product.compareAtPrice %}
-                            <span class="price-old">{{ product.compareAtPrice }} {{ product.currency }}</span>
-                        {% endif %}
+    <div class="home-top-categories-wrap">
+        <button type="button" class="carousel-arrow carousel-arrow--edge left" data-carousel-prev aria-label="{{ 'home.prev'|trans }}"><i class="bi bi-chevron-left"></i></button>
+        <div class="most-viewed-track" data-scroll-track>
+            {% for item in mostViewedProducts %}
+                {% set product = item.product %}
+                <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="most-viewed-card">
+                    <div class="most-viewed-media">
+                        <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
                     </div>
-                </div>
-            </div>
-        {% endfor %}
+                    <div class="most-viewed-info">
+                        <p class="most-viewed-title">{{ product.title }}</p>
+                        <div class="new-items-price">
+                            <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+                            {% if product.displayOldPrice %}
+                                <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+        <button type="button" class="carousel-arrow carousel-arrow--edge right" data-carousel-next aria-label="{{ 'home.next'|trans }}"><i class="bi bi-chevron-right"></i></button>
     </div>
 </section>
+{% endif %}

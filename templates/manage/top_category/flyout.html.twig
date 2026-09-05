@@ -1,14 +1,14 @@
 {% extends 'manage/base.html.twig' %}
 
-{% block title %}Méga-menu — {{ rayon.name }}{% endblock %}
+{% block title %}Panneau — {{ rayon.name }}{% endblock %}
 {% block page_icon %}bi-grid-3x3-gap{% endblock %}
-{% block page_title %}Top Catégorie — Méga-menu de "{{ rayon.name }}"{% endblock %}
+{% block page_title %}Top Rayons — Panneau de "{{ rayon.name }}"{% endblock %}
 
 {% block body %}
-    <a href="{{ path('manage_top_category_index') }}" class="btn btn-outline-secondary btn-sm mb-3"><i class="bi bi-arrow-left me-1"></i>Retour à Top Catégorie</a>
+    <a href="{{ path('manage_top_category_index') }}" class="btn btn-outline-secondary btn-sm mb-3"><i class="bi bi-arrow-left me-1"></i>Retour à Top Rayons</a>
 
     <div class="sw-card mb-3">
-        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-megaphone text-primary me-2"></i>Position de la pub dans ce méga-menu</h6></div>
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-megaphone text-primary me-2"></i>Position de la pub dans ce panneau</h6></div>
         <div class="card-body">
             <form method="post" action="{{ path('manage_top_category_flyout_ad_position', { id: rayon.id }) }}" class="d-flex gap-3 align-items-center">
                 <select name="flyout_ad_position" class="form-select" style="max-width: 220px;">
@@ -18,67 +18,188 @@
                 </select>
                 <button type="submit" class="btn btn-primary btn-sm">Enregistrer</button>
             </form>
-            {% if rayon.flyoutAdPosition == 'droite' %}
-                <small class="text-muted d-block mt-2">La pub se crée dans Publicités → zone "Flyout rayon — position droite" (220×400) → catégorie liée : "{{ rayon.name }}".</small>
-            {% elseif rayon.flyoutAdPosition == 'bas' %}
-                <small class="text-muted d-block mt-2">La pub se crée dans Publicités → zone "Flyout rayon — position bas" (480×120) → catégorie liée : "{{ rayon.name }}".</small>
+            {% if rayon.flyoutAdPosition == 'droite' or rayon.flyoutAdPosition == 'bas' %}
+                {% set zoneKey = rayon.flyoutAdPosition == 'droite' ? 'rayon_flyout_ad_droite' : 'rayon_flyout_ad_bas' %}
+                {% set zoneDims = rayon.flyoutAdPosition == 'droite' ? '220×400' : '480×120' %}
+                <div class="mt-3 p-3" style="background:var(--body-bg,#f5f5f5);border-radius:6px;">
+                    {% if currentAd and currentAd.imageName %}
+                        <p class="small text-muted mb-2">Bannière active actuellement :</p>
+                        <img src="{{ vich_uploader_asset(currentAd, 'imageFile') }}" alt="{{ currentAd.title }}" style="max-width:220px;border-radius:4px;border:1px solid var(--kb-border);">
+                        <div class="mt-2">
+                            <a href="{{ path('manage_ads_edit', {id: currentAd.id}) }}" class="btn btn-sm btn-outline-primary">Modifier cette bannière</a>
+                        </div>
+                    {% else %}
+                        <p class="small text-muted mb-2">Aucune bannière active pour l'instant sur cette position ({{ zoneDims }}).</p>
+                        <a href="{{ path('manage_ads_new', {zone_key: zoneKey, category_id: rayon.id}) }}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-plus-circle me-1"></i>Créer la bannière pour "{{ rayon.name }}"
+                        </a>
+                    {% endif %}
+                </div>
             {% endif %}
         </div>
     </div>
 
     <div class="sw-card mb-3">
-        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-pin-angle text-primary me-2"></i>Colonnes épinglées <small class="text-muted fw-normal">(affichées dans cet ordre — 4 max recommandé)</small></h6></div>
-        <div class="card-body p-0">
-            {% if flyoutColumns|length == 0 %}
-                <p class="text-muted p-3 mb-0">Aucune colonne épinglée pour l'instant : le méga-menu affiche automatiquement les 4 premières sous-catégories de "{{ rayon.name }}" par défaut.</p>
-            {% else %}
-                <table class="table ctb-table mb-0">
-                    <tbody>
-                        {% for child in flyoutColumns %}
-                            <tr>
-                                <td style="width: 60px;">
-                                    <form method="post" action="{{ path('manage_top_category_flyout_column_move', { id: child.id, direction: 'up' }) }}" style="display:inline;">
-                                        <button type="submit" class="admin-btn admin-btn--outline"{{ loop.first ? ' disabled' }}><i class="bi bi-arrow-up"></i></button>
-                                    </form>
-                                    <form method="post" action="{{ path('manage_top_category_flyout_column_move', { id: child.id, direction: 'down' }) }}" style="display:inline;">
-                                        <button type="submit" class="admin-btn admin-btn--outline"{{ loop.last ? ' disabled' }}><i class="bi bi-arrow-down"></i></button>
-                                    </form>
-                                </td>
-                                <td>{{ child.name }}</td>
-                                <td style="width: 120px;">
-                                    <form method="post" action="{{ path('manage_top_category_flyout_column_toggle', { id: child.id }) }}">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">Retirer</button>
-                                    </form>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% endif %}
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-palette text-primary me-2"></i>Couleur du panneau</h6></div>
+        <div class="card-body">
+            <p class="text-muted small mb-0">
+                Le fond du panneau hérite automatiquement de la couleur de "{{ rayon.name }}"
+                (réglable dans Catégories → {{ rayon.name }} → Couleur). Si aucune couleur n'est définie,
+                on remonte au parent direct, puis à la racine, puis au bleu du site par défaut.
+                <br>Couleur actuellement appliquée : <span class="badge" style="background:{{ rayon.effectiveThemeColor|default('#2FA8E0') }};">{{ rayon.effectiveThemeColor|default('bleu du site (par défaut)') }}</span>
+            </p>
+        </div>
+    </div>
+
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-plus-circle text-primary me-2"></i>Ajouter une colonne</h6></div>
+        <div class="card-body">
+            <p class="text-muted small">Choisis n'importe quel niveau sous "{{ rayon.name }}" — une sous-catégorie directe ou plus profonde.</p>
+            <form method="post" action="{{ path('manage_top_category_flyout_column_add', {id: rayon.id}) }}">
+                <div class="cascade-picker" id="addFlyoutColumnCascade" data-children-url="{{ path('manage_top_category_children_cascade') }}" data-parent-id="{{ rayon.id }}"></div>
+                <input type="hidden" name="category_id" id="addFlyoutColumnCategoryId" required>
+                <button type="submit" class="btn btn-primary btn-sm mt-2" id="addFlyoutColumnSubmitBtn" disabled>Ajouter cette colonne</button>
+            </form>
         </div>
     </div>
 
     <div class="sw-card">
-        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-list-ul text-primary me-2"></i>Toutes les sous-catégories de "{{ rayon.name }}"</h6></div>
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-pin-angle text-primary me-2"></i>Colonnes configurées <small class="text-muted fw-normal">(4 max recommandé)</small></h6></div>
         <div class="card-body p-0">
-            <table class="table ctb-table mb-0">
-                <tbody>
-                    {% for child in children %}
-                        {% if not child.flyoutColumnFeatured %}
-                            <tr>
-                                <td>{{ child.name }}</td>
-                                <td style="width: 120px;">
-                                    <form method="post" action="{{ path('manage_top_category_flyout_column_toggle', { id: child.id }) }}">
-                                        <button type="submit" class="btn btn-sm btn-primary">Épingler</button>
-                                    </form>
-                                </td>
-                            </tr>
+            {% if flyoutColumns|length == 0 %}
+                <p class="text-muted p-3 mb-0">Aucune colonne configurée : le panneau affiche automatiquement les 4 premières sous-catégories directes de "{{ rayon.name }}" par défaut.</p>
+            {% else %}
+                {% for column in flyoutColumns %}
+                    <div class="border-bottom p-3">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <form method="post" action="{{ path('manage_top_category_flyout_column_move', { id: column.id, direction: 'up' }) }}" style="display:inline;">
+                                    <button type="submit" class="admin-btn admin-btn--outline"{{ loop.first ? ' disabled' }}><i class="bi bi-arrow-up"></i></button>
+                                </form>
+                                <form method="post" action="{{ path('manage_top_category_flyout_column_move', { id: column.id, direction: 'down' }) }}" style="display:inline;">
+                                    <button type="submit" class="admin-btn admin-btn--outline"{{ loop.last ? ' disabled' }}><i class="bi bi-arrow-down"></i></button>
+                                </form>
+                                <strong>{{ column.category.name }}</strong>
+                                <span class="badge {{ column.items|length > 0 ? 'bg-primary' : 'bg-secondary' }}">
+                                    {{ column.items|length > 0 ? 'Vraie colonne (' ~ column.items|length ~ ' item' ~ (column.items|length > 1 ? 's' : '') ~ ')' : 'Lien simple (aucun item)' }}
+                                </span>
+                            </div>
+                            <form method="post" action="{{ path('manage_top_category_flyout_column_remove', { id: column.id }) }}" onsubmit="return confirm('Retirer cette colonne du flyout ?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Retirer la colonne</button>
+                            </form>
+                        </div>
+
+                        {% if column.items|length > 0 %}
+                            <table class="table table-sm mb-2">
+                                <tbody>
+                                    {% for item in column.items %}
+                                        <tr>
+                                            <td style="width: 60px;">
+                                                <form method="post" action="{{ path('manage_top_category_flyout_column_item_move', { id: item.id, direction: 'up' }) }}" style="display:inline;">
+                                                    <button type="submit" class="admin-btn admin-btn--outline"{{ loop.first ? ' disabled' }}><i class="bi bi-arrow-up"></i></button>
+                                                </form>
+                                                <form method="post" action="{{ path('manage_top_category_flyout_column_item_move', { id: item.id, direction: 'down' }) }}" style="display:inline;">
+                                                    <button type="submit" class="admin-btn admin-btn--outline"{{ loop.last ? ' disabled' }}><i class="bi bi-arrow-down"></i></button>
+                                                </form>
+                                            </td>
+                                            <td>{{ item.category.name }}</td>
+                                            <td style="width: 100px;">
+                                                <form method="post" action="{{ path('manage_top_category_flyout_column_item_remove', { id: item.id }) }}" onsubmit="return confirm('Retirer cet item ?');">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">Retirer</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         {% endif %}
-                    {% else %}
-                        <tr><td class="text-muted">Aucune sous-catégorie.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+
+                        <form method="post" action="{{ path('manage_top_category_flyout_column_item_add', {id: column.id}) }}" class="add-flyout-item-form">
+                            <label class="form-label small">Ajouter un item à cette colonne (cascade, n'importe quel niveau)</label>
+                            <div class="cascade-picker add-flyout-item-cascade" data-children-url="{{ path('manage_top_category_children_cascade') }}" data-parent-id="{{ column.category.id }}"></div>
+                            <input type="hidden" name="category_id" class="add-flyout-item-pending-id">
+                            <button type="submit" class="btn btn-sm btn-outline-primary mt-2 add-flyout-item-btn" disabled>+ Ajouter cet item</button>
+                        </form>
+                    </div>
+                {% endfor %}
+            {% endif %}
         </div>
     </div>
+
+    <script>
+        function initLevelPickCascade(container, onPick) {
+            const childrenUrl = container.dataset.childrenUrl;
+            const initialParentId = container.dataset.parentId || null;
+
+            function loadLevel(parentId) {
+                fetch(childrenUrl + '?parent_id=' + (parentId || ''))
+                    .then((r) => r.json())
+                    .then((data) => {
+                        if (data.results.length === 0) return;
+
+                        const row = document.createElement('div');
+                        row.className = 'd-flex align-items-center gap-2 mb-2';
+
+                        const select = document.createElement('select');
+                        select.className = 'form-select';
+                        select.style.maxWidth = '240px';
+                        select.innerHTML = '<option value="">— Choisir —</option>' +
+                            data.results.map((c) => `<option value="${c.id}" data-name="${c.name}" data-has-children="${c.hasChildren}">${c.name}</option>`).join('');
+
+                        const pickBtn = document.createElement('button');
+                        pickBtn.type = 'button';
+                        pickBtn.className = 'btn btn-sm btn-outline-secondary';
+                        pickBtn.textContent = 'Choisir ce niveau';
+                        pickBtn.disabled = true;
+
+                        select.addEventListener('change', function () {
+                            let next = row.nextElementSibling;
+                            while (next) {
+                                const toRemove = next;
+                                next = next.nextElementSibling;
+                                toRemove.remove();
+                            }
+                            pickBtn.disabled = !this.value;
+                            if (this.value) {
+                                const opt = this.options[this.selectedIndex];
+                                if (opt.dataset.hasChildren === 'true') {
+                                    loadLevel(this.value);
+                                }
+                            }
+                        });
+
+                        pickBtn.addEventListener('click', function () {
+                            const opt = select.options[select.selectedIndex];
+                            onPick(select.value, opt.dataset.name);
+                        });
+
+                        row.appendChild(select);
+                        row.appendChild(pickBtn);
+                        container.appendChild(row);
+                    });
+            }
+
+            loadLevel(initialParentId);
+        }
+
+        const addFlyoutColumnCascade = document.getElementById('addFlyoutColumnCascade');
+        const addFlyoutColumnCategoryId = document.getElementById('addFlyoutColumnCategoryId');
+        const addFlyoutColumnSubmitBtn = document.getElementById('addFlyoutColumnSubmitBtn');
+        initLevelPickCascade(addFlyoutColumnCascade, function (id, name) {
+            addFlyoutColumnCategoryId.value = id;
+            addFlyoutColumnSubmitBtn.disabled = false;
+            addFlyoutColumnSubmitBtn.textContent = 'Ajouter "' + name + '" comme colonne';
+        });
+
+        document.querySelectorAll('.add-flyout-item-cascade').forEach((cascade) => {
+            const form = cascade.closest('form');
+            const pendingIdInput = form.querySelector('.add-flyout-item-pending-id');
+            const addBtn = form.querySelector('.add-flyout-item-btn');
+            initLevelPickCascade(cascade, function (id, name) {
+                pendingIdInput.value = id;
+                addBtn.disabled = false;
+                addBtn.textContent = 'Ajouter "' + name + '"';
+            });
+        });
+    </script>
 {% endblock %}

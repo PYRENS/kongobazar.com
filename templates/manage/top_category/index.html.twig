@@ -2,7 +2,7 @@
 
 {% block title %}Top Catégorie{% endblock %}
 {% block page_icon %}bi-star{% endblock %}
-{% block page_title %}Top Catégorie — sidebar "Les Rayons"{% endblock %}
+{% block page_title %}Top Rayons — sidebar "Top Rayons"{% endblock %}
 
 {% block body %}
     <div class="row g-3 mb-4">
@@ -10,14 +10,7 @@
             <div class="sw-card ctb-stat ctb-stat-blue h-100">
                 <div class="ctb-stat-icon ctb-stat-icon-blue"><i class="bi bi-diagram-3"></i></div>
                 <div class="ctb-stat-val">{{ stats.total }}</div>
-                <div class="ctb-stat-label">Rayons au total</div>
-            </div>
-        </div>
-        <div class="col-xl-4 col-md-6">
-            <div class="sw-card ctb-stat ctb-stat-green h-100">
-                <div class="ctb-stat-icon ctb-stat-icon-green"><i class="bi bi-star-fill"></i></div>
-                <div class="ctb-stat-val">{{ stats.inTop }}</div>
-                <div class="ctb-stat-label">Dans "Top Rayons"</div>
+                <div class="ctb-stat-label">Rayons dans "Top Rayons"</div>
             </div>
         </div>
         <div class="col-xl-4 col-md-6">
@@ -29,17 +22,124 @@
         </div>
     </div>
 
-    <div class="sw-card">
-        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-star text-primary me-2"></i>Rayons — sidebar "Top Rayons"</h6></div>
-        <div class="card-body p-0">
-            <p class="text-muted p-3 mb-0">
-                Coche/décoche pour afficher ou masquer un rayon dans la sidebar "Top Rayons" (page d'accueil), et utilise les flèches pour changer son ordre.
-                Clique sur "Méga-menu" pour configurer le flyout qui s'ouvre au survol de ce rayon.
-            </p>
-
-            <div id="topCategoryTable" data-live-table>
-                {% include 'manage/top_category/_table.html.twig' %}
-            </div>
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-plus-circle text-primary me-2"></i>Ajouter un rayon</h6></div>
+        <div class="card-body">
+            <p class="text-muted small">Choisis n'importe quel niveau de l'arbre — un rayon entier ou une sous-catégorie précise.</p>
+            <form method="post" action="{{ path('manage_top_category_add') }}">
+                <div class="cascade-picker" id="addTopRayonCascade" data-children-url="{{ path('manage_top_category_children_cascade') }}"></div>
+                <input type="hidden" name="category_id" id="addTopRayonCategoryId" required>
+                <button type="submit" class="btn btn-primary btn-sm mt-2" id="addTopRayonSubmitBtn" disabled>Ajouter à Top Rayons</button>
+            </form>
         </div>
     </div>
+
+    <div class="sw-card">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-star text-primary me-2"></i>Rayons configurés</h6></div>
+        <div class="card-body p-0">
+            <p class="text-muted p-3 mb-0">
+                Utilise les flèches pour changer l'ordre. Clique sur "Panneau" pour configurer les colonnes qui s'affichent au survol de ce rayon.
+            </p>
+
+            <table class="table ctb-table mb-0">
+                <thead>
+                    <tr>
+                        <th style="width:80px;">Ordre</th>
+                        <th>Rayon</th>
+                        <th>Pub flyout</th>
+                        <th style="width:200px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rayon in rayons %}
+                        <tr>
+                            <td>
+                                <form method="post" action="{{ path('manage_top_category_move', {id: rayon.id, direction: 'up'}) }}" style="display:inline;">
+                                    <button type="submit" class="admin-btn admin-btn--outline"{{ loop.first ? ' disabled' }}><i class="bi bi-arrow-up"></i></button>
+                                </form>
+                                <form method="post" action="{{ path('manage_top_category_move', {id: rayon.id, direction: 'down'}) }}" style="display:inline;">
+                                    <button type="submit" class="admin-btn admin-btn--outline"{{ loop.last ? ' disabled' }}><i class="bi bi-arrow-down"></i></button>
+                                </form>
+                            </td>
+                            <td>{{ rayon.name }}</td>
+                            <td>{{ rayon.flyoutAdPosition ? rayon.flyoutAdPosition|capitalize : '—' }}</td>
+                            <td>
+                                <a href="{{ path('manage_top_category_flyout', {id: rayon.id}) }}" class="btn btn-sm btn-outline-primary">Panneau</a>
+                                <form method="post" action="{{ path('manage_top_category_toggle', {id: rayon.id}) }}" style="display:inline;" onsubmit="return confirm('Retirer ce rayon de Top Rayons ?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Retirer</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="4" class="text-muted">Aucun rayon configuré — ajoute-en un ci-dessus.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function initLevelPickCascade(container, onPick) {
+            const childrenUrl = container.dataset.childrenUrl;
+
+            function loadLevel(parentId) {
+                fetch(childrenUrl + '?parent_id=' + (parentId || ''))
+                    .then((r) => r.json())
+                    .then((data) => {
+                        if (data.results.length === 0) return;
+
+                        const row = document.createElement('div');
+                        row.className = 'd-flex align-items-center gap-2 mb-2';
+
+                        const select = document.createElement('select');
+                        select.className = 'form-select';
+                        select.style.maxWidth = '240px';
+                        select.innerHTML = '<option value="">— Choisir —</option>' +
+                            data.results.map((c) => `<option value="${c.id}" data-name="${c.name}" data-has-children="${c.hasChildren}">${c.name}</option>`).join('');
+
+                        const pickBtn = document.createElement('button');
+                        pickBtn.type = 'button';
+                        pickBtn.className = 'btn btn-sm btn-outline-secondary';
+                        pickBtn.textContent = 'Choisir ce niveau';
+                        pickBtn.disabled = true;
+
+                        select.addEventListener('change', function () {
+                            let next = row.nextElementSibling;
+                            while (next) {
+                                const toRemove = next;
+                                next = next.nextElementSibling;
+                                toRemove.remove();
+                            }
+                            pickBtn.disabled = !this.value;
+                            if (this.value) {
+                                const opt = this.options[this.selectedIndex];
+                                if (opt.dataset.hasChildren === 'true') {
+                                    loadLevel(this.value);
+                                }
+                            }
+                        });
+
+                        pickBtn.addEventListener('click', function () {
+                            const opt = select.options[select.selectedIndex];
+                            onPick(select.value, opt.dataset.name);
+                        });
+
+                        row.appendChild(select);
+                        row.appendChild(pickBtn);
+                        container.appendChild(row);
+                    });
+            }
+
+            loadLevel(null);
+        }
+
+        const addTopRayonCascade = document.getElementById('addTopRayonCascade');
+        const addTopRayonCategoryId = document.getElementById('addTopRayonCategoryId');
+        const addTopRayonSubmitBtn = document.getElementById('addTopRayonSubmitBtn');
+        initLevelPickCascade(addTopRayonCascade, function (id, name) {
+            addTopRayonCategoryId.value = id;
+            addTopRayonSubmitBtn.disabled = false;
+            addTopRayonSubmitBtn.textContent = 'Ajouter "' + name + '" à Top Rayons';
+        });
+    </script>
 {% endblock %}

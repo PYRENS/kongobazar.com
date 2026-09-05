@@ -1,0 +1,63 @@
+{% extends 'manage/base.html.twig' %}
+{% block title %}Les plus consultés — Accueil{% endblock %}
+{% block page_icon %}bi-eye{% endblock %}
+{% block page_title %}Affichage "Les plus consultés" — Accueil{% endblock %}
+{% block body %}
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-toggle-on text-primary me-2"></i>Visibilité</h6></div>
+        <div class="card-body">
+            <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="mostViewedEnabledSwitch" role="switch" {{ setting.enabled ? 'checked' : '' }} data-toggle-url="{{ path('manage_most_viewed_toggle_enabled') }}">
+                <label class="form-check-label">Afficher la section "Les plus consultés" sur la page d'accueil</label>
+            </div>
+            <small id="mostViewedEnabledFeedback" class="text-muted"></small>
+        </div>
+    </div>
+
+    <form method="post" action="{{ path('manage_most_viewed_setting_update') }}">
+        <div class="sw-card mb-3">
+            <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-sliders text-primary me-2"></i>Réglages</h6></div>
+            <div class="card-body">
+                <label class="form-label">Nombre de produits affichés</label>
+                <input type="number" name="display_count" class="form-control mb-3" style="max-width:160px;" min="6" value="{{ setting.displayCount }}">
+
+                <label class="form-label d-block">Types de vendeurs inclus</label>
+                <div class="form-check">
+                    <input type="checkbox" name="include_kbz" value="1" class="form-check-input" id="incKbz" {{ setting.includeKbz ? 'checked' : '' }}>
+                    <label class="form-check-label" for="incKbz">KBZ (produits KongoBazar)</label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" name="include_store" value="1" class="form-check-input" id="incStore" {{ setting.includeStore ? 'checked' : '' }}>
+                    <label class="form-check-label" for="incStore">Boutique</label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" name="include_pro" value="1" class="form-check-input" id="incPro" {{ setting.includePro ? 'checked' : '' }}>
+                    <label class="form-check-label" for="incPro">Professionnels</label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" name="include_individual" value="1" class="form-check-input" id="incIndividual" {{ setting.includeIndividual ? 'checked' : '' }}>
+                    <label class="form-check-label" for="incIndividual">Particulier</label>
+                </div>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-success">Enregistrer</button>
+    </form>
+
+    <script>
+        (function () {
+            const sw = document.getElementById('mostViewedEnabledSwitch');
+            const feedback = document.getElementById('mostViewedEnabledFeedback');
+            sw.addEventListener('change', function () {
+                const wasChecked = this.checked;
+                fetch(this.dataset.toggleUrl, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        this.checked = data.enabled;
+                        feedback.textContent = data.enabled ? 'Activé.' : 'Désactivé.';
+                        setTimeout(() => { feedback.textContent = ''; }, 2000);
+                    })
+                    .catch(() => { this.checked = !wasChecked; });
+            });
+        })();
+    </script>
+{% endblock %}

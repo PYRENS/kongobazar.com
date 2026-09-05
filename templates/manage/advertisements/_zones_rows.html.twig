@@ -7,6 +7,11 @@
         <td>{{ row.totalImpressions }}</td>
         <td>{{ row.totalClicks }}</td>
         <td>
+            <div class="form-check form-switch mb-0">
+                <input type="checkbox" class="form-check-input zone-enabled-switch" role="switch" {{ row.enabled ? 'checked' : '' }} data-toggle-url="{{ path('manage_ad_zones_toggle_enabled', {zoneKey: row.zoneKey}) }}">
+            </div>
+        </td>
+        <td>
             <div class="d-flex align-items-center gap-2 flex-wrap zone-controls">
                 <div class="form-check form-check-inline mb-0">
                     <input type="radio" name="mode_{{ row.zoneKey }}" value="random" class="form-check-input zone-mode-radio" id="mode_random_{{ row.zoneKey }}" {{ row.mode == 'random' ? 'checked' : '' }}>
@@ -28,5 +33,5 @@
         </td>
     </tr>
 {% else %}
-    <tr><td colspan="7" class="text-muted">Aucune zone ne correspond à ces critères.</td></tr>
+    <tr><td colspan="8" class="text-muted">Aucune zone ne correspond à ces critères.</td></tr>
 {% endfor %}

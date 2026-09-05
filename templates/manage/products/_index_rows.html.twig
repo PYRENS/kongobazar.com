@@ -18,7 +18,15 @@
             {% else %}—{% endif %}
         </td>
         <td>{{ product.brand ? product.brand.name : '—' }}</td>
-        <td>{{ product.sellerProfile ? product.sellerProfile.user.email : '—' }}</td>
+        <td>
+            {% if product.sellerProfile %}
+                <a href="{{ path('partner_show', {slug: product.sellerProfile.slug}) }}" target="_blank">{{ product.sellerProfile.displayName }}</a>
+                {% if product.sellerProfile.isKbz %}<span class="badge bg-primary">KBZ</span>{% endif %}
+                <br><small class="text-muted">{{ product.sellerProfile.typeLabel }}</small>
+            {% else %}
+                —
+            {% endif %}
+        </td>
         <td>
             {% if product.sellerProfile %}
                 {% set provinces = [] %}
@@ -31,7 +39,19 @@
                 {{ provinces|join(', ') ?: '—' }}
             {% else %}—{% endif %}
         </td>
-        <td>{{ product.basePrice }} {{ product.currency }}</td>
+        <td>
+            {{ product.basePrice }} {{ product.currency }}
+            {% if product.compareAtPrice %}
+                <br><small class="text-muted text-decoration-line-through">{{ product.compareAtPrice }} {{ product.currency }}</small>
+            {% endif %}
+        </td>
+        <td>
+            {% if product.getActiveDiscountCampaign() %}
+                <span class="badge bg-danger">Vente flash</span>
+            {% else %}
+                <span class="text-muted">—</span>
+            {% endif %}
+        </td>
         <td>{{ product.condition == 'new' ? 'Neuf' : 'Occasion' }}</td>
         <td>
             {% if product.authenticityStatus == 'original' %}
@@ -40,7 +60,11 @@
                 <span class="ctb-status-badge ctb-status-pending"><i class="bi bi-info-circle"></i> Réplique</span>
             {% else %}<span class="text-muted">—</span>{% endif %}
         </td>
-        <td>{{ {'active': 'Actif', 'draft': 'Brouillon', 'suspended': 'Suspendu'}[product.status] ?? product.status }}</td>
+        <td>
+            {% set statusBadges = {'active': 'bg-success', 'draft': 'bg-secondary', 'futur': 'bg-warning text-dark', 'coming_soon': 'bg-info text-dark', 'suspended': 'bg-danger'} %}
+            {% set statusLabels = {'active': 'Actif', 'draft': 'Brouillon', 'futur': 'Futur', 'coming_soon': 'Prochainement en rayon', 'suspended': 'Suspendu'} %}
+            <span class="badge {{ statusBadges[product.status] ?? 'bg-secondary' }}">{{ statusLabels[product.status] ?? product.status }}</span>
+        </td>
         <td>{{ product.salesCount }}</td>
         <td>{{ product.createdAt ? product.createdAt|date('d/m/Y') : '—' }}</td>
         <td class="admin-actions">
@@ -53,5 +77,5 @@
         </td>
     </tr>
 {% else %}
-    <tr><td colspan="12" class="text-muted">Aucun produit.</td></tr>
+    <tr><td colspan="14" class="text-muted">Aucun produit.</td></tr>
 {% endfor %}

@@ -22,7 +22,7 @@
                 <div class="home-deal-card">
                     <a href="{{ path('catalog_product', { slug: deal.slug }) }}" class="home-deal-image">
                         <img src="{{ deal.images|length > 0 ? vich_uploader_asset(deal.images|first, 'imageFile') : '' }}" alt="{{ deal.title }}" loading="lazy">
-                        {% if deal.activeDiscountPercent is defined %}
+                        {% if deal.activeDiscountPercent %}
                             <span class="badge-discount">-{{ deal.activeDiscountPercent }}%</span>
                         {% endif %}
 
@@ -52,9 +52,9 @@
                             </p>
                         {% endif %}
                         <div class="home-deal-price">
-                            <span class="price-now">{{ deal.currentDiscountedPrice|default(deal.basePrice) }} {{ deal.currency }}</span>
-                            {% if deal.activeDiscountPercent is defined %}
-                                <span class="price-old">{{ deal.basePrice }} {{ deal.currency }}</span>
+                            <span class="price-now">{{ deal.displayCurrentPrice }} {{ deal.currency }}</span>
+                            {% if deal.displayOldPrice %}
+                                <span class="price-old">{{ deal.displayOldPrice }} {{ deal.currency }}</span>
                             {% endif %}
                         </div>
                         <div class="home-deal-countdown-row">

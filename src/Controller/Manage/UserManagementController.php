@@ -128,6 +128,21 @@ class UserManagementController extends AbstractController
         return $this->redirectToRoute('manage_users_show', ['id' => $user->getId()]);
     }
 
+    // TODO : à retirer une fois le vrai flux d'inscription/validation vendeur construit —
+    // l'attribution de la référence devra se faire automatiquement à la validation, pas manuellement ici.
+    #[Route('/utilisateurs/{id}/generer-reference', name: 'manage_users_generate_reference', host: 'manage.kongobazar.com', methods: ['POST'])]
+    public function generateReference(User $user, SellerProfileRepository $sellerProfileRepository, \App\Service\SellerReferenceNumberGenerator $generator, \Doctrine\ORM\EntityManagerInterface $em): \Symfony\Component\HttpFoundation\RedirectResponse
+    {
+        $sellerProfile = $sellerProfileRepository->findOneByUser($user);
+        if ($sellerProfile && !$sellerProfile->getReferenceNumber()) {
+            $sellerProfile->setReferenceNumber($generator->generateFor($sellerProfile));
+            $em->flush();
+            $this->addFlash('success', 'Numéro de référence attribué : ' . $sellerProfile->getReferenceNumber());
+        }
+
+        return $this->redirectToRoute('manage_users_show', ['id' => $user->getId()]);
+    }
+
     #[Route('/utilisateurs/{id}', name: 'manage_users_show', host: 'manage.kongobazar.com')]
     public function show(
         User $user,

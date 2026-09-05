@@ -94,6 +94,7 @@ class AdZoneSettingController extends AbstractController
                 'width' => AdvertisementManagementController::ZONE_INFO[$zoneKey]['width'] ?? null,
                 'height' => AdvertisementManagementController::ZONE_INFO[$zoneKey]['height'] ?? null,
                 'mode' => $rowMode,
+                'enabled' => $setting ? $setting->isEnabled() : true,
                 'fixedAdvertisementId' => $setting && $setting->getFixedAdvertisement() ? $setting->getFixedAdvertisement()->getId() : null,
                 'candidates' => $candidates,
                 'totalImpressions' => array_sum(array_map(fn ($ad) => $ad->getImpressionCount(), $candidates)),
@@ -146,5 +147,22 @@ class AdZoneSettingController extends AbstractController
         $em->flush();
 
         return $this->json(['ok' => true]);
+    }
+
+    #[Route('/publicites/zones/{zoneKey}/basculer', name: 'manage_ad_zones_toggle_enabled', host: 'manage.kongobazar.com', methods: ['POST'])]
+    public function toggleEnabled(string $zoneKey, AdZoneSettingRepository $settingRepository, EntityManagerInterface $em): Response
+    {
+        if (!isset(self::SINGLE_SLOT_ZONES[$zoneKey])) {
+            throw $this->createNotFoundException('Zone inconnue.');
+        }
+
+        $setting = $settingRepository->findOneByZoneKey($zoneKey) ?? new AdZoneSetting();
+        $setting->setZoneKey($zoneKey);
+        $setting->setEnabled(!$setting->isEnabled());
+
+        $em->persist($setting);
+        $em->flush();
+
+        return $this->json(['ok' => true, 'enabled' => $setting->isEnabled()]);
     }
 }

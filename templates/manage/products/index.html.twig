@@ -77,6 +77,14 @@
             <option value="used" {{ currentCondition == 'used' ? 'selected' : '' }}>Occasion</option>
         </select>
 
+        <select name="sellerType" id="productsSellerTypeFilterInput" class="form-select" style="max-width: 190px;">
+            <option value="">Par type de vendeur</option>
+            <option value="store" {{ currentSellerType == 'store' ? 'selected' : '' }}>Boutique / Magasin</option>
+            <option value="pro" {{ currentSellerType == 'pro' ? 'selected' : '' }}>Professionnel</option>
+            <option value="individual" {{ currentSellerType == 'individual' ? 'selected' : '' }}>Particulier</option>
+            <option value="kbz" {{ currentSellerType == 'kbz' ? 'selected' : '' }}>KBZ</option>
+        </select>
+
         <select name="perPage" id="productsPerPageSelect" class="form-select" style="max-width: 130px;">
             {% for n in [10, 20, 50, 100] %}
                 <option value="{{ n }}" {{ perPage == n ? 'selected' : '' }}>{{ n }} / page</option>
@@ -104,7 +112,6 @@
         <div id="productsProvincePicker" style="display:flex;flex-direction:row;gap:6px;flex-wrap:wrap;"></div>
         <input type="hidden" name="province" id="productsProvinceFilterInput" value="{{ currentProvince }}">
     </form>
-
     <div class="mb-4"></div>
 
     <div class="sw-card">
@@ -121,6 +128,7 @@
                 <th>{{ self.sortLink('seller', 'Vendeur', currentSort, currentDir) }}</th>
                 <th>Province</th>
                 <th>{{ self.sortLink('basePrice', 'Prix', currentSort, currentDir) }}</th>
+                <th>Promotion</th>
                 <th>{{ self.sortLink('condition', 'État', currentSort, currentDir) }}</th>
                 <th>{{ self.sortLink('authenticityStatus', 'Authenticité', currentSort, currentDir) }}</th>
                 <th>{{ self.sortLink('status', 'Statut', currentSort, currentDir) }}</th>
@@ -171,7 +179,7 @@
                 refreshList();
             });
 
-            ['productsStatusSelect', 'productsConditionSelect', 'productsPerPageSelect'].forEach((id) => {
+            ['productsStatusSelect', 'productsConditionSelect', 'productsPerPageSelect', 'productsSellerTypeFilterInput'].forEach((id) => {
                 document.getElementById(id).addEventListener('change', function () {
                     currentPage = 1;
                     refreshList();

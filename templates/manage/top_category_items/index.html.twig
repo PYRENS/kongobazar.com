@@ -5,6 +5,16 @@
 {% block page_title %}Affichage "Top Catégorie" — Accueil{% endblock %}
 
 {% block body %}
+    <div class="row g-3 mb-3">
+        <div class="col-xl-3 col-md-4">
+            <div class="sw-card ctb-stat ctb-stat-blue h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-blue"><i class="bi bi-circle-square"></i></div>
+                <div class="ctb-stat-val">{{ items|length }}</div>
+                <div class="ctb-stat-label">Catégories configurées</div>
+            </div>
+        </div>
+    </div>
+
     <div class="sw-card mb-3">
         <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-toggle-on text-primary me-2"></i>Visibilité</h6></div>
         <div class="card-body">

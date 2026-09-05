@@ -45,6 +45,10 @@ abstract class SellerProfile
     #[ORM\Column(options: ['default' => false])]
     private bool $isKbz = false;
 
+    /** Numéro de référence unique, attribué à la validation de l'inscription (ex: BTQ-0001, PRO-0001, PRT-0001, RLY-0001). */
+    #[ORM\Column(length: 20, nullable: true, unique: true)]
+    private ?string $referenceNumber = null;
+
     /** @var Collection<int, AdministrativeUnit> */
     #[ORM\ManyToMany(targetEntity: AdministrativeUnit::class)]
     #[ORM\JoinTable(name: 'seller_profile_delivery_zone')]
@@ -117,10 +121,45 @@ abstract class SellerProfile
         return $this->isKbz;
     }
 
+    /** Libellé du type de vendeur, directement utilisable dans Twig (ex: product.sellerProfile.typeLabel). */
+    public function getTypeLabel(): string
+    {
+        return match (true) {
+            $this instanceof StoreProfile => 'Boutique',
+            $this instanceof ProProfile => 'Vendeur Pro',
+            $this instanceof RelayProfile => 'Point Relais',
+            $this instanceof IndividualProfile => 'Particulier',
+            default => 'Particulier',
+        };
+    }
+
     public function setIsKbz(bool $isKbz): static
     {
         $this->isKbz = $isKbz;
         return $this;
+    }
+
+    public function getReferenceNumber(): ?string
+    {
+        return $this->referenceNumber;
+    }
+
+    public function setReferenceNumber(?string $referenceNumber): static
+    {
+        $this->referenceNumber = $referenceNumber;
+        return $this;
+    }
+
+    /** Préfixe utilisé pour générer le numéro de référence de ce type de vendeur. */
+    public function getReferencePrefix(): string
+    {
+        return match (true) {
+            $this instanceof StoreProfile => 'BTQ',
+            $this instanceof ProProfile => 'PRO',
+            $this instanceof RelayProfile => 'RLY',
+            $this instanceof IndividualProfile => 'PRT',
+            default => 'PRT',
+        };
     }
 
     /** @return Collection<int, AdministrativeUnit> */

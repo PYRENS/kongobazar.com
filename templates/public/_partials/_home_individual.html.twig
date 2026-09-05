@@ -1,0 +1,51 @@
+{# ==========================================================================
+   "Particulier" — catégories par cascade + "Voir tout" toujours en dernier.
+   Chaque catégorie affiche ses produits prioritaires + un complément automatique
+   (derniers produits actifs de vendeurs "Particulier").
+   ========================================================================== #}
+{% if individualSectionEnabled and individualAllProducts|default([])|length > 0 %}
+<section class="home-individual-section">
+    <div class="home-deals-head">
+        <span class="home-section-badge">{{ 'home.individual_sellers'|trans }}</span>
+        <span class="home-deals-head-line"></span>
+        <div class="individual-tabs" role="tablist">
+            {% for sc in individualCategories %}
+                <button type="button" class="trending-tab{{ loop.first ? ' active' : '' }}" data-tab-target="individual-panel-{{ sc.id }}">{{ sc.category.name }}</button>
+            {% endfor %}
+            <button type="button" class="trending-tab{{ individualCategories|length == 0 ? ' active' : '' }}" data-tab-target="individual-panel-all">{{ 'menu.voir_tout'|trans }}</button>
+        </div>
+    </div>
+
+    {% for sc in individualCategories %}
+        <div class="individual-panel{{ loop.first ? ' active' : '' }}" id="individual-panel-{{ sc.id }}">
+            <div class="coming-soon-grid">
+                {% for product in individualProductsByCategory[sc.id] %}
+                    <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="coming-soon-card">
+                        <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
+                        <div class="coming-soon-card-info">
+                            <p class="coming-soon-card-title">{{ product.title }}</p>
+                            <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+                        </div>
+                    </a>
+                {% else %}
+                    <p class="text-muted">Aucun produit pour cette catégorie.</p>
+                {% endfor %}
+            </div>
+        </div>
+    {% endfor %}
+
+    <div class="individual-panel{{ individualCategories|length == 0 ? ' active' : '' }}" id="individual-panel-all">
+        <div class="coming-soon-grid">
+            {% for product in individualAllProducts %}
+                <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="coming-soon-card">
+                    <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
+                    <div class="coming-soon-card-info">
+                        <p class="coming-soon-card-title">{{ product.title }}</p>
+                        <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}

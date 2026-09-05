@@ -24,7 +24,8 @@ class AdvertisementManagementController extends AbstractController
         'sidebar_middle' => ['label' => 'Colonne gauche — milieu', 'width' => 270, 'height' => 200, 'page' => 'Accueil'],
         'homepage_promo_strip' => ['label' => 'Bandeau promo', 'width' => 1044, 'height' => 120, 'page' => 'Accueil'],
         'homepage_center_banner' => ['label' => 'Bannière centrale', 'width' => 1044, 'height' => 250, 'page' => 'Accueil'],
-        'category_block_banner' => ['label' => 'Bannière bas de bloc catégorie (liée à une catégorie précise)', 'width' => null, 'height' => null, 'page' => 'Catégorie'],
+        'category_block_banner' => ['label' => 'Bannière bas de bloc catégorie (liée à une catégorie précise)', 'width' => 1044, 'height' => 180, 'page' => 'Catégorie'],
+        'futur_section_banner' => ['label' => 'Bannière section "Prochainement" (accueil, statut futur)', 'width' => 1044, 'height' => 180, 'page' => 'Accueil'],
         'homepage_lifestyle_left' => ['label' => 'Mosaïque lifestyle — gauche', 'width' => 255, 'height' => 220, 'page' => 'Accueil'],
         'homepage_lifestyle_center' => ['label' => 'Mosaïque lifestyle — centre', 'width' => 510, 'height' => 220, 'page' => 'Accueil'],
         'homepage_lifestyle_right' => ['label' => 'Mosaïque lifestyle — droite', 'width' => 255, 'height' => 220, 'page' => 'Accueil'],
@@ -290,14 +291,18 @@ class AdvertisementManagementController extends AbstractController
     }
 
     #[Route('/publicites/nouveau', name: 'manage_ads_new', host: 'manage.kongobazar.com', methods: ['GET'])]
-    public function new(EntityManagerInterface $em): Response
+    public function new(Request $request, EntityManagerInterface $em): Response
     {
+        $prefillZoneKey = $request->query->get('zone_key');
+        $prefillCategoryId = $request->query->get('category_id') ? (int) $request->query->get('category_id') : null;
+
         return $this->render('manage/advertisements/form.html.twig', [
             'ad' => null,
             'zoneKeys' => self::ZONE_INFO,
-            'selectedZoneKeys' => [],
+            'selectedZoneKeys' => $prefillZoneKey ? [$prefillZoneKey] : [],
             'sellers' => [],
             'categories' => $em->getRepository(Category::class)->findBy([], ['name' => 'ASC']),
+            'prefillCategory' => $prefillCategoryId ? $em->getRepository(Category::class)->find($prefillCategoryId) : null,
         ]);
     }
 

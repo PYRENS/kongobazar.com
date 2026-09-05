@@ -179,9 +179,9 @@ class ProductRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function findFiltered(?string $term, ?array $categoryIds, ?string $status, ?string $condition, string $sort, string $dir, int $page, int $perPage, ?int $sellerProfileId = null, ?array $unitIds = null): array
+    public function findFiltered(?string $term, ?array $categoryIds, ?string $status, ?string $condition, string $sort, string $dir, int $page, int $perPage, ?int $sellerProfileId = null, ?array $unitIds = null, ?string $sellerType = null): array
     {
-        $qb = $this->buildFilterQuery($term, $categoryIds, $status, $condition, $sellerProfileId, $unitIds);
+        $qb = $this->buildFilterQuery($term, $categoryIds, $status, $condition, $sellerProfileId, $unitIds, $sellerType);
         $dirSql = strtoupper($dir) === 'ASC' ? 'ASC' : 'DESC';
 
         // leftJoin + addSelect : précharge la 1ère image en une seule requête,
@@ -225,9 +225,9 @@ class ProductRepository extends ServiceEntityRepository
         return iterator_to_array(new \Doctrine\ORM\Tools\Pagination\Paginator($query, true));
     }
 
-    public function countFiltered(?string $term, ?array $categoryIds, ?string $status, ?string $condition, ?int $sellerProfileId = null, ?array $unitIds = null): int
+    public function countFiltered(?string $term, ?array $categoryIds, ?string $status, ?string $condition, ?int $sellerProfileId = null, ?array $unitIds = null, ?string $sellerType = null): int
     {
-        return (int) $this->buildFilterQuery($term, $categoryIds, $status, $condition, $sellerProfileId, $unitIds)
+        return (int) $this->buildFilterQuery($term, $categoryIds, $status, $condition, $sellerProfileId, $unitIds, $sellerType)
             ->select('COUNT(DISTINCT p.id)')
             ->getQuery()
             ->getSingleScalarResult();
@@ -261,7 +261,7 @@ class ProductRepository extends ServiceEntityRepository
         return $map;
     }
 
-    private function buildFilterQuery(?string $term, ?array $categoryIds, ?string $status, ?string $condition, ?int $sellerProfileId = null, ?array $unitIds = null)
+    private function buildFilterQuery(?string $term, ?array $categoryIds, ?string $status, ?string $condition, ?int $sellerProfileId = null, ?array $unitIds = null, ?string $sellerType = null)
     {
         $qb = $this->createQueryBuilder('p');
 
@@ -298,6 +298,24 @@ class ProductRepository extends ServiceEntityRepository
         }
         if ($sellerProfileId) {
             $qb->andWhere('p.sellerProfile = :sellerProfileId')->setParameter('sellerProfileId', $sellerProfileId);
+        }
+        if ($sellerType) {
+            if (!$unitIds) {
+                $qb->join('p.sellerProfile', 'spu');
+            }
+            if ('kbz' === $sellerType) {
+                $qb->andWhere('spu.isKbz = true');
+            } else {
+                $entityClass = match ($sellerType) {
+                    'store' => \App\Entity\StoreProfile::class,
+                    'pro' => \App\Entity\ProProfile::class,
+                    'individual' => \App\Entity\IndividualProfile::class,
+                    default => null,
+                };
+                if ($entityClass) {
+                    $qb->andWhere('spu INSTANCE OF ' . $entityClass);
+                }
+            }
         }
 
         return $qb;
@@ -544,7 +562,43 @@ class ProductRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function findByCategorySort(array $categories, string $sort, int $limit = 4): array
+    /** @return Product[] — nouveaux articles actifs des catégories données, en excluant les vendeurs "Particulier". */
+    /** @return Product[] — derniers produits actifs de vendeurs "Particulier" uniquement. */
+    public function findLatestByIndividualSellers(array $categories, int $limit = 8, array $excludeIds = []): array
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->join('p.sellerProfile', 's')
+            ->andWhere('p.category IN (:categories)')
+            ->andWhere('p.status = :status')
+            ->andWhere('s INSTANCE OF App\Entity\IndividualProfile')
+            ->setParameter('categories', $categories)
+            ->setParameter('status', 'active')
+            ->orderBy('p.createdAt', 'DESC')
+            ->setMaxResults($limit);
+
+        if ($excludeIds) {
+            $qb->andWhere('p.id NOT IN (:excludeIds)')->setParameter('excludeIds', $excludeIds);
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
+    public function findNewArrivalsExcludingIndividuals(array $categories, int $limit = 7): array
+    {
+        return $this->createQueryBuilder('p')
+            ->join('p.sellerProfile', 's')
+            ->andWhere('p.category IN (:categories)')
+            ->andWhere('p.status = :status')
+            ->andWhere('s NOT INSTANCE OF App\Entity\IndividualProfile')
+            ->setParameter('categories', $categories)
+            ->setParameter('status', 'active')
+            ->orderBy('p.createdAt', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function findByCategorySort(array $categories, string $sort, int $limit = 4, bool $individualSellersOnly = false): array
     {
         if ('trending' === $sort) {
             return $this->findTrendingByCategory($categories, $limit);
@@ -556,6 +610,11 @@ class ProductRepository extends ServiceEntityRepository
             ->setParameter('categories', $categories)
             ->setParameter('status', 'active')
             ->setMaxResults($limit);
+
+        if ($individualSellersOnly) {
+            $qb->join('p.sellerProfile', 'indiv')
+                ->andWhere('indiv INSTANCE OF App\Entity\IndividualProfile');
+        }
 
         match ($sort) {
             'new_arrivals' => $qb->orderBy('p.createdAt', 'DESC'),

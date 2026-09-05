@@ -1,0 +1,311 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Nouveauté — Accueil{% endblock %}
+{% block page_icon %}bi-stars{% endblock %}
+{% block page_title %}Affichage "Nouveauté" — Accueil{% endblock %}
+
+{% block body %}
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-toggle-on text-primary me-2"></i>Visibilité</h6></div>
+        <div class="card-body">
+            <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="newItemsEnabledSwitch" role="switch" {{ sectionSetting.enabled ? 'checked' : '' }} data-toggle-url="{{ path('manage_new_items_toggle_enabled') }}">
+                <label class="form-check-label" for="newItemsEnabledSwitch">Afficher la section "Nouveauté" sur la page d'accueil</label>
+            </div>
+            <small id="newItemsEnabledFeedback" class="text-muted"></small>
+        </div>
+    </div>
+
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-plus-circle text-primary me-2"></i>Ajouter un onglet</h6></div>
+        <div class="card-body">
+            <p class="text-muted small">Choisis n'importe quel niveau de l'arbre — un rayon entier ou une sous-catégorie précise.</p>
+            <form method="post" action="{{ path('manage_new_items_add_tab') }}">
+                <div class="cascade-picker" id="addNewItemsTabCascade" data-children-url="{{ path('manage_new_items_children_cascade') }}"></div>
+                <input type="hidden" name="category_id" id="addNewItemsTabCategoryId" required>
+                <button type="submit" class="btn btn-primary btn-sm mt-2" id="addNewItemsTabSubmitBtn" disabled>Ajouter comme onglet</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="sw-card" data-remove-product-url-template="{{ path('manage_new_items_remove_product', {id: 999999}) }}" data-toggle-bigcard-url-template="{{ path('manage_new_items_toggle_big_card', {id: 999999}) }}">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-list-ol text-primary me-2"></i>Onglets configurés</h6></div>
+        <div class="card-body p-0">
+            {% for tab in tabs %}
+                <div class="border-bottom p-3">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <form method="post" action="{{ path('manage_new_items_move_tab', {id: tab.id, direction: 'up'}) }}" style="display:inline;">
+                                <button type="submit" class="admin-btn admin-btn--outline"{{ loop.first ? ' disabled' }}><i class="bi bi-arrow-up"></i></button>
+                            </form>
+                            <form method="post" action="{{ path('manage_new_items_move_tab', {id: tab.id, direction: 'down'}) }}" style="display:inline;">
+                                <button type="submit" class="admin-btn admin-btn--outline"{{ loop.last ? ' disabled' }}><i class="bi bi-arrow-down"></i></button>
+                            </form>
+                            <strong>{{ tab.category.name }}</strong>
+                        </div>
+                        <form method="post" action="{{ path('manage_new_items_remove_tab', {id: tab.id}) }}" onsubmit="return confirm('Retirer cet onglet ?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Retirer</button>
+                        </form>
+                    </div>
+
+                    <form method="post" action="{{ path('manage_new_items_update_tab', {id: tab.id}) }}" class="new-items-tab-form" data-tab-id="{{ tab.id }}">
+                        <div class="d-flex gap-3 align-items-end flex-wrap mb-2">
+                            <div>
+                                <label class="form-label small">Mode</label>
+                                <select name="mode" class="form-select form-select-sm new-items-mode-select">
+                                    {% for key, label in modes %}
+                                        <option value="{{ key }}" {{ tab.mode == key ? 'selected' : '' }}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label small">Nombre de produits</label>
+                                <input type="number" name="product_count" class="form-control form-control-sm" style="max-width:100px;" min="2" value="{{ tab.productCount }}">
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-success">Enregistrer</button>
+                        </div>
+                    </form>
+
+                    <div class="new-items-targeted-fields" style="display:{{ tab.mode == 'targeted' ? 'block' : 'none' }};">
+                        <p class="text-muted small mb-2">Choisis 7 produits. Coche celui qui devient la grande carte (un seul à la fois) — rien coché = tiré au hasard parmi les 7.</p>
+                        <div class="d-flex flex-column gap-2 mb-2 new-items-targeted-list">
+                            {% for item in tab.targetedProducts %}
+                                <div class="d-flex align-items-center gap-2 p-2" style="background:var(--body-bg,#f5f5f5);border-radius:4px;" data-item-id="{{ item.id }}">
+                                    <div class="form-check mb-0">
+                                        <input type="checkbox" class="form-check-input new-items-bigcard-checkbox" {{ item.isBigCard ? 'checked' : '' }}>
+                                    </div>
+                                    <span class="flex-grow-1">{{ item.product.title }}</span>
+                                    <button type="button" class="btn btn-sm btn-outline-danger new-items-remove-product-btn">Retirer</button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <form method="post" action="{{ path('manage_new_items_add_product', {id: tab.id}) }}" class="new-items-add-product-form" style="display:{{ tab.mode == 'targeted' ? 'block' : 'none' }};">
+                        <label class="form-label small">Ajouter un produit à cet onglet</label>
+                        <input type="text" class="form-control form-control-sm new-items-product-search" style="max-width:320px;" placeholder="Rechercher un produit..." autocomplete="off">
+                        <div class="list-group new-items-product-results mt-1" style="max-width:320px;position:relative;z-index:10;"></div>
+                        <input type="hidden" name="product_id" class="new-items-product-pending-id">
+                        <button type="submit" class="btn btn-sm btn-outline-primary mt-2 new-items-add-product-btn" disabled>+ Ajouter ce produit</button>
+                    </form>
+                </div>
+            {% else %}
+                <p class="text-muted p-3 mb-0">Aucun onglet configuré — ajoute une catégorie ci-dessus.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const enabledSwitch = document.getElementById('newItemsEnabledSwitch');
+            const feedback = document.getElementById('newItemsEnabledFeedback');
+            enabledSwitch.addEventListener('change', function () {
+                const wasChecked = this.checked;
+                fetch(this.dataset.toggleUrl, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        this.checked = data.enabled;
+                        feedback.textContent = data.enabled ? 'Activé.' : 'Désactivé.';
+                        setTimeout(() => { feedback.textContent = ''; }, 2000);
+                    })
+                    .catch(() => {
+                        this.checked = !wasChecked;
+                        feedback.textContent = 'Erreur — réessaie.';
+                    });
+            });
+        })();
+
+        function initLevelPickCascade(container, onPick) {
+            const childrenUrl = container.dataset.childrenUrl;
+
+            function loadLevel(parentId) {
+                fetch(childrenUrl + '?parent_id=' + (parentId || ''))
+                    .then((r) => r.json())
+                    .then((data) => {
+                        if (data.results.length === 0) return;
+
+                        const row = document.createElement('div');
+                        row.className = 'd-flex align-items-center gap-2 mb-2';
+
+                        const select = document.createElement('select');
+                        select.className = 'form-select';
+                        select.style.maxWidth = '240px';
+                        select.innerHTML = '<option value="">— Choisir —</option>' +
+                            data.results.map((c) => `<option value="${c.id}" data-name="${c.name}" data-has-children="${c.hasChildren}">${c.name}</option>`).join('');
+
+                        const pickBtn = document.createElement('button');
+                        pickBtn.type = 'button';
+                        pickBtn.className = 'btn btn-sm btn-outline-secondary';
+                        pickBtn.textContent = 'Choisir ce niveau';
+                        pickBtn.disabled = true;
+
+                        select.addEventListener('change', function () {
+                            let next = row.nextElementSibling;
+                            while (next) {
+                                const toRemove = next;
+                                next = next.nextElementSibling;
+                                toRemove.remove();
+                            }
+                            pickBtn.disabled = !this.value;
+                            if (this.value) {
+                                const opt = this.options[this.selectedIndex];
+                                if (opt.dataset.hasChildren === 'true') {
+                                    loadLevel(this.value);
+                                }
+                            }
+                        });
+
+                        pickBtn.addEventListener('click', function () {
+                            const opt = select.options[select.selectedIndex];
+                            onPick(select.value, opt.dataset.name);
+                        });
+
+                        row.appendChild(select);
+                        row.appendChild(pickBtn);
+                        container.appendChild(row);
+                    });
+            }
+
+            loadLevel(null);
+        }
+
+        const addCascade = document.getElementById('addNewItemsTabCascade');
+        const addCategoryId = document.getElementById('addNewItemsTabCategoryId');
+        const addSubmitBtn = document.getElementById('addNewItemsTabSubmitBtn');
+        initLevelPickCascade(addCascade, function (id, name) {
+            addCategoryId.value = id;
+            addSubmitBtn.disabled = false;
+            addSubmitBtn.textContent = 'Ajouter "' + name + '" comme onglet';
+        });
+
+        const removeUrlTemplate = document.querySelector('[data-remove-product-url-template]').dataset.removeProductUrlTemplate;
+        const toggleBigCardUrlTemplate = document.querySelector('[data-toggle-bigcard-url-template]').dataset.toggleBigcardUrlTemplate;
+
+        function wireProductRow(row) {
+            const checkbox = row.querySelector('.new-items-bigcard-checkbox');
+            const removeBtn = row.querySelector('.new-items-remove-product-btn');
+            const itemId = row.dataset.itemId;
+
+            checkbox.addEventListener('change', function () {
+                const wasChecked = this.checked;
+                const url = toggleBigCardUrlTemplate.replace('999999', itemId);
+                fetch(url, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        this.checked = data.isBigCard;
+                        // Décoche visuellement les autres cases du même onglet.
+                        const list = row.closest('.new-items-targeted-list');
+                        list.querySelectorAll('.new-items-bigcard-checkbox').forEach((cb) => {
+                            if (cb !== this) cb.checked = false;
+                        });
+                    })
+                    .catch(() => { this.checked = !wasChecked; });
+            });
+
+            removeBtn.addEventListener('click', function () {
+                if (!confirm('Retirer ce produit ?')) return;
+                const url = removeUrlTemplate.replace('999999', itemId);
+                fetch(url, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => { if (data.ok) row.remove(); });
+            });
+        }
+        document.querySelectorAll('.new-items-targeted-list [data-item-id]').forEach(wireProductRow);
+
+        // Bascule mode (affiche/masque les champs "ciblé"), par onglet.
+        document.querySelectorAll('.new-items-tab-form').forEach((form) => {
+            const modeSelect = form.querySelector('.new-items-mode-select');
+            const wrap = form.closest('.border-bottom');
+            const targetedFields = wrap.querySelector('.new-items-targeted-fields');
+            const addProductForm = wrap.querySelector('.new-items-add-product-form');
+
+            modeSelect.addEventListener('change', function () {
+                const show = this.value === 'targeted';
+                targetedFields.style.display = show ? 'block' : 'none';
+                if (addProductForm) addProductForm.style.display = show ? 'block' : 'none';
+            });
+
+            // Enregistrement du mode/nombre en AJAX.
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const originalText = submitBtn.textContent;
+                fetch(form.action, { method: 'POST', body: new FormData(form) })
+                    .then((r) => r.json())
+                    .then(() => {
+                        submitBtn.textContent = 'Enregistré ✓';
+                        setTimeout(() => { submitBtn.textContent = originalText; }, 1500);
+                    })
+                    .catch(() => {
+                        submitBtn.textContent = 'Erreur';
+                        setTimeout(() => { submitBtn.textContent = originalText; }, 1500);
+                    });
+            });
+        });
+
+        // Recherche + ajout de produit ciblé, en AJAX.
+        document.querySelectorAll('.new-items-add-product-form').forEach((form) => {
+            const searchInput = form.querySelector('.new-items-product-search');
+            const results = form.querySelector('.new-items-product-results');
+            const pendingIdInput = form.querySelector('.new-items-product-pending-id');
+            const addBtn = form.querySelector('.new-items-add-product-btn');
+            let timeout;
+            searchInput.addEventListener('input', function () {
+                clearTimeout(timeout);
+                const term = this.value.trim();
+                if (term.length < 1) { results.innerHTML = ''; return; }
+                timeout = setTimeout(() => {
+                    fetch('{{ path("manage_new_items_search_products") }}?q=' + encodeURIComponent(term))
+                        .then((r) => r.json())
+                        .then((data) => {
+                            results.innerHTML = '';
+                            data.results.forEach((item) => {
+                                const btn = document.createElement('button');
+                                btn.type = 'button';
+                                btn.className = 'list-group-item list-group-item-action';
+                                btn.textContent = item.name;
+                                btn.addEventListener('click', () => {
+                                    pendingIdInput.value = item.id;
+                                    addBtn.disabled = false;
+                                    searchInput.value = item.name;
+                                    results.innerHTML = '';
+                                });
+                                results.appendChild(btn);
+                            });
+                        });
+                }, 250);
+            });
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                if (!pendingIdInput.value) return;
+
+                fetch(form.action, { method: 'POST', body: new FormData(form) })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        if (!data.ok) {
+                            alert(data.error || 'Erreur.');
+                            return;
+                        }
+                        const wrap = form.closest('.border-bottom');
+                        const list = wrap.querySelector('.new-items-targeted-list');
+
+                        const row = document.createElement('div');
+                        row.className = 'd-flex align-items-center gap-2 p-2';
+                        row.style.background = 'var(--body-bg,#f5f5f5)';
+                        row.style.borderRadius = '4px';
+                        row.dataset.itemId = data.itemId;
+                        row.innerHTML = '<div class="form-check mb-0"><input type="checkbox" class="form-check-input new-items-bigcard-checkbox"></div>' +
+                            '<span class="flex-grow-1">' + data.productTitle + '</span>' +
+                            '<button type="button" class="btn btn-sm btn-outline-danger new-items-remove-product-btn">Retirer</button>';
+                        list.appendChild(row);
+                        wireProductRow(row);
+
+                        searchInput.value = '';
+                        pendingIdInput.value = '';
+                        addBtn.disabled = true;
+                    });
+            });
+        });
+    </script>
+{% endblock %}

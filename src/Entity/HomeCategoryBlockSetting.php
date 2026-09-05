@@ -28,6 +28,18 @@ class HomeCategoryBlockSetting
     #[ORM\Column]
     private int $position = 0;
 
+    /** Interrupteur : ce bloc s'affiche-t-il du tout sur l'accueil ? */
+    #[ORM\Column(options: ['default' => true])]
+    private bool $enabled = true;
+
+    /** Si activé, ce bloc ne montre que les produits vendus par des particuliers. */
+    #[ORM\Column(options: ['default' => false])]
+    private bool $individualSellersOnly = false;
+
+    /** Interrupteur : afficher ou non la bannière publicitaire sous ce bloc (zone "category_block_banner"). */
+    #[ORM\Column(options: ['default' => true])]
+    private bool $bannerEnabled = true;
+
     /** Sous-catégories affichées dans le menu de gauche de ce bloc, réordonnables une par une (voir HomeCategoryBlockSubcategory). */
     #[ORM\OneToMany(mappedBy: 'block', targetEntity: HomeCategoryBlockSubcategory::class, orphanRemoval: true)]
     #[ORM\OrderBy(['position' => 'ASC'])]
@@ -68,6 +80,39 @@ class HomeCategoryBlockSetting
     public function setPosition(int $position): static
     {
         $this->position = $position;
+        return $this;
+    }
+
+    public function isEnabled(): bool
+    {
+        return $this->enabled;
+    }
+
+    public function setEnabled(bool $enabled): static
+    {
+        $this->enabled = $enabled;
+        return $this;
+    }
+
+    public function isIndividualSellersOnly(): bool
+    {
+        return $this->individualSellersOnly;
+    }
+
+    public function setIndividualSellersOnly(bool $individualSellersOnly): static
+    {
+        $this->individualSellersOnly = $individualSellersOnly;
+        return $this;
+    }
+
+    public function isBannerEnabled(): bool
+    {
+        return $this->bannerEnabled;
+    }
+
+    public function setBannerEnabled(bool $bannerEnabled): static
+    {
+        $this->bannerEnabled = $bannerEnabled;
         return $this;
     }
 

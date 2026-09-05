@@ -13,6 +13,12 @@
             {% include 'public/_partials/_home_center_top.html.twig' %}
             {% include 'public/_partials/_home_trending_tabs.html.twig' %}
 
+            {% include 'public/_partials/_home_new_items.html.twig' %}
+
+            {% include 'public/_partials/_home_coming_soon.html.twig' %}
+
+            {% include 'public/_partials/_home_individual.html.twig' %}
+
             {% if categoryBlocksEnabled %}
                 {% for row in featuredBlocks|default([]) %}
                     {% include 'public/_partials/_home_category_block.html.twig' with {
@@ -28,9 +34,11 @@
             {% endif %}
 
             {% include 'public/_partials/_home_top_categories_vendors.html.twig' %}
+            {% include 'public/_partials/_home_most_viewed.html.twig' %}
+            {% include 'public/_partials/_home_sponsor_brands.html.twig' %}
+            {% include 'public/_partials/_home_partners.html.twig' %}
             {% include 'public/_partials/_home_popular_tags.html.twig' %}
             {% include 'public/_partials/_home_trust_badges.html.twig' %}
-            {% include 'public/_partials/_home_most_viewed.html.twig' %}
         </div>
     </div>
 {% endblock %}

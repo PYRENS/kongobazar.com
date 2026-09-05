@@ -43,6 +43,7 @@ class ProductManagementController extends AbstractController
         $status = $request->query->get('status') ?: null;
         $condition = $request->query->get('condition') ?: null;
         $sellerProfileId = $request->query->get('sellerProfile') ? (int) $request->query->get('sellerProfile') : null;
+        $sellerType = $request->query->get('sellerType') ?: null;
         $provinceId = $request->query->get('province') ? (int) $request->query->get('province') : null;
         $sort = $request->query->get('sort', 'createdAt');
         $dir = $request->query->get('dir', 'DESC');
@@ -53,7 +54,7 @@ class ProductManagementController extends AbstractController
         $categoryIds = $this->resolveCategoryIdsWithDescendants($categoryId, $categoryRepository);
         $unitIds = $this->resolveAdministrativeUnitIdsWithDescendants($provinceId, $em);
 
-        $total = $repository->countFiltered($term, $categoryIds, $status, $condition, $sellerProfileId, $unitIds);
+        $total = $repository->countFiltered($term, $categoryIds, $status, $condition, $sellerProfileId, $unitIds, $sellerType);
 
         $stats = [
             'total' => $repository->countFiltered(null, null, null, null),
@@ -65,7 +66,7 @@ class ProductManagementController extends AbstractController
         return $this->render('manage/products/index.html.twig', [
             'stats' => $stats,
             'vehicleSectionLabels' => $categoryRepository->findVehicleSectionLabelMap(),
-            'products' => $repository->findFiltered($term, $categoryIds, $status, $condition, $sort, $dir, $page, $perPage, $sellerProfileId, $unitIds),
+            'products' => $repository->findFiltered($term, $categoryIds, $status, $condition, $sort, $dir, $page, $perPage, $sellerProfileId, $unitIds, $sellerType),
             'categories' => $categoryRepository->findBy([], ['name' => 'ASC']),
             'rootCategories' => $categoryRepository->findChildrenOf(null),
             'searchTerm' => $term,
@@ -74,6 +75,7 @@ class ProductManagementController extends AbstractController
             'currentCondition' => $condition,
             'currentSellerProfile' => $sellerProfileId,
             'currentSellerName' => $sellerProfileId ? ($sellerProfileRepository->find($sellerProfileId)?->getDisplayName()) : null,
+            'currentSellerType' => $sellerType,
             'currentProvince' => $provinceId,
             'currentSort' => $sort,
             'currentDir' => $dir,
@@ -92,6 +94,7 @@ class ProductManagementController extends AbstractController
         $status = $request->query->get('status') ?: null;
         $condition = $request->query->get('condition') ?: null;
         $sellerProfileId = $request->query->get('sellerProfile') ? (int) $request->query->get('sellerProfile') : null;
+        $sellerType = $request->query->get('sellerType') ?: null;
         $provinceId = $request->query->get('province') ? (int) $request->query->get('province') : null;
         $sort = $request->query->get('sort', 'createdAt');
         $dir = $request->query->get('dir', 'DESC');
@@ -102,12 +105,12 @@ class ProductManagementController extends AbstractController
         $categoryIds = $this->resolveCategoryIdsWithDescendants($categoryId, $categoryRepository);
         $unitIds = $this->resolveAdministrativeUnitIdsWithDescendants($provinceId, $em);
 
-        $total = $repository->countFiltered($term, $categoryIds, $status, $condition, $sellerProfileId, $unitIds);
+        $total = $repository->countFiltered($term, $categoryIds, $status, $condition, $sellerProfileId, $unitIds, $sellerType);
         $pages = max(1, (int) ceil($total / $perPage));
 
         return $this->json([
             'rowsHtml' => $this->renderView('manage/products/_index_rows.html.twig', [
-                'products' => $repository->findFiltered($term, $categoryIds, $status, $condition, $sort, $dir, $page, $perPage, $sellerProfileId, $unitIds),
+                'products' => $repository->findFiltered($term, $categoryIds, $status, $condition, $sort, $dir, $page, $perPage, $sellerProfileId, $unitIds, $sellerType),
                 'vehicleSectionLabels' => $categoryRepository->findVehicleSectionLabelMap(),
             ]),
             'footerInfo' => $total . ' produit' . ($total != 1 ? 's' : '') . ' au total — page ' . $page . ' / ' . $pages,
@@ -202,6 +205,18 @@ class ProductManagementController extends AbstractController
             'categoryRequiresModelMap' => $categoryRepository->findAllRequiresModelMap(),
             'categoryAuthenticityMap' => $categoryRepository->findAllAuthenticityRelevantMap(),
         ]);
+    }
+
+    #[Route('/produits/{id}/marquer-disponible', name: 'manage_products_mark_available', host: 'manage.kongobazar.com', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function markAvailable(Product $product, EntityManagerInterface $em): RedirectResponse
+    {
+        if ('futur' === $product->getStatus()) {
+            $product->setStatus('active');
+            $em->flush();
+            $this->addFlash('success', 'Produit marqué disponible à la vente.');
+        }
+
+        return $this->redirectToRoute('manage_products_edit', ['id' => $product->getId()]);
     }
 
     #[Route('/produits/{id}/modifier', name: 'manage_products_update', host: 'manage.kongobazar.com', methods: ['POST'], requirements: ['id' => '\d+'])]

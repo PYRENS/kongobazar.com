@@ -14,20 +14,19 @@
 
     {# seoData : rempli par les pages qui appellent seo('type', id, pageKey, {defaults}) — voir SeoResolver. #}
     {% set seoData = seoData ?? null %}
-    <meta name="description" content="{% block meta_description %}{{ seoData and seoData.metaDescription ? seoData.metaDescription : 'KongoBazar — la marketplace de référence en RDC' }}{% endblock %}">
-    {% if seoData and seoData.metaKeywords %}<meta name="keywords" content="{{ seoData.metaKeywords }}">{% endif %}
-    {% if seoData and (seoData.noIndex or seoData.noFollow) %}
-        <meta name="robots" content="{{ seoData.noIndex ? 'noindex' : 'index' }},{{ seoData.noFollow ? 'nofollow' : 'follow' }}">
+    <meta name="description" content="{% block meta_description %}{{ seoData and seoData.metaDescription is defined and seoData.metaDescription ? seoData.metaDescription : 'KongoBazar — la marketplace de référence en RDC' }}{% endblock %}">
+    {% if seoData and seoData.metaKeywords is defined and seoData.metaKeywords %}<meta name="keywords" content="{{ seoData.metaKeywords }}">{% endif %}
+    {% if seoData and ((seoData.noIndex is defined and seoData.noIndex) or (seoData.noFollow is defined and seoData.noFollow)) %}
+        <meta name="robots" content="{{ (seoData.noIndex is defined and seoData.noIndex) ? 'noindex' : 'index' }},{{ (seoData.noFollow is defined and seoData.noFollow) ? 'nofollow' : 'follow' }}">
     {% endif %}
-
-    <title>{% block title %}{{ seoData and seoData.metaTitle ? seoData.metaTitle : 'KongoBazar' }}{% endblock %}</title>
+    <title>{% block title %}{{ seoData and seoData.metaTitle is defined and seoData.metaTitle ? seoData.metaTitle : 'KongoBazar' }}{% endblock %}</title>
 
     <link rel="canonical" href="{{ app.request.uri }}">
-    <meta property="og:title" content="{% block og_title %}{{ seoData and seoData.ogTitle ? seoData.ogTitle : block('title') }}{% endblock %}">
-    <meta property="og:description" content="{% block og_description %}{{ seoData and seoData.ogDescription ? seoData.ogDescription : block('meta_description') }}{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}{{ seoData and seoData.ogTitle is defined and seoData.ogTitle ? seoData.ogTitle : block('title') }}{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}{{ seoData and seoData.ogDescription is defined and seoData.ogDescription ? seoData.ogDescription : block('meta_description') }}{% endblock %}">
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ app.request.uri }}">
-    <meta property="og:image" content="{% block og_image %}{{ seoData and seoData.ogImageUrl ? seoData.ogImageUrl : (app.request.schemeAndHttpHost ~ asset('images/og-default.jpg')) }}{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ seoData and seoData.ogImageUrl is defined and seoData.ogImageUrl ? seoData.ogImageUrl : (app.request.schemeAndHttpHost ~ asset('images/og-default.jpg')) }}{% endblock %}">
 
     {# --- Bootstrap 5 (CSS) --- #}
     <link

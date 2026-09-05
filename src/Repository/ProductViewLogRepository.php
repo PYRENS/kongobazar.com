@@ -16,17 +16,19 @@ class ProductViewLogRepository extends ServiceEntityRepository
         parent::__construct($registry, ProductViewLog::class);
     }
 
-    public function findMostVisited(int $days = 7, int $limit = 8): array
+    /** @param array<string,bool> $includeTypes clés possibles : kbz, store, pro, individual */
+    public function findMostVisited(int $days = 7, int $limit = 8, array $includeTypes = []): array
     {
         $since = new \DateTimeImmutable("-{$days} days");
 
+        // On tire une marge plus large que $limit car le filtre par type de vendeur se fait ensuite en PHP.
         $rows = $this->createQueryBuilder('v')
             ->select('IDENTITY(v.product) AS productId, COUNT(v.id) AS visitCount')
             ->andWhere('v.viewedAt >= :since')
             ->setParameter('since', $since)
             ->groupBy('v.product')
             ->orderBy('visitCount', 'DESC')
-            ->setMaxResults($limit)
+            ->setMaxResults($limit * 6)
             ->getQuery()
             ->getResult();
 
@@ -35,8 +37,27 @@ class ProductViewLogRepository extends ServiceEntityRepository
         $results = [];
         foreach ($rows as $row) {
             $product = $productRepository->find($row['productId']);
-            if (null !== $product) {
-                $results[] = ['product' => $product, 'visitCount' => (int) $row['visitCount']];
+            if (null === $product || 'active' !== $product->getStatus()) {
+                continue;
+            }
+
+            if ($includeTypes) {
+                $seller = $product->getSellerProfile();
+                if (!$seller) {
+                    continue;
+                }
+                $matches = ($includeTypes['kbz'] ?? true) && $seller->isKbz()
+                    || ($includeTypes['store'] ?? true) && $seller instanceof \App\Entity\StoreProfile && !$seller->isKbz()
+                    || ($includeTypes['pro'] ?? true) && $seller instanceof \App\Entity\ProProfile
+                    || ($includeTypes['individual'] ?? true) && $seller instanceof \App\Entity\IndividualProfile;
+                if (!$matches) {
+                    continue;
+                }
+            }
+
+            $results[] = ['product' => $product, 'visitCount' => (int) $row['visitCount']];
+            if (count($results) >= $limit) {
+                break;
             }
         }
 
