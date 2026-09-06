@@ -20,6 +20,8 @@ class AdZoneSettingController extends AbstractController
         'homepage_hero_side_top' => 'homepage',
         'homepage_hero_side_bottom' => 'homepage',
         'sidebar_top' => 'homepage',
+        'sidebar_2' => 'homepage',
+        'sidebar_3' => 'homepage',
         'sidebar_middle' => 'homepage',
         'homepage_promo_strip' => 'homepage',
         'homepage_center_banner' => 'homepage',

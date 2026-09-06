@@ -51,6 +51,18 @@
         </div>
     </div>
 
+    {% if adSidebar2 is defined and adSidebar2 and adSidebar2.imageName %}
+        <a {% if adSidebar2.targetUrl %}href="{{ path('ads_click', { id: adSidebar2.id, zoneKey: 'sidebar_2' }) }}"{% endif %}{% if adSidebar2.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="home-ad-slot home-ad-slot--sidebar2{{ adSidebar2.targetUrl ? ' ad-clickable' : '' }}">
+            <img src="{{ vich_uploader_asset(adSidebar2, 'imageFile') }}" alt="{{ adSidebar2.title }}" loading="lazy">
+        </a>
+    {% endif %}
+
+    {% if adSidebar3 is defined and adSidebar3 and adSidebar3.imageName %}
+        <a {% if adSidebar3.targetUrl %}href="{{ path('ads_click', { id: adSidebar3.id, zoneKey: 'sidebar_3' }) }}"{% endif %}{% if adSidebar3.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="home-ad-slot home-ad-slot--sidebar3{{ adSidebar3.targetUrl ? ' ad-clickable' : '' }}">
+            <img src="{{ vich_uploader_asset(adSidebar3, 'imageFile') }}" alt="{{ adSidebar3.title }}" loading="lazy">
+        </a>
+    {% endif %}
+
     {# --- Icônes de réassurance --- #}
     <ul class="home-trust-list">
         <li>

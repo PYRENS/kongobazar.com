@@ -74,6 +74,8 @@ class HomeController extends AbstractController
 
         // --- Colonne gauche ---
         $adSidebarTop = $adZonePicker->pick('sidebar_top', 'public');
+        $adSidebar2 = $adZonePicker->pick('sidebar_2', 'public');
+        $adSidebar3 = $adZonePicker->pick('sidebar_3', 'public');
         $adSidebarMiddle = $adZonePicker->pick('sidebar_middle', 'public');
         $bestSellers = $productRepository->findBestSellersInStock(8);
         $newArrivals = $productRepository->findNewArrivals(8);
@@ -236,6 +238,8 @@ class HomeController extends AbstractController
             'sideAdTop' => $sideAdTop,
             'sideAdBottom' => $sideAdBottom,
             'adSidebarTop' => $adSidebarTop,
+            'adSidebar2' => $adSidebar2,
+            'adSidebar3' => $adSidebar3,
             'adSidebarMiddle' => $adSidebarMiddle,
             'bestSellers' => $bestSellers,
             'newArrivals' => $newArrivals,
