@@ -3,7 +3,11 @@
    Vanilla JS, sans dépendance.
    ========================================================================== */
 document.addEventListener('DOMContentLoaded', () => {
+    regroupMiniCarouselForMobileGrid('bestSellersMiniCarousel');
+    regroupMiniCarouselForMobileGrid('newArrivalsMiniCarousel');
     initMiniCarousels();
+    initMiniCarouselMobileScroll('bestSellersMiniCarousel');
+    initMiniCarouselMobileScroll('newArrivalsMiniCarousel');
     initDealsCarousel();
     initTrendingTabs();
     initNewItemsTabs();
@@ -94,9 +98,94 @@ function initDealsCarousel() {
    via margin-left (pas transform, qui posait un souci de rendu sur cette
    machine).
    -------------------------------------------------------------------------- */
+/* --------------------------------------------------------------------------
+   "Meilleures ventes" en mobile (≤575px) : au lieu de 3 produits empilés par
+   page (comme sur desktop), on regroupe par 6 en grille 2 colonnes, glissable
+   au doigt (scroll natif + snap), séparé du système page-par-page à transform
+   utilisé par les autres mini-carrousels.
+   -------------------------------------------------------------------------- */
+function regroupMiniCarouselForMobileGrid(carouselId) {
+    const carousel = document.getElementById(carouselId);
+    if (!carousel || window.innerWidth > 575) return;
+    if (carousel.dataset.mobileGridDone === '1') return;
+
+    const track = carousel.querySelector('.home-mini-carousel-track');
+    const dotsWrap = carousel.querySelector('.home-mini-carousel-dots');
+    if (!track) return;
+
+    const products = Array.from(track.querySelectorAll('.home-mini-product'));
+    if (products.length === 0) return;
+
+    const GROUP_SIZE = 6;
+    const groups = [];
+    for (let i = 0; i < products.length; i += GROUP_SIZE) {
+        groups.push(products.slice(i, i + GROUP_SIZE));
+    }
+
+    track.innerHTML = '';
+    groups.forEach((group) => {
+        const page = document.createElement('div');
+        page.className = 'home-mini-carousel-page';
+        group.forEach((product) => page.appendChild(product));
+        track.appendChild(page);
+    });
+
+    if (dotsWrap) {
+        dotsWrap.innerHTML = '';
+        groups.forEach((_, i) => {
+            const dot = document.createElement('button');
+            dot.type = 'button';
+            dot.className = 'dot' + (i === 0 ? ' active' : '');
+            dot.dataset.page = String(i);
+            dotsWrap.appendChild(dot);
+        });
+    }
+
+    carousel.dataset.mobileGridDone = '1';
+}
+
+function initMiniCarouselMobileScroll(carouselId) {
+    const carousel = document.getElementById(carouselId);
+    if (!carousel || carousel.dataset.mobileGridDone !== '1') return;
+
+    const track = carousel.querySelector('.home-mini-carousel-track');
+    const dots = carousel.querySelectorAll('.dot');
+    const pages = track ? track.querySelectorAll('.home-mini-carousel-page') : [];
+    if (!track || pages.length === 0) return;
+
+    let currentIndex = 0;
+    let syncTimer = null;
+
+    function setActiveDot(index) {
+        if (dots[currentIndex]) dots[currentIndex].classList.remove('active');
+        currentIndex = index;
+        if (dots[currentIndex]) dots[currentIndex].classList.add('active');
+    }
+
+    dots.forEach((dot, i) => {
+        dot.addEventListener('click', () => {
+            track.scrollTo({ left: pages[i].offsetLeft, behavior: 'smooth' });
+        });
+    });
+
+    track.addEventListener('scroll', () => {
+        clearTimeout(syncTimer);
+        syncTimer = setTimeout(() => {
+            let closest = 0;
+            let closestDist = Infinity;
+            pages.forEach((p, i) => {
+                const d = Math.abs(p.offsetLeft - track.scrollLeft);
+                if (d < closestDist) { closestDist = d; closest = i; }
+            });
+            if (closest !== currentIndex) setActiveDot(closest);
+        }, 120);
+    }, { passive: true });
+}
+
 function initMiniCarousels() {
     const AUTOPLAY_DELAY = 4000;
     document.querySelectorAll('[data-mini-carousel]').forEach((carousel) => {
+        if (carousel.dataset.mobileGridDone === '1') return;
         const track = carousel.querySelector('.home-mini-carousel-track, .home-deals-track, .home-top-categories-track');
         const dots = carousel.querySelectorAll('.dot');
         const prevBtn = carousel.querySelector('[data-carousel-prev]');
@@ -106,7 +195,7 @@ function initMiniCarousels() {
         const pages = track.querySelectorAll(':scope > *');
         let currentPage = 0;
         let timer = null;
-        const totalPages = dots.length || 1;
+        const totalPages = pages.length || dots.length || 1;
 
         // Chaque page occupe 100% de la largeur du track (pas de pixels figés, pas de risque
         // de valeur qui dérape) ; on fait glisser avec un pourcentage, toujours relatif à la

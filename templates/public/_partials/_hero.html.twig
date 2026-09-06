@@ -73,10 +73,17 @@
                        class="hero-slide{{ loop.first ? ' active' : '' }}"
                        style="background-image:url('{{ vich_uploader_asset(ad, 'imageFile') }}')"
                        aria-hidden="{{ loop.first ? 'false' : 'true' }}">
+                        <img class="hero-slide-img" src="{{ vich_uploader_asset(ad, 'imageFile') }}" alt="{{ ad.title|default('') }}" loading="{{ loop.first ? 'eager' : 'lazy' }}">
                     </a>
                 {% endfor %}
             </div>
             {% if heroSlides|length > 1 %}
+                <button type="button" class="hero-carousel-arrow hero-carousel-arrow--prev" aria-label="{{ 'header.hero.prev'|trans|default('Précédent') }}">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <button type="button" class="hero-carousel-arrow hero-carousel-arrow--next" aria-label="{{ 'header.hero.next'|trans|default('Suivant') }}">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
                 <div class="hero-carousel-dots" id="heroCarouselDots">
                     {% for ad in heroSlides %}
                         <button type="button" class="hero-carousel-dot{{ loop.first ? ' active' : '' }}" data-slide-index="{{ loop.index0 }}" aria-label="{{ 'header.hero.slide'|trans({'%number%': loop.index}) }}"></button>

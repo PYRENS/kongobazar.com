@@ -122,14 +122,22 @@ function initHeroCarousel() {
     const carousel = document.getElementById('heroCarousel');
     if (!carousel) return;
 
+    const track = carousel.querySelector('.hero-carousel-slides');
     const slides = carousel.querySelectorAll('.hero-slide');
     const fill = carousel.querySelector('#heroProgressFill');
-    if (slides.length === 0 || !fill) return;
+    if (slides.length === 0 || !fill || !track) return;
 
     const SLIDE_DURATION = 5000; // 5 secondes par slide
+    const MOBILE_SWIPE_QUERY = '(max-width: 768px)';
     let currentIndex = 0;
     let timer = null;
     let isPaused = false;
+    let scrollSyncTimer = null;
+    let programmaticScroll = false;
+
+    function isMobileSwipe() {
+        return window.matchMedia(MOBILE_SWIPE_QUERY).matches;
+    }
 
     function resetFill() {
         fill.classList.remove('filling');
@@ -138,8 +146,6 @@ function initHeroCarousel() {
     }
 
     function playFill() {
-        // Double requestAnimationFrame : garantit que le navigateur applique bien le width:0%
-        // avant de relancer la transition vers 100%, sinon elle peut être ignorée dans le même frame.
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 fill.style.transitionDuration = `${SLIDE_DURATION}ms`;
@@ -151,7 +157,7 @@ function initHeroCarousel() {
 
     const dots = carousel.querySelectorAll('.hero-carousel-dot');
 
-    function goToSlide(index) {
+    function setActiveState(index) {
         slides[currentIndex].classList.remove('active');
         slides[currentIndex].setAttribute('aria-hidden', 'true');
         if (dots[currentIndex]) dots[currentIndex].classList.remove('active');
@@ -161,13 +167,28 @@ function initHeroCarousel() {
         slides[currentIndex].classList.add('active');
         slides[currentIndex].setAttribute('aria-hidden', 'false');
         if (dots[currentIndex]) dots[currentIndex].classList.add('active');
+    }
 
+    function goToSlide(index) {
+        if (isMobileSwipe()) {
+            // En mode glissement, on déplace physiquement le scroll au lieu de faire un fondu.
+            programmaticScroll = true;
+            track.scrollTo({ left: slides[index].offsetLeft, behavior: 'smooth' });
+            setActiveState(index);
+            window.setTimeout(() => { programmaticScroll = false; }, 500);
+            return;
+        }
+        setActiveState(index);
         resetFill();
         playFill();
     }
 
     function next() {
         goToSlide((currentIndex + 1) % slides.length);
+    }
+
+    function prev() {
+        goToSlide((currentIndex - 1 + slides.length) % slides.length);
     }
 
     function startAutoplay() {
@@ -180,16 +201,43 @@ function initHeroCarousel() {
 
     carousel.addEventListener('mouseenter', () => { isPaused = true; });
     carousel.addEventListener('mouseleave', () => { isPaused = false; });
+    track.addEventListener('touchstart', () => { isPaused = true; }, { passive: true });
+    track.addEventListener('touchend', () => { isPaused = false; }, { passive: true });
+
+    // En glissement tactile, l'utilisateur peut faire défiler au doigt sans cliquer
+    // sur une pastille : on resynchronise donc la pastille active sur la position
+    // réelle du scroll après chaque geste.
+    track.addEventListener('scroll', () => {
+        if (!isMobileSwipe() || programmaticScroll) return;
+        clearTimeout(scrollSyncTimer);
+        scrollSyncTimer = setTimeout(() => {
+            let closestIndex = 0;
+            let closestDistance = Infinity;
+            slides.forEach((slide, i) => {
+                const distance = Math.abs(slide.offsetLeft - track.scrollLeft);
+                if (distance < closestDistance) {
+                    closestDistance = distance;
+                    closestIndex = i;
+                }
+            });
+            if (closestIndex !== currentIndex) setActiveState(closestIndex);
+        }, 120);
+    }, { passive: true });
 
     dots.forEach((dot) => {
         dot.addEventListener('click', () => {
             const index = parseInt(dot.dataset.slideIndex, 10);
             if (index !== currentIndex) {
                 goToSlide(index);
-                startAutoplay(); // relance le minuteur pour laisser le temps de voir le slide choisi
+                startAutoplay();
             }
         });
     });
+
+    const prevBtn = carousel.querySelector('.hero-carousel-arrow--prev');
+    const nextBtn = carousel.querySelector('.hero-carousel-arrow--next');
+    if (prevBtn) prevBtn.addEventListener('click', () => { prev(); startAutoplay(); });
+    if (nextBtn) nextBtn.addEventListener('click', () => { next(); startAutoplay(); });
 
     playFill();
     startAutoplay();
@@ -267,4 +315,11 @@ function initMobileHeaderHeight() {
     window.addEventListener('resize', updateHeight);
     window.addEventListener('load', updateHeight);
     window.addEventListener('scroll', updateHeight);
+
+    // Filet de sécurité : si la hauteur du header change pour une autre raison
+    // (police qui finit de charger, image qui pousse le contenu, etc.) avant
+    // le premier scroll/resize, la variable ne reste pas périmée.
+    if (window.ResizeObserver) {
+        new ResizeObserver(updateHeight).observe(condensedHeader);
+    }
 }
