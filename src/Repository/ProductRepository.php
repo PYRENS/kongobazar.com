@@ -562,6 +562,24 @@ class ProductRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /** @return Product[] — produits "futur" (Prochainement) de la catégorie et ses sous-catégories, en excluant certains IDs. */
+    public function findFuturByCategoryIds(array $categoryIds, int $limit, array $excludeIds = []): array
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->andWhere('p.category IN (:categoryIds)')
+            ->andWhere('p.status = :status')
+            ->setParameter('categoryIds', $categoryIds)
+            ->setParameter('status', 'futur')
+            ->orderBy('p.createdAt', 'DESC')
+            ->setMaxResults($limit);
+
+        if ($excludeIds) {
+            $qb->andWhere('p.id NOT IN (:excludeIds)')->setParameter('excludeIds', $excludeIds);
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
     /** @return Product[] — nouveaux articles actifs des catégories données, en excluant les vendeurs "Particulier". */
     /** @return Product[] — derniers produits actifs de vendeurs "Particulier" uniquement. */
     public function findLatestByIndividualSellers(array $categories, int $limit = 8, array $excludeIds = []): array
@@ -598,7 +616,7 @@ class ProductRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function findByCategorySort(array $categories, string $sort, int $limit = 4, bool $individualSellersOnly = false): array
+    public function findByCategorySort(array $categories, string $sort, int $limit = 4, bool $individualSellersOnly = false, array $excludeIds = []): array
     {
         if ('trending' === $sort) {
             return $this->findTrendingByCategory($categories, $limit);
@@ -614,6 +632,10 @@ class ProductRepository extends ServiceEntityRepository
         if ($individualSellersOnly) {
             $qb->join('p.sellerProfile', 'indiv')
                 ->andWhere('indiv INSTANCE OF App\Entity\IndividualProfile');
+        }
+
+        if ($excludeIds) {
+            $qb->andWhere('p.id NOT IN (:excludeIds)')->setParameter('excludeIds', $excludeIds);
         }
 
         match ($sort) {

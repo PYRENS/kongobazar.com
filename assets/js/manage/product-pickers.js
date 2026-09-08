@@ -70,6 +70,40 @@ function loadCategoryPickerLevel(parentId, root, finalInput, level, ancestorIds 
         });
 }
 
+/**
+ * Adapte le champ "Statut" et le bloc "Précommande" selon les privilèges du vendeur
+ * sélectionné — appelée juste après la sélection d'un vendeur dans la recherche.
+ */
+function applySellerPrivilegeToForm(canUseComingSoon, canUsePreorder) {
+    const statusSelect = document.querySelector('select[name="status"]');
+    if (!statusSelect) return;
+    const futurOption = statusSelect.querySelector('option[value="futur"]');
+    if (!futurOption) return;
+
+    if (canUseComingSoon) {
+        futurOption.disabled = false;
+        futurOption.hidden = false;
+    } else {
+        futurOption.disabled = true;
+        futurOption.hidden = true;
+        if (statusSelect.value === 'futur') {
+            statusSelect.value = 'draft';
+        }
+    }
+
+    const preorderRow = document.getElementById('preorderFieldsRow');
+    if (preorderRow) {
+        preorderRow.dataset.sellerCanPreorder = canUsePreorder ? '1' : '0';
+        preorderRow.style.display = (canUsePreorder && statusSelect.value === 'futur') ? 'flex' : 'none';
+        if (!canUsePreorder) {
+            const sw = document.getElementById('preorderEnabled');
+            if (sw) sw.checked = false;
+            const availabilityWrap = document.getElementById('estimatedAvailabilityWrap');
+            if (availabilityWrap) availabilityWrap.style.display = 'none';
+        }
+    }
+}
+
 function initSellerAutocomplete() {
     const input = document.getElementById('sellerSearchInput');
     const results = document.getElementById('sellerSearchResults');
@@ -100,6 +134,7 @@ function initSellerAutocomplete() {
                             input.value = seller.label;
                             hiddenInput.value = seller.id;
                             results.innerHTML = '';
+                            applySellerPrivilegeToForm(seller.canUseComingSoon, seller.canUsePreorder);
                         });
                         results.appendChild(item);
                     });

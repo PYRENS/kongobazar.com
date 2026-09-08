@@ -149,7 +149,7 @@
                 <label class="form-label">Statut</label>
                 <select name="status" class="form-select">
                     <option value="draft" {{ product and product.status == 'draft' ? 'selected' : '' }}>Brouillon</option>
-                    <option value="futur" {{ product and product.status == 'futur' ? 'selected' : '' }}>Futur (accueil "Prochainement", avec réservation 40%)</option>
+                    <option value="futur" {{ product and product.status == 'futur' ? 'selected' : '' }} {{ not (product and product.sellerProfile and product.sellerProfile.canUseComingSoon) ? 'disabled hidden' : '' }}>Futur (accueil "Prochainement", avec précommande)</option>
                     <option value="coming_soon" {{ product and product.status == 'coming_soon' ? 'selected' : '' }}>Prochainement en rayon (bandeau "Me prévenir", sur la fiche produit)</option>
                     <option value="active" {{ product and product.status == 'active' ? 'selected' : '' }}>Actif</option>
                     <option value="suspended" {{ product and product.status == 'suspended' ? 'selected' : '' }}>Suspendu</option>
@@ -162,6 +162,36 @@
                 </div>
             </div>
         </div>
+
+        {% set seller = product ? product.sellerProfile : null %}
+        <div class="row" id="preorderFieldsRow" data-seller-can-preorder="{{ (seller and seller.canUsePreorder) ? '1' : '0' }}" style="display:{{ (seller and seller.canUsePreorder and product and product.status == 'futur') ? 'flex' : 'none' }};">
+                <div class="col-md-3 mb-3 d-flex align-items-end">
+                    <div class="form-check form-switch">
+                        <input type="checkbox" name="preorder_enabled" value="1" class="form-check-input" id="preorderEnabled" role="switch" {{ product and product.preorderEnabled ? 'checked' : '' }}>
+                        <label class="form-check-label" for="preorderEnabled">Précommande</label>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3" id="estimatedAvailabilityWrap" style="display:{{ product and product.preorderEnabled ? 'block' : 'none' }};">
+                    <label class="form-label">Disponibilité estimée</label>
+                    <input type="date" name="estimated_availability" class="form-control" min="{{ "tomorrow"|date('Y-m-d') }}" value="{{ product and product.estimatedAvailability ? product.estimatedAvailability|date('Y-m-d') : '' }}">
+                </div>
+            </div>
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    const statusSelect = document.querySelector('select[name="status"]');
+                    const preorderRow = document.getElementById('preorderFieldsRow');
+                    const preorderSwitch = document.getElementById('preorderEnabled');
+                    const availabilityWrap = document.getElementById('estimatedAvailabilityWrap');
+
+                    statusSelect.addEventListener('change', function () {
+                        const canPreorder = preorderRow.dataset.sellerCanPreorder === '1';
+                        preorderRow.style.display = (this.value === 'futur' && canPreorder) ? 'flex' : 'none';
+                    });
+                    preorderSwitch.addEventListener('change', function () {
+                        availabilityWrap.style.display = this.checked ? 'block' : 'none';
+                    });
+                });
+            </script>
 
         </div>
     </div>

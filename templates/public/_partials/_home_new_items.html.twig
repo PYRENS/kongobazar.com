@@ -1,9 +1,8 @@
 {# ==========================================================================
-   "Nouveauté" — un onglet par catégorie, 4 petites | grande carte | 4 petites (9 au total).
-   Contexte attendu :
-     - newItemsEnabled : bool
-     - newItemsTabs     : NewItemsTab[]
-     - newItemsByTab    : { tabId: {bigCard: Product|null, smallCards: Product[]} }
+   "Nouveauté" — un onglet par catégorie. Réutilise exactement le même système
+   de grille/pagination/glissement que "Articles tendances" (classes trending-*),
+   la seule différence est la carte "bigCard" agrandie (product-card--big) sur
+   desktop uniquement — cf. CSS.
    ========================================================================== #}
 {% if newItemsEnabled and newItemsTabs|default([])|length > 0 %}
 <section class="home-new-items">
@@ -19,69 +18,85 @@
         </div>
     </div>
 
-    {% macro productCard(product) %}
-        <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="new-items-small-card">
-            <div class="new-items-small-badges">
-                <span class="badge-new">{{ 'home.new'|trans }}</span>
-                {% if product.activeDiscountPercent %}
-                    <span class="badge-discount">-{{ product.activeDiscountPercent }}%</span>
-                {% elseif product.compareAtPrice %}
-                    <span class="badge-discount">-{{ ((1 - (product.basePrice / product.compareAtPrice)) * 100)|round }}%</span>
-                {% endif %}
-            </div>
-            <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
-            <div class="new-items-small-info">
-                <p class="new-items-small-title">{{ product.title }}</p>
-                <div class="new-items-price">
-                    <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
-                    {% if product.displayOldPrice %}
-                        <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
-                    {% endif %}
-                </div>
-            </div>
-        </a>
-    {% endmacro %}
-
     {% for tab in newItemsTabs %}
         {% set data = newItemsByTab[tab.id] %}
-        <div class="new-items-panel{{ loop.first ? ' active' : '' }}" id="new-items-panel-{{ tab.id }}">
-            {% if data.bigCard %}
-                {% set leftCards = data.smallCards|slice(0, 4) %}
-                {% set rightCards = data.smallCards|slice(4, 4) %}
-                <div class="new-items-grid">
-                    <div class="new-items-small-grid">
-                        {% for product in leftCards %}
-                            {{ _self.productCard(product) }}
+        {% set perPage = newItemsTabProductCounts[tab.id] ?? 9 %}
+        {% set productPages = (data.products ?? [])|batch(perPage) %}
+        <div class="new-items-panel trending-panel{{ loop.first ? ' active' : '' }}" id="new-items-panel-{{ tab.id }}" data-desktop-per-page="{{ perPage }}">
+            {% if data.products|length > 0 %}
+                <div class="trending-panel-toolbar">
+                    <div class="trending-page-dots">
+                        {% for page in productPages %}
+                            <button type="button" class="trending-page-dot{{ loop.first ? ' active' : '' }}" data-page="{{ loop.index0 }}"></button>
                         {% endfor %}
                     </div>
-
-                    <a href="{{ path('catalog_product', { slug: data.bigCard.slug }) }}" class="new-items-big-card">
-                        <div class="new-items-big-badges">
-                            <span class="badge-new">{{ 'home.new'|trans }}</span>
-                            {% if data.bigCard.activeDiscountPercent %}
-                                <span class="badge-discount">-{{ data.bigCard.activeDiscountPercent }}%</span>
-                            {% elseif data.bigCard.compareAtPrice %}
-                                <span class="badge-discount">-{{ ((1 - (data.bigCard.basePrice / data.bigCard.compareAtPrice)) * 100)|round }}%</span>
-                            {% endif %}
-                        </div>
-                        <img src="{{ data.bigCard.images|length > 0 ? vich_uploader_asset(data.bigCard.images|first, 'imageFile') : '' }}" alt="{{ data.bigCard.title }}" loading="lazy">
-                        <div class="new-items-big-info">
-                            <h5>{{ data.bigCard.title }}</h5>
-                            <div class="new-items-price">
-                                <span class="price-now">{{ data.bigCard.displayCurrentPrice }} {{ data.bigCard.currency }}</span>
-                                {% if data.bigCard.displayOldPrice %}
-                                    <span class="price-old">{{ data.bigCard.displayOldPrice }} {{ data.bigCard.currency }}</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </a>
-
-                    <div class="new-items-small-grid">
-                        {% for product in rightCards %}
-                            {{ _self.productCard(product) }}
-                        {% endfor %}
+                    <div class="trending-panel-actions">
+                        {% if productPages|length > 1 %}
+                            <button type="button" class="trending-page-arrow trending-page-arrow--prev" disabled><i class="bi bi-chevron-left"></i></button>
+                            <button type="button" class="trending-page-arrow trending-page-arrow--next"{{ productPages|length <= 1 ? ' disabled' : '' }}><i class="bi bi-chevron-right"></i></button>
+                        {% endif %}
+                        <a href="{{ path('catalog_category', { slug: tab.category.slug }) }}" class="see-all-link">{{ 'home.see_all'|trans }}</a>
                     </div>
                 </div>
+                {% for page in productPages %}
+                <div class="trending-product-page">
+                <div class="home-product-grid">
+                    {% for product in page %}
+                        <div class="product-card{{ data.bigCard and product.id == data.bigCard.id ? ' product-card--big' : '' }}">
+                            <div class="product-card-media">
+                                <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}"
+                                     alt="{{ product.title }}"
+                                     class="product-card-main-image"
+                                     data-main-image
+                                     loading="lazy">
+                                <span class="badge-new">{{ 'home.new'|trans }}</span>
+                                {% if product.activeDiscountPercent %}
+                                    <span class="badge-discount">-{{ product.activeDiscountPercent }}%</span>
+                                {% elseif product.compareAtPrice %}
+                                    <span class="badge-discount">
+                                        -{{ ((1 - (product.basePrice / product.compareAtPrice)) * 100)|round }}%
+                                    </span>
+                                {% endif %}
+                                {% if product.brand and product.brand.logoName %}
+                                    <img src="{{ vich_uploader_asset(product.brand, 'logoFile') }}" alt="{{ product.brand.name }}" class="product-card-brand-logo">
+                                {% endif %}
+                                <div class="product-card-actions-left">
+                                    <button type="button" class="card-action" data-add-to-cart="{{ product.id }}" aria-label="{{ 'product.add_to_cart'|trans }}">
+                                        <i class="bi bi-cart3"></i>
+                                    </button>
+                                    <button type="button" class="card-action" data-quick-view="{{ product.id }}" aria-label="{{ 'product.quick_view'|trans }}">
+                                        <i class="bi bi-search"></i>
+                                    </button>
+                                    <button type="button" class="card-action" data-add-to-wishlist="{{ product.id }}" aria-label="{{ 'product.add_to_wishlist'|trans }}">
+                                        <i class="bi bi-heart"></i>
+                                    </button>
+                                </div>
+                                {% if product.images|length > 1 %}
+                                    <div class="product-card-gallery-thumbs">
+                                        {% for image in product.images|slice(0, 4) %}
+                                            <button type="button"
+                                                    class="gallery-thumb{{ loop.first ? ' active' : '' }}"
+                                                    data-swap-image="{{ vich_uploader_asset(image, 'imageFile') }}">
+                                                <img src="{{ vich_uploader_asset(image, 'imageFile') }}" alt="" loading="lazy">
+                                            </button>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="product-card-body">
+                                <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="product-card-title">{{ product.title }}</a>
+                                <div class="product-card-price">
+                                    <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+                                    {% if product.displayOldPrice %}
+                                        <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                </div>
+                {% endfor %}
             {% else %}
                 <p class="text-muted">Aucun produit pour cet onglet.</p>
             {% endif %}

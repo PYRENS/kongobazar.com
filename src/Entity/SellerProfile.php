@@ -45,9 +45,26 @@ abstract class SellerProfile
     #[ORM\Column(options: ['default' => false])]
     private bool $isKbz = false;
 
+    /**
+     * Privilège "Prochainement"/"Précommande", attribué par l'admin (pas de demande automatique pour l'instant).
+     * Valeurs : 'none' | 'coming_soon' | 'coming_soon_preorder'.
+     */
+    #[ORM\Column(length: 30, options: ['default' => 'none'])]
+    private string $comingSoonPrivilege = 'none';
+
     /** Numéro de référence unique, attribué à la validation de l'inscription (ex: BTQ-0001, PRO-0001, PRT-0001, RLY-0001). */
     #[ORM\Column(length: 20, nullable: true, unique: true)]
     private ?string $referenceNumber = null;
+
+    /**
+     * Localisation du vendeur lui-même (entité administrative la plus petite disponible),
+     * distincte des zones de livraison ci-dessous (qui définissent où IL livre, pas où IL EST).
+     */
+    #[ORM\ManyToOne(targetEntity: AdministrativeUnit::class)]
+    private ?AdministrativeUnit $location = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $address = null;
 
     /** @var Collection<int, AdministrativeUnit> */
     #[ORM\ManyToMany(targetEntity: AdministrativeUnit::class)]
@@ -276,6 +293,36 @@ abstract class SellerProfile
     public function getDisplayName(): ?string
     {
         return $this->displayName;
+    }
+
+    public function getLocation(): ?AdministrativeUnit { return $this->location; }
+    public function setLocation(?AdministrativeUnit $location): static { $this->location = $location; return $this; }
+
+    public function getAddress(): ?string { return $this->address; }
+    public function setAddress(?string $address): static { $this->address = $address; return $this; }
+
+    public function getComingSoonPrivilege(): string
+    {
+        return $this->comingSoonPrivilege;
+    }
+
+    public function setComingSoonPrivilege(string $privilege): static
+    {
+        if (!in_array($privilege, ['none', 'coming_soon', 'coming_soon_preorder'], true)) {
+            $privilege = 'none';
+        }
+        $this->comingSoonPrivilege = $privilege;
+        return $this;
+    }
+
+    public function canUseComingSoon(): bool
+    {
+        return in_array($this->comingSoonPrivilege, ['coming_soon', 'coming_soon_preorder'], true);
+    }
+
+    public function canUsePreorder(): bool
+    {
+        return 'coming_soon_preorder' === $this->comingSoonPrivilege;
     }
 
     public function setDisplayName(?string $displayName): static

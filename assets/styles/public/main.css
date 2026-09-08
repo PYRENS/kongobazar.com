@@ -1483,6 +1483,10 @@ html, body {
     .homepage-hero-row {
         margin-right: 0;
     }
+    .home-layout {
+        margin-left: 0;
+        margin-right: 0;
+    }
     .cart-trigger {
         margin-right: 16px;
     }
@@ -1492,9 +1496,6 @@ html, body {
    Ajustements écrans réduits (992px – 1199px) — densification progressive
    -------------------------------------------------------------------------- */
 @media (min-width: 992px) and (max-width: 1199px) {
-    .logo {
-        font-size: 22px;
-    }
     .search-form {
         flex: 0 1 480px;
     }
@@ -1728,6 +1729,12 @@ html, body {
     padding: 24px 0;
     background: #fff;
     border-radius: 6px;
+}
+@media (min-width: 992px) and (max-width: 1366px) {
+    .home-how-it-works {
+        margin-left: 0;
+        margin-right: 0;
+    }
 }
 .how-it-works-step {
     position: relative;

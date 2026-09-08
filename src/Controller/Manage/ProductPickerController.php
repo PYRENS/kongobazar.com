@@ -40,6 +40,8 @@ class ProductPickerController extends AbstractController
         return $this->json(['results' => array_map(fn (\App\Entity\SellerProfile $s) => [
             'id' => $s->getId(),
             'label' => $s->getDisplayName() . ($s->getReferenceNumber() ? ' (' . $s->getReferenceNumber() . ')' : ''),
+            'canUseComingSoon' => $s->canUseComingSoon(),
+            'canUsePreorder' => $s->canUsePreorder(),
         ], $results)]);
     }
 

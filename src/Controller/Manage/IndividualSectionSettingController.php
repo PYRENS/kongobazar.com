@@ -127,7 +127,14 @@ class IndividualSectionSettingController extends AbstractController
         $em->persist($item);
         $em->flush();
 
-        return $this->json(['ok' => true, 'itemId' => $item->getId(), 'productTitle' => $product->getTitle()]);
+        return $this->json([
+            'ok' => true,
+            'itemId' => $item->getId(),
+            'productId' => $product->getId(),
+            'productTitle' => $product->getTitle(),
+            'reference' => $product->getKongobazarReference(),
+            'imageUrl' => $product->getImages()->count() > 0 ? '/media/products/' . $product->getImages()->first()->getImageName() : null,
+        ]);
     }
 
     #[Route('/parametres/particulier-accueil/produit-prioritaire/{id}/supprimer', name: 'manage_individual_section_remove_priority_product', host: 'manage.kongobazar.com', methods: ['POST'], requirements: ['id' => '\d+'])]
@@ -143,23 +150,30 @@ class IndividualSectionSettingController extends AbstractController
     #[Route('/parametres/particulier-accueil/rechercher-produits', name: 'manage_individual_section_search_products', host: 'manage.kongobazar.com', methods: ['GET'])]
     public function searchProducts(Request $request, ProductRepository $productRepository): Response
     {
-        $term = trim((string) $request->query->get('q', ''));
+        $term = mb_strtolower(trim((string) $request->query->get('q', '')));
 
         $qb = $productRepository->createQueryBuilder('p')
             ->join('p.sellerProfile', 's')
             ->andWhere('p.status = :status')->setParameter('status', 'active')
-            ->andWhere('s INSTANCE OF App\Entity\IndividualProfile')
-            ->setMaxResults(20);
-
-        if ($term) {
-            $qb->andWhere('p.title LIKE :term')->setParameter('term', '%' . $term . '%');
-        }
+            ->andWhere('s INSTANCE OF App\Entity\IndividualProfile');
 
         $results = $qb->getQuery()->getResult();
+
+        if ($term) {
+            $results = array_filter($results, fn (Product $p) =>
+                str_contains(mb_strtolower($p->getTitle()), $term)
+                || str_contains(mb_strtolower((string) $p->getKongobazarReference()), $term)
+            );
+        }
+
+        $results = array_slice($results, 0, 20);
 
         return $this->json(['results' => array_map(fn (Product $p) => [
             'id' => $p->getId(),
             'name' => $p->getTitle(),
+            'title' => $p->getTitle(),
+            'reference' => $p->getKongobazarReference(),
+            'imageUrl' => $p->getImages()->count() > 0 ? '/media/products/' . $p->getImages()->first()->getImageName() : null,
         ], $results)]);
     }
 

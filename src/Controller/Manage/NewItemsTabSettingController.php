@@ -159,7 +159,10 @@ class NewItemsTabSettingController extends AbstractController
         return $this->json([
             'ok' => true,
             'itemId' => $item->getId(),
+            'productId' => $product->getId(),
             'productTitle' => $product->getTitle(),
+            'reference' => $product->getKongobazarReference(),
+            'imageUrl' => $product->getImages()->count() > 0 ? '/media/products/' . $product->getImages()->first()->getImageName() : null,
         ]);
     }
 
@@ -193,21 +196,28 @@ class NewItemsTabSettingController extends AbstractController
     #[Route('/parametres/nouveautes-accueil/rechercher-produits', name: 'manage_new_items_search_products', host: 'manage.kongobazar.com', methods: ['GET'])]
     public function searchProducts(Request $request, ProductRepository $productRepository): Response
     {
-        $term = trim((string) $request->query->get('q', ''));
+        $term = mb_strtolower(trim((string) $request->query->get('q', '')));
 
         $qb = $productRepository->createQueryBuilder('p')
-            ->andWhere('p.status = :status')->setParameter('status', 'active')
-            ->setMaxResults(20);
-
-        if ($term) {
-            $qb->andWhere('p.title LIKE :term')->setParameter('term', '%' . $term . '%');
-        }
+            ->andWhere('p.status = :status')->setParameter('status', 'active');
 
         $results = $qb->getQuery()->getResult();
+
+        if ($term) {
+            $results = array_filter($results, fn (Product $p) =>
+                str_contains(mb_strtolower($p->getTitle()), $term)
+                || str_contains(mb_strtolower((string) $p->getKongobazarReference()), $term)
+            );
+        }
+
+        $results = array_slice($results, 0, 20);
 
         return $this->json(['results' => array_map(fn (Product $p) => [
             'id' => $p->getId(),
             'name' => $p->getTitle() . ' (' . $p->getKongobazarReference() . ')',
+            'title' => $p->getTitle(),
+            'reference' => $p->getKongobazarReference(),
+            'imageUrl' => $p->getImages()->count() > 0 ? '/media/products/' . $p->getImages()->first()->getImageName() : null,
         ], $results)]);
     }
 

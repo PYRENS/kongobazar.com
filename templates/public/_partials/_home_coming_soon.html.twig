@@ -1,13 +1,7 @@
 {# ==========================================================================
    "Prochainement" — titre libre (pas une catégorie), onglets par cascade + "Voir tous"
-   toujours en dernier, bannière publicitaire en bas.
-   Contexte attendu :
-     - comingSoonEnabled : bool
-     - comingSoonTitle : string
-     - comingSoonTabs : ComingSoonTab[]
-     - comingSoonProductsByTab : { tabId: Product[] }
-     - comingSoonAllProducts : Product[] ("Voir tous")
-     - comingSoonBanner : Advertisement|null
+   toujours en dernier. Réutilise exactement le même système de grille/pagination/
+   glissement que "Articles tendances" et "Nouveauté" (classes trending-*).
    ========================================================================== #}
 {% if comingSoonEnabled and comingSoonAllProducts|default([])|length > 0 %}
 <section class="home-coming-soon">
@@ -18,41 +12,86 @@
             {% for tab in comingSoonTabs %}
                 <button type="button" class="trending-tab{{ loop.first ? ' active' : '' }}" data-tab-target="coming-soon-panel-{{ tab.id }}">{{ tab.category.name }}</button>
             {% endfor %}
-            <button type="button" class="trending-tab{{ comingSoonTabs|length == 0 ? ' active' : '' }}" data-tab-target="coming-soon-panel-all">{{ 'menu.voir_tout'|trans }}</button>
         </div>
     </div>
+
+    {% macro renderPanel(id, isActive, products, perPage, seeAllUrl) %}
+        {% set productPages = products|batch(perPage) %}
+        <div class="coming-soon-panel trending-panel{{ isActive ? ' active' : '' }}" id="{{ id }}" data-desktop-per-page="{{ perPage }}">
+            {% if products|length > 0 %}
+                <div class="trending-panel-toolbar">
+                    <div class="trending-page-dots">
+                        {% for page in productPages %}
+                            <button type="button" class="trending-page-dot{{ loop.first ? ' active' : '' }}" data-page="{{ loop.index0 }}"></button>
+                        {% endfor %}
+                    </div>
+                    <div class="trending-panel-actions">
+                        {% if productPages|length > 1 %}
+                            <button type="button" class="trending-page-arrow trending-page-arrow--prev" disabled><i class="bi bi-chevron-left"></i></button>
+                            <button type="button" class="trending-page-arrow trending-page-arrow--next"{{ productPages|length <= 1 ? ' disabled' : '' }}><i class="bi bi-chevron-right"></i></button>
+                        {% endif %}
+                        {% if seeAllUrl %}
+                            <a href="{{ seeAllUrl }}" class="see-all-link">{{ 'home.see_all'|trans }}</a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% for page in productPages %}
+                <div class="trending-product-page">
+                <div class="home-product-grid">
+                    {% for product in page %}
+                        <div class="product-card">
+                            <div class="product-card-media">
+                                <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}"
+                                     alt="{{ product.title }}"
+                                     class="product-card-main-image"
+                                     data-main-image
+                                     loading="lazy">
+                                {% if product.activeDiscountPercent %}
+                                    <span class="badge-discount">-{{ product.activeDiscountPercent }}%</span>
+                                {% elseif product.compareAtPrice %}
+                                    <span class="badge-discount">
+                                        -{{ ((1 - (product.basePrice / product.compareAtPrice)) * 100)|round }}%
+                                    </span>
+                                {% endif %}
+                                {% if product.brand and product.brand.logoName %}
+                                    <img src="{{ vich_uploader_asset(product.brand, 'logoFile') }}" alt="{{ product.brand.name }}" class="product-card-brand-logo">
+                                {% endif %}
+                                <div class="product-card-coming-soon-actions">
+                                    <a href="{{ path('product_follow_availability', { slug: product.slug }) }}" class="card-action card-action--expandable" title="Me prévenir" onclick="event.stopPropagation();">
+                                        <i class="bi bi-bell"></i>
+                                        <span class="card-action-label">Me prévenir</span>
+                                    </a>
+                                    {% if product.preorderEnabled %}
+                                        <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="card-action card-action--expandable card-action--preorder" title="Précommander">
+                                            <i class="bi bi-bag-check"></i>
+                                            <span class="card-action-label">Précommander</span>
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="product-card-body">
+                                <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="product-card-title">{{ product.title }}</a>
+                                <div class="product-card-price">
+                                    <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+                                    {% if product.displayOldPrice %}
+                                        <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">Aucun produit pour cet onglet.</p>
+            {% endif %}
+        </div>
+    {% endmacro %}
 
     {% for tab in comingSoonTabs %}
-        <div class="coming-soon-panel{{ loop.first ? ' active' : '' }}" id="coming-soon-panel-{{ tab.id }}">
-            <div class="coming-soon-grid">
-                {% for product in comingSoonProductsByTab[tab.id] %}
-                    <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="coming-soon-card">
-                        <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
-                        <div class="coming-soon-card-info">
-                            <p class="coming-soon-card-title">{{ product.title }}</p>
-                            <span class="price-now">{{ product.basePrice }} {{ product.currency }}</span>
-                        </div>
-                    </a>
-                {% else %}
-                    <p class="text-muted">Aucun produit pour cet onglet.</p>
-                {% endfor %}
-            </div>
-        </div>
+        {{ _self.renderPanel('coming-soon-panel-' ~ tab.id, loop.first, comingSoonProductsByTab[tab.id], comingSoonTabProductCounts[tab.id] ?? 9, path('catalog_category', { slug: tab.category.slug })) }}
     {% endfor %}
-
-    <div class="coming-soon-panel{{ comingSoonTabs|length == 0 ? ' active' : '' }}" id="coming-soon-panel-all">
-        <div class="coming-soon-grid">
-            {% for product in comingSoonAllProducts %}
-                <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="coming-soon-card">
-                    <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
-                    <div class="coming-soon-card-info">
-                        <p class="coming-soon-card-title">{{ product.title }}</p>
-                        <span class="price-now">{{ product.basePrice }} {{ product.currency }}</span>
-                    </div>
-                </a>
-            {% endfor %}
-        </div>
-    </div>
 
     {% if comingSoonBanner and comingSoonBanner.imageName %}
         <a {% if comingSoonBanner.targetUrl %}href="{{ path('ads_click', { id: comingSoonBanner.id, zoneKey: 'futur_section_banner' }) }}"{% endif %}{% if comingSoonBanner.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="home-center-banner{{ comingSoonBanner.targetUrl ? ' ad-clickable' : '' }}">

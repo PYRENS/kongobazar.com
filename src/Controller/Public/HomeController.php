@@ -33,6 +33,8 @@ class HomeController extends AbstractController
         CategoryViewLogRepository $categoryViewLogRepository,
         ProductViewLogRepository $productViewLogRepository,
         \App\Repository\MostViewedSettingRepository $mostViewedSettingRepository,
+        \App\Repository\BestSellersSectionSettingRepository $bestSellersSectionSettingRepository,
+        \App\Repository\SidebarNewArrivalsSettingRepository $sidebarNewArrivalsSettingRepository,
         CartRepository $cartRepository,
         \App\Service\SeoResolver $seoResolver,
         \App\Service\HomeDealsSelector $homeDealsSelector,
@@ -77,8 +79,14 @@ class HomeController extends AbstractController
         $adSidebar2 = $adZonePicker->pick('sidebar_2', 'public');
         $adSidebar3 = $adZonePicker->pick('sidebar_3', 'public');
         $adSidebarMiddle = $adZonePicker->pick('sidebar_middle', 'public');
-        $bestSellers = $productRepository->findBestSellersInStock(8);
-        $newArrivals = $productRepository->findNewArrivals(8);
+        $bestSellersSetting = $bestSellersSectionSettingRepository->getSingleton();
+        $sidebarNewArrivalsSetting = $sidebarNewArrivalsSettingRepository->getSingleton();
+        $bestSellers = $bestSellersSetting->isEnabled()
+            ? $productRepository->findBestSellersInStock($bestSellersSetting->getDisplayCount())
+            : [];
+        $newArrivals = $sidebarNewArrivalsSetting->isEnabled()
+            ? $productRepository->findNewArrivals($sidebarNewArrivalsSetting->getDisplayCount())
+            : [];
         $latestPost = $blogPostRepository->findLatestPublished();
 
         // --- Centre : promo + deals ---
@@ -91,6 +99,10 @@ class HomeController extends AbstractController
         $trendingSectionSettings = $trendingSectionSettingRepository->getSingleton();
         $trendingTabs = $trendingTabSettingRepository->findAllOrdered();
         $trendingTabCategories = array_map(fn ($tab) => $tab->getCategory(), $trendingTabs);
+        $trendingTabProductCounts = [];
+        foreach ($trendingTabs as $tab) {
+            $trendingTabProductCounts[$tab->getCategory()->getSlug()] = $tab->getProductCount();
+        }
         $trendingProductsByCategory = [];
         foreach ($trendingTabs as $tab) {
             $trendingProductsByCategory[$tab->getCategory()->getSlug()] = $trendingTabSelector->select($tab);
@@ -144,19 +156,42 @@ class HomeController extends AbstractController
         $newItemsSectionSettings = $newItemsSectionSettingRepository->getSingleton();
         $newItemsTabs = $newItemsTabRepository->findAllOrdered();
         $newItemsByTab = [];
+        $newItemsTabProductCounts = [];
         foreach ($newItemsTabs as $tab) {
             $newItemsByTab[$tab->getId()] = $newItemsTabSelector->select($tab);
+            $newItemsTabProductCounts[$tab->getId()] = $tab->getProductCount();
         }
 
         // --- Prochainement ---
         $comingSoonSectionSettings = $comingSoonSectionSettingRepository->getSingleton();
         $comingSoonTabs = $comingSoonTabRepository->findAllOrdered();
         $comingSoonProductsByTab = [];
+        $comingSoonTabProductCounts = [];
         $comingSoonAllProducts = [];
         foreach ($comingSoonTabs as $tab) {
-            $products = array_map(fn ($item) => $item->getProduct(), $tab->getProducts()->toArray());
-            $products = array_values(array_filter($products, fn ($p) => 'futur' === $p->getStatus()));
+            $pinned = array_map(fn ($item) => $item->getProduct(), $tab->getProducts()->toArray());
+            $pinned = array_values(array_filter($pinned, fn ($p) => 'futur' === $p->getStatus()));
+
+            $poolSize = $tab->getProductCount() * 3; // même logique que les autres sections (jusqu'à 3 pages)
+            $pinned = array_slice($pinned, 0, $poolSize);
+
+            if ('auto' === $tab->getMode()) {
+                $remaining = $poolSize - count($pinned);
+                $pinnedIds = array_map(fn ($p) => $p->getId(), $pinned);
+                $filler = $remaining > 0 && $tab->getCategory()
+                    ? $productRepository->findFuturByCategoryIds(
+                        array_merge([$tab->getCategory()->getId()], array_map(fn ($c) => $c->getId(), $tab->getCategory()->getDescendantCategories())),
+                        $remaining,
+                        $pinnedIds
+                    )
+                    : [];
+                $products = array_merge($pinned, $filler);
+            } else {
+                $products = $pinned;
+            }
+
             $comingSoonProductsByTab[$tab->getId()] = $products;
+            $comingSoonTabProductCounts[$tab->getId()] = $tab->getProductCount();
             $comingSoonAllProducts = array_merge($comingSoonAllProducts, $products);
         }
         $comingSoonAllProducts = array_values(array_unique($comingSoonAllProducts, SORT_REGULAR));
@@ -166,10 +201,12 @@ class HomeController extends AbstractController
         $individualSectionSettings = $individualSectionSettingRepository->getSingleton();
         $individualCategories = $individualSectionCategoryRepository->findAllOrdered();
         $individualProductsByCategory = [];
+        $individualTabProductCounts = [];
         $individualAllProducts = [];
         foreach ($individualCategories as $sc) {
             $products = $individualSectionSelector->select($sc);
             $individualProductsByCategory[$sc->getId()] = $products;
+            $individualTabProductCounts[$sc->getId()] = $sc->getCardCount();
             $individualAllProducts = array_merge($individualAllProducts, $products);
         }
         $individualAllProducts = array_values(array_unique($individualAllProducts, SORT_REGULAR));
@@ -222,15 +259,18 @@ class HomeController extends AbstractController
             'newItemsEnabled' => $newItemsSectionSettings->isEnabled(),
             'newItemsTabs' => $newItemsTabs,
             'newItemsByTab' => $newItemsByTab,
+            'newItemsTabProductCounts' => $newItemsTabProductCounts,
             'comingSoonEnabled' => $comingSoonSectionSettings->isEnabled(),
             'comingSoonTitle' => $comingSoonSectionSettings->getTitle(),
             'comingSoonTabs' => $comingSoonTabs,
             'comingSoonProductsByTab' => $comingSoonProductsByTab,
+            'comingSoonTabProductCounts' => $comingSoonTabProductCounts,
             'comingSoonAllProducts' => $comingSoonAllProducts,
             'comingSoonBanner' => $comingSoonBanner,
             'individualSectionEnabled' => $individualSectionSettings->isEnabled(),
             'individualCategories' => $individualCategories,
             'individualProductsByCategory' => $individualProductsByCategory,
+            'individualTabProductCounts' => $individualTabProductCounts,
             'individualAllProducts' => $individualAllProducts,
             'sponsorBrands' => $sponsorBrands,
             'partners' => $partners,
@@ -248,6 +288,7 @@ class HomeController extends AbstractController
             'dealsProducts' => $dealsProducts,
             'centerAdBanner' => $centerAdBanner,
             'trendingTabCategories' => $trendingTabCategories,
+            'trendingTabProductCounts' => $trendingTabProductCounts,
             'trendingProductsByCategory' => $trendingProductsByCategory,
             'featuredBlocks' => $featuredBlocks,
             'topCategories' => $topCategories,
@@ -258,6 +299,8 @@ class HomeController extends AbstractController
             'adLifestyleRight' => $adLifestyleRight,
             'mostViewedProducts' => $mostViewedProducts,
             'mostViewedEnabled' => $mostViewedSettings->isEnabled(),
+            'bestSellersEnabled' => $bestSellersSetting->isEnabled(),
+            'sidebarNewArrivalsEnabled' => $sidebarNewArrivalsSetting->isEnabled(),
             'footerColumns' => $footerColumns,
             'footerSocialAd' => $footerSocialAd,
             'footerBrands' => $footerBrands,

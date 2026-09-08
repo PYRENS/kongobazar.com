@@ -1,0 +1,46 @@
+{% extends 'manage/base.html.twig' %}
+{% block title %}Meilleures ventes — Accueil{% endblock %}
+{% block page_icon %}bi-graph-up-arrow{% endblock %}
+{% block page_title %}Affichage "Meilleures ventes" — Accueil{% endblock %}
+{% block body %}
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-toggle-on text-primary me-2"></i>Visibilité</h6></div>
+        <div class="card-body">
+            <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="bestSellersEnabledSwitch" role="switch" {{ setting.enabled ? 'checked' : '' }} data-toggle-url="{{ path('manage_best_sellers_toggle_enabled') }}">
+                <label class="form-check-label">Afficher la section "Meilleures ventes" sur la page d'accueil</label>
+            </div>
+            <small id="bestSellersEnabledFeedback" class="text-muted"></small>
+        </div>
+    </div>
+
+    <form method="post" action="{{ path('manage_best_sellers_setting_update') }}">
+        <div class="sw-card mb-3">
+            <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-sliders text-primary me-2"></i>Réglages</h6></div>
+            <div class="card-body">
+                <label class="form-label">Nombre de produits récupérés en base</label>
+                <input type="number" name="display_count" class="form-control mb-3" style="max-width:160px;" min="3" value="{{ setting.displayCount }}">
+                <small class="text-muted">Minimum 3. Ce nombre pilote combien de produits sont chargés depuis la base pour ce carrousel.</small>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-success">Enregistrer</button>
+    </form>
+
+    <script>
+        (function () {
+            const sw = document.getElementById('bestSellersEnabledSwitch');
+            const feedback = document.getElementById('bestSellersEnabledFeedback');
+            sw.addEventListener('change', function () {
+                const wasChecked = this.checked;
+                fetch(this.dataset.toggleUrl, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        this.checked = data.enabled;
+                        feedback.textContent = data.enabled ? 'Activé.' : 'Désactivé.';
+                        setTimeout(() => { feedback.textContent = ''; }, 2000);
+                    })
+                    .catch(() => { this.checked = !wasChecked; });
+            });
+        })();
+    </script>
+{% endblock %}

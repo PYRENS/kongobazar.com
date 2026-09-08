@@ -133,6 +133,9 @@ class HomeDealsSettingController extends AbstractController
         return $this->json(['results' => array_map(fn (Product $p) => [
             'id' => $p->getId(),
             'name' => $p->getTitle() . ' (' . $p->getKongobazarReference() . ')',
+            'title' => $p->getTitle(),
+            'reference' => $p->getKongobazarReference(),
+            'imageUrl' => $p->getImages()->count() > 0 ? '/media/products/' . $p->getImages()->first()->getImageName() : null,
         ], $deals)]);
     }
 }

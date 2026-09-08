@@ -73,16 +73,19 @@
                             <button type="submit" class="btn btn-sm btn-success">Enregistrer</button>
                         </div>
 
-                        <div class="trending-targeted-fields mt-2" style="display:{{ tab.mode == 'targeted' ? 'block' : 'none' }};">
-                            <label class="form-label small">Produits ciblés (catégorie "{{ tab.category.name }}")</label>
-                            <input type="text" class="form-control form-control-sm trending-targeted-search" style="max-width:320px;" placeholder="Rechercher par titre..." autocomplete="off">
+                        <div class="trending-targeted-fields mt-2">
+                            <label class="form-label small">Produits mis en avant (optionnel — le reste se complète automatiquement selon le mode choisi)</label>
+                            <input type="text" class="form-control form-control-sm trending-targeted-search" style="max-width:320px;" placeholder="Rechercher par titre ou réf. KongoBazar..." autocomplete="off">
                             <div class="list-group trending-targeted-results mt-1" style="max-width:320px;"></div>
                             <div class="d-flex flex-wrap gap-2 mt-2 trending-targeted-list">
                                 {% for product in tab.targetedProducts %}
-                                    <span class="badge bg-primary d-flex align-items-center gap-1" data-product-badge data-id="{{ product.id }}">
-                                        {{ product.title }}
+                                    <span class="product-badge-thumb" data-product-badge data-id="{{ product.id }}">
+                                        <a href="{{ path('manage_products_show', { id: product.id }) }}" target="_blank" class="product-badge-thumb-link">
+                                            <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}">
+                                            <span class="product-badge-thumb-name">{{ product.title|length > 18 ? product.title|slice(0, 18) ~ '…' : product.title }} - {{ product.kongobazarReference }}</span>
+                                        </a>
                                         <input type="hidden" name="targeted_product_ids[]" value="{{ product.id }}">
-                                        <button type="button" class="btn-close btn-close-white btn-sm" data-remove-badge></button>
+                                        <button type="button" class="product-badge-thumb-remove" data-remove-badge>×</button>
                                     </span>
                                 {% endfor %}
                             </div>
@@ -116,12 +119,6 @@
         })();
 
         document.querySelectorAll('.trending-tab-form').forEach((form) => {
-            const modeSelect = form.querySelector('.trending-mode-select');
-            const targetedFields = form.querySelector('.trending-targeted-fields');
-            modeSelect.addEventListener('change', function () {
-                targetedFields.style.display = this.value === 'targeted' ? 'block' : 'none';
-            });
-
             const searchInput = form.querySelector('.trending-targeted-search');
             const results = form.querySelector('.trending-targeted-results');
             const list = form.querySelector('.trending-targeted-list');
@@ -147,10 +144,16 @@
                                 btn.addEventListener('click', () => {
                                     selectedIds.add(String(item.id));
                                     const badge = document.createElement('span');
-                                    badge.className = 'badge bg-primary d-flex align-items-center gap-1';
+                                    badge.className = 'product-badge-thumb';
                                     badge.setAttribute('data-product-badge', '');
                                     badge.dataset.id = item.id;
-                                    badge.innerHTML = item.name + ' <input type="hidden" name="targeted_product_ids[]" value="' + item.id + '"> <button type="button" class="btn-close btn-close-white btn-sm" data-remove-badge></button>';
+                                    const shortTitle = item.title.length > 18 ? item.title.slice(0, 18) + '…' : item.title;
+                                    badge.innerHTML = '<a href="/produits/' + item.id + '" target="_blank" class="product-badge-thumb-link">'
+                                        + '<img src="' + (item.imageUrl || '') + '" alt="">'
+                                        + '<span class="product-badge-thumb-name">' + shortTitle + ' - ' + item.reference + '</span>'
+                                        + '</a>'
+                                        + '<input type="hidden" name="targeted_product_ids[]" value="' + item.id + '">'
+                                        + '<button type="button" class="product-badge-thumb-remove" data-remove-badge>×</button>';
                                     badge.querySelector('[data-remove-badge]').addEventListener('click', () => {
                                         selectedIds.delete(String(item.id));
                                         badge.remove();

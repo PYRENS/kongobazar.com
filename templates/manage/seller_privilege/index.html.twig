@@ -1,0 +1,211 @@
+{% extends 'manage/base.html.twig' %}
+{% block title %}Privilèges vendeur — Prochainement / Précommande{% endblock %}
+{% block page_icon %}bi-shield-check{% endblock %}
+{% block page_title %}Privilèges vendeur — Prochainement / Précommande{% endblock %}
+
+{% macro sortLink(field, label, currentSort, currentDir) %}
+    {% set nextDir = (currentSort == field and currentDir == 'ASC') ? 'DESC' : 'ASC' %}
+    <a href="?sort={{ field }}&dir={{ nextDir }}" class="admin-sort-link">
+        {{ label }}
+        {% if currentSort == field %}
+            <i class="bi bi-caret-{{ currentDir == 'ASC' ? 'up' : 'down' }}-fill"></i>
+        {% else %}
+            <i class="bi bi-arrow-down-up admin-sort-icon-idle"></i>
+        {% endif %}
+    </a>
+{% endmacro %}
+{% import _self as self %}
+
+{% block body %}
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-blue h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-blue"><i class="bi bi-shop"></i></div>
+                <div class="ctb-stat-val">{{ stats.total }}</div>
+                <div class="ctb-stat-label">Vendeurs au total</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-purple h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-purple"><i class="bi bi-slash-circle"></i></div>
+                <div class="ctb-stat-val">{{ stats.none }}</div>
+                <div class="ctb-stat-label">Aucun privilège</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-orange h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-orange"><i class="bi bi-hourglass-split"></i></div>
+                <div class="ctb-stat-val">{{ stats.coming_soon }}</div>
+                <div class="ctb-stat-label">Prochainement seul</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="sw-card ctb-stat ctb-stat-green h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-green"><i class="bi bi-check-circle-fill"></i></div>
+                <div class="ctb-stat-val">{{ stats.coming_soon_preorder }}</div>
+                <div class="ctb-stat-label">Prochainement + Précommande</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-percent text-primary me-2"></i>Seuil de précommande</h6></div>
+        <div class="card-body">
+            <form method="post" action="{{ path('manage_preorder_min_percent_update') }}" class="d-flex align-items-center gap-2">
+                <label class="form-label mb-0">Pourcentage minimum du prix à verser pour valider une précommande</label>
+                <input type="number" name="min_percent" class="form-control" style="max-width:120px;" min="1" max="100" value="{{ preorderSetting.minPercent }}">
+                <span>%</span>
+                <button type="submit" class="btn btn-success">Enregistrer</button>
+            </form>
+            <small class="text-muted">S'applique à tous les vendeurs autorisés à la précommande.</small>
+        </div>
+    </div>
+
+    <form method="get" id="sellerPrivFilterForm" class="d-flex align-items-center gap-2 flex-wrap">
+        <input type="text" name="q" id="sellerPrivSearchInput" class="form-control" style="max-width:240px;" placeholder="Nom ou référence..." value="{{ searchTerm }}">
+
+        <select name="privilege" id="sellerPrivPrivilegeSelect" class="form-select" style="max-width:220px;">
+            <option value="">— Tous privilèges —</option>
+            {% for value, label in privilegeLabels %}
+                <option value="{{ value }}" {{ currentPrivilege == value ? 'selected' : '' }}>{{ label }}</option>
+            {% endfor %}
+        </select>
+
+        <select name="status" id="sellerPrivStatusSelect" class="form-select" style="max-width:180px;">
+            <option value="">— Tous statuts —</option>
+            {% for s in ['pending', 'active', 'expired', 'deserteur'] %}
+                <option value="{{ s }}" {{ currentStatus == s ? 'selected' : '' }}>{{ s }}</option>
+            {% endfor %}
+        </select>
+
+        <select name="perPage" id="sellerPrivPerPageSelect" class="form-select" style="max-width:130px;">
+            {% for n in [10, 20, 50, 100] %}
+                <option value="{{ n }}" {{ perPage == n ? 'selected' : '' }}>{{ n }} / page</option>
+            {% endfor %}
+        </select>
+
+        <a href="{{ path('manage_seller_privilege_index') }}" class="btn btn-sm btn-outline-secondary">Réinitialiser</a>
+
+        <div class="w-100"></div>
+
+        <small class="text-muted">Par entité administrative :</small>
+        <div id="sellerPrivLocationPicker" style="display:flex;flex-direction:row;gap:6px;flex-wrap:wrap;"></div>
+        <input type="hidden" name="location" id="sellerPrivLocationFilterInput" value="{{ currentLocation }}">
+    </form>
+    <div class="mb-4"></div>
+
+    <div class="sw-card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table ctb-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Logo</th>
+                            <th>{{ self.sortLink('displayName', 'Vendeur', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('referenceNumber', 'Référence', currentSort, currentDir) }}</th>
+                            <th>Type</th>
+                            <th>{{ self.sortLink('avgRating', 'Notation', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('reviewCount', 'Avis', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('createdAt', 'Créé le', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('itemsSold', 'Articles vendus', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('totalSalesUsd', 'Montant vente', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('location', 'Province', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('status', 'Statut', currentSort, currentDir) }}</th>
+                            <th>Privilège</th>
+                            <th>Changer</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sellerPrivTableBody">
+                        {% include 'manage/seller_privilege/_index_rows.html.twig' %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="ctb-table-footer">
+        <span class="ctb-footer-info" id="sellerPrivFooterInfo">{{ total }} vendeur{{ total != 1 ? 's' : '' }} au total — page {{ page }} / {{ pages }}</span>
+        <div id="sellerPrivPaginationWrap">
+            {% include 'manage/seller_privilege/_index_pagination.html.twig' %}
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('sellerPrivFilterForm');
+            const tbody = document.getElementById('sellerPrivTableBody');
+            const footerInfo = document.getElementById('sellerPrivFooterInfo');
+            const paginationWrap = document.getElementById('sellerPrivPaginationWrap');
+            let currentPage = {{ page }};
+
+            function refreshList() {
+                const params = new URLSearchParams(new FormData(form));
+                params.set('page', currentPage);
+                fetch('{{ path("manage_seller_privilege_index_fragment") }}?' + params.toString())
+                    .then((r) => r.json())
+                    .then((data) => {
+                        tbody.innerHTML = data.rowsHtml;
+                        footerInfo.textContent = data.footerInfo;
+                        paginationWrap.innerHTML = data.paginationHtml;
+                    });
+            }
+
+            ['sellerPrivPrivilegeSelect', 'sellerPrivStatusSelect', 'sellerPrivPerPageSelect'].forEach((id) => {
+                document.getElementById(id).addEventListener('change', function () {
+                    currentPage = 1;
+                    refreshList();
+                });
+            });
+
+            let searchTimeout;
+            document.getElementById('sellerPrivSearchInput').addEventListener('input', function () {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    currentPage = 1;
+                    refreshList();
+                }, 400);
+            });
+
+            // Cascade géographique (entité administrative la plus petite).
+            const locationPicker = document.getElementById('sellerPrivLocationPicker');
+            const locationFilterInput = document.getElementById('sellerPrivLocationFilterInput');
+            function loadLocationLevel(parentId, isRoot) {
+                const url = isRoot ? '/geo/enfants/0' : '/geo/enfants/' + parentId;
+                fetch(url)
+                    .then((r) => r.json())
+                    .then((data) => {
+                        if (data.results.length === 0) return;
+                        const select = document.createElement('select');
+                        select.className = 'form-select';
+                        select.style.maxWidth = '220px';
+                        select.innerHTML = '<option value="">— Choisir —</option>' +
+                            data.results.map((u) => '<option value="' + u.id + '">' + u.name + ' (' + u.typeLabel + ')</option>').join('');
+                        select.addEventListener('change', function () {
+                            let next = select.nextElementSibling;
+                            while (next) {
+                                const toRemove = next;
+                                next = next.nextElementSibling;
+                                toRemove.remove();
+                            }
+                            locationFilterInput.value = this.value;
+                            if (this.value) {
+                                loadLocationLevel(this.value, false);
+                                currentPage = 1;
+                                refreshList();
+                            }
+                        });
+                        locationPicker.appendChild(select);
+                    });
+            }
+            loadLocationLevel(null, true);
+
+            paginationWrap.addEventListener('click', function (e) {
+                const link = e.target.closest('.ctb-page-btn');
+                if (!link || link.classList.contains('disabled')) return;
+                e.preventDefault();
+                currentPage = parseInt(link.dataset.page, 10);
+                refreshList();
+            });
+        });
+    </script>
+{% endblock %}

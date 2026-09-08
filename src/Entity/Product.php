@@ -72,6 +72,9 @@ class Product
     #[ORM\Column(length: 20)]
     private ?string $status = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $estimatedAvailability = null;
+
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
@@ -333,6 +336,9 @@ class Product
     {
         return $this->status;
     }
+
+    public function getEstimatedAvailability(): ?\DateTimeImmutable { return $this->estimatedAvailability; }
+    public function setEstimatedAvailability(?\DateTimeImmutable $date): static { $this->estimatedAvailability = $date; return $this; }
 
     public function setStatus(string $status): static
     {

@@ -82,10 +82,13 @@
                     <div id="targetedProductSearchResults" class="list-group mt-1" style="max-width:400px;"></div>
                     <div id="targetedProductList" class="d-flex flex-wrap gap-2 mt-2">
                         {% for product in setting.targetedProducts %}
-                            <span class="badge bg-primary d-flex align-items-center gap-1" data-product-badge data-id="{{ product.id }}">
-                                {{ product.title }}
+                            <span class="product-badge-thumb" data-product-badge data-id="{{ product.id }}">
+                                <a href="{{ path('manage_products_show', { id: product.id }) }}" target="_blank" class="product-badge-thumb-link">
+                                    <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}">
+                                    <span class="product-badge-thumb-name">{{ product.title|length > 18 ? product.title|slice(0, 18) ~ '…' : product.title }} - {{ product.kongobazarReference }}</span>
+                                </a>
                                 <input type="hidden" name="targeted_product_ids[]" value="{{ product.id }}">
-                                <button type="button" class="btn-close btn-close-white btn-sm" data-remove-badge></button>
+                                <button type="button" class="product-badge-thumb-remove" data-remove-badge>×</button>
                             </span>
                         {% endfor %}
                     </div>
@@ -227,6 +230,24 @@
                     if (selectedIds.has(String(item.id))) return;
                     selectedIds.add(String(item.id));
                     const badge = document.createElement('span');
+                    if (badgeAttr === 'data-product-badge') {
+                        badge.className = 'product-badge-thumb';
+                        badge.setAttribute(badgeAttr, '');
+                        badge.dataset.id = item.id;
+                        const shortTitle = item.title.length > 18 ? item.title.slice(0, 18) + '…' : item.title;
+                        badge.innerHTML = '<a href="/produits/' + item.id + '" target="_blank" class="product-badge-thumb-link">'
+                            + '<img src="' + (item.imageUrl || '') + '" alt="">'
+                            + '<span class="product-badge-thumb-name">' + shortTitle + ' - ' + item.reference + '</span>'
+                            + '</a>'
+                            + '<input type="hidden" name="' + inputName + '" value="' + item.id + '">'
+                            + '<button type="button" class="product-badge-thumb-remove" data-remove-badge>×</button>';
+                        badge.querySelector('[data-remove-badge]').addEventListener('click', () => {
+                            selectedIds.delete(String(item.id));
+                            badge.remove();
+                        });
+                        list.appendChild(badge);
+                        return;
+                    }
                     badge.className = 'badge ' + (badgeAttr === 'data-seller-badge' && inputName === 'excluded_seller_ids[]' ? 'bg-danger' : 'bg-primary') + ' d-flex align-items-center gap-1';
                     badge.setAttribute(badgeAttr, '');
                     badge.dataset.id = item.id;

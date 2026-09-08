@@ -16,6 +16,7 @@
         {% endif %}
 
         {# --- Meilleures ventes --- #}
+        {% if bestSellersEnabled is not defined or bestSellersEnabled %}
         {% set bestSellerGroups = bestSellers|default([])|batch(3) %}
         <div class="home-mini-carousel" id="bestSellersMiniCarousel" data-mini-carousel data-per-page="3">
             <div class="home-mini-carousel-head">
@@ -49,6 +50,7 @@
                 {% endfor %}
             </div>
         </div>
+        {% endif %}
     </div>
 
     {% if adSidebar2 is defined and adSidebar2 and adSidebar2.imageName %}
@@ -103,6 +105,7 @@
         {% endif %}
 
         {# --- Nouveaux articles --- #}
+        {% if sidebarNewArrivalsEnabled is not defined or sidebarNewArrivalsEnabled %}
         {% set newArrivalGroups = newArrivals|default([])|batch(3) %}
         <div class="home-mini-carousel" id="newArrivalsMiniCarousel" data-mini-carousel data-per-page="3">
             <div class="home-mini-carousel-head">
@@ -136,6 +139,7 @@
                 {% endfor %}
             </div>
         </div>
+        {% endif %}
     </div>
 
     {# --- Dernier article de blog --- #}

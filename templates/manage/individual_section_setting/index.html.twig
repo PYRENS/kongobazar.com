@@ -54,9 +54,12 @@
                     <label class="form-label small">Produits prioritaires (le reste se complète automatiquement)</label>
                     <div class="d-flex flex-wrap gap-2 mb-2 individual-priority-list">
                         {% for item in sc.priorityProducts %}
-                            <span class="badge bg-primary d-flex align-items-center gap-1" data-item-id="{{ item.id }}">
-                                {{ item.product.title }}
-                                <button type="button" class="btn-close btn-close-white btn-sm individual-remove-btn" style="border:none;background-color:transparent;"></button>
+                            <span class="product-badge-thumb" data-item-id="{{ item.id }}">
+                                <a href="{{ path('manage_products_show', { id: item.product.id }) }}" target="_blank" class="product-badge-thumb-link">
+                                    <img src="{{ item.product.images|length > 0 ? vich_uploader_asset(item.product.images|first, 'imageFile') : '' }}" alt="{{ item.product.title }}">
+                                    <span class="product-badge-thumb-name">{{ item.product.title|length > 18 ? item.product.title|slice(0, 18) ~ '…' : item.product.title }} - {{ item.product.kongobazarReference }}</span>
+                                </a>
+                                <button type="button" class="product-badge-thumb-remove individual-remove-btn">×</button>
                             </span>
                         {% endfor %}
                     </div>
@@ -207,9 +210,14 @@
                         if (!data.ok) { alert(data.error || 'Erreur.'); return; }
                         const list = form.closest('.border-bottom').querySelector('.individual-priority-list');
                         const badge = document.createElement('span');
-                        badge.className = 'badge bg-primary d-flex align-items-center gap-1';
+                        badge.className = 'product-badge-thumb';
                         badge.dataset.itemId = data.itemId;
-                        badge.innerHTML = data.productTitle + ' <button type="button" class="btn-close btn-close-white btn-sm individual-remove-btn" style="border:none;background-color:transparent;"></button>';
+                        const shortTitle = data.productTitle.length > 18 ? data.productTitle.slice(0, 18) + '…' : data.productTitle;
+                        badge.innerHTML = '<a href="/produits/' + data.productId + '" target="_blank" class="product-badge-thumb-link">'
+                            + '<img src="' + (data.imageUrl || '') + '" alt="">'
+                            + '<span class="product-badge-thumb-name">' + shortTitle + ' - ' + data.reference + '</span>'
+                            + '</a>'
+                            + '<button type="button" class="product-badge-thumb-remove individual-remove-btn">×</button>';
                         wireRemoveBtn(badge.querySelector('.individual-remove-btn'));
                         list.appendChild(badge);
                         searchInput.value = '';

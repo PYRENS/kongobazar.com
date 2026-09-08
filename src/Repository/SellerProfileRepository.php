@@ -14,6 +14,87 @@ class SellerProfileRepository extends ServiceEntityRepository
         parent::__construct($registry, SellerProfile::class);
     }
 
+    /**
+     * Liste "Privilèges vendeur" — boutiques & pros uniquement, avec agrégats
+     * (avis, ventes) calculés en sous-requêtes pour permettre le tri SQL dessus.
+     * Retourne un tableau de lignes mixtes : ['seller' => SellerProfile, 'avgRating' => float, 'reviewCount' => int, 'itemsSold' => int, 'totalSalesUsd' => float].
+     */
+    private function buildPrivilegeListQuery(
+        ?string $term,
+        ?string $privilege,
+        ?string $status,
+        ?array $locationIds,
+    ) {
+        $qb = $this->createQueryBuilder('s')
+            ->select('s')
+            ->addSelect('(SELECT COALESCE(AVG(r.rating), 0) FROM App\Entity\Review r WHERE r.target = s.user AND r.direction = \'buyer_to_seller\') AS avgRating')
+            ->addSelect('(SELECT COUNT(r2.id) FROM App\Entity\Review r2 WHERE r2.target = s.user AND r2.direction = \'buyer_to_seller\') AS reviewCount')
+            ->addSelect('(SELECT COALESCE(SUM(oi.quantity), 0) FROM App\Entity\OrderItem oi JOIN oi.order o WHERE o.sellerProfile = s AND o.status = \'delivered\') AS itemsSold')
+            ->addSelect('(SELECT COALESCE(SUM(o2.totalAmountUsd), 0) FROM App\Entity\Order o2 WHERE o2.sellerProfile = s AND o2.status = \'delivered\') AS totalSalesUsd')
+            ->andWhere('s INSTANCE OF App\Entity\StoreProfile OR s INSTANCE OF App\Entity\ProProfile');
+
+        if ($term) {
+            $qb->andWhere('s.displayName LIKE :term OR s.referenceNumber LIKE :term')->setParameter('term', '%' . $term . '%');
+        }
+        if ($privilege) {
+            $qb->andWhere('s.comingSoonPrivilege = :privilege')->setParameter('privilege', $privilege);
+        }
+        if ($status) {
+            $qb->andWhere('s.status = :status')->setParameter('status', $status);
+        }
+        if ($locationIds) {
+            $qb->andWhere('s.location IN (:locationIds)')->setParameter('locationIds', $locationIds);
+        }
+
+        return $qb;
+    }
+
+    public function countPrivilegeList(?string $term, ?string $privilege, ?string $status, ?array $locationIds): int
+    {
+        return count($this->buildPrivilegeListQuery($term, $privilege, $status, $locationIds)->getQuery()->getResult());
+    }
+
+    public function findPrivilegeList(
+        ?string $term,
+        ?string $privilege,
+        ?string $status,
+        ?array $locationIds,
+        string $sort,
+        string $dir,
+        int $page,
+        int $perPage,
+    ): array {
+        $qb = $this->buildPrivilegeListQuery($term, $privilege, $status, $locationIds);
+
+        $sortMap = [
+            'displayName' => 's.displayName',
+            'referenceNumber' => 's.referenceNumber',
+            'status' => 's.status',
+            'createdAt' => 's.createdAt',
+            'location' => 's.location',
+            'avgRating' => 'avgRating',
+            'reviewCount' => 'reviewCount',
+            'itemsSold' => 'itemsSold',
+            'totalSalesUsd' => 'totalSalesUsd',
+        ];
+        $orderBy = $sortMap[$sort] ?? 's.displayName';
+        $dir = strtoupper($dir) === 'DESC' ? 'DESC' : 'ASC';
+
+        $qb->orderBy($orderBy, $dir)
+            ->setFirstResult(($page - 1) * $perPage)
+            ->setMaxResults($perPage);
+
+        $rows = $qb->getQuery()->getResult();
+
+        return array_map(fn ($row) => [
+            'seller' => $row[0],
+            'avgRating' => round((float) $row['avgRating'], 1),
+            'reviewCount' => (int) $row['reviewCount'],
+            'itemsSold' => (int) $row['itemsSold'],
+            'totalSalesUsd' => round((float) $row['totalSalesUsd'], 2),
+        ], $rows);
+    }
+
     public function searchByName(string $term, int $limit = 15): array
     {
         return $this->createQueryBuilder('s')

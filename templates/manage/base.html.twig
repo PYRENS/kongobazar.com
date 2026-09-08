@@ -221,8 +221,17 @@
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_most_viewed' ? 'active' : '' }}">
                             <a href="{{ path('manage_most_viewed_setting') }}"><i class="bi bi-eye"></i> <span class="hide-menu">Plus consultés accueil</span></a>
                         </li>
+                        <li class="{{ app.request.attributes.get('_route') starts with 'manage_best_sellers' ? 'active' : '' }}">
+                            <a href="{{ path('manage_best_sellers_setting') }}"><i class="bi bi-graph-up-arrow"></i> <span class="hide-menu">Meilleures ventes accueil</span></a>
+                        </li>
+                        <li class="{{ app.request.attributes.get('_route') starts with 'manage_sidebar_new_arrivals' ? 'active' : '' }}">
+                            <a href="{{ path('manage_sidebar_new_arrivals_setting') }}"><i class="bi bi-stars"></i> <span class="hide-menu">Nouveaux articles (col. gauche)</span></a>
+                        </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_coming_soon' ? 'active' : '' }}">
                             <a href="{{ path('manage_coming_soon_setting') }}"><i class="bi bi-hourglass-split"></i> <span class="hide-menu">Prochainement accueil</span></a>
+                        </li>
+                        <li class="{{ app.request.attributes.get('_route') starts with 'manage_seller_privilege' or app.request.attributes.get('_route') starts with 'manage_preorder' ? 'active' : '' }}">
+                            <a href="{{ path('manage_seller_privilege_index') }}"><i class="bi bi-shield-check"></i> <span class="hide-menu">Privilèges vendeur</span></a>
                         </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_individual_section' ? 'active' : '' }}">
                             <a href="{{ path('manage_individual_section_setting') }}"><i class="bi bi-person"></i> <span class="hide-menu">Particulier accueil</span></a>

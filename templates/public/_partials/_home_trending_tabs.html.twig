@@ -28,9 +28,27 @@
 
     <div class="home-trending-panels">
         {% for category in trendingTabCategories|default([]) %}
-            <div class="trending-panel{{ loop.first ? ' active' : '' }}" id="trending-panel-{{ category.id }}">
+            {% set perPage = trendingTabProductCounts[category.slug] ?? 8 %}
+            {% set productPages = (trendingProductsByCategory[category.slug] ?? [])|batch(perPage) %}
+            <div class="trending-panel{{ loop.first ? ' active' : '' }}" id="trending-panel-{{ category.id }}" data-desktop-per-page="{{ perPage }}">
+                <div class="trending-panel-toolbar">
+                    <div class="trending-page-dots">
+                        {% for page in productPages %}
+                            <button type="button" class="trending-page-dot{{ loop.first ? ' active' : '' }}" data-page="{{ loop.index0 }}"></button>
+                        {% endfor %}
+                    </div>
+                    <div class="trending-panel-actions">
+                        {% if productPages|length > 1 %}
+                            <button type="button" class="trending-page-arrow trending-page-arrow--prev" disabled><i class="bi bi-chevron-left"></i></button>
+                            <button type="button" class="trending-page-arrow trending-page-arrow--next"{{ productPages|length <= 1 ? ' disabled' : '' }}><i class="bi bi-chevron-right"></i></button>
+                        {% endif %}
+                        <a href="{{ path('catalog_category', { slug: category.slug }) }}" class="see-all-link">{{ 'home.see_all'|trans }}</a>
+                    </div>
+                </div>
+                {% for page in productPages %}
+                <div class="trending-product-page{{ loop.first ? ' active' : '' }}" data-page="{{ loop.index0 }}">
                 <div class="home-product-grid">
-                    {% for product in (trendingProductsByCategory[category.slug] ?? []) %}
+                    {% for product in page %}
                         <div class="product-card">
                             <div class="product-card-media">
                                 <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}"
@@ -50,6 +68,10 @@
                                     <span class="badge-discount">
                                         -{{ ((1 - (product.basePrice / product.compareAtPrice)) * 100)|round }}%
                                     </span>
+                                {% endif %}
+
+                                {% if product.brand and product.brand.logoName %}
+                                    <img src="{{ vich_uploader_asset(product.brand, 'logoFile') }}" alt="{{ product.brand.name }}" class="product-card-brand-logo">
                                 {% endif %}
 
                                 {# Actions au survol, à gauche #}
@@ -91,6 +113,8 @@
                         </div>
                     {% endfor %}
                 </div>
+                </div>
+                {% endfor %}
             </div>
         {% endfor %}
     </div>

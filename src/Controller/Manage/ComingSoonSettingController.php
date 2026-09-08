@@ -108,6 +108,24 @@ class ComingSoonSettingController extends AbstractController
         return $this->redirectToRoute('manage_coming_soon_setting');
     }
 
+    #[Route('/parametres/prochainement-accueil/onglet/{id}/nombre-produits', name: 'manage_coming_soon_update_product_count', host: 'manage.kongobazar.com', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function updateProductCount(ComingSoonTab $tab, Request $request, EntityManagerInterface $em): RedirectResponse
+    {
+        $tab->setProductCount((int) $request->request->get('product_count', 9));
+        $em->flush();
+
+        return $this->redirectToRoute('manage_coming_soon_setting');
+    }
+
+    #[Route('/parametres/prochainement-accueil/onglet/{id}/mode', name: 'manage_coming_soon_update_mode', host: 'manage.kongobazar.com', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function updateMode(ComingSoonTab $tab, Request $request, EntityManagerInterface $em): RedirectResponse
+    {
+        $tab->setMode((string) $request->request->get('mode', 'auto'));
+        $em->flush();
+
+        return $this->redirectToRoute('manage_coming_soon_setting');
+    }
+
     #[Route('/parametres/prochainement-accueil/onglet/{id}/produit/ajouter', name: 'manage_coming_soon_add_product', host: 'manage.kongobazar.com', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function addProduct(ComingSoonTab $tab, Request $request, ComingSoonTabProductRepository $tabProductRepository, EntityManagerInterface $em): Response
     {
@@ -133,7 +151,14 @@ class ComingSoonSettingController extends AbstractController
         $em->persist($item);
         $em->flush();
 
-        return $this->json(['ok' => true, 'itemId' => $item->getId(), 'productTitle' => $product->getTitle()]);
+        return $this->json([
+            'ok' => true,
+            'itemId' => $item->getId(),
+            'productId' => $product->getId(),
+            'productTitle' => $product->getTitle(),
+            'reference' => $product->getKongobazarReference(),
+            'imageUrl' => $product->getImages()->count() > 0 ? '/media/products/' . $product->getImages()->first()->getImageName() : null,
+        ]);
     }
 
     #[Route('/parametres/prochainement-accueil/produit/{id}/supprimer', name: 'manage_coming_soon_remove_product', host: 'manage.kongobazar.com', methods: ['POST'], requirements: ['id' => '\d+'])]
@@ -145,25 +170,37 @@ class ComingSoonSettingController extends AbstractController
         return $this->json(['ok' => true]);
     }
 
-    /** Recherche de produits par nom, strictement isolée au statut "futur" (jamais draft/suspended/active). */
-    #[Route('/parametres/prochainement-accueil/rechercher-produits', name: 'manage_coming_soon_search_products', host: 'manage.kongobazar.com', methods: ['GET'])]
-    public function searchProducts(Request $request, ProductRepository $productRepository): Response
+    /** Recherche de produits par nom, strictement isolée au statut "futur" (jamais draft/suspended/active), et limitée à la catégorie de l'onglet + ses sous-catégories. */
+    #[Route('/parametres/prochainement-accueil/onglet/{id}/rechercher-produits', name: 'manage_coming_soon_search_products', host: 'manage.kongobazar.com', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function searchProducts(ComingSoonTab $tab, Request $request, ProductRepository $productRepository): Response
     {
-        $term = trim((string) $request->query->get('q', ''));
+        $term = mb_strtolower(trim((string) $request->query->get('q', '')));
+        $categoryIds = [$tab->getCategory()->getId()];
+        foreach ($tab->getCategory()->getDescendantCategories() as $descendant) {
+            $categoryIds[] = $descendant->getId();
+        }
 
         $qb = $productRepository->createQueryBuilder('p')
             ->andWhere('p.status = :status')->setParameter('status', 'futur')
-            ->setMaxResults(20);
-
-        if ($term) {
-            $qb->andWhere('p.title LIKE :term')->setParameter('term', '%' . $term . '%');
-        }
+            ->andWhere('p.category IN (:categoryIds)')->setParameter('categoryIds', $categoryIds);
 
         $results = $qb->getQuery()->getResult();
+
+        if ($term) {
+            $results = array_filter($results, fn (Product $p) =>
+                str_contains(mb_strtolower($p->getTitle()), $term)
+                || str_contains(mb_strtolower((string) $p->getKongobazarReference()), $term)
+            );
+        }
+
+        $results = array_slice($results, 0, 20);
 
         return $this->json(['results' => array_map(fn (Product $p) => [
             'id' => $p->getId(),
             'name' => $p->getTitle(),
+            'title' => $p->getTitle(),
+            'reference' => $p->getKongobazarReference(),
+            'imageUrl' => $p->getImages()->count() > 0 ? '/media/products/' . $p->getImages()->first()->getImageName() : null,
         ], $results)]);
     }
 

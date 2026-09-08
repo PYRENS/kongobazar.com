@@ -27,6 +27,13 @@ class ComingSoonTab
     #[ORM\Column]
     private int $position = 0;
 
+    #[ORM\Column(options: ['default' => 9])]
+    private int $productCount = 9;
+
+    /** 'auto' (complète avec d'autres produits "futur" de la catégorie) | 'targeted' (uniquement ceux choisis). */
+    #[ORM\Column(length: 20, options: ['default' => 'auto'])]
+    private string $mode = 'auto';
+
     /** Produits (statut "futur") choisis un par un pour cet onglet. */
     #[ORM\OneToMany(mappedBy: 'tab', targetEntity: ComingSoonTabProduct::class, orphanRemoval: true)]
     #[ORM\OrderBy(['position' => 'ASC'])]
@@ -44,6 +51,12 @@ class ComingSoonTab
 
     public function getPosition(): int { return $this->position; }
     public function setPosition(int $position): static { $this->position = $position; return $this; }
+
+    public function getProductCount(): int { return $this->productCount; }
+    public function setProductCount(int $productCount): static { $this->productCount = max(1, $productCount); return $this; }
+
+    public function getMode(): string { return $this->mode; }
+    public function setMode(string $mode): static { $this->mode = 'targeted' === $mode ? 'targeted' : 'auto'; return $this; }
 
     /** @return Collection<int, ComingSoonTabProduct> */
     public function getProducts(): Collection { return $this->products; }

@@ -34,7 +34,7 @@ class ProductAvailabilityListener
         $oldStatus = $event->getOldValue('status');
         $newStatus = $event->getNewValue('status');
 
-        if ($oldStatus === 'coming_soon' && $newStatus === 'active') {
+        if (($oldStatus === 'coming_soon' || $oldStatus === 'futur') && $newStatus === 'active') {
             // On ne fait QUE repérer le produit ici — aucune écriture en base pour l'instant
             $this->productsJustBecameAvailable[] = $product;
         }

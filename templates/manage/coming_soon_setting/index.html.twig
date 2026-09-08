@@ -54,15 +54,32 @@
                         </form>
                     </div>
 
+                    <div class="d-flex align-items-center gap-3 mb-2 flex-wrap">
+                        <form method="post" action="{{ path('manage_coming_soon_update_product_count', {id: tab.id}) }}" class="d-flex align-items-center gap-2">
+                            <label class="form-label small mb-0">Produits par page</label>
+                            <input type="number" name="product_count" class="form-control form-control-sm" style="max-width:100px;" min="1" value="{{ tab.productCount }}">
+                            <button type="submit" class="btn btn-sm btn-success">Enregistrer</button>
+                        </form>
+                        <form method="post" action="{{ path('manage_coming_soon_update_mode', {id: tab.id}) }}" class="d-flex align-items-center gap-2">
+                            <label class="form-label small mb-0">Mode</label>
+                            <select name="mode" class="form-select form-select-sm" style="max-width:200px;" onchange="this.form.submit()">
+                                <option value="auto" {{ tab.mode == 'auto' ? 'selected' : '' }}>Auto (complète automatiquement)</option>
+                                <option value="targeted" {{ tab.mode == 'targeted' ? 'selected' : '' }}>Ciblé (uniquement ceux choisis)</option>
+                            </select>
+                        </form>
+                    </div>
+
                     <div class="d-flex flex-wrap gap-2 mb-2 coming-soon-product-list">
                         {% for item in tab.products %}
-                            <span class="badge bg-primary d-flex align-items-center gap-1" data-item-id="{{ item.id }}">
-                                {{ item.product.title }}
-                                <button type="button" class="btn-close btn-close-white btn-sm coming-soon-remove-btn" style="border:none;background-color:transparent;"></button>
+                            <span class="product-badge-thumb" data-item-id="{{ item.id }}">
+                                <a href="{{ path('manage_products_show', { id: item.product.id }) }}" target="_blank" class="product-badge-thumb-link">
+                                    <img src="{{ item.product.images|length > 0 ? vich_uploader_asset(item.product.images|first, 'imageFile') : '' }}" alt="{{ item.product.title }}">
+                                    <span class="product-badge-thumb-name">{{ item.product.title|length > 18 ? item.product.title|slice(0, 18) ~ '…' : item.product.title }} - {{ item.product.kongobazarReference }}</span>
+                                </a>
+                                <button type="button" class="product-badge-thumb-remove coming-soon-remove-btn">×</button>
                             </span>
                         {% endfor %}
                     </div>
-
                     <form method="post" action="{{ path('manage_coming_soon_add_product', {id: tab.id}) }}" class="coming-soon-add-form">
                         <label class="form-label small">Ajouter un produit "Futur" à cet onglet</label>
                         <input type="text" class="form-control form-control-sm coming-soon-search" style="max-width:320px;" placeholder="Rechercher un produit au statut Futur..." autocomplete="off">
@@ -169,7 +186,7 @@
                 const term = this.value.trim();
                 if (term.length < 1) { results.innerHTML = ''; return; }
                 timeout = setTimeout(() => {
-                    fetch('{{ path("manage_coming_soon_search_products") }}?q=' + encodeURIComponent(term))
+                    fetch(form.action.replace('/produit/ajouter', '/rechercher-produits') + '?q=' + encodeURIComponent(term))
                         .then((r) => r.json())
                         .then((data) => {
                             results.innerHTML = '';
@@ -199,9 +216,14 @@
                         if (!data.ok) { alert(data.error || 'Erreur.'); return; }
                         const list = form.closest('.border-bottom').querySelector('.coming-soon-product-list');
                         const badge = document.createElement('span');
-                        badge.className = 'badge bg-primary d-flex align-items-center gap-1';
+                        badge.className = 'product-badge-thumb';
                         badge.dataset.itemId = data.itemId;
-                        badge.innerHTML = data.productTitle + ' <button type="button" class="btn-close btn-close-white btn-sm coming-soon-remove-btn" style="border:none;background-color:transparent;"></button>';
+                        const shortTitle = data.productTitle.length > 18 ? data.productTitle.slice(0, 18) + '…' : data.productTitle;
+                        badge.innerHTML = '<a href="/produits/' + data.productId + '" target="_blank" class="product-badge-thumb-link">'
+                            + '<img src="' + (data.imageUrl || '') + '" alt="">'
+                            + '<span class="product-badge-thumb-name">' + shortTitle + ' - ' + data.reference + '</span>'
+                            + '</a>'
+                            + '<button type="button" class="product-badge-thumb-remove coming-soon-remove-btn">×</button>';
                         wireRemoveBtn(badge.querySelector('.coming-soon-remove-btn'));
                         list.appendChild(badge);
                         searchInput.value = '';

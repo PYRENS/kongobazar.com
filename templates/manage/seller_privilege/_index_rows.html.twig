@@ -1,0 +1,53 @@
+{% for row in rows %}
+    {% set seller = row.seller %}
+    <tr>
+        <td>
+            {% if seller.logoName %}
+                <img src="{{ vich_uploader_asset(seller, 'logoFile') }}" alt="" style="width:40px;height:40px;object-fit:cover;border-radius:50%;">
+            {% else %}
+                <span class="text-muted">—</span>
+            {% endif %}
+        </td>
+        <td>
+            <a href="{{ path('partner_show', { slug: seller.slug }) }}" target="_blank">{{ seller.displayName }}</a>
+        </td>
+        <td>{{ seller.referenceNumber }}</td>
+        <td>{{ seller.typeLabel }}</td>
+        <td>
+            {% if row.avgRating > 0 %}
+                <i class="bi bi-star-fill text-warning"></i> {{ row.avgRating }}
+            {% else %}
+                <span class="text-muted">—</span>
+            {% endif %}
+        </td>
+        <td>{{ row.reviewCount }}</td>
+        <td>{{ seller.createdAt ? seller.createdAt|date('d/m/Y') : '—' }}</td>
+        <td>{{ row.itemsSold }}</td>
+        <td>{{ row.totalSalesUsd|number_format(2, '.', ' ') }} $</td>
+        <td>{{ seller.location ? seller.location.name : '—' }}</td>
+        <td>
+            <span class="badge bg-{{ seller.status == 'active' ? 'success' : (seller.status == 'pending' ? 'warning' : 'secondary') }}">{{ seller.status }}</span>
+        </td>
+        <td>
+            {% if seller.comingSoonPrivilege == 'coming_soon_preorder' %}
+                <span class="badge bg-success">{{ privilegeLabels['coming_soon_preorder'] }}</span>
+            {% elseif seller.comingSoonPrivilege == 'coming_soon' %}
+                <span class="badge bg-info text-dark">{{ privilegeLabels['coming_soon'] }}</span>
+            {% else %}
+                <span class="badge bg-secondary">{{ privilegeLabels['none'] }}</span>
+            {% endif %}
+        </td>
+        <td>
+            <form method="post" action="{{ path('manage_seller_privilege_update', { id: seller.id }) }}" class="d-flex gap-1">
+                <select name="privilege" class="form-select form-select-sm" style="max-width:200px;">
+                    <option value="none" {{ seller.comingSoonPrivilege == 'none' ? 'selected' : '' }}>Aucun</option>
+                    <option value="coming_soon" {{ seller.comingSoonPrivilege == 'coming_soon' ? 'selected' : '' }}>Prochainement seul</option>
+                    <option value="coming_soon_preorder" {{ seller.comingSoonPrivilege == 'coming_soon_preorder' ? 'selected' : '' }}>Prochainement + Précommande</option>
+                </select>
+                <button type="submit" class="btn btn-sm btn-success">Appliquer</button>
+            </form>
+        </td>
+    </tr>
+{% else %}
+    <tr><td colspan="12" class="text-center text-muted py-4">Aucun vendeur trouvé.</td></tr>
+{% endfor %}

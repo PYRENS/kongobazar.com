@@ -68,13 +68,18 @@
 
                     <div class="new-items-targeted-fields" style="display:{{ tab.mode == 'targeted' ? 'block' : 'none' }};">
                         <p class="text-muted small mb-2">Choisis 7 produits. Coche celui qui devient la grande carte (un seul à la fois) — rien coché = tiré au hasard parmi les 7.</p>
-                        <div class="d-flex flex-column gap-2 mb-2 new-items-targeted-list">
+                        <div class="d-flex flex-wrap gap-2 mb-2 new-items-targeted-list">
                             {% for item in tab.targetedProducts %}
                                 <div class="d-flex align-items-center gap-2 p-2" style="background:var(--body-bg,#f5f5f5);border-radius:4px;" data-item-id="{{ item.id }}">
                                     <div class="form-check mb-0">
                                         <input type="checkbox" class="form-check-input new-items-bigcard-checkbox" {{ item.isBigCard ? 'checked' : '' }}>
                                     </div>
-                                    <span class="flex-grow-1">{{ item.product.title }}</span>
+                                    <span class="product-badge-thumb" style="width:auto;padding-top:0;">
+                                        <a href="{{ path('manage_products_show', { id: item.product.id }) }}" target="_blank" class="product-badge-thumb-link">
+                                            <img src="{{ item.product.images|length > 0 ? vich_uploader_asset(item.product.images|first, 'imageFile') : '' }}" alt="{{ item.product.title }}">
+                                            <span class="product-badge-thumb-name">{{ item.product.title|length > 18 ? item.product.title|slice(0, 18) ~ '…' : item.product.title }} - {{ item.product.kongobazarReference }}</span>
+                                        </a>
+                                    </span>
                                     <button type="button" class="btn btn-sm btn-outline-danger new-items-remove-product-btn">Retirer</button>
                                 </div>
                             {% endfor %}
@@ -295,8 +300,13 @@
                         row.style.background = 'var(--body-bg,#f5f5f5)';
                         row.style.borderRadius = '4px';
                         row.dataset.itemId = data.itemId;
+                        const shortTitle = data.productTitle.length > 18 ? data.productTitle.slice(0, 18) + '…' : data.productTitle;
                         row.innerHTML = '<div class="form-check mb-0"><input type="checkbox" class="form-check-input new-items-bigcard-checkbox"></div>' +
-                            '<span class="flex-grow-1">' + data.productTitle + '</span>' +
+                            '<span class="product-badge-thumb" style="width:auto;padding-top:0;">' +
+                            '<a href="/produits/' + data.productId + '" target="_blank" class="product-badge-thumb-link">' +
+                            '<img src="' + (data.imageUrl || '') + '" alt="">' +
+                            '<span class="product-badge-thumb-name">' + shortTitle + ' - ' + data.reference + '</span>' +
+                            '</a></span>' +
                             '<button type="button" class="btn btn-sm btn-outline-danger new-items-remove-product-btn">Retirer</button>';
                         list.appendChild(row);
                         wireProductRow(row);

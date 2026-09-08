@@ -9,7 +9,15 @@ document.addEventListener('DOMContentLoaded', () => {
     initMiniCarouselMobileScroll('bestSellersMiniCarousel');
     initMiniCarouselMobileScroll('newArrivalsMiniCarousel');
     initDealsCarousel();
+    shortenDealCurrencyOnSmallScreens();
     initTrendingTabs();
+    initTrendingPagination();
+
+    let trendingResizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(trendingResizeTimeout);
+        trendingResizeTimeout = setTimeout(initTrendingPagination, 200);
+    });
     initNewItemsTabs();
     initComingSoonTabs();
     initIndividualSectionTabs();
@@ -24,9 +32,18 @@ document.addEventListener('DOMContentLoaded', () => {
    Mécanisme dédié, séparé de initMiniCarousels() qui reste page-par-page
    pour les autres carrousels de la page.
    -------------------------------------------------------------------------- */
+function shortenDealCurrencyOnSmallScreens() {
+    if (window.innerWidth > 496) return;
+    document.querySelectorAll('.home-deal-price .price-now, .home-deal-price .price-old').forEach((el) => {
+        if (el.dataset.currencyShortened === '1') return;
+        el.textContent = el.textContent.replace(/\s*USD\b/, ' $');
+        el.dataset.currencyShortened = '1';
+    });
+}
+
 function initDealsCarousel() {
     const AUTOPLAY_DELAY = 4000;
-    const GAP = 20;
+    const GAP = window.innerWidth <= 496 ? 10 : 20;
 
     document.querySelectorAll('[data-deals-carousel]').forEach((carousel) => {
         const viewport = carousel.querySelector('.home-deals-viewport');
@@ -44,7 +61,7 @@ function initDealsCarousel() {
         let timer = null;
 
         function layout() {
-            itemsPerView = Math.min(cards.length, viewport.offsetWidth < 500 ? 1 : 2);
+            itemsPerView = Math.min(cards.length, 2);
             cardWidth = (viewport.offsetWidth - GAP * (itemsPerView - 1)) / itemsPerView;
             cards.forEach((card) => {
                 card.style.width = cardWidth + 'px';
@@ -82,6 +99,40 @@ function initDealsCarousel() {
         carousel.addEventListener('mouseenter', () => clearInterval(timer));
         carousel.addEventListener('mouseleave', startAutoplay);
 
+        // --- Glissement tactile (mobile) ---
+        let touchStartX = 0;
+        let touchDeltaX = 0;
+        let isDragging = false;
+        const SWIPE_THRESHOLD = 40;
+
+        viewport.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            touchStartX = e.touches[0].clientX;
+            touchDeltaX = 0;
+            clearInterval(timer);
+            track.style.transition = 'none';
+        }, { passive: true });
+
+        viewport.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            touchDeltaX = e.touches[0].clientX - touchStartX;
+            const basePosition = -currentIndex * (cardWidth + GAP);
+            track.style.marginLeft = `${basePosition + touchDeltaX}px`;
+        }, { passive: true });
+
+        viewport.addEventListener('touchend', () => {
+            if (!isDragging) return;
+            isDragging = false;
+            if (touchDeltaX <= -SWIPE_THRESHOLD) {
+                next();
+            } else if (touchDeltaX >= SWIPE_THRESHOLD) {
+                prev();
+            } else {
+                applyPosition(true);
+            }
+            startAutoplay();
+        });
+
         let resizeTimeout;
         window.addEventListener('resize', () => {
             clearTimeout(resizeTimeout);
@@ -106,7 +157,7 @@ function initDealsCarousel() {
    -------------------------------------------------------------------------- */
 function regroupMiniCarouselForMobileGrid(carouselId) {
     const carousel = document.getElementById(carouselId);
-    if (!carousel || window.innerWidth > 575) return;
+    if (!carousel || window.innerWidth > 991) return;
     if (carousel.dataset.mobileGridDone === '1') return;
 
     const track = carousel.querySelector('.home-mini-carousel-track');
@@ -270,6 +321,146 @@ function initTrendingTabs() {
             if (target) target.classList.add('active');
         });
     });
+}
+
+/* --------------------------------------------------------------------------
+   Pagination interne de chaque panneau "Articles tendances" — flèches +
+   pastilles pour naviguer entre les pages de produits d'un même onglet.
+   -------------------------------------------------------------------------- */
+/* --------------------------------------------------------------------------
+   Pagination "Articles tendances" — une seule fonction, cohérente à toutes
+   les résolutions. La liste complète des cartes est mise en cache au premier
+   passage (panel._trendingAllCards), puis les pages sont reconstruites à
+   chaque appel selon la taille de groupe qui correspond à la largeur actuelle
+   — y compris en repassant d'une résolution à une autre dans la même session.
+   -------------------------------------------------------------------------- */
+function getTrendingGroupSize(panel) {
+    if (window.innerWidth <= 414) return 4;
+    if (window.innerWidth <= 796) return 9;
+    return parseInt(panel.dataset.desktopPerPage || '8', 10);
+}
+
+function initTrendingPanel(panel) {
+    if (!panel._trendingAllCards) {
+        panel._trendingAllCards = Array.from(panel.querySelectorAll('.product-card'));
+        // Les cartes sont récupérées, mais les coquilles de pages générées par le
+        // serveur (avant la création de la piste glissante par ce script) restent
+        // vides dans le DOM une fois leurs cartes déplacées — on les retire ici.
+        panel.querySelectorAll('.trending-product-page').forEach((p) => p.remove());
+    }
+    const allCards = panel._trendingAllCards;
+    if (allCards.length === 0) return;
+
+    const groupSize = getTrendingGroupSize(panel);
+    if (panel.dataset.currentGroupSize === String(groupSize)) return;
+    panel.dataset.currentGroupSize = String(groupSize);
+
+    const groups = [];
+    for (let i = 0; i < allCards.length; i += groupSize) {
+        groups.push(allCards.slice(i, i + groupSize));
+    }
+
+    // Piste glissante : on la crée une fois, on la réutilise ensuite.
+    let track = panel.querySelector('.trending-pages-track');
+    if (!track) {
+        track = document.createElement('div');
+        track.className = 'trending-pages-track';
+        const toolbar = panel.querySelector('.trending-panel-toolbar');
+        if (toolbar && toolbar.nextSibling) {
+            panel.insertBefore(track, toolbar.nextSibling);
+        } else {
+            panel.appendChild(track);
+        }
+    }
+    track.innerHTML = '';
+    groups.forEach((group) => {
+        const pageDiv = document.createElement('div');
+        pageDiv.className = 'trending-product-page';
+        const grid = document.createElement('div');
+        grid.className = 'home-product-grid';
+        group.forEach((card) => grid.appendChild(card));
+        pageDiv.appendChild(grid);
+        track.appendChild(pageDiv);
+    });
+
+    const dotsWrap = panel.querySelector('.trending-page-dots');
+    if (dotsWrap) {
+        dotsWrap.innerHTML = '';
+        groups.forEach((_, i) => {
+            const dot = document.createElement('button');
+            dot.type = 'button';
+            dot.className = 'trending-page-dot' + (i === 0 ? ' active' : '');
+            dot.dataset.page = String(i);
+            dotsWrap.appendChild(dot);
+        });
+    }
+
+    let prevBtn = panel.querySelector('.trending-page-arrow--prev');
+    let nextBtn = panel.querySelector('.trending-page-arrow--next');
+    const actions = panel.querySelector('.trending-panel-actions');
+    const seeAllLink = panel.querySelector('.see-all-link');
+    if (actions && !prevBtn) {
+        prevBtn = document.createElement('button');
+        prevBtn.type = 'button';
+        prevBtn.className = 'trending-page-arrow trending-page-arrow--prev';
+        prevBtn.innerHTML = '<i class="bi bi-chevron-left"></i>';
+        actions.insertBefore(prevBtn, seeAllLink || actions.firstChild);
+    }
+    if (actions && !nextBtn) {
+        nextBtn = document.createElement('button');
+        nextBtn.type = 'button';
+        nextBtn.className = 'trending-page-arrow trending-page-arrow--next';
+        nextBtn.innerHTML = '<i class="bi bi-chevron-right"></i>';
+        actions.insertBefore(nextBtn, seeAllLink || null);
+    }
+
+    const hasMultiple = groups.length > 1;
+    if (prevBtn) prevBtn.style.display = hasMultiple ? '' : 'none';
+    if (nextBtn) nextBtn.style.display = hasMultiple ? '' : 'none';
+
+    let current = 0;
+    const dots = panel.querySelectorAll('.trending-page-dot');
+    const pageEls = Array.from(track.querySelectorAll('.trending-product-page'));
+    let programmaticScroll = false;
+
+    function setActiveState(index) {
+        current = index;
+        dots.forEach((d, i) => d.classList.toggle('active', i === current));
+        if (prevBtn) prevBtn.disabled = current === 0;
+        if (nextBtn) nextBtn.disabled = current === groups.length - 1;
+    }
+
+    function goTo(index) {
+        programmaticScroll = true;
+        track.scrollTo({ left: pageEls[index].offsetLeft, behavior: 'smooth' });
+        setActiveState(index);
+        window.setTimeout(() => { programmaticScroll = false; }, 500);
+    }
+
+    if (prevBtn) prevBtn.onclick = () => { if (current > 0) goTo(current - 1); };
+    if (nextBtn) nextBtn.onclick = () => { if (current < groups.length - 1) goTo(current + 1); };
+    dots.forEach((dot, i) => { dot.onclick = () => goTo(i); });
+
+    let scrollSyncTimer = null;
+    track.onscroll = () => {
+        if (programmaticScroll) return;
+        clearTimeout(scrollSyncTimer);
+        scrollSyncTimer = setTimeout(() => {
+            let closest = 0;
+            let closestDist = Infinity;
+            pageEls.forEach((p, i) => {
+                const d = Math.abs(p.offsetLeft - track.scrollLeft);
+                if (d < closestDist) { closestDist = d; closest = i; }
+            });
+            if (closest !== current) setActiveState(closest);
+        }, 120);
+    };
+
+    setActiveState(0);
+}
+
+function initTrendingPagination() {
+    document.querySelectorAll('.trending-panel').forEach((panel) => initTrendingPanel(panel));
 }
 /* --------------------------------------------------------------------------
    Onglets "Nouveauté" — même principe que "Articles tendances" (tout préchargé,

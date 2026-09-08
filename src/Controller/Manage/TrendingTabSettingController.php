@@ -20,7 +20,6 @@ class TrendingTabSettingController extends AbstractController
         'recent' => 'Plus récents',
         'best_sellers' => 'Meilleures ventes',
         'random' => 'Aléatoire',
-        'targeted' => 'Ciblé produit',
     ];
 
     #[Route('/parametres/articles-tendances-accueil', name: 'manage_home_trending_tabs_setting', host: 'manage.kongobazar.com', methods: ['GET'])]
@@ -124,27 +123,42 @@ class TrendingTabSettingController extends AbstractController
     }
 
     #[Route('/parametres/articles-tendances-accueil/rechercher-produits', name: 'manage_home_trending_tabs_search_products', host: 'manage.kongobazar.com', methods: ['GET'])]
-    public function searchProducts(Request $request, \App\Repository\ProductRepository $productRepository): Response
+    public function searchProducts(Request $request, EntityManagerInterface $em, \App\Repository\ProductRepository $productRepository): Response
     {
-        $term = trim((string) $request->query->get('q', ''));
+        $term = mb_strtolower(trim((string) $request->query->get('q', '')));
         $categoryId = $request->query->get('category_id') ? (int) $request->query->get('category_id') : null;
 
         $qb = $productRepository->createQueryBuilder('p')
-            ->andWhere('p.status = :status')->setParameter('status', 'active')
-            ->setMaxResults(20);
+            ->andWhere('p.status = :status')->setParameter('status', 'active');
+
+        if ($categoryId) {
+            $category = $em->getRepository(\App\Entity\Category::class)->find($categoryId);
+            if ($category) {
+                $categoryIds = [$category->getId()];
+                foreach ($category->getDescendantCategories() as $descendant) {
+                    $categoryIds[] = $descendant->getId();
+                }
+                $qb->andWhere('p.category IN (:categoryIds)')->setParameter('categoryIds', $categoryIds);
+            }
+        }
+
+        $products = $qb->getQuery()->getResult();
 
         if ($term) {
-            $qb->andWhere('p.title LIKE :term')->setParameter('term', '%' . $term . '%');
-        }
-        if ($categoryId) {
-            $qb->andWhere('p.category = :categoryId')->setParameter('categoryId', $categoryId);
+            $products = array_filter($products, fn (Product $p) =>
+                str_contains(mb_strtolower($p->getTitle()), $term)
+                || str_contains(mb_strtolower((string) $p->getKongobazarReference()), $term)
+            );
         }
 
-        $results = $qb->getQuery()->getResult();
+        $products = array_slice($products, 0, 20);
 
         return $this->json(['results' => array_map(fn (Product $p) => [
             'id' => $p->getId(),
             'name' => $p->getTitle() . ' (' . $p->getKongobazarReference() . ')',
-        ], $results)]);
+            'title' => $p->getTitle(),
+            'reference' => $p->getKongobazarReference(),
+            'imageUrl' => $p->getImages()->count() > 0 ? '/media/products/' . $p->getImages()->first()->getImageName() : null,
+        ], $products)]);
     }
 }

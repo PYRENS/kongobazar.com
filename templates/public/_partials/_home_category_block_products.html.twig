@@ -16,10 +16,13 @@
                     <button type="button" class="card-action" data-quick-view="{{ product.id }}"><i class="bi bi-search"></i></button>
                     <button type="button" class="card-action" data-add-to-wishlist="{{ product.id }}"><i class="bi bi-heart"></i></button>
                 </div>
+                {% if product.brand and product.brand.logoName %}
+                    <img src="{{ vich_uploader_asset(product.brand, 'logoFile') }}" alt="{{ product.brand.name }}" class="product-card-brand-logo">
+                {% endif %}
+                <div class="product-card-rating product-card-rating--overlay">★★★★☆</div>
             </div>
             <div class="product-card-body">
                 <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="product-card-title">{{ product.title }}</a>
-                <div class="product-card-rating">★★★★☆</div>
                 <div class="product-card-price">
                     <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
                     {% if product.displayOldPrice %}

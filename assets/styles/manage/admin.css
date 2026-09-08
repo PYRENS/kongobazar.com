@@ -1039,3 +1039,57 @@ body.admin-body {
 /* --- Cascade picker (choix d'une catégorie niveau par niveau) — réutilisé sur plusieurs écrans admin --- */
 .cascade-picker { display: flex; flex-direction: column; }
 .cascade-picker .btn { white-space: nowrap; flex-shrink: 0; }
+
+/* Badge produit avec miniature — recherche autocomplétée (Articles tendances, Ventes flash) */
+.product-badge-thumb {
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    width: 72px;
+    padding-top: 6px;
+}
+.product-badge-thumb-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
+}
+.product-badge-thumb-link:hover .product-badge-thumb-name {
+    text-decoration: underline;
+}
+.product-badge-thumb img {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid var(--kb-border, #dee2e6);
+    background: #f7f7f7;
+}
+.product-badge-thumb .product-badge-thumb-name {
+    font-size: 10px;
+    text-align: center;
+    line-height: 1.2;
+    margin-top: 4px;
+    max-width: 72px;
+    word-break: break-word;
+}
+.product-badge-thumb-remove {
+    position: absolute;
+    top: 0;
+    right: 4px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #dc3545;
+    color: #fff;
+    border: none;
+    font-size: 11px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+}

@@ -1,7 +1,7 @@
 {# ==========================================================================
-   "Particulier" — catégories par cascade + "Voir tout" toujours en dernier.
-   Chaque catégorie affiche ses produits prioritaires + un complément automatique
-   (derniers produits actifs de vendeurs "Particulier").
+   "Particulier" — une catégorie par onglet, sans onglet "Voir tout" agrégé.
+   Réutilise exactement le même système de grille/pagination/glissement que
+   les 3 autres sections (Articles tendances, Nouveauté, Prochainement).
    ========================================================================== #}
 {% if individualSectionEnabled and individualAllProducts|default([])|length > 0 %}
 <section class="home-individual-section">
@@ -12,40 +12,82 @@
             {% for sc in individualCategories %}
                 <button type="button" class="trending-tab{{ loop.first ? ' active' : '' }}" data-tab-target="individual-panel-{{ sc.id }}">{{ sc.category.name }}</button>
             {% endfor %}
-            <button type="button" class="trending-tab{{ individualCategories|length == 0 ? ' active' : '' }}" data-tab-target="individual-panel-all">{{ 'menu.voir_tout'|trans }}</button>
         </div>
     </div>
+
+    {% macro renderPanel(id, isActive, products, perPage, seeAllUrl) %}
+        {% set productPages = products|batch(perPage) %}
+        <div class="individual-panel trending-panel{{ isActive ? ' active' : '' }}" id="{{ id }}" data-desktop-per-page="{{ perPage }}">
+            {% if products|length > 0 %}
+                <div class="trending-panel-toolbar">
+                    <div class="trending-page-dots">
+                        {% for page in productPages %}
+                            <button type="button" class="trending-page-dot{{ loop.first ? ' active' : '' }}" data-page="{{ loop.index0 }}"></button>
+                        {% endfor %}
+                    </div>
+                    <div class="trending-panel-actions">
+                        {% if productPages|length > 1 %}
+                            <button type="button" class="trending-page-arrow trending-page-arrow--prev" disabled><i class="bi bi-chevron-left"></i></button>
+                            <button type="button" class="trending-page-arrow trending-page-arrow--next"{{ productPages|length <= 1 ? ' disabled' : '' }}><i class="bi bi-chevron-right"></i></button>
+                        {% endif %}
+                        <a href="{{ seeAllUrl }}" class="see-all-link">{{ 'home.see_all'|trans }}</a>
+                    </div>
+                </div>
+                {% for page in productPages %}
+                <div class="trending-product-page">
+                <div class="home-product-grid">
+                    {% for product in page %}
+                        <div class="product-card">
+                            <div class="product-card-media">
+                                <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}"
+                                     alt="{{ product.title }}"
+                                     class="product-card-main-image"
+                                     data-main-image
+                                     loading="lazy">
+                                {% if product.activeDiscountPercent %}
+                                    <span class="badge-discount">-{{ product.activeDiscountPercent }}%</span>
+                                {% elseif product.compareAtPrice %}
+                                    <span class="badge-discount">
+                                        -{{ ((1 - (product.basePrice / product.compareAtPrice)) * 100)|round }}%
+                                    </span>
+                                {% endif %}
+                                {% if product.brand and product.brand.logoName %}
+                                    <img src="{{ vich_uploader_asset(product.brand, 'logoFile') }}" alt="{{ product.brand.name }}" class="product-card-brand-logo">
+                                {% endif %}
+                                <div class="product-card-actions-left">
+                                    <button type="button" class="card-action" data-add-to-cart="{{ product.id }}" aria-label="{{ 'product.add_to_cart'|trans }}">
+                                        <i class="bi bi-cart3"></i>
+                                    </button>
+                                    <button type="button" class="card-action" data-quick-view="{{ product.id }}" aria-label="{{ 'product.quick_view'|trans }}">
+                                        <i class="bi bi-search"></i>
+                                    </button>
+                                    <button type="button" class="card-action" data-add-to-wishlist="{{ product.id }}" aria-label="{{ 'product.add_to_wishlist'|trans }}">
+                                        <i class="bi bi-heart"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="product-card-body">
+                                <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="product-card-title">{{ product.title }}</a>
+                                <div class="product-card-price">
+                                    <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+                                    {% if product.displayOldPrice %}
+                                        <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">Aucun produit pour cette catégorie.</p>
+            {% endif %}
+        </div>
+    {% endmacro %}
 
     {% for sc in individualCategories %}
-        <div class="individual-panel{{ loop.first ? ' active' : '' }}" id="individual-panel-{{ sc.id }}">
-            <div class="coming-soon-grid">
-                {% for product in individualProductsByCategory[sc.id] %}
-                    <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="coming-soon-card">
-                        <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
-                        <div class="coming-soon-card-info">
-                            <p class="coming-soon-card-title">{{ product.title }}</p>
-                            <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
-                        </div>
-                    </a>
-                {% else %}
-                    <p class="text-muted">Aucun produit pour cette catégorie.</p>
-                {% endfor %}
-            </div>
-        </div>
+        {{ _self.renderPanel('individual-panel-' ~ sc.id, loop.first, individualProductsByCategory[sc.id], individualTabProductCounts[sc.id] ?? 8, path('catalog_category', { slug: sc.category.slug })) }}
     {% endfor %}
-
-    <div class="individual-panel{{ individualCategories|length == 0 ? ' active' : '' }}" id="individual-panel-all">
-        <div class="coming-soon-grid">
-            {% for product in individualAllProducts %}
-                <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="coming-soon-card">
-                    <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
-                    <div class="coming-soon-card-info">
-                        <p class="coming-soon-card-title">{{ product.title }}</p>
-                        <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
-                    </div>
-                </a>
-            {% endfor %}
-        </div>
-    </div>
 </section>
 {% endif %}

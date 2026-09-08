@@ -167,7 +167,11 @@ class ProductManagementController extends AbstractController
         }
 
         $product = new Product();
-        $this->hydrateCommon($product, $request, $em);
+        $commonError = $this->hydrateCommon($product, $request, $em);
+        if ($commonError) {
+            $this->addFlash('error', $commonError);
+            return $this->redirectToRoute('manage_products_new');
+        }
         $em->persist($product);
         $em->flush();
 
@@ -227,7 +231,11 @@ class ProductManagementController extends AbstractController
             return $this->redirectToRoute('manage_products_edit', ['id' => $product->getId()]);
         }
 
-        $this->hydrateCommon($product, $request, $em);
+        $commonError = $this->hydrateCommon($product, $request, $em);
+        if ($commonError) {
+            $this->addFlash('error', $commonError);
+            return $this->redirectToRoute('manage_products_edit', ['id' => $product->getId()]);
+        }
         $this->hydrateModeSpecific($product, $resolver->resolve($product->getCategory()), $request, $em);
         $this->hydrateAttributes($product, $request, $em);
         $imageError = $this->hydrateImages($product, $request, $em);
@@ -258,7 +266,8 @@ class ProductManagementController extends AbstractController
         return (bool) $request->request->get('seller_profile_id') && (bool) $request->request->get('category_id');
     }
 
-    private function hydrateCommon(Product $product, Request $request, EntityManagerInterface $em): void
+    /** @return string|null Message d'erreur si la précommande est mal renseignée, sinon null. */
+    private function hydrateCommon(Product $product, Request $request, EntityManagerInterface $em): ?string
     {
         $title = (string) $request->request->get('title');
         $product->setTitle($title);
@@ -287,12 +296,36 @@ class ProductManagementController extends AbstractController
 
         $quantity = $request->request->get('quantity');
         $product->setQuantity('' !== (string) $quantity ? max(0, (int) $quantity) : 1);
-        $product->setStatus($request->request->get('status') ?: 'draft');
+        $newStatus = $request->request->get('status') ?: 'draft';
+        $product->setStatus($newStatus);
+
+        // La précommande n'a de sens que pour le statut "futur", et seulement si le
+        // vendeur a le privilège adéquat — on ignore silencieusement sinon (défense en
+        // profondeur : même si le champ était forcé côté client, il ne serait pas pris en compte).
+        $seller = $product->getSellerProfile();
+        if ('futur' === $newStatus && $seller && $seller->canUsePreorder()) {
+            $product->setPreorderEnabled((bool) $request->request->get('preorder_enabled'));
+            $estimatedAvailability = $request->request->get('estimated_availability');
+            if ($estimatedAvailability) {
+                $date = new \DateTimeImmutable($estimatedAvailability);
+                if ($date <= new \DateTimeImmutable('today')) {
+                    return 'La disponibilité estimée doit être une date future.';
+                }
+                $product->setEstimatedAvailability($date);
+            } else {
+                $product->setEstimatedAvailability(null);
+            }
+        } else {
+            $product->setPreorderEnabled(false);
+            $product->setEstimatedAvailability(null);
+        }
 
         if (null === $product->getSlug()) {
             $slugger = new AsciiSlugger();
             $product->setSlug(strtolower((string) $slugger->slug($title)) . '-' . uniqid());
         }
+
+        return null;
     }
 
     private function hydrateModeSpecific(Product $product, array $resolved, Request $request, EntityManagerInterface $em): void
