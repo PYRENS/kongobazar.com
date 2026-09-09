@@ -20,6 +20,7 @@ class TopVendorSettingController extends AbstractController
     public const MODES = [
         'auto' => 'Affichage automatique (meilleurs vendeurs)',
         'targeted' => 'Affichage ciblé',
+        'mixed' => 'Mixte (vendeurs choisis + complété automatiquement)',
     ];
 
     #[Route('/parametres/top-vendeur-accueil', name: 'manage_top_vendor_setting', host: 'manage.kongobazar.com', methods: ['GET'])]

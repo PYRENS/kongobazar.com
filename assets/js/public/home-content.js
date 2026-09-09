@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initDealsCarousel();
     shortenDealCurrencyOnSmallScreens();
     initTrendingTabs();
+    regroupTopVendorsForMobile();
+    window.addEventListener('resize', regroupTopVendorsForMobile);
     initTrendingPagination();
 
     let trendingResizeTimeout;
@@ -457,6 +459,45 @@ function initTrendingPanel(panel) {
     };
 
     setActiveState(0);
+}
+
+/* --------------------------------------------------------------------------
+   "Top vendeur" — regroupe les cartes par 4 (2×2) et active le glissement,
+   uniquement ≤414px. Au-dessus, la grille reste statique telle quelle.
+   -------------------------------------------------------------------------- */
+function regroupTopVendorsForMobile() {
+    const grid = document.querySelector('.home-vendors-grid');
+    if (!grid) return;
+
+    const shouldBeMobile = window.innerWidth <= 414;
+    const isMobile = grid.dataset.mobileRegrouped === '1';
+
+    if (shouldBeMobile === isMobile) return;
+
+    if (shouldBeMobile) {
+        const cards = Array.from(grid.querySelectorAll('.vendor-card'));
+        if (cards.length === 0) return;
+        grid.dataset.originalHtml = grid.innerHTML;
+
+        const GROUP_SIZE = 4;
+        const groups = [];
+        for (let i = 0; i < cards.length; i += GROUP_SIZE) {
+            groups.push(cards.slice(i, i + GROUP_SIZE));
+        }
+
+        grid.innerHTML = '';
+        groups.forEach((group) => {
+            const page = document.createElement('div');
+            page.className = 'vendors-page';
+            group.forEach((card) => page.appendChild(card));
+            grid.appendChild(page);
+        });
+
+        grid.dataset.mobileRegrouped = '1';
+    } else if (grid.dataset.originalHtml) {
+        grid.innerHTML = grid.dataset.originalHtml;
+        grid.dataset.mobileRegrouped = '0';
+    }
 }
 
 function initTrendingPagination() {

@@ -120,7 +120,7 @@ class SellerProfileRepository extends ServiceEntityRepository
     }
 
     /** Meilleurs vendeurs par ventes cumulées de leurs produits, avec exclusions de type optionnelles. */
-    public function findAutoTopVendors(int $limit, bool $excludePro = false, bool $excludeBoutique = false): array
+    public function findAutoTopVendors(int $limit, bool $excludePro = false, bool $excludeBoutique = false, array $excludeIds = []): array
     {
         $rows = $this->getEntityManager()->createQueryBuilder()
             ->select('IDENTITY(p.sellerProfile) AS sellerId', 'SUM(p.salesCount) AS totalSales')
@@ -153,6 +153,9 @@ class SellerProfileRepository extends ServiceEntityRepository
 
         $result = [];
         foreach ($sellerIds as $id) {
+            if (in_array($id, $excludeIds, true)) {
+                continue;
+            }
             $seller = $byId[$id] ?? null;
             if (!$seller) {
                 continue;

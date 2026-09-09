@@ -37,7 +37,7 @@
                     {% endfor %}
                 </div>
 
-                <div id="modeAutoFields" class="mt-3 p-3" style="background:var(--body-bg,#f5f5f5);border-radius:6px;display:{{ setting.displayMode == 'auto' ? 'block' : 'none' }};">
+                <div id="modeAutoFields" class="mt-3 p-3" style="background:var(--body-bg,#f5f5f5);border-radius:6px;display:{{ setting.displayMode in ['auto', 'mixed'] ? 'block' : 'none' }};">
                     <p class="text-muted small mb-2">Classement par ventes cumulées des produits actifs.</p>
                     <div class="d-flex gap-4">
                         <div class="form-check">
@@ -56,7 +56,7 @@
         <button type="submit" class="btn btn-success">Enregistrer</button>
     </form>
 
-    <div id="modeTargetedSection" class="sw-card mt-3" style="display:{{ setting.displayMode == 'targeted' ? 'block' : 'none' }};">
+    <div id="modeTargetedSection" class="sw-card mt-3" style="display:{{ setting.displayMode in ['targeted', 'mixed'] ? 'block' : 'none' }};">
         <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-people text-primary me-2"></i>Vendeurs ciblés</h6></div>
         <div class="card-body">
             <form method="post" action="{{ path('manage_top_vendor_add_seller') }}" class="mb-3">
@@ -118,8 +118,8 @@
         const modeTargetedSection = document.getElementById('modeTargetedSection');
         document.querySelectorAll('[name="display_mode"]').forEach((radio) => {
             radio.addEventListener('change', function () {
-                modeAutoFields.style.display = this.value === 'auto' ? 'block' : 'none';
-                modeTargetedSection.style.display = this.value === 'targeted' ? 'block' : 'none';
+                modeAutoFields.style.display = (this.value === 'auto' || this.value === 'mixed') ? 'block' : 'none';
+                modeTargetedSection.style.display = (this.value === 'targeted' || this.value === 'mixed') ? 'block' : 'none';
             });
         });
 

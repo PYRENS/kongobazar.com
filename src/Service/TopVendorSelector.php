@@ -23,9 +23,11 @@ class TopVendorSelector
     /** @return array<int, array{seller: SellerProfile, averageRating: float, salesCount: int, topProducts: array}> */
     public function select(TopVendorSetting $settings): array
     {
-        $sellers = 'targeted' === $settings->getDisplayMode()
-            ? $this->selectTargeted($settings)
-            : $this->sellerProfileRepository->findAutoTopVendors($settings->getDisplayCount(), $settings->isExcludePro(), $settings->isExcludeBoutique());
+        $sellers = match ($settings->getDisplayMode()) {
+            'targeted' => $this->selectTargeted($settings),
+            'mixed' => $this->selectMixed($settings),
+            default => $this->sellerProfileRepository->findAutoTopVendors($settings->getDisplayCount(), $settings->isExcludePro(), $settings->isExcludeBoutique()),
+        };
 
         return array_map(fn (SellerProfile $seller) => [
             'seller' => $seller,
@@ -42,6 +44,27 @@ class TopVendorSelector
         $sellers = array_map(fn ($item) => $item->getSeller(), $items);
 
         return array_slice($sellers, 0, $settings->getDisplayCount());
+    }
+
+    /** Vendeurs choisis par l'admin en tête, puis complétés automatiquement selon les ventes. */
+    private function selectMixed(TopVendorSetting $settings): array
+    {
+        $pinned = $this->selectTargeted($settings);
+        $remaining = $settings->getDisplayCount() - count($pinned);
+
+        if ($remaining <= 0) {
+            return $pinned;
+        }
+
+        $pinnedIds = array_map(fn (SellerProfile $s) => $s->getId(), $pinned);
+        $filler = $this->sellerProfileRepository->findAutoTopVendors(
+            $remaining,
+            $settings->isExcludePro(),
+            $settings->isExcludeBoutique(),
+            $pinnedIds
+        );
+
+        return array_merge($pinned, $filler);
     }
 
     /** Priorité : produits "Vedette" choisis par le vendeur lui-même, puis complété par ses meilleures ventes. */

@@ -17,7 +17,7 @@
                     <li><a href="#" class="category-block-subcat-link{{ loop.first ? ' active' : '' }}" data-subcategory-id="{{ item.category.id }}">{{ item.category.name }}</a></li>
                 {% endfor %}
                 <li>
-                    <a href="#" class="category-block-subcat-link category-block-view-all{{ subcategories|default([])|length == 0 ? ' active' : '' }}" data-subcategory-id="{{ category.id }}">{{ 'home.see_all'|trans }}</a>
+                    <a href="{{ path('catalog_category', { slug: category.slug }) }}" class="category-block-view-all">{{ 'home.see_all'|trans }}</a>
                 </li>
             </ul>
         </aside>
