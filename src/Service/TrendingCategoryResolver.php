@@ -17,11 +17,16 @@ class TrendingCategoryResolver
     public function __construct(
         private readonly CategoryRepository $categoryRepository,
         private readonly CategoryViewLogRepository $categoryViewLogRepository,
+        private readonly \App\Repository\TrendingBarSettingRepository $trendingBarSettingRepository,
     ) {
     }
 
     public function resolve(int $limit = 8): array
     {
+        if (!$this->trendingBarSettingRepository->getSingleton()->isEnabled()) {
+            return [];
+        }
+
         $pinnedCategories = $this->categoryRepository->findPinnedTrending();
 
         $results = array_map(

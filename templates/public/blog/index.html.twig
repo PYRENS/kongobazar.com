@@ -1,0 +1,41 @@
+{% extends 'public/base.html.twig' %}
+{% block title %}Blog — KongoBazar{% endblock %}
+{% block body %}
+<link rel="stylesheet" href="{{ asset('styles/public/blog.css') }}">
+<div class="container-kb" style="padding-top:24px;padding-bottom:40px;">
+    <h1 class="mb-4">Blog</h1>
+
+    <form method="get" class="mb-4">
+        <input type="text" name="q" class="form-control" style="max-width:320px;" placeholder="Rechercher un article..." value="{{ searchTerm }}">
+    </form>
+
+    <div class="row g-4">
+        {% for post in posts %}
+            <div class="col-md-4">
+                <a href="{{ path('blog_show', { slug: post.slug }) }}" class="text-decoration-none text-reset">
+                    {% if post.coverImageName %}
+                        <img src="{{ vich_uploader_asset(post, 'coverImageFile') }}" alt="{{ post.title }}" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px;">
+                    {% endif %}
+                    <h5 class="mt-2">{{ post.title }}</h5>
+                    {% if post.excerpt %}<p class="text-muted">{{ post.excerpt|slice(0, 120) }}...</p>{% endif %}
+                    <small class="text-muted">{{ post.publishedAt ? post.publishedAt|date('d M Y') : '' }}</small>
+                </a>
+            </div>
+        {% else %}
+            <p class="text-muted">Aucun article pour l'instant.</p>
+        {% endfor %}
+    </div>
+
+    {% if pages > 1 %}
+        <nav class="mt-4">
+            <ul class="pagination">
+                {% for p in 1..pages %}
+                    <li class="page-item {{ p == page ? 'active' : '' }}">
+                        <a class="page-link" href="?page={{ p }}&q={{ searchTerm }}">{{ p }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </nav>
+    {% endif %}
+</div>
+{% endblock %}

@@ -6,6 +6,16 @@
     {% include 'public/_partials/_hero.html.twig' %}
     {% include 'public/_partials/_home_how_it_works.html.twig' %}
 
+    {% if promoStripBanners|default([])|length > 0 %}
+        <div class="home-promo-strip" data-desktop-count="{{ promoStripDisplayCount }}">
+            {% for banner in promoStripBanners %}
+                <a {% if banner.targetUrl %}href="{{ banner.targetUrl }}"{% endif %}{% if banner.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="home-promo-strip-item{{ loop.index > promoStripDisplayCount ? ' home-promo-strip-item--overflow' : '' }}">
+                    <img src="{{ vich_uploader_asset(banner, 'imageFile') }}" alt="{{ banner.title }}" loading="lazy">
+                </a>
+            {% endfor %}
+        </div>
+    {% endif %}
+
     <div class="home-layout">
         {% include 'public/_partials/_home_left_column.html.twig' %}
 
@@ -33,12 +43,14 @@
                 {% endfor %}
             {% endif %}
 
-            {% include 'public/_partials/_home_top_categories_vendors.html.twig' %}
-            {% include 'public/_partials/_home_most_viewed.html.twig' %}
-            {% include 'public/_partials/_home_sponsor_brands.html.twig' %}
-            {% include 'public/_partials/_home_partners.html.twig' %}
-            {% include 'public/_partials/_home_popular_tags.html.twig' %}
-            {% include 'public/_partials/_home_trust_badges.html.twig' %}
         </div>
+    </div>
+
+    <div class="home-full-width-bottom">
+        {% include 'public/_partials/_home_top_categories_vendors.html.twig' %}
+        {% include 'public/_partials/_home_most_viewed.html.twig' %}
+        {% include 'public/_partials/_home_latest_blogs.html.twig' %}
+        {% include 'public/_partials/_home_sponsor_brands.html.twig' %}
+        {% include 'public/_partials/_home_partners.html.twig' %}
     </div>
 {% endblock %}

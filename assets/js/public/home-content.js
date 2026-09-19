@@ -26,6 +26,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initCategoryBlockSortTabs();
     initGalleryThumbSwap();
     initCountdowns();
+    initHotDealCard();
+    initLatestBlogsCarousel();
+    fillSidebarWithBanners();
     // initAddToCartButtons() retiré : géré désormais globalement (toutes pages) par cart-added-modal.js
 });
 /* --------------------------------------------------------------------------
@@ -591,6 +594,147 @@ function initGalleryThumbSwap() {
    Comptes à rebours "Deals of the week" — le serveur fait foi (data-countdown-end
    est un horodatage ISO fourni par le contrôleur, jamais recalculé côté client).
    -------------------------------------------------------------------------- */
+function initHotDealCard() {
+    const card = document.querySelector('.hot-deal-card');
+    if (!card) return;
+
+    const track = card.querySelector('.hot-deal-slides');
+    const prevBtn = card.querySelector('.hot-deal-arrow--prev');
+    const nextBtn = card.querySelector('.hot-deal-arrow--next');
+    if (!track.dataset.originalHtml) {
+        track.dataset.originalHtml = track.innerHTML;
+    }
+
+    let current = 0;
+
+    function regroup() {
+        const shouldPage = window.innerWidth <= 991;
+        const isPaged = track.dataset.paged === '1';
+        if (shouldPage === isPaged) return;
+
+        if (shouldPage) {
+            const originalSlides = Array.from(track.children);
+            if (originalSlides.length <= 1) return;
+
+            const GROUP_SIZE = 2;
+            const pages = [];
+            for (let i = 0; i < originalSlides.length; i += GROUP_SIZE) {
+                pages.push(originalSlides.slice(i, i + GROUP_SIZE));
+            }
+
+            track.innerHTML = '';
+            pages.forEach((group) => {
+                const page = document.createElement('div');
+                page.className = 'hot-deal-slide hot-deal-page';
+                group.forEach((slide) => {
+                    slide.classList.add('hot-deal-slide-inner');
+                    slide.classList.remove('hot-deal-slide');
+                    page.appendChild(slide);
+                });
+                track.appendChild(page);
+            });
+            track.dataset.paged = '1';
+        } else {
+            track.innerHTML = track.dataset.originalHtml;
+            track.dataset.paged = '0';
+        }
+        current = 0;
+        track.style.transform = '';
+        track.scrollLeft = 0;
+    }
+
+    function goTo(index) {
+        const slides = Array.from(track.children);
+        if (slides.length <= 1) return;
+        current = (index + slides.length) % slides.length;
+        track.scrollTo({ left: slides[current].offsetLeft, behavior: 'smooth' });
+    }
+
+    regroup();
+    window.addEventListener('resize', regroup);
+
+    if (prevBtn) prevBtn.addEventListener('click', (e) => { e.preventDefault(); goTo(current - 1); });
+    if (nextBtn) nextBtn.addEventListener('click', (e) => { e.preventDefault(); goTo(current + 1); });
+}
+
+/**
+ * Choisit la meilleure combinaison de bannières "bouche-trou" (parmi celles
+ * disponibles, déjà présentes dans le DOM mais masquées) pour approcher au
+ * plus près l'écart de hauteur avec la colonne centrale, SANS le dépasser —
+ * plutôt que de les révéler au hasard jusqu'à déborder sur la dernière.
+ * Algorithme "meilleur ajustement décroissant" : mesure d'abord la hauteur
+ * réelle de chaque bannière (largeur fixe 270px, donc hauteur = ratio de
+ * l'image), les trie de la plus grande à la plus petite, puis ajoute chaque
+ * bannière si — et seulement si — elle tient encore dans l'espace restant.
+ */
+function fillSidebarWithBanners() {
+    const container = document.getElementById('homeSidebarFiller');
+    if (!container) return;
+
+    const leftCol = document.querySelector('.home-left-col');
+    const centerCol = document.querySelector('.home-center-col');
+    if (!leftCol || !centerCol) return;
+
+    const GAP = 12; // doit correspondre à .home-sidebar-filler { gap: 12px; }
+    const items = Array.from(container.querySelectorAll('.home-sidebar-filler-item'));
+    if (items.length === 0) return;
+
+    function measureHeight(item) {
+        return new Promise((resolve) => {
+            const img = item.querySelector('img');
+            const compute = () => {
+                const ratio = img.naturalHeight / img.naturalWidth;
+                resolve({ item, height: (isFinite(ratio) && ratio > 0) ? 270 * ratio : 0 });
+            };
+            if (img.complete && img.naturalWidth > 0) {
+                compute();
+            } else {
+                img.addEventListener('load', compute, { once: true });
+                img.addEventListener('error', () => resolve({ item, height: 0 }), { once: true });
+                // Filet de sécurité : si ni "load" ni "error" ne se déclenchent (cas
+                // imprévu), on n'attend jamais indéfiniment plus de 4 secondes.
+                window.setTimeout(() => resolve({ item, height: 0 }), 4000);
+            }
+        });
+    }
+
+    // On laisse le layout se stabiliser avant de mesurer l'écart cible.
+    window.setTimeout(() => {
+        Promise.all(items.map(measureHeight)).then((measured) => {
+            const targetGap = centerCol.getBoundingClientRect().height - leftCol.getBoundingClientRect().height;
+            if (targetGap <= 0) return;
+
+            measured.sort((a, b) => b.height - a.height);
+
+            let used = 0;
+            measured.forEach(({ item, height }) => {
+                const cost = used === 0 ? height : height + GAP;
+                if (used + cost <= targetGap) {
+                    item.hidden = false;
+                    used += cost;
+                }
+            });
+        });
+    }, 300);
+}
+
+function initLatestBlogsCarousel() {
+    const track = document.querySelector('[data-blog-track]');
+    if (!track) return;
+    const prevBtn = document.querySelector('[data-blog-prev]');
+    const nextBtn = document.querySelector('[data-blog-next]');
+    const cards = Array.from(track.children);
+    if (cards.length === 0) return;
+
+    const scrollByOne = (dir) => {
+        const cardWidth = cards[0].getBoundingClientRect().width + 20;
+        track.scrollBy({ left: dir * cardWidth, behavior: 'smooth' });
+    };
+
+    if (prevBtn) prevBtn.addEventListener('click', () => scrollByOne(-1));
+    if (nextBtn) nextBtn.addEventListener('click', () => scrollByOne(1));
+}
+
 function initCountdowns() {
     const countdowns = document.querySelectorAll('[data-countdown-end]');
     if (countdowns.length === 0) return;

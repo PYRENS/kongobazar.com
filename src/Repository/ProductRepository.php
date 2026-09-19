@@ -514,6 +514,103 @@ class ProductRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /**
+     * Page "Solde" — requête de base commune (produits actifs avec une réduction
+     * active en cours), avec filtres optionnels catégorie/marque/prix.
+     */
+    private function buildSaleQuery(?int $categoryId, ?int $brandId, ?float $minPrice, ?float $maxPrice)
+    {
+        $now = new \DateTimeImmutable();
+        $qb = $this->createQueryBuilder('p')
+            ->join('p.discountCampaigns', 'd')
+            ->andWhere('p.status = :pstatus')
+            ->andWhere('d.status = :dstatus')
+            ->andWhere('d.startAt <= :now')
+            ->andWhere('d.endAt > :now')
+            ->setParameter('pstatus', 'active')
+            ->setParameter('dstatus', 'active')
+            ->setParameter('now', $now);
+
+        if ($categoryId) {
+            $qb->andWhere('p.category = :categoryId')->setParameter('categoryId', $categoryId);
+        }
+        if ($brandId) {
+            $qb->andWhere('p.brand = :brandId')->setParameter('brandId', $brandId);
+        }
+        if (null !== $minPrice) {
+            $qb->andWhere('d.discountedPrice >= :minPrice')->setParameter('minPrice', $minPrice);
+        }
+        if (null !== $maxPrice) {
+            $qb->andWhere('d.discountedPrice <= :maxPrice')->setParameter('maxPrice', $maxPrice);
+        }
+
+        return $qb;
+    }
+
+    public function countSaleProducts(?int $categoryId, ?int $brandId, ?float $minPrice, ?float $maxPrice): int
+    {
+        return count($this->buildSaleQuery($categoryId, $brandId, $minPrice, $maxPrice)->getQuery()->getResult());
+    }
+
+    /** @return Product[] */
+    public function findSaleProductsBatch(?int $categoryId, ?int $brandId, ?float $minPrice, ?float $maxPrice, int $limit, int $offset): array
+    {
+        return $this->buildSaleQuery($categoryId, $brandId, $minPrice, $maxPrice)
+            ->orderBy('d.startAt', 'DESC')
+            ->setFirstResult($offset)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Calcule les options de filtre RÉELLEMENT disponibles parmi les produits soldés
+     * actuellement actifs — chaque catégorie/marque proposée a garanti au moins 1
+     * produit correspondant, jamais un filtre qui mènerait à 0 résultat.
+     * @return array{categories: array<int, array{id:int,name:string,count:int}>, brands: array<int, array{id:int,name:string,count:int}>, minPrice: float, maxPrice: float, maxDiscountPercent: int}
+     */
+    public function getSaleFilterOptions(): array
+    {
+        $products = $this->findAllActiveDeals();
+
+        $categories = [];
+        $brands = [];
+        $minPrice = null;
+        $maxPrice = null;
+        $maxDiscountPercent = 0;
+
+        foreach ($products as $product) {
+            $category = $product->getCategory();
+            if ($category) {
+                $categories[$category->getId()] ??= ['id' => $category->getId(), 'name' => $category->getName(), 'count' => 0];
+                $categories[$category->getId()]['count']++;
+            }
+
+            $brand = $product->getBrand();
+            if ($brand) {
+                $brands[$brand->getId()] ??= ['id' => $brand->getId(), 'name' => $brand->getName(), 'count' => 0];
+                $brands[$brand->getId()]['count']++;
+            }
+
+            $price = (float) $product->getCurrentDiscountedPrice();
+            $minPrice = null === $minPrice ? $price : min($minPrice, $price);
+            $maxPrice = null === $maxPrice ? $price : max($maxPrice, $price);
+
+            $percent = $product->getActiveDiscountPercent();
+            if (null !== $percent) {
+                $maxDiscountPercent = max($maxDiscountPercent, $percent);
+            }
+        }
+
+        return [
+            'categories' => array_values($categories),
+            'brands' => array_values($brands),
+            'minPrice' => $minPrice ?? 0,
+            'maxPrice' => $maxPrice ?? 0,
+            'maxDiscountPercent' => $maxDiscountPercent,
+        ];
+    }
+
     public function findActiveDeals(int $limit = 10): array
     {
         $now = new \DateTimeImmutable();
@@ -731,10 +828,16 @@ class ProductRepository extends ServiceEntityRepository
     {
         $qb = $this->createQueryBuilder('p')
             ->andWhere('p.status = :status')
-            ->andWhere('p.title LIKE :term OR p.reference LIKE :term')
+            ->andWhere('p.title LIKE :term OR p.reference LIKE :term OR p.ean LIKE :term')
             ->setParameter('status', 'active')
             ->setParameter('term', '%' . $term . '%')
             ->orderBy('p.salesCount', 'DESC');
+
+        // La référence "KBZ-000123" est calculée depuis l'ID (pas une colonne en base) —
+        // si le terme tapé y correspond, on ajoute une recherche directe par ID.
+        if (preg_match('/kbz-?0*(\d+)/i', $term, $matches)) {
+            $qb->orWhere('p.id = :refId')->setParameter('refId', (int) $matches[1]);
+        }
 
         if (null !== $limit) {
             $qb->setMaxResults($limit);

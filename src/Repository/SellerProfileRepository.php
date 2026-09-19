@@ -95,6 +95,19 @@ class SellerProfileRepository extends ServiceEntityRepository
         ], $rows);
     }
 
+    /** @return SellerProfile[] — boutiques, pros et points relais actifs, jamais les "Particulier". */
+    public function searchByTerm(string $term, int $limit = 5): array
+    {
+        return $this->createQueryBuilder('s')
+            ->andWhere('s INSTANCE OF App\Entity\StoreProfile OR s INSTANCE OF App\Entity\ProProfile OR s INSTANCE OF App\Entity\RelayProfile')
+            ->andWhere('s.status = :status')->setParameter('status', 'active')
+            ->andWhere('s.displayName LIKE :term OR s.referenceNumber LIKE :term')
+            ->setParameter('term', '%' . $term . '%')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
     public function searchByName(string $term, int $limit = 15): array
     {
         return $this->createQueryBuilder('s')

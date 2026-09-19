@@ -1,0 +1,129 @@
+/* ==========================================================================
+   Page "Solde" — bannière + badge dynamique, grille produits, tiroir de filtres
+   ========================================================================== */
+
+.solde-hero {
+    position: relative;
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+    background: #f7f7f7;
+}
+.solde-hero-img {
+    width: 100%;
+    height: auto;
+    display: block;
+    max-height: 420px;
+    object-fit: cover;
+}
+.solde-hero-badge {
+    position: absolute;
+    top: 50%;
+    right: 40px;
+    transform: translateY(-50%);
+    background: #e11d1d;
+    color: #fff;
+    font-size: 28px;
+    font-weight: 800;
+    padding: 14px 28px;
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.solde-content-head {
+    margin: 24px auto 16px;
+}
+.solde-title { font-size: 20px; font-weight: 800; margin: 0; }
+.solde-filter-trigger {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1500;
+    background: var(--kb-theme-color);
+    color: #fff;
+    border: none;
+    border-radius: 30px;
+    padding: 12px 22px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+.solde-filter-trigger:hover { opacity: 0.9; }
+
+.solde-product-grid { margin-bottom: 20px; }
+.badge-solde {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: #e11d1d;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 4px;
+    z-index: 2;
+}
+
+.solde-batch-ad {
+    display: block;
+    width: 100%;
+    margin: 24px 0;
+}
+.solde-batch-ad img {
+    width: 100%;
+    aspect-ratio: 1044 / 200;
+    object-fit: cover;
+    border-radius: 6px;
+    display: block;
+}
+
+.solde-scroll-sentinel { height: 1px; }
+
+/* --- Tiroir de filtres --- */
+.solde-filter-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: rgba(0, 0, 0, 0.5);
+}
+.solde-filter-overlay.solde-filter-open { display: block; }
+.solde-filter-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: 100%;
+    max-width: 360px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.2);
+}
+.solde-filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--kb-border);
+}
+.solde-filter-body { padding: 20px; overflow-y: auto; flex: 1; }
+.solde-filter-body h6 { font-weight: 700; margin-bottom: 8px; }
+.solde-filter-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 16px 20px;
+    border-top: 1px solid var(--kb-border);
+}
+
+@media (max-width: 767px) {
+    .solde-hero-badge {
+        right: 16px;
+        font-size: 18px;
+        padding: 10px 18px;
+    }
+}

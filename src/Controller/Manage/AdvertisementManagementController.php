@@ -24,16 +24,15 @@ class AdvertisementManagementController extends AbstractController
         'sidebar_2' => ['label' => 'Colonne gauche — 2', 'width' => 270, 'height' => 480, 'page' => 'Accueil'],
         'sidebar_3' => ['label' => 'Colonne gauche — 3', 'width' => 1044, 'height' => 250, 'page' => 'Accueil'],
         'sidebar_middle' => ['label' => 'Colonne gauche — 4', 'width' => 270, 'height' => 240, 'page' => 'Accueil'],
-        'homepage_promo_strip' => ['label' => 'Bandeau promo', 'width' => 1044, 'height' => 120, 'page' => 'Accueil'],
         'homepage_center_banner' => ['label' => 'Bannière centrale', 'width' => 1044, 'height' => 250, 'page' => 'Accueil'],
         'category_block_banner' => ['label' => 'Bannière bas de bloc catégorie (liée à une catégorie précise)', 'width' => 1044, 'height' => 180, 'page' => 'Catégorie'],
         'futur_section_banner' => ['label' => 'Bannière section "Prochainement" (accueil, statut futur)', 'width' => 1044, 'height' => 180, 'page' => 'Accueil'],
         'homepage_lifestyle_left' => ['label' => 'Mosaïque lifestyle — gauche', 'width' => 255, 'height' => 220, 'page' => 'Accueil'],
         'homepage_lifestyle_center' => ['label' => 'Mosaïque lifestyle — centre', 'width' => 510, 'height' => 220, 'page' => 'Accueil'],
         'homepage_lifestyle_right' => ['label' => 'Mosaïque lifestyle — droite', 'width' => 255, 'height' => 220, 'page' => 'Accueil'],
-        'footer_social_banner' => ['label' => 'Footer — bannière sociale', 'width' => null, 'height' => null, 'page' => 'Footer (toutes pages)'],
-        'footer_mosaic' => ['label' => 'Footer — mosaïque photos', 'width' => null, 'height' => null, 'page' => 'Footer (toutes pages)'],
-        'footer_callus_photo' => ['label' => 'Footer — photo "Appelez-nous"', 'width' => null, 'height' => null, 'page' => 'Footer (toutes pages)'],
+        'footer_social_banner' => ['label' => 'Footer — bannière sociale', 'width' => 270, 'height' => 130, 'page' => 'Footer (toutes pages)'],
+        'footer_mosaic' => ['label' => 'Footer — mosaïque photos', 'width' => 200, 'height' => 90, 'page' => 'Footer (toutes pages)'],
+        'solde_between_batches' => ['label' => 'Solde — bannière entre les lots de produits', 'width' => 1044, 'height' => 200, 'page' => 'Accueil (Solde)'],
         'mega_menu_catalogue_1' => ['label' => 'Méga-menu — bannière 1', 'width' => 320, 'height' => 180, 'page' => 'Méga-menu (toutes pages)'],
         'mega_menu_catalogue_2' => ['label' => 'Méga-menu — bannière 2', 'width' => 320, 'height' => 180, 'page' => 'Méga-menu (toutes pages)'],
         'mega_menu_catalogue_3' => ['label' => 'Méga-menu — bannière 3', 'width' => 320, 'height' => 180, 'page' => 'Méga-menu (toutes pages)'],
@@ -471,6 +470,12 @@ class AdvertisementManagementController extends AbstractController
         $ad->setStatus($request->request->get('status', 'scheduled'));
 
         $startAt = $request->request->get('start_at');
+        // Toujours minuit pile, quelle que soit l'heure de saisie — sinon une pub
+        // créée "aujourd'hui" mais après cette heure du jour lors d'une prochaine
+        // visite pourrait sembler inactive alors qu'elle devrait déjà l'être.
+        if ($startAt) {
+            $startAt = (new \DateTimeImmutable($startAt))->setTime(0, 0, 0)->format('Y-m-d H:i:s');
+        }
         $endAt = $request->request->get('end_at');
 
         $startAtDate = $startAt ? new \DateTimeImmutable($startAt) : null;

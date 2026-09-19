@@ -1,0 +1,43 @@
+{# ==========================================================================
+   Un "lot" de produits soldés — utilisé au chargement initial ET renvoyé par
+   l'endpoint AJAX de défilement infini (avec une bannière pub aléatoire avant
+   le lot, sauf pour le tout premier rendu de la page).
+   Contexte : products (Product[]), ad (Advertisement|null), hasMore (bool), nextOffset (int)
+   ========================================================================== #}
+{% if ad and ad.imageName %}
+    <a {% if ad.targetUrl %}href="{{ path('ads_click', { id: ad.id, zoneKey: 'solde_between_batches' }) }}"{% endif %}{% if ad.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="solde-batch-ad{{ ad.targetUrl ? ' ad-clickable' : '' }}">
+        <img src="{{ vich_uploader_asset(ad, 'imageFile') }}" alt="{{ ad.title }}" loading="lazy">
+    </a>
+{% endif %}
+
+<div class="home-product-grid solde-product-grid">
+    {% for product in products %}
+        <div class="product-card">
+            <div class="product-card-media">
+                <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}"
+                     alt="{{ product.title }}"
+                     class="product-card-main-image"
+                     loading="lazy">
+                <span class="badge-solde">SOLDE -{{ product.activeDiscountPercent }}%</span>
+                {% if product.brand and product.brand.logoName %}
+                    <img src="{{ vich_uploader_asset(product.brand, 'logoFile') }}" alt="{{ product.brand.name }}" class="product-card-brand-logo">
+                {% endif %}
+            </div>
+            <div class="product-card-body">
+                <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="product-card-title">{{ product.title }}</a>
+                <div class="product-card-price">
+                    <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+                    {% if product.displayOldPrice %}
+                        <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <p class="text-muted">Aucun produit ne correspond à ces filtres pour l'instant.</p>
+    {% endfor %}
+</div>
+
+{% if hasMore %}
+    <div class="solde-scroll-sentinel" data-solde-sentinel data-next-offset="{{ nextOffset }}"></div>
+{% endif %}

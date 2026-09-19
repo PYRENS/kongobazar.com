@@ -33,11 +33,17 @@ class HomeController extends AbstractController
         CategoryViewLogRepository $categoryViewLogRepository,
         ProductViewLogRepository $productViewLogRepository,
         \App\Repository\MostViewedSettingRepository $mostViewedSettingRepository,
+        \App\Repository\HotDealSectionSettingRepository $hotDealSectionSettingRepository,
+        \App\Service\HotDealSectionSelector $hotDealSectionSelector,
+        \App\Repository\PromoStripBannerRepository $promoStripBannerRepository,
+        \App\Repository\PromoStripSettingRepository $promoStripSettingRepository,
+        \App\Repository\SidebarFillerBannerRepository $sidebarFillerBannerRepository,
         \App\Repository\BestSellersSectionSettingRepository $bestSellersSectionSettingRepository,
         \App\Repository\SidebarNewArrivalsSettingRepository $sidebarNewArrivalsSettingRepository,
         CartRepository $cartRepository,
         \App\Service\SeoResolver $seoResolver,
         \App\Service\HomeDealsSelector $homeDealsSelector,
+        \App\Repository\CampaignRepository $campaignRepository,
         \App\Repository\HomeDealsSettingRepository $homeDealsSettingRepository,
         \App\Service\TrendingTabSelector $trendingTabSelector,
         \App\Repository\TrendingTabSettingRepository $trendingTabSettingRepository,
@@ -61,6 +67,10 @@ class HomeController extends AbstractController
         \App\Repository\SponsorSectionSettingRepository $sponsorSectionSettingRepository,
         \App\Repository\PartnerSectionSettingRepository $partnerSectionSettingRepository,
     ): Response {
+        $liveCampaign = $campaignRepository->findCurrentlyLive();
+        if ($liveCampaign && 'solde' === $liveCampaign->getType()) {
+            return $this->redirectToRoute('home_solde');
+        }
         $rootCategories = $categoryRepository->findRootCategories();
 
         // --- Header ---
@@ -75,6 +85,9 @@ class HomeController extends AbstractController
         $sideAdBottom = $adZonePicker->pick('homepage_hero_side_bottom', 'public');
 
         // --- Colonne gauche ---
+        $hotDealSetting = $hotDealSectionSettingRepository->getSingleton();
+        $hotDealProducts = $hotDealSetting->isEnabled() ? $hotDealSectionSelector->select($hotDealSetting) : [];
+
         $adSidebarTop = $adZonePicker->pick('sidebar_top', 'public');
         $adSidebar2 = $adZonePicker->pick('sidebar_2', 'public');
         $adSidebar3 = $adZonePicker->pick('sidebar_3', 'public');
@@ -88,9 +101,13 @@ class HomeController extends AbstractController
             ? $productRepository->findNewArrivals($sidebarNewArrivalsSetting->getDisplayCount())
             : [];
         $latestPost = $blogPostRepository->findLatestPublished();
+        $recentBlogPosts = $blogPostRepository->findRecentPublished(5);
+        $sidebarFillerBanners = $sidebarFillerBannerRepository->findActiveRandomOrder();
 
         // --- Centre : promo + deals ---
-        $promoStrip = $adZonePicker->pick('homepage_promo_strip', 'public');
+        $promoStripSetting = $promoStripSettingRepository->getSingleton();
+        $promoStripBanners = $promoStripSetting->isEnabled() ? $promoStripBannerRepository->findActiveOrdered() : [];
+        $promoStripDisplayCount = $promoStripSetting->getDisplayCount();
         $homeDealsSettings = $homeDealsSettingRepository->getSingleton();
         $dealsProducts = $homeDealsSelector->select($homeDealsSettings);
         $centerAdBanner = $adZonePicker->pick('homepage_center_banner', 'public');
@@ -241,7 +258,6 @@ class HomeController extends AbstractController
         $footerBrands = $brandRepository->findFeaturedHomepage(); // réutilisé pour le bandeau de mots-clés
         $footerMosaicAds = $advertisementRepository->findActiveByZone('footer_mosaic', 'public'); // plusieurs photos
         $adZonePicker->recordImpressions($footerMosaicAds, 'footer_mosaic');
-        $footerCallUsPhoto = $adZonePicker->pick('footer_callus_photo', 'public');
         $footerBottomLinks = $customMenuItemRepository->findByLocationAndSpace('footer_bottom_links', 'public');
 
         $seoData = $seoResolver->resolve('static_page', null, 'homepage', [
@@ -284,7 +300,10 @@ class HomeController extends AbstractController
             'bestSellers' => $bestSellers,
             'newArrivals' => $newArrivals,
             'latestPost' => $latestPost,
-            'promoStrip' => $promoStrip,
+            'recentBlogPosts' => $recentBlogPosts,
+            'sidebarFillerBanners' => $sidebarFillerBanners,
+            'promoStripBanners' => $promoStripBanners,
+            'promoStripDisplayCount' => $promoStripDisplayCount,
             'dealsProducts' => $dealsProducts,
             'centerAdBanner' => $centerAdBanner,
             'trendingTabCategories' => $trendingTabCategories,
@@ -300,12 +319,12 @@ class HomeController extends AbstractController
             'mostViewedProducts' => $mostViewedProducts,
             'mostViewedEnabled' => $mostViewedSettings->isEnabled(),
             'bestSellersEnabled' => $bestSellersSetting->isEnabled(),
+            'hotDealProducts' => $hotDealProducts,
             'sidebarNewArrivalsEnabled' => $sidebarNewArrivalsSetting->isEnabled(),
             'footerColumns' => $footerColumns,
             'footerSocialAd' => $footerSocialAd,
             'footerBrands' => $footerBrands,
             'footerMosaicAds' => $footerMosaicAds,
-            'footerCallUsPhoto' => $footerCallUsPhoto,
             'footerBottomLinks' => $footerBottomLinks,
         ]);
     }

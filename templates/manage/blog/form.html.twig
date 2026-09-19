@@ -1,0 +1,150 @@
+{% extends 'manage/base.html.twig' %}
+{% block title %}{{ post ? 'Modifier' : 'Nouvel' }} article{% endblock %}
+{% block page_icon %}bi-journal-text{% endblock %}
+{% block page_title %}{{ post ? 'Modifier l\'article' : 'Nouvel article' }}{% endblock %}
+
+{% block body %}
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
+    <form method="post" action="{{ post ? path('manage_blog_update', { id: post.id }) : path('manage_blog_create') }}" enctype="multipart/form-data">
+        <div class="row g-3">
+            <div class="col-md-8">
+                <div class="sw-card mb-3">
+                    <div class="card-body">
+                        <label class="form-label">Titre</label>
+                        <input type="text" name="title" class="form-control mb-3" value="{{ post ? post.title : '' }}" required>
+
+                        <label class="form-label">Résumé court (affiché sur les cartes)</label>
+                        <textarea name="excerpt" class="form-control mb-3" rows="2">{{ post ? post.excerpt : '' }}</textarea>
+
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label mb-0">Contenu</label>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="importHtmlBtn">Importer HTML</button>
+                        </div>
+                        <div id="quillEditor" style="height:400px;background:#fff;">{{ post ? post.content|raw : '' }}</div>
+                        <textarea name="content" id="contentInput" hidden></textarea>
+
+                        <div id="importHtmlPanel" class="mt-3" style="display:none;">
+                            <label class="form-label">Colle ton code HTML ci-dessous, puis clique sur "Insérer"</label>
+                            <textarea id="importHtmlTextarea" class="form-control" rows="8" placeholder="<h2>Titre...</h2>
+<p>Texte...</p>"></textarea>
+                            <div class="mt-2 d-flex gap-2">
+                                <button type="button" class="btn btn-sm btn-success" id="importHtmlConfirm">Insérer dans l'article</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="importHtmlCancel">Annuler</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="sw-card mb-3">
+                    <div class="card-header"><h6 class="mb-0 fw-bold">Publication</h6></div>
+                    <div class="card-body">
+                        <label class="form-label">Statut</label>
+                        <select name="status" class="form-select mb-3">
+                            <option value="draft" {{ post and post.status == 'draft' ? 'selected' : '' }}>Brouillon</option>
+                            <option value="published" {{ post and post.status == 'published' ? 'selected' : '' }}>Publié</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="sw-card mb-3">
+                    <div class="card-header"><h6 class="mb-0 fw-bold">Image de couverture</h6></div>
+                    <div class="card-body">
+                        <small class="text-muted d-block mb-2">Dimension conseillée : 1200 × 900px (ratio 4:3), poids sous 300 Ko.</small>
+                        <small class="text-muted d-block mb-1" id="blogImageStatus">
+                            {{ post and post.coverImageName ? 'Image actuelle' : 'Aucune image choisie' }}
+                        </small>
+                        <div class="kb-image-uploader">
+                            <div class="kb-image-uploader-thumb" id="blogImageCurrent" style="{{ post and post.coverImageName ? '' : 'display:none;' }}">
+                                <img id="blogImagePreview" src="{{ post and post.coverImageName ? vich_uploader_asset(post, 'coverImageFile') : '' }}" alt="">
+                                <button type="button" class="kb-image-uploader-remove" id="blogImageRemove" aria-label="Retirer">×</button>
+                            </div>
+                            <label class="kb-image-uploader-dropzone" for="blogImageInput">
+                                <i class="bi bi-camera"></i>
+                                <span>Upload</span>
+                            </label>
+                            <input type="file" name="cover_image" id="blogImageInput" accept="image/*" hidden>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-success w-100">Enregistrer</button>
+                <a href="{{ path('manage_blog_index') }}" class="btn btn-outline-secondary w-100 mt-2">Annuler</a>
+            </div>
+        </div>
+    </form>
+{% endblock %}
+
+{% block javascripts %}
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+    <script>
+        const quill = new Quill('#quillEditor', {
+            theme: 'snow',
+            modules: {
+                toolbar: [
+                    [{ header: [2, 3, false] }],
+                    ['bold', 'italic', 'underline'],
+                    [{ list: 'ordered' }, { list: 'bullet' }],
+                    ['link', 'image'],
+                    ['clean']
+                ]
+            }
+        });
+
+        document.querySelector('form').addEventListener('submit', function () {
+            document.getElementById('contentInput').value = quill.root.innerHTML;
+        });
+
+        (function () {
+            const importBtn = document.getElementById('importHtmlBtn');
+            const panel = document.getElementById('importHtmlPanel');
+            const textarea = document.getElementById('importHtmlTextarea');
+            const confirmBtn = document.getElementById('importHtmlConfirm');
+            const cancelBtn = document.getElementById('importHtmlCancel');
+
+            importBtn.addEventListener('click', () => {
+                panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+            });
+            cancelBtn.addEventListener('click', () => {
+                panel.style.display = 'none';
+                textarea.value = '';
+            });
+            confirmBtn.addEventListener('click', () => {
+                const html = textarea.value.trim();
+                if (!html) return;
+                quill.setText('');
+                quill.clipboard.dangerouslyPasteHTML(html);
+                panel.style.display = 'none';
+                textarea.value = '';
+            });
+        })();
+
+        (function () {
+            const input = document.getElementById('blogImageInput');
+            const currentBlock = document.getElementById('blogImageCurrent');
+            const preview = document.getElementById('blogImagePreview');
+            const removeBtn = document.getElementById('blogImageRemove');
+            const status = document.getElementById('blogImageStatus');
+
+            input.addEventListener('change', function () {
+                const file = this.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    preview.src = e.target.result;
+                    currentBlock.style.display = 'block';
+                    status.textContent = 'Nouvelle image sélectionnée';
+                };
+                reader.readAsDataURL(file);
+            });
+
+            removeBtn.addEventListener('click', () => {
+                input.value = '';
+                preview.src = '';
+                currentBlock.style.display = 'none';
+                status.textContent = 'Aucune image choisie';
+            });
+        })();
+    </script>
+{% endblock %}

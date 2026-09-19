@@ -1,0 +1,187 @@
+{% extends 'manage/base.html.twig' %}
+{% block title %}Moyens de paiement{% endblock %}
+{% block page_icon %}bi-credit-card{% endblock %}
+{% block page_title %}Moyens de paiement (footer, toutes pages){% endblock %}
+{% block body %}
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-plus-circle text-primary me-2"></i>Ajouter</h6></div>
+        <div class="card-body">
+            <form method="post" action="{{ path('manage_payment_method_add') }}" enctype="multipart/form-data">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Logo</label>
+                        <small class="text-muted d-block mb-1" id="pmImageStatus">Aucune image choisie</small>
+                        <div class="kb-image-uploader">
+                            <div class="kb-image-uploader-thumb" id="pmImageCurrent" style="display:none;">
+                                <img id="pmImagePreview" src="" alt="">
+                                <button type="button" class="kb-image-uploader-remove" id="pmImageRemove" aria-label="Retirer">×</button>
+                            </div>
+                            <label class="kb-image-uploader-dropzone" for="pmImageInput">
+                                <i class="bi bi-camera"></i>
+                                <span>Upload</span>
+                            </label>
+                            <input type="file" name="image" id="pmImageInput" accept="image/*" required hidden>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Nom</label>
+                        <input type="text" name="name" class="form-control" placeholder="Ex: M-Pesa" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success mt-3">Ajouter</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="sw-card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Logo</th>
+                        <th>Nom</th>
+                        <th>Actif</th>
+                        <th>Ordre</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody data-menu-list>
+                    {% for method in methods %}
+                        <tr data-item-id="{{ method.id }}">
+                            <td><img src="{{ vich_uploader_asset(method, 'imageFile') }}" style="width:60px;height:60px;object-fit:contain;background:#f7f7f7;border-radius:6px;" alt=""></td>
+                            <td>{{ method.name }}</td>
+                            <td>
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" class="form-check-input pm-toggle" role="switch" {{ method.active ? 'checked' : '' }} data-toggle-url="{{ path('manage_payment_method_toggle', { id: method.id }) }}">
+                                </div>
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-secondary pm-move" data-move-url="{{ path('manage_payment_method_move', { id: method.id, direction: 'up' }) }}">↑</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary pm-move" data-move-url="{{ path('manage_payment_method_move', { id: method.id, direction: 'down' }) }}">↓</button>
+                            </td>
+                            <td class="d-flex gap-1">
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-panel-open="editPanel{{ method.id }}">Modifier</button>
+                                <form method="post" action="{{ path('manage_payment_method_remove', { id: method.id }) }}" onsubmit="return confirm('Retirer ?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Retirer</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="5" class="text-center text-muted py-4">Aucun moyen de paiement.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% for method in methods %}
+        <div class="kb-panel-overlay" id="editPanel{{ method.id }}">
+            <div class="kb-panel-box">
+                <form method="post" action="{{ path('manage_payment_method_update', { id: method.id }) }}" enctype="multipart/form-data">
+                    <div class="kb-panel-header">
+                        <h6 class="mb-0">Modifier "{{ method.name }}"</h6>
+                        <button type="button" class="btn-close kb-panel-close" data-panel-close="editPanel{{ method.id }}"></button>
+                    </div>
+                    <div class="kb-panel-body">
+                        <label class="form-label">Nom</label>
+                        <input type="text" name="name" class="form-control mb-3" value="{{ method.name }}">
+
+                        <label class="form-label">Logo</label>
+                        <small class="text-muted d-block mb-1" id="pmEditImageStatus{{ method.id }}">Image actuelle</small>
+                        <div class="kb-image-uploader">
+                            <div class="kb-image-uploader-thumb">
+                                <img id="pmEditImagePreview{{ method.id }}" src="{{ vich_uploader_asset(method, 'imageFile') }}" alt="">
+                            </div>
+                            <label class="kb-image-uploader-dropzone" for="pmEditImageInput{{ method.id }}">
+                                <i class="bi bi-camera"></i>
+                                <span>Upload</span>
+                            </label>
+                            <input type="file" name="image" id="pmEditImageInput{{ method.id }}" accept="image/*" hidden>
+                        </div>
+                    </div>
+                    <div class="kb-panel-footer">
+                        <button type="button" class="btn btn-outline-secondary kb-panel-close" data-panel-close="editPanel{{ method.id }}">Annuler</button>
+                        <button type="submit" class="btn btn-success">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <script>
+            document.getElementById('pmEditImageInput{{ method.id }}').addEventListener('change', function () {
+                const file = this.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('pmEditImagePreview{{ method.id }}').src = e.target.result;
+                    document.getElementById('pmEditImageStatus{{ method.id }}').textContent = 'Nouvelle image sélectionnée';
+                };
+                reader.readAsDataURL(file);
+            });
+        </script>
+    {% endfor %}
+
+    <script>
+        document.querySelectorAll('[data-panel-open]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                document.getElementById(btn.dataset.panelOpen).classList.add('kb-panel-open');
+            });
+        });
+        document.querySelectorAll('.kb-panel-close').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                document.getElementById(btn.dataset.panelClose).classList.remove('kb-panel-open');
+            });
+        });
+    </script>
+
+    <script>
+        (function () {
+            const input = document.getElementById('pmImageInput');
+            const currentBlock = document.getElementById('pmImageCurrent');
+            const preview = document.getElementById('pmImagePreview');
+            const removeBtn = document.getElementById('pmImageRemove');
+            const status = document.getElementById('pmImageStatus');
+
+            input.addEventListener('change', function () {
+                const file = this.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    preview.src = e.target.result;
+                    currentBlock.style.display = 'block';
+                    status.textContent = 'Nouvelle image sélectionnée';
+                };
+                reader.readAsDataURL(file);
+            });
+
+            removeBtn.addEventListener('click', () => {
+                input.value = '';
+                preview.src = '';
+                currentBlock.style.display = 'none';
+                status.textContent = 'Aucune image choisie';
+            });
+        })();
+
+        document.querySelectorAll('.pm-toggle').forEach((sw) => {
+            sw.addEventListener('change', function () {
+                fetch(this.dataset.toggleUrl, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => { this.checked = data.active; });
+            });
+        });
+
+        document.querySelectorAll('.pm-move').forEach((btn) => {
+            btn.addEventListener('click', function () {
+                const list = this.closest('[data-menu-list]');
+                fetch(this.dataset.moveUrl, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        if (!data.ok) return;
+                        data.order.forEach((id) => {
+                            const row = list.querySelector('[data-item-id="' + id + '"]');
+                            if (row) list.appendChild(row);
+                        });
+                    });
+            });
+        });
+    </script>
+{% endblock %}

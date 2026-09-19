@@ -4,7 +4,7 @@
 
 .site-footer { margin-top: 40px; color: #444; background: #fff; }
 
-.footer-newsletter { background: var(--kb-blue); padding: 30px 0; }
+.footer-newsletter { background: var(--kb-blue); padding: 16px 0; }
 .footer-newsletter-inner {
     display: flex;
     align-items: center;
@@ -25,7 +25,8 @@
 .newsletter-texts {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 0;
+    line-height: 1.1;
 }
 .newsletter-title {
     font-size: 19px;
@@ -35,6 +36,11 @@
 .newsletter-text {
     font-size: 16px;
     color: #fff;
+}
+@media (max-width: 421px) {
+    .newsletter-text {
+        font-size: 13px;
+    }
 }
 .newsletter-form {
     display: flex;
@@ -67,7 +73,10 @@
     display: grid;
     grid-template-columns: 1.4fr 1fr 1fr 1.6fr;
     gap: 30px;
-    padding: 36px 0;
+    padding-top: 36px;
+    padding-bottom: 26px;
+    padding-left: 0;
+    padding-right: 0;
 }
 .footer-brand-logo { font-size: 22px; font-weight: 800; }
 .footer-brand-logo .logo-kongo { color: #1a1a1a; }
@@ -102,12 +111,19 @@
     grid-template-columns: repeat(3, 1fr);
     gap: 6px;
     position: relative;
-    min-height: 190px;
     background: #f2f2f2;
     border-radius: 6px;
     padding: 6px;
 }
-.footer-mosaic-item img { width: 100%; height: 90px; object-fit: cover; display: block; }
+.footer-mosaic-item {
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    overflow: hidden;
+}
+.footer-mosaic-item img { width: 100%; aspect-ratio: 3 / 2; object-fit: contain; display: block; }
 .footer-mosaic-caption {
     text-align: center;
     margin-top: 10px;
@@ -120,9 +136,12 @@
 .footer-columns-wrapper { background: #fff; }
 .footer-columns-grid {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 24px;
-    padding: 30px 0;
+    padding-top: 16px;
+    padding-bottom: 30px;
+    padding-left: 0;
+    padding-right: 0;
 }
 
 /* --- Bandeau de mots-clés --- */
@@ -146,7 +165,7 @@
     gap: 24px;
     border: 1px solid #f7f7f7;
     border-radius: 6px;
-    padding: 20px 24px;
+    padding: 16px 24px 16px 0;
     flex-wrap: wrap;
 }
 
@@ -155,19 +174,29 @@
 .footer-contact-phone strong,
 .footer-address strong { color: #1a1a1a; font-size: 15px; }
 .footer-contact-phone em { color: var(--kb-blue); font-style: normal; }
-.footer-social-icons { display: flex; gap: 14px; margin-left: auto; }
+.footer-social-icons { display: flex; gap: 8px; margin-left: auto; }
 .footer-social-icons a {
     width: 36px;
     height: 36px;
-    border-radius: 50%;
-    border: 1px solid #ddd;
-    color: #555;
+    border-radius: 8px;
+    background: #f3f3f3;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: background 0.15s ease, transform 0.15s ease;
 }
-.footer-social-icons a:hover { background: var(--kb-blue); border-color: var(--kb-blue); color: #fff; }
-
+.footer-social-icons a i {
+    color: #888;
+    font-size: 15px;
+    transition: color 0.15s ease;
+}
+.footer-social-icons a:hover {
+    background: #eef7fc;
+    transform: translateY(-2px);
+}
+.footer-social-icons a:hover i {
+    color: currentColor;
+}
 .footer-contact-photo img {
     width: 70px;
     height: 70px;
@@ -175,14 +204,27 @@
     object-fit: cover;
     flex-shrink: 0;
 }
-
+.footer-social-ad {
+    display: block;
+    flex-shrink: 0;
+}
+.footer-social-ad img {
+    width: 270px;
+    height: 130px;
+    object-fit: cover;
+    display: block;
+    border-radius: 6px 0 0 6px;
+}
 /* --- Ligne de liens rapides --- */
 .footer-bottom-links { background: #fff; border-top: 1px solid var(--kb-border); }
 .footer-bottom-links-inner {
     display: flex;
     justify-content: center;
     gap: 30px;
-    padding: 16px 0;
+    padding-top: 16px;
+    padding-bottom: 16px;
+    padding-left: 0;
+    padding-right: 0;
     flex-wrap: wrap;
 }
 .footer-bottom-links-inner a { color: #777; font-size: 13px; text-decoration: none; }
@@ -194,7 +236,10 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 14px 0;
+    padding-top: 14px;
+    padding-bottom: 14px;
+    padding-left: 0;
+    padding-right: 0;
     font-size: 12px;
     color: #999;
     flex-wrap: wrap;
@@ -210,12 +255,85 @@
 }
 .footer-payment-icons i { font-size: 20px; color: #ccc; }
 
-@media (max-width: 991px) {
-    .footer-top-grid { grid-template-columns: 1fr 1fr; }
-    .footer-mosaic { grid-column: span 2; }
-}
 @media (max-width: 767px) {
-    .footer-top-grid { grid-template-columns: 1fr; }
+    .footer-top-grid { grid-template-columns: 1fr 1fr; }
+    .footer-brand { grid-column: 1 / -1; }
+    .footer-mosaic {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .footer-mosaic-grid {
+        max-width: 460px;
+        margin: 0 auto;
+    }
+    .footer-mosaic-item img {
+        aspect-ratio: 3 / 2;
+    }
     .footer-columns-grid { grid-template-columns: repeat(2, 1fr); }
-    .footer-newsletter-inner { flex-direction: column; align-items: flex-start; }
+}
+@media (max-width: 972px) {
+    .footer-newsletter-inner {
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+    .newsletter-info {
+        gap: 6px;
+    }
+    .newsletter-texts {
+        text-align: left;
+    }
+    .newsletter-form {
+        width: 100%;
+        max-width: 420px;
+        box-sizing: border-box;
+    }
+    .newsletter-form input {
+        min-width: 0;
+        flex: 1;
+    }
+}
+
+@media (max-width: 1366px) {
+    .footer-top-grid,
+    .footer-columns-grid,
+    .footer-bottom-links-inner,
+    .footer-bottom-inner {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+    .footer-contact-inner {
+        padding-left: 16px;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Moyens de paiement (footer, toutes pages)
+   -------------------------------------------------------------------------- */
+.footer-payment-methods-band { background: #fafafa; border-top: 1px solid var(--kb-border); }
+.footer-payment-methods-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 16px;
+    flex-wrap: wrap;
+}
+.footer-payment-methods-logo {
+    height: 42px;
+    width: auto;
+    max-width: 75px;
+    object-fit: contain;
+    border-radius: 6px;
+}
+@media (max-width: 363px) {
+    .footer-payment-methods-inner {
+        padding-left: 0;
+        padding-right: 0;
+        flex-wrap: nowrap;
+        gap: 8px;
+        justify-content: center;
+    }
 }

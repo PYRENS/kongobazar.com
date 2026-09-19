@@ -28,8 +28,8 @@ class AdZoneSettingController extends AbstractController
         'homepage_lifestyle_left' => 'homepage',
         'homepage_lifestyle_center' => 'homepage',
         'homepage_lifestyle_right' => 'homepage',
+        'footer_mosaic' => 'footer',
         'footer_social_banner' => 'footer',
-        'footer_callus_photo' => 'footer',
     ];
 
     private const PAGE_GROUPS = [
@@ -38,9 +38,9 @@ class AdZoneSettingController extends AbstractController
     ];
 
     #[Route('/publicites/zones', name: 'manage_ad_zones_index', host: 'manage.kongobazar.com', methods: ['GET'])]
-    public function index(Request $request, AdZoneSettingRepository $settingRepository, AdvertisementRepository $adRepository): Response
+    public function index(Request $request, AdZoneSettingRepository $settingRepository, AdvertisementRepository $adRepository, \App\Repository\AdvertisementZonePlacementRepository $placementRepository): Response
     {
-        $built = $this->buildRows($request, $settingRepository, $adRepository);
+        $built = $this->buildRows($request, $settingRepository, $adRepository, $placementRepository);
 
         return $this->render('manage/advertisements/zones.html.twig', [
             'stats' => $built['stats'],
@@ -56,7 +56,7 @@ class AdZoneSettingController extends AbstractController
     }
 
     #[Route('/publicites/zones/liste-fragment', name: 'manage_ad_zones_index_fragment', host: 'manage.kongobazar.com', methods: ['GET'])]
-    public function indexFragment(Request $request, AdZoneSettingRepository $settingRepository, AdvertisementRepository $adRepository): Response
+    public function indexFragment(Request $request, AdZoneSettingRepository $settingRepository, AdvertisementRepository $adRepository, \App\Repository\AdvertisementZonePlacementRepository $placementRepository): Response
     {
         $built = $this->buildRows($request, $settingRepository, $adRepository);
 
@@ -70,7 +70,7 @@ class AdZoneSettingController extends AbstractController
         ]);
     }
 
-    private function buildRows(Request $request, AdZoneSettingRepository $settingRepository, AdvertisementRepository $adRepository): array
+    private function buildRows(Request $request, AdZoneSettingRepository $settingRepository, AdvertisementRepository $adRepository, \App\Repository\AdvertisementZonePlacementRepository $placementRepository): array
     {
         $pageGroup = $request->query->get('pageGroup') ?: null;
         $mode = $request->query->get('mode') ?: null;
@@ -99,8 +99,14 @@ class AdZoneSettingController extends AbstractController
                 'enabled' => $setting ? $setting->isEnabled() : true,
                 'fixedAdvertisementId' => $setting && $setting->getFixedAdvertisement() ? $setting->getFixedAdvertisement()->getId() : null,
                 'candidates' => $candidates,
-                'totalImpressions' => array_sum(array_map(fn ($ad) => $ad->getImpressionCount(), $candidates)),
-                'totalClicks' => array_sum(array_map(fn ($ad) => $ad->getClickCount(), $candidates)),
+                'totalImpressions' => array_sum(array_map(function ($ad) use ($placementRepository, $zoneKey) {
+                    $p = $placementRepository->findOneByAdvertisementAndZone($ad->getId(), $zoneKey);
+                    return $p ? $p->getImpressionCount() : 0;
+                }, $candidates)),
+                'totalClicks' => array_sum(array_map(function ($ad) use ($placementRepository, $zoneKey) {
+                    $p = $placementRepository->findOneByAdvertisementAndZone($ad->getId(), $zoneKey);
+                    return $p ? $p->getClickCount() : 0;
+                }, $candidates)),
             ];
         }
 

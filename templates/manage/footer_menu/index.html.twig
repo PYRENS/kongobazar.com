@@ -1,0 +1,72 @@
+{% extends 'manage/base.html.twig' %}
+{% block title %}Footer — Rubriques et liens{% endblock %}
+{% block page_icon %}bi-list-ul{% endblock %}
+{% block page_title %}Footer — Rubriques et liens{% endblock %}
+{% block body %}
+    <div class="row g-3">
+        {% for location, label in locations %}
+            <div class="col-md-6 col-lg-4">
+                <div class="sw-card h-100">
+                    <div class="card-header"><h6 class="mb-0 fw-bold">{{ label }}</h6></div>
+                    <div class="card-body">
+                        <ul class="list-group mb-3" data-menu-list>
+                            {% for item in itemsByLocation[location] %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center" data-item-id="{{ item.id }}">
+                                    <div>
+                                        <div class="form-check form-switch d-inline-block me-2">
+                                            <input type="checkbox" class="form-check-input footer-menu-toggle" role="switch" {{ item.active ? 'checked' : '' }} data-toggle-url="{{ path('manage_footer_menu_toggle', { id: item.id }) }}">
+                                        </div>
+                                        {{ item.label }}
+                                        <small class="text-muted d-block">{{ item.url }}</small>
+                                    </div>
+                                    <div class="d-flex gap-1">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary footer-menu-move" data-move-url="{{ path('manage_footer_menu_move', { id: item.id, direction: 'up' }) }}">↑</button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary footer-menu-move" data-move-url="{{ path('manage_footer_menu_move', { id: item.id, direction: 'down' }) }}">↓</button>
+                                        <form method="post" action="{{ path('manage_footer_menu_remove', { id: item.id }) }}" onsubmit="return confirm('Retirer ce lien ?');"><button type="submit" class="btn btn-sm btn-outline-danger">×</button></form>
+                                    </div>
+                                </li>
+                            {% else %}
+                                <li class="list-group-item text-muted">Aucun lien.</li>
+                            {% endfor %}
+                        </ul>
+
+                        <form method="post" action="{{ path('manage_footer_menu_add', { location: location }) }}">
+                            <input type="text" name="label" class="form-control form-control-sm mb-2" placeholder="Libellé du lien" required>
+                            <input type="text" name="url" class="form-control form-control-sm mb-2" placeholder="/chemin ou https://..." required>
+                            <div class="form-check mb-2">
+                                <input type="checkbox" name="open_in_new_tab" value="1" class="form-check-input" id="newtab_{{ location }}">
+                                <label class="form-check-label small" for="newtab_{{ location }}">Nouvel onglet</label>
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-success w-100">Ajouter</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        document.querySelectorAll('.footer-menu-toggle').forEach((sw) => {
+            sw.addEventListener('change', function () {
+                fetch(this.dataset.toggleUrl, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => { this.checked = data.active; });
+            });
+        });
+
+        document.querySelectorAll('.footer-menu-move').forEach((btn) => {
+            btn.addEventListener('click', function () {
+                const list = this.closest('[data-menu-list]');
+                fetch(this.dataset.moveUrl, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        if (!data.ok) return;
+                        data.order.forEach((id) => {
+                            const li = list.querySelector('[data-item-id="' + id + '"]');
+                            if (li) list.appendChild(li);
+                        });
+                    });
+            });
+        });
+    </script>
+{% endblock %}

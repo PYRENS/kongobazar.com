@@ -1,0 +1,76 @@
+{% extends 'public/base.html.twig' %}
+{% block title %}Solde — KongoBazar{% endblock %}
+
+{% block body %}
+<link rel="stylesheet" href="{{ asset('styles/public/solde.css') }}">
+
+{# --- Bannière pleine largeur + pourcentage réel incrusté --- #}
+<div class="solde-hero">
+    {% if campaign.bannerImageName %}
+        <img src="{{ vich_uploader_asset(campaign, 'bannerImageFile') }}" alt="{{ campaign.title }}" class="solde-hero-img">
+    {% endif %}
+    {% if filters.maxDiscountPercent > 0 %}
+        <div class="solde-hero-badge">Jusqu'à -{{ filters.maxDiscountPercent }}%</div>
+    {% endif %}
+</div>
+
+<div class="container-kb">
+    {% include 'public/_partials/_home_top_categories_vendors.html.twig' %}
+</div>
+
+<div class="container-kb solde-content-head">
+    <h2 class="solde-title">Tous les produits en solde</h2>
+    <button type="button" class="solde-filter-trigger" id="soldeFilterTrigger">
+        <i class="bi bi-sliders"></i> Filtrer
+    </button>
+</div>
+
+<div class="container-kb" id="soldeProductsContainer">
+    {% include 'public/_partials/_solde_products_batch.html.twig' with { products: products, ad: null, hasMore: hasMore, nextOffset: nextOffset } %}
+</div>
+
+{# --- Tiroir de filtres --- #}
+<div class="solde-filter-overlay" id="soldeFilterOverlay">
+    <div class="solde-filter-panel">
+        <div class="solde-filter-header">
+            <h5 class="mb-0">Filtrer</h5>
+            <button type="button" class="btn-close" id="soldeFilterClose"></button>
+        </div>
+        <div class="solde-filter-body">
+            {% if filters.categories|length > 0 %}
+                <h6>Catégorie</h6>
+                <select id="soldeFilterCategory" class="form-select mb-3">
+                    <option value="">Toutes</option>
+                    {% for cat in filters.categories %}
+                        <option value="{{ cat.id }}">{{ cat.name }} ({{ cat.count }})</option>
+                    {% endfor %}
+                </select>
+            {% endif %}
+
+            {% if filters.brands|length > 0 %}
+                <h6>Marque</h6>
+                <select id="soldeFilterBrand" class="form-select mb-3">
+                    <option value="">Toutes</option>
+                    {% for brand in filters.brands %}
+                        <option value="{{ brand.id }}">{{ brand.name }} ({{ brand.count }})</option>
+                    {% endfor %}
+                </select>
+            {% endif %}
+
+            {% if filters.maxPrice > filters.minPrice %}
+                <h6>Prix</h6>
+                <div class="d-flex gap-2 mb-3">
+                    <input type="number" id="soldeFilterMinPrice" class="form-control" placeholder="Min ({{ filters.minPrice|round }})">
+                    <input type="number" id="soldeFilterMaxPrice" class="form-control" placeholder="Max ({{ filters.maxPrice|round }})">
+                </div>
+            {% endif %}
+        </div>
+        <div class="solde-filter-footer">
+            <button type="button" class="btn btn-outline-secondary" id="soldeFilterReset">Réinitialiser</button>
+            <button type="button" class="btn btn-success" id="soldeFilterApply">Appliquer</button>
+        </div>
+    </div>
+</div>
+
+<script src="{{ asset('js/public/solde.js') }}"></script>
+{% endblock %}

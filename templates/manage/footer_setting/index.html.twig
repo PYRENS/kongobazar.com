@@ -1,0 +1,35 @@
+{% extends 'manage/base.html.twig' %}
+{% block title %}Footer — Réglages généraux{% endblock %}
+{% block page_icon %}bi-layout-text-window-reverse{% endblock %}
+{% block page_title %}Footer — Réglages généraux{% endblock %}
+{% block body %}
+    <form method="post" action="{{ path('manage_footer_setting_update') }}">
+        <div class="sw-card mb-3">
+            <div class="card-header"><h6 class="mb-0 fw-bold">Présentation de l'entreprise</h6></div>
+            <div class="card-body">
+                <label class="form-label">Texte de présentation (sous le logo)</label>
+                <textarea name="company_description" class="form-control" rows="3">{{ setting.companyDescription }}</textarea>
+            </div>
+        </div>
+
+        <div class="sw-card mb-3">
+            <div class="card-header"><h6 class="mb-0 fw-bold">Contact</h6></div>
+            <div class="card-body row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Numéro de téléphone</label>
+                    <input type="text" name="phone" class="form-control" value="{{ setting.phone }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Disponibilité (ex: 24h/24, 7j/7)</label>
+                    <input type="text" name="phone_availability" class="form-control" value="{{ setting.phoneAvailability }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Adresse</label>
+                    <input type="text" name="address" class="form-control" value="{{ setting.address }}">
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-success">Enregistrer</button>
+    </form>
+{% endblock %}

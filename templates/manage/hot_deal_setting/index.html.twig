@@ -1,0 +1,112 @@
+{% extends 'manage/base.html.twig' %}
+{% block title %}Offre exceptionnelle — Accueil{% endblock %}
+{% block page_icon %}bi-lightning-charge{% endblock %}
+{% block page_title %}Carte "Offre exceptionnelle" — Colonne gauche accueil{% endblock %}
+{% block body %}
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-toggle-on text-primary me-2"></i>Visibilité</h6></div>
+        <div class="card-body">
+            <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="hotDealEnabledSwitch" role="switch" {{ setting.enabled ? 'checked' : '' }} data-toggle-url="{{ path('manage_hot_deal_toggle_enabled') }}">
+                <label class="form-check-label">Afficher la carte "Offre exceptionnelle" sur la page d'accueil</label>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" action="{{ path('manage_hot_deal_setting_update') }}">
+        <div class="sw-card mb-3">
+            <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-sliders text-primary me-2"></i>Réglages</h6></div>
+            <div class="card-body">
+                <label class="form-label">Nombre de produits affichés (cycle avec les flèches)</label>
+                <input type="number" name="display_count" class="form-control mb-3" style="max-width:160px;" min="1" value="{{ setting.displayCount }}">
+
+                <label class="form-label">Produits mis en avant (optionnel — le reste se complète automatiquement parmi les ventes flash actives, triées par % de réduction le plus haut)</label>
+                <input type="text" class="form-control form-control-sm hot-deal-search" style="max-width:320px;" placeholder="Rechercher par titre ou réf. KongoBazar..." autocomplete="off">
+                <div class="list-group hot-deal-search-results mt-1" style="max-width:320px;position:relative;z-index:10;"></div>
+
+                <div id="hotDealProductList" class="d-flex flex-wrap gap-2 mt-2">
+                    {% for product in setting.targetedProducts %}
+                        <span class="product-badge-thumb" data-product-badge data-id="{{ product.id }}">
+                            <a href="{{ path('manage_products_show', { id: product.id }) }}" target="_blank" class="product-badge-thumb-link">
+                                <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}">
+                                <span class="product-badge-thumb-name">{{ product.title|length > 18 ? product.title|slice(0, 18) ~ '…' : product.title }} - {{ product.kongobazarReference }}</span>
+                            </a>
+                            <button type="button" class="product-badge-thumb-remove hot-deal-remove-btn" data-remove-url="{{ path('manage_hot_deal_remove_product', { id: product.id }) }}">×</button>
+                        </span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-success">Enregistrer le nombre</button>
+    </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const sw = document.getElementById('hotDealEnabledSwitch');
+            sw.addEventListener('change', function () {
+                const wasChecked = this.checked;
+                fetch(this.dataset.toggleUrl, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => { this.checked = data.enabled; })
+                    .catch(() => { this.checked = !wasChecked; });
+            });
+
+            const searchInput = document.querySelector('.hot-deal-search');
+            const results = document.querySelector('.hot-deal-search-results');
+            const list = document.getElementById('hotDealProductList');
+
+            function wireRemove(btn) {
+                btn.addEventListener('click', () => {
+                    fetch(btn.dataset.removeUrl, { method: 'POST' })
+                        .then((r) => r.json())
+                        .then((data) => { if (data.ok) btn.closest('[data-product-badge]').remove(); });
+                });
+            }
+            list.querySelectorAll('.hot-deal-remove-btn').forEach(wireRemove);
+
+            let searchTimeout;
+            searchInput.addEventListener('input', function () {
+                clearTimeout(searchTimeout);
+                const term = this.value.trim();
+                if (term.length < 2) { results.innerHTML = ''; return; }
+                searchTimeout = setTimeout(() => {
+                    fetch('{{ path("manage_hot_deal_search_products") }}?q=' + encodeURIComponent(term))
+                        .then((r) => r.json())
+                        .then((data) => {
+                            results.innerHTML = '';
+                            data.results.forEach((item) => {
+                                const btn = document.createElement('button');
+                                btn.type = 'button';
+                                btn.className = 'list-group-item list-group-item-action';
+                                btn.textContent = item.title + ' (' + item.reference + ')';
+                                btn.addEventListener('click', () => {
+                                    const fd = new FormData();
+                                    fd.append('product_id', item.id);
+                                    fetch('{{ path("manage_hot_deal_add_product") }}', { method: 'POST', body: fd })
+                                        .then((r) => r.json())
+                                        .then((data2) => {
+                                            if (!data2.ok) { alert(data2.error || 'Erreur.'); return; }
+                                            const shortTitle = data2.productTitle.length > 18 ? data2.productTitle.slice(0, 18) + '…' : data2.productTitle;
+                                            const badge = document.createElement('span');
+                                            badge.className = 'product-badge-thumb';
+                                            badge.setAttribute('data-product-badge', '');
+                                            badge.dataset.id = data2.productId;
+                                            badge.innerHTML = '<a href="/produits/' + data2.productId + '" target="_blank" class="product-badge-thumb-link">'
+                                                + '<img src="' + (data2.imageUrl || '') + '" alt="">'
+                                                + '<span class="product-badge-thumb-name">' + shortTitle + ' - ' + data2.reference + '</span>'
+                                                + '</a>'
+                                                + '<button type="button" class="product-badge-thumb-remove hot-deal-remove-btn" data-remove-url="/parametres/offre-exceptionnelle-accueil/produit/' + data2.productId + '/retirer">×</button>';
+                                            wireRemove(badge.querySelector('.hot-deal-remove-btn'));
+                                            list.appendChild(badge);
+                                            searchInput.value = '';
+                                            results.innerHTML = '';
+                                        });
+                                });
+                                results.appendChild(btn);
+                            });
+                        });
+                }, 300);
+            });
+        });
+    </script>
+{% endblock %}

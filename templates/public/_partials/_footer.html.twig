@@ -2,6 +2,11 @@
    Footer complet — disposition fidèle au modèle de référence,
    palette bleue (--kb-blue), alignée sur le header.
    ========================================================================== #}
+{% set fd = footer_data() %}
+{% set footerColumns = fd.columns %}
+{% set footerMosaicAds = fd.mosaicAds %}
+{% set footerBrands = fd.brands %}
+{% set footerBottomLinks = fd.bottomLinks %}
 <footer class="site-footer">
 
     {# --- Newsletter --- #}
@@ -28,7 +33,7 @@
                 <span class="footer-brand-logo">
                     <span class="logo-kongo">Kongo</span><span class="logo-bazar">Bazar</span>
                 </span>
-                <p>{{ 'footer.brand_description'|trans }}</p>
+                <p>{{ fd.settings.companyDescription }}</p>
             </div>
 
             {% set columnLabels = {
@@ -60,9 +65,6 @@
                             </a>
                         {% endfor %}
                     </div>
-                    <div class="footer-mosaic-caption">
-                        {{ 'footer.follow_us'|trans }} <strong>#KongoBazar</strong>
-                    </div>
                 </div>
             {% endif %}
         </div>
@@ -76,8 +78,6 @@
                 'footer_col_4': 'footer.col.customer_service'|trans,
                 'footer_col_5': 'footer.col.practical'|trans,
                 'footer_col_6': 'footer.col.earn_more'|trans,
-                'footer_col_7': 'footer.col.help_support'|trans,
-                'footer_col_8': 'footer.col.contact'|trans,
             } %}
             {% for location, label in moreColumnLabels %}
                 <div class="footer-col">
@@ -100,27 +100,38 @@
         </div>
     </div>
 
+    {% if fd.paymentMethods|length > 0 %}
+        <div class="footer-payment-methods-band">
+            <div class="container-kb footer-payment-methods-inner">
+                {% for method in fd.paymentMethods %}
+                    <img src="{{ vich_uploader_asset(method, 'imageFile') }}" alt="{{ method.name }}" title="{{ method.name }}" class="footer-payment-methods-logo">
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
     {# --- Bannière "Call Us" avec photo en arrière-plan (déplacée avant le bandeau marques) --- #}
     <div class="footer-contact-band">
         <div class="container-kb footer-contact-inner">
-            {% if footerCallUsPhoto is defined and footerCallUsPhoto %}
-                <div class="footer-contact-photo">
-                    <img src="{{ vich_uploader_asset(footerCallUsPhoto, 'imageFile') }}" alt="Support KongoBazar" loading="lazy">
-                </div>
+            {% if fd.socialAd and fd.socialAd.imageName %}
+                <a {% if fd.socialAd.targetUrl %}href="{{ path('ads_click', { id: fd.socialAd.id, zoneKey: 'footer_social_banner' }) }}"{% endif %}{% if fd.socialAd.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="footer-social-ad{{ fd.socialAd.targetUrl ? ' ad-clickable' : '' }}">
+                    <img src="{{ vich_uploader_asset(fd.socialAd, 'imageFile') }}" alt="{{ fd.socialAd.title }}" loading="lazy">
+                </a>
             {% endif %}
             <div class="footer-contact-phone">
                 <span>{{ 'footer.call_us'|trans }}</span>
-                <strong>+243 000 000 000 <em>({{ 'footer.available_24_7'|trans }})</em></strong>
+                <strong>{{ fd.settings.phone }} <em>({{ fd.settings.phoneAvailability }})</em></strong>
             </div>
             <div class="footer-social-icons">
-                <a href="#" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
-                <a href="#" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>
-                <a href="#" aria-label="Twitter"><i class="bi bi-twitter-x"></i></a>
-                <a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+                {% for link in fd.socialLinks %}
+                    <a href="{{ link.url }}" target="_blank" rel="noopener" aria-label="{{ link.platform }}" style="color: {{ link.colorHex }};">
+                        <i class="{{ link.iconClass }}"></i>
+                    </a>
+                {% endfor %}
             </div>
             <div class="footer-address">
                 <span>{{ 'footer.address'|trans }}</span>
-                <strong>Kinshasa, Gombe — RDC</strong>
+                <strong>{{ fd.settings.address }}</strong>
             </div>
         </div>
     </div>
@@ -138,7 +149,7 @@
 
     {# --- Ligne de liens rapides --- #}
     {% if footerBottomLinks is defined and footerBottomLinks|length > 0 %}
-        <div class="footer-bottom-links">
+    <div class="footer-bottom-links">
             <div class="container-kb footer-bottom-links-inner">
                 {% for item in footerBottomLinks %}
                     <a href="{{ item.internalRoute ? path(item.internalRoute) : item.url }}">{{ item.label }}</a>

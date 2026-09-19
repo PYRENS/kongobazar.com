@@ -35,14 +35,17 @@
                     <div class="card-body">
                     <div class="mb-3">
                         <label class="form-label">Zones d'affichage (une même bannière ne peut être placée que sur des zones de même dimension)</label>
-                        <select name="zone_keys[]" id="adZoneMultiSelect" class="form-select" multiple size="8" required>
+                        <div class="border rounded p-2" style="max-height:260px;overflow-y:auto;">
                             {% for key, info in zoneKeys %}
-                                <option value="{{ key }}" data-width="{{ info.width }}" data-height="{{ info.height }}" {{ key in selectedZoneKeys ? 'selected' : '' }}>
-                                    {{ info.label }}{{ info.width and info.height ? ' (' ~ info.width ~ '×' ~ info.height ~ ')' : '' }}
-                                </option>
+                                <div class="form-check">
+                                    <input type="checkbox" name="zone_keys[]" value="{{ key }}" class="form-check-input" id="zoneKey_{{ key }}" {{ key in selectedZoneKeys ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="zoneKey_{{ key }}">
+                                        {{ info.label }}{{ info.width and info.height ? ' (' ~ info.width ~ '×' ~ info.height ~ ')' : '' }}
+                                    </label>
+                                </div>
                             {% endfor %}
-                        </select>
-                        <small class="text-muted">Maintiens Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs zones.</small>
+                        </div>
+                        <small class="text-muted">Coche toutes les zones où cette bannière doit apparaître.</small>
                     </div>
 
                     <div class="row">

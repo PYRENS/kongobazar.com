@@ -111,20 +111,7 @@ class StubPagesController extends AbstractController
         ]);
     }
 
-    #[Route('/blog/{slug}', name: 'blog_show', host: 'kongobazar.com')]
-    public function blogShow(string $slug, BlogPostRepository $blogPostRepository): Response
-    {
-        $post = $blogPostRepository->findOneBy(['slug' => $slug]);
-        $title = $post ? $post->getTitle() : $slug;
-
-        return $this->render('public/stub_generic.html.twig', [
-            'title' => "Article : {$title}",
-            'breadcrumbs' => [
-                ['label' => $title, 'url' => null],
-            ],
-        ]);
-    }
-
+    /* Route blog_show déplacée dans BlogController — supprimée d'ici pour éviter le doublon. */
     #[Route('/notre-reseau/{slug}', name: 'partner_show', host: 'kongobazar.com')]
     public function partnerShow(string $slug, \App\Repository\SellerProfileRepository $sellerProfileRepository): Response
     {

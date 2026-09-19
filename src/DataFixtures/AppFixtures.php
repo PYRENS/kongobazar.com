@@ -228,7 +228,7 @@ class AppFixtures extends Fixture
             'homepage_hero_main', 'homepage_hero_main', 'homepage_hero_main',
             'homepage_hero_side_top', 'homepage_hero_side_bottom',
             'sidebar_top', 'sidebar_middle',
-            'homepage_promo_strip', 'homepage_center_banner',
+            'homepage_center_banner',
             'mega_menu_catalogue',
             'homepage_lifestyle_left', 'homepage_lifestyle_center', 'homepage_lifestyle_right',
             'footer_social_banner',

@@ -8,6 +8,8 @@
    ========================================================================== #}
 <aside class="home-left-col">
 
+    {% include 'public/_partials/_home_hot_deal.html.twig' %}
+
     <div class="home-top-ad-and-bestsellers">
         {% if adSidebarTop is defined and adSidebarTop and adSidebarTop.imageName %}
             <a {% if adSidebarTop.targetUrl %}href="{{ path('ads_click', { id: adSidebarTop.id, zoneKey: 'sidebar_top' }) }}"{% endif %}{% if adSidebarTop.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="home-ad-slot{{ adSidebarTop.targetUrl ? ' ad-clickable' : '' }}">
@@ -142,20 +144,13 @@
         {% endif %}
     </div>
 
-    {# --- Dernier article de blog --- #}
-    {% if latestPost is defined and latestPost %}
-        <div class="home-blog-latest">
-            <h6>{{ 'home.latest_blog'|trans }}</h6>
-            <a href="{{ path('blog_show', { slug: latestPost.slug }) }}" class="home-blog-card">
-                {% if latestPost.coverImageName %}
-                    <img src="{{ vich_uploader_asset(latestPost, 'coverImageFile') }}" alt="{{ latestPost.title }}" loading="lazy">
-                {% endif %}
-                <div class="home-blog-card-body">
-                    <span class="home-blog-card-title">{{ latestPost.title }}</span>
-                    <span class="home-blog-card-date">{{ latestPost.publishedAt ? latestPost.publishedAt|date('d M Y') : '' }}</span>
-                </div>
-            </a>
+    {% if sidebarFillerBanners is defined and sidebarFillerBanners|length > 0 %}
+        <div class="home-sidebar-filler" id="homeSidebarFiller">
+            {% for banner in sidebarFillerBanners %}
+                <a {% if banner.targetUrl %}href="{{ banner.targetUrl }}"{% endif %}{% if banner.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="home-sidebar-filler-item" hidden>
+                    <img src="{{ vich_uploader_asset(banner, 'imageFile') }}" alt="{{ banner.title }}">
+                </a>
+            {% endfor %}
         </div>
     {% endif %}
-
 </aside>

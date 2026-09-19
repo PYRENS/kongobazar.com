@@ -42,9 +42,9 @@ function fetchSuggestions(term, box, form) {
 
 function renderSuggestions(data, term, box, form) {
     box.innerHTML = '';
-    const { products = [], categories = [] } = data;
+    const { products = [], categories = [], sellers = [] } = data;
 
-    if (products.length === 0 && categories.length === 0) {
+    if (products.length === 0 && categories.length === 0 && sellers.length === 0) {
         box.hidden = true;
         return;
     }
@@ -60,6 +60,30 @@ function renderSuggestions(data, term, box, form) {
             link.href = cat.url;
             link.className = 'search-suggestion-item search-suggestion-item--category';
             link.innerHTML = `<i class="bi ${cat.icon} suggestion-icon"></i><span class="suggestion-title">${cat.name}</span>`;
+            box.appendChild(link);
+        });
+    }
+
+    if (sellers.length > 0) {
+        const heading = document.createElement('div');
+        heading.className = 'suggestion-heading';
+        heading.textContent = 'Vendeurs trouvés';
+        box.appendChild(heading);
+
+        sellers.forEach((seller) => {
+            const link = document.createElement('a');
+            link.href = seller.url;
+            link.className = 'search-suggestion-item search-suggestion-item--seller';
+
+            const img = seller.logo
+                ? `<img src="${seller.logo}" class="suggestion-thumb" alt="">`
+                : `<span class="suggestion-thumb suggestion-thumb--empty"></span>`;
+
+            link.innerHTML = `
+                ${img}
+                <span class="suggestion-title">${seller.name}</span>
+                <span class="suggestion-seller-type">${seller.typeLabel}</span>
+            `;
             box.appendChild(link);
         });
     }

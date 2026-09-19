@@ -30,6 +30,34 @@ class CustomMenuItemRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /** Admin — tous les items (actifs ou non) d'un emplacement, dans l'ordre. */
+    public function findAllByLocation(string $location, string $targetSpace = 'public'): array
+    {
+        return $this->createQueryBuilder('m')
+            ->andWhere('m.location = :location')
+            ->andWhere('m.targetSpace = :space')
+            ->andWhere('m.parent IS NULL')
+            ->setParameter('location', $location)
+            ->setParameter('space', $targetSpace)
+            ->orderBy('m.position', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function findNextPosition(string $location, string $targetSpace = 'public'): int
+    {
+        $max = $this->createQueryBuilder('m')
+            ->select('MAX(m.position)')
+            ->andWhere('m.location = :location')
+            ->andWhere('m.targetSpace = :space')
+            ->setParameter('location', $location)
+            ->setParameter('space', $targetSpace)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return ((int) $max) + 1;
+    }
+
     //    /**
     //     * @return CustomMenuItem[] Returns an array of CustomMenuItem objects
     //     */

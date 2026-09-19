@@ -1,0 +1,49 @@
+{# ==========================================================================
+   "Offre exceptionnelle" — colonne gauche, 1 produit affiché à la fois,
+   flèches pour naviguer entre les produits du pool (épinglés + auto-complétés
+   par % de réduction décroissant). Contexte : hotDealProducts (Product[]).
+   ========================================================================== #}
+{% if hotDealProducts|default([])|length > 0 %}
+<div class="hot-deal-card">
+    <div class="hot-deal-head">
+        <span class="hot-deal-head-title"><i class="bi bi-lightning-charge-fill"></i> {{ 'home.hot_deals'|trans|default('Offre exceptionnelle') }}</span>
+        {% if hotDealProducts|length > 1 %}
+            <div class="hot-deal-nav">
+                <button type="button" class="hot-deal-arrow hot-deal-arrow--prev" aria-label="{{ 'home.prev'|trans }}"><i class="bi bi-chevron-left"></i></button>
+                <button type="button" class="hot-deal-arrow hot-deal-arrow--next" aria-label="{{ 'home.next'|trans }}"><i class="bi bi-chevron-right"></i></button>
+            </div>
+        {% endif %}
+    </div>
+    <div class="hot-deal-slides">
+        {% for product in hotDealProducts %}
+            <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="hot-deal-slide{{ loop.first ? ' active' : '' }}">
+                <div class="hot-deal-media">
+                    <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
+                    {% if product.activeDiscountPercent %}
+                        <span class="badge-discount">-{{ product.activeDiscountPercent }}%</span>
+                    {% endif %}
+                </div>
+                {% if product.activeDiscountEndAt %}
+                    <div class="home-deal-countdown" data-countdown-end="{{ product.activeDiscountEndAt|date('c') }}">
+                        <div class="countdown-boxes">
+                            <div><span data-cd-days>--</span><small>{{ 'home.days'|trans|default('Jours') }}</small></div>
+                            <div><span data-cd-hours>--</span><small>{{ 'home.hours'|trans|default('Heures') }}</small></div>
+                            <div><span data-cd-mins>--</span><small>{{ 'home.mins'|trans|default('Min') }}</small></div>
+                            <div><span data-cd-secs>--</span><small>{{ 'home.secs'|trans|default('Sec') }}</small></div>
+                        </div>
+                    </div>
+                {% endif %}
+                <div class="hot-deal-info">
+                    <p class="hot-deal-title">{{ product.title }}</p>
+                    <div class="hot-deal-price">
+                        <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+                        {% if product.displayOldPrice %}
+                            <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}

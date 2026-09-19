@@ -1,0 +1,82 @@
+{% extends 'manage/base.html.twig' %}
+{% block title %}{{ campaign ? 'Modifier' : 'Nouvelle' }} campagne{% endblock %}
+{% block page_icon %}bi-megaphone{% endblock %}
+{% block page_title %}{{ campaign ? 'Modifier la campagne' : 'Nouvelle campagne' }}{% endblock %}
+{% block body %}
+    <form method="post" action="{{ campaign ? path('manage_campaign_update', { id: campaign.id }) : path('manage_campaign_create') }}" enctype="multipart/form-data">
+        <div class="sw-card mb-3">
+            <div class="card-body row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Type de campagne</label>
+                    <select name="type" class="form-select" id="campaignTypeSelect">
+                        {% for key, label in types %}
+                            <option value="{{ key }}" {{ campaign and campaign.type == key ? 'selected' : '' }}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3" id="campaignCustomTypeWrap" style="{{ campaign and campaign.type == 'autre' ? '' : 'display:none;' }}">
+                    <label class="form-label">Précisez</label>
+                    <input type="text" name="custom_type_label" class="form-control" value="{{ campaign ? campaign.customTypeLabel : '' }}" placeholder="Ex: Anniversaire du site">
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label">Titre (ex: Solde janvier 2027)</label>
+                    <input type="text" name="title" class="form-control" value="{{ campaign ? campaign.title : '' }}" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Début</label>
+                    <input type="datetime-local" name="start_at" class="form-control" value="{{ campaign and campaign.startAt ? campaign.startAt|date('Y-m-d\\TH:i') : '' }}" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Fin</label>
+                    <input type="datetime-local" name="end_at" class="form-control" value="{{ campaign and campaign.endAt ? campaign.endAt|date('Y-m-d\\TH:i') : '' }}" required>
+                </div>
+            </div>
+        </div>
+
+        <div class="sw-card mb-3">
+            <div class="card-body row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Bannière de tête (1920 × 420px conseillé)</label>
+                    <small class="text-muted d-block mb-1" id="campaignImageStatus">
+                        {{ campaign and campaign.bannerImageName ? 'Image actuelle' : 'Aucune image choisie' }}
+                    </small>
+                    <div class="kb-image-uploader">
+                        <div class="kb-image-uploader-thumb" id="campaignImageCurrent" style="{{ campaign and campaign.bannerImageName ? '' : 'display:none;' }} width:160px;height:70px;">
+                            <img id="campaignImagePreview" src="{{ campaign and campaign.bannerImageName ? vich_uploader_asset(campaign, 'bannerImageFile') : '' }}" alt="">
+                        </div>
+                        <label class="kb-image-uploader-dropzone" for="campaignImageInput">
+                            <i class="bi bi-camera"></i>
+                            <span>Upload</span>
+                        </label>
+                        <input type="file" name="banner_image" id="campaignImageInput" accept="image/*" hidden>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Produits par lot (défilement infini)</label>
+                    <input type="number" name="batch_size" class="form-control" min="1" value="{{ campaign ? campaign.batchSize : 12 }}">
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-success">Enregistrer</button>
+        <a href="{{ path('manage_campaign_index') }}" class="btn btn-outline-secondary">Annuler</a>
+    </form>
+
+    <script>
+        document.getElementById('campaignTypeSelect').addEventListener('change', function () {
+            document.getElementById('campaignCustomTypeWrap').style.display = this.value === 'autre' ? 'block' : 'none';
+        });
+
+        document.getElementById('campaignImageInput').addEventListener('change', function () {
+            const file = this.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('campaignImagePreview').src = e.target.result;
+                document.getElementById('campaignImageCurrent').style.display = 'block';
+                document.getElementById('campaignImageStatus').textContent = 'Nouvelle image sélectionnée';
+            };
+            reader.readAsDataURL(file);
+        });
+    </script>
+{% endblock %}

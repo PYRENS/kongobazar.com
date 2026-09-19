@@ -219,12 +219,23 @@
             </button>
         </div>
 
-        <form class="search-form-condensed" id="mobileSearchOverlay" action="{{ path('catalog_search') }}" method="get">
-            <button type="button" class="mobile-search-close" id="mobileSearchClose" aria-label="{{ 'menu.close'|trans }}"><i class="bi bi-x-lg"></i></button>
-            <input type="search" name="q" placeholder="{{ 'header.search_placeholder'|trans }}" autocomplete="off">
-            <button type="submit" class="mobile-search-submit"><i class="bi bi-search"></i></button>
-            <div class="search-suggestions" hidden></div>
-        </form>
+        <div class="mobile-search-drawer" id="mobileSearchOverlay">
+            <div class="mobile-search-drawer-header">
+                <h5 class="offcanvas-title">{{ 'header.search_title'|trans|default('Rechercher') }}</h5>
+                <button type="button" class="btn-close-custom" id="mobileSearchClose" aria-label="{{ 'menu.close'|trans }}">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="mobile-search-drawer-body">
+                <form class="search-form-condensed mobile-search-drawer-form" action="{{ path('catalog_search') }}" method="get">
+                    <div class="mobile-search-drawer-inputwrap">
+                        <input type="search" name="q" placeholder="{{ 'header.search_placeholder'|trans }}" autocomplete="off">
+                        <button type="submit" class="mobile-search-submit"><i class="bi bi-search"></i></button>
+                    </div>
+                    <div class="search-suggestions" hidden></div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <div class="container-kb site-header-condensed-inner condensed-inner--desktop">

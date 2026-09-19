@@ -13,7 +13,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class TrendingManagementController extends AbstractController
 {
     #[Route('/tendances', name: 'manage_trending_index', host: 'manage.kongobazar.com', methods: ['GET'])]
-    public function index(Request $request, CategoryRepository $repository): Response
+    public function index(Request $request, CategoryRepository $repository, \App\Repository\TrendingBarSettingRepository $barSettingRepository): Response
     {
         $searchTerm = $request->query->get('q');
         $searchResults = $searchTerm ? $repository->searchByName($searchTerm) : [];
@@ -28,7 +28,18 @@ class TrendingManagementController extends AbstractController
             'searchResults' => $searchResults,
             'searchTerm' => $searchTerm,
             'rootCategories' => $repository->findRootCategories(),
+            'barSetting' => $barSettingRepository->getSingleton(),
         ]);
+    }
+
+    #[Route('/tendances/basculer', name: 'manage_trending_toggle_enabled', host: 'manage.kongobazar.com', methods: ['POST'])]
+    public function toggleEnabled(\App\Repository\TrendingBarSettingRepository $barSettingRepository, EntityManagerInterface $em): Response
+    {
+        $setting = $barSettingRepository->getSingleton();
+        $setting->setEnabled(!$setting->isEnabled());
+        $em->flush();
+
+        return $this->json(['ok' => true, 'enabled' => $setting->isEnabled()]);
     }
 
     #[Route('/tendances/epingler-cascade', name: 'manage_trending_pin_cascade', host: 'manage.kongobazar.com', methods: ['POST'])]

@@ -5,6 +5,17 @@
 {% block page_title %}Tendances{% endblock %}
 
 {% block body %}
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-toggle-on text-primary me-2"></i>Visibilité</h6></div>
+        <div class="card-body">
+            <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="trendingBarEnabledSwitch" role="switch" {{ barSetting.enabled ? 'checked' : '' }} data-toggle-url="{{ path('manage_trending_toggle_enabled') }}">
+                <label class="form-check-label" for="trendingBarEnabledSwitch">Afficher le bandeau "Tendances" dans le header (toutes les pages)</label>
+            </div>
+            <small id="trendingBarEnabledFeedback" class="text-muted"></small>
+        </div>
+    </div>
+
     <div class="row g-3 mb-4">
         <div class="col-xl-3 col-md-6">
             <div class="sw-card ctb-stat ctb-stat-blue h-100">
@@ -100,4 +111,18 @@
             {% endif %}
         </div>
     </div>
+    <script>
+        (function () {
+            const sw = document.getElementById('trendingBarEnabledSwitch');
+            const feedback = document.getElementById('trendingBarEnabledFeedback');
+            sw.addEventListener('change', function () {
+                fetch(this.dataset.toggleUrl, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        this.checked = data.enabled;
+                        feedback.textContent = data.enabled ? 'Activé.' : 'Désactivé.';
+                    });
+            });
+        })();
+    </script>
 {% endblock %}

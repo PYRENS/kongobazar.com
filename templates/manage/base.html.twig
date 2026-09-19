@@ -186,7 +186,7 @@
                 <li>
                     <a href="{{ path('manage_seller_attr_test_index') }}"><i class="bi bi-person-gear"></i> <span class="hide-menu">Test — Caractéristiques vendeur</span></a>
                 </li>
-                <li class="admin-nav-group {{ app.request.attributes.get('_route') starts with 'manage_settings' or app.request.attributes.get('_route') starts with 'manage_sidebar_themes' or app.request.attributes.get('_route') starts with 'manage_seo' or app.request.attributes.get('_route') starts with 'manage_site_identity' or app.request.attributes.get('_route') starts with 'manage_home_deals_setting' or app.request.attributes.get('_route') starts with 'manage_home_trending_tabs' or app.request.attributes.get('_route') starts with 'manage_home_category_blocks' or app.request.attributes.get('_route') starts with 'manage_top_category_items' or app.request.attributes.get('_route') starts with 'manage_top_vendor' ? 'open' : '' }}">
+                <li class="admin-nav-group {{ app.request.attributes.get('_route') starts with 'manage_settings' or app.request.attributes.get('_route') starts with 'manage_sidebar_themes' or app.request.attributes.get('_route') starts with 'manage_seo' or app.request.attributes.get('_route') starts with 'manage_site_identity' ? 'open' : '' }}">
                     <button type="button" class="admin-nav-group-toggle">
                         <i class="bi bi-gear"></i> <span class="hide-menu">Paramètres</span> <i class="bi bi-chevron-down admin-nav-group-arrow"></i>
                     </button>
@@ -200,6 +200,14 @@
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_site_identity' ? 'active' : '' }}">
                             <a href="{{ path('manage_site_identity') }}"><i class="bi bi-badge-hd"></i> <span class="hide-menu">Identité visuelle</span></a>
                         </li>
+                    </ul>
+                </li>
+
+                <li class="admin-nav-group {{ app.request.attributes.get('_route') starts with 'manage_home_deals_setting' or app.request.attributes.get('_route') starts with 'manage_home_trending_tabs' or app.request.attributes.get('_route') starts with 'manage_home_category_blocks' or app.request.attributes.get('_route') starts with 'manage_top_category_items' or app.request.attributes.get('_route') starts with 'manage_top_vendor' or app.request.attributes.get('_route') starts with 'manage_new_items' or app.request.attributes.get('_route') starts with 'manage_most_viewed' or app.request.attributes.get('_route') starts with 'manage_best_sellers' or app.request.attributes.get('_route') starts with 'manage_hot_deal' or app.request.attributes.get('_route') starts with 'manage_promo_strip' or app.request.attributes.get('_route') starts with 'manage_sidebar_new_arrivals' or app.request.attributes.get('_route') starts with 'manage_coming_soon' or app.request.attributes.get('_route') starts with 'manage_individual_section' ? 'open' : '' }}">
+                    <button type="button" class="admin-nav-group-toggle">
+                        <i class="bi bi-house-door"></i> <span class="hide-menu">Sections accueil</span> <i class="bi bi-chevron-down admin-nav-group-arrow"></i>
+                    </button>
+                    <ul class="admin-nav-submenu">
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_home_deals_setting' ? 'active' : '' }}">
                             <a href="{{ path('manage_home_deals_setting') }}"><i class="bi bi-lightning-charge"></i> <span class="hide-menu">Ventes flash accueil</span></a>
                         </li>
@@ -224,18 +232,59 @@
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_best_sellers' ? 'active' : '' }}">
                             <a href="{{ path('manage_best_sellers_setting') }}"><i class="bi bi-graph-up-arrow"></i> <span class="hide-menu">Meilleures ventes accueil</span></a>
                         </li>
+                        <li class="{{ app.request.attributes.get('_route') starts with 'manage_hot_deal' ? 'active' : '' }}">
+                            <a href="{{ path('manage_hot_deal_setting') }}"><i class="bi bi-lightning-charge"></i> <span class="hide-menu">Offre exceptionnelle accueil</span></a>
+                        </li>
+                        <li class="{{ app.request.attributes.get('_route') starts with 'manage_promo_strip' ? 'active' : '' }}">
+                            <a href="{{ path('manage_promo_strip_index') }}"><i class="bi bi-images"></i> <span class="hide-menu">Bandeau promo accueil</span></a>
+                        </li>
+                        <li class="{{ app.request.attributes.get('_route') starts with 'manage_sidebar_filler' ? 'active' : '' }}">
+                            <a href="{{ path('manage_sidebar_filler_index') }}"><i class="bi bi-images"></i> <span class="hide-menu">Bannières bouche-trou (col. gauche)</span></a>
+                        </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_sidebar_new_arrivals' ? 'active' : '' }}">
                             <a href="{{ path('manage_sidebar_new_arrivals_setting') }}"><i class="bi bi-stars"></i> <span class="hide-menu">Nouveaux articles (col. gauche)</span></a>
                         </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_coming_soon' ? 'active' : '' }}">
                             <a href="{{ path('manage_coming_soon_setting') }}"><i class="bi bi-hourglass-split"></i> <span class="hide-menu">Prochainement accueil</span></a>
                         </li>
-                        <li class="{{ app.request.attributes.get('_route') starts with 'manage_seller_privilege' or app.request.attributes.get('_route') starts with 'manage_preorder' ? 'active' : '' }}">
-                            <a href="{{ path('manage_seller_privilege_index') }}"><i class="bi bi-shield-check"></i> <span class="hide-menu">Privilèges vendeur</span></a>
-                        </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_individual_section' ? 'active' : '' }}">
                             <a href="{{ path('manage_individual_section_setting') }}"><i class="bi bi-person"></i> <span class="hide-menu">Particulier accueil</span></a>
                         </li>
+                    </ul>
+                </li>
+
+                <li class="admin-nav-group {{ app.request.attributes.get('_route') starts with 'manage_seller_privilege' or app.request.attributes.get('_route') starts with 'manage_preorder' ? 'open' : '' }}">
+                    <button type="button" class="admin-nav-group-toggle">
+                        <i class="bi bi-shop"></i> <span class="hide-menu">Vendeur</span> <i class="bi bi-chevron-down admin-nav-group-arrow"></i>
+                    </button>
+                    <ul class="admin-nav-submenu">
+                        <li class="{{ app.request.attributes.get('_route') starts with 'manage_seller_privilege' or app.request.attributes.get('_route') starts with 'manage_preorder' ? 'active' : '' }}">
+                            <a href="{{ path('manage_seller_privilege_index') }}"><i class="bi bi-shield-check"></i> <span class="hide-menu">Privilèges</span></a>
+                        </li>
+                    </ul>
+                </li>
+
+                <li class="{{ app.request.attributes.get('_route') starts with 'manage_blog' ? 'active' : '' }}">
+                    <a href="{{ path('manage_blog_index') }}"><i class="bi bi-journal-text"></i> <span class="hide-menu">Blog</span></a>
+                </li>
+                <li class="{{ app.request.attributes.get('_route') starts with 'manage_footer_setting' ? 'active' : '' }}">
+                    <a href="{{ path('manage_footer_setting') }}"><i class="bi bi-layout-text-window-reverse"></i> <span class="hide-menu">Footer — Réglages</span></a>
+                </li>
+                <li class="{{ app.request.attributes.get('_route') starts with 'manage_footer_menu' ? 'active' : '' }}">
+                    <a href="{{ path('manage_footer_menu_index') }}"><i class="bi bi-list-ul"></i> <span class="hide-menu">Footer — Rubriques</span></a>
+                </li>
+                <li class="{{ app.request.attributes.get('_route') starts with 'manage_payment_method' ? 'active' : '' }}">
+                    <a href="{{ path('manage_payment_method_index') }}"><i class="bi bi-credit-card"></i> <span class="hide-menu">Moyens de paiement</span></a>
+                </li>
+                <li class="{{ app.request.attributes.get('_route') starts with 'manage_campaign' ? 'active' : '' }}">
+                    <a href="{{ path('manage_campaign_index') }}"><i class="bi bi-megaphone"></i> <span class="hide-menu">Campagnes</span></a>
+                </li>
+
+                <li class="admin-nav-group {{ app.request.attributes.get('_route') starts with 'manage_sponsor_brands' or app.request.attributes.get('_route') starts with 'manage_partners' ? 'open' : '' }}">
+                    <button type="button" class="admin-nav-group-toggle">
+                        <i class="bi bi-award"></i> <span class="hide-menu">Sponsoring / Partenaire</span> <i class="bi bi-chevron-down admin-nav-group-arrow"></i>
+                    </button>
+                    <ul class="admin-nav-submenu">
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_sponsor_brands' ? 'active' : '' }}">
                             <a href="{{ path('manage_sponsor_brands') }}"><i class="bi bi-award"></i> <span class="hide-menu">Marques sponsors</span></a>
                         </li>

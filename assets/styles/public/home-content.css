@@ -13,7 +13,8 @@
     margin-right: -16px;
 }
 @media (min-width: 992px) and (max-width: 1366px) {
-    .home-layout {
+    .home-layout,
+    .home-full-width-bottom {
         margin-left: 0;
         margin-right: 0;
     }
@@ -67,6 +68,46 @@
 .home-center-banner img { aspect-ratio: 1044 / 250; max-height: 250px; }
 .category-block-banner img { aspect-ratio: 1044 / 180; max-height: 180px; }
 .home-center-banner { display: block; margin-top: 24px; }
+.home-promo-strip {
+    display: flex;
+    gap: 16px;
+    margin-top: 24px;
+    width: 100%;
+}
+.home-promo-strip-item {
+    flex: 1;
+    min-width: 0;
+    display: block;
+}
+.home-promo-strip-item--overflow {
+    display: none;
+}
+.home-promo-strip-item img {
+    width: 100%;
+    aspect-ratio: 434 / 150;
+    max-height: 150px;
+    border-radius: 6px;
+    display: block;
+    object-fit: cover;
+    background: #f7f7f7;
+}
+@media (max-width: 767px) {
+    .home-promo-strip {
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+    }
+    .home-promo-strip::-webkit-scrollbar { display: none; }
+    .home-promo-strip-item {
+        flex: 0 0 80%;
+        scroll-snap-align: start;
+    }
+    .home-promo-strip-item--overflow {
+        display: block;
+    }
+}
 /* --------------------------------------------------------------------------
    Colonne gauche
    -------------------------------------------------------------------------- */
@@ -75,6 +116,7 @@
     flex-direction: column;
     gap: 20px;
     min-width: 0;
+    align-self: start;
 }
 .home-center-col {
     min-width: 0;
@@ -875,23 +917,7 @@
     }
     .home-top-categories-track {
         padding: 0 16px;
-        gap: 6px;
-    }
-    .top-category-item {
-        background: linear-gradient(to bottom, #f0f0f0, #ffffff);
-        min-width: 72px;
-        padding: 8px 6px;
-        gap: 6px;
-    }
-    .top-category-circle {
-        width: 48px;
-        height: 48px;
-    }
-    .top-category-circle i {
-        font-size: 16px;
-    }
-    .top-category-label {
-        font-size: 10px;
+        gap: 4px;
     }
 }
 .top-category-circle {
@@ -907,6 +933,25 @@
 .top-category-circle img { width: 100%; height: 100%; object-fit: cover; }
 .top-category-circle i { font-size: 30px; color: #fff; }
 .top-category-label { font-size: 14px; font-weight: 700; color: var(--kb-text); text-align: center; }
+
+@media (max-width: 414px) {
+    .top-category-item {
+        background: linear-gradient(to bottom, #f0f0f0, #ffffff);
+        min-width: 68px;
+        padding: 8px 5px;
+        gap: 5px;
+    }
+    .top-category-circle {
+        width: 46px;
+        height: 46px;
+    }
+    .top-category-circle i {
+        font-size: 15px;
+    }
+    .top-category-label {
+        font-size: 10px;
+    }
+}
 
 /* --------------------------------------------------------------------------
    Top Vendeur
@@ -1227,76 +1272,6 @@
         border-radius: 0;
     }
 }
-/* --------------------------------------------------------------------------
-   Popular Tags (logos marques + mosaïque lifestyle)
-   -------------------------------------------------------------------------- */
-.home-popular-tags { margin-top: 30px; }
-.popular-tags-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-.popular-tags-brands {
-    display: flex;
-    flex-direction: row;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-.popular-tags-brands .brand-tag-item {
-    flex: 1;
-    min-width: 100px;
-}
-.brand-tag-item {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 44px;
-    border: 1px solid var(--kb-border);
-    border-radius: 4px;
-}
-.brand-tag-item img { max-width: 70%; max-height: 70%; object-fit: contain; }
-.brand-tag-fallback { font-size: 11px; font-weight: 700; color: #999; }
-
-.popular-tags-lifestyle {
-    display: grid;
-    grid-template-columns: 1fr 2fr 1fr;
-    gap: 12px;
-}
-.lifestyle-cell img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; display: block; }
-.lifestyle-cell--side { height: 220px; }
-.lifestyle-cell--center { height: 220px; }
-
-@media (max-width: 767px) {
-    .popular-tags-grid { grid-template-columns: 1fr; }
-    .popular-tags-brands { flex-direction: row; flex-wrap: wrap; }
-    .popular-tags-lifestyle { grid-template-columns: 1fr; }
-}
-
-/* --------------------------------------------------------------------------
-   Badges qualité (statique)
-   -------------------------------------------------------------------------- */
-.home-trust-badges {
-    display: flex;
-    justify-content: space-around;
-    flex-wrap: wrap;
-    gap: 20px;
-    margin-top: 30px;
-    padding: 20px 0;
-    border-top: 1px solid var(--kb-border);
-    border-bottom: 1px solid var(--kb-border);
-}
-.trust-badge-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    color: #999;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-}
-.trust-badge-item i { font-size: 22px; }
-
 /* --------------------------------------------------------------------------
    Most Viewed
    -------------------------------------------------------------------------- */
@@ -1659,4 +1634,86 @@
     }
     #newArrivalsMiniCarousel .price-now { font-size: 13px; }
     #newArrivalsMiniCarousel .price-old { font-size: 11px; margin-left: 0; }
+}
+
+/* --------------------------------------------------------------------------
+   Bloc pleine largeur bas de page + carrousel "Derniers articles"
+   -------------------------------------------------------------------------- */
+.home-full-width-bottom {
+    margin-top: 30px;
+    margin-left: -16px;
+    margin-right: -16px;
+}
+@media (min-width: 992px) and (max-width: 1366px) {
+    .home-full-width-bottom {
+        margin-left: 0;
+        margin-right: 0;
+    }
+}
+@media (max-width: 991px) {
+    .home-full-width-bottom {
+        margin-left: 0;
+        margin-right: 0;
+    }
+}
+.home-latest-blogs { margin-top: 30px; }
+.home-latest-blogs-viewport { overflow: hidden; }
+.home-latest-blogs-track {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+}
+.home-latest-blogs-track::-webkit-scrollbar { display: none; }
+.home-latest-blog-card {
+    flex: 0 0 calc((100% - 4 * 20px) / 5);
+    scroll-snap-align: start;
+    text-decoration: none;
+    color: inherit;
+    border: 1px solid var(--kb-border);
+    border-radius: 6px;
+    overflow: hidden;
+}
+.home-latest-blog-card img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
+.home-latest-blog-info { padding: 10px 12px; display: flex; align-items: flex-start; gap: 10px; }
+.home-latest-blog-date {
+    flex-shrink: 0;
+    background: var(--kb-theme-color);
+    color: #fff;
+    border-radius: 4px;
+    padding: 4px 8px;
+    text-align: center;
+    line-height: 1.1;
+}
+.home-latest-blog-date strong { display: block; font-size: 14px; }
+.home-latest-blog-date small { display: block; font-size: 9px; }
+.home-latest-blog-title { font-size: 13px; font-weight: 600; color: var(--kb-text); }
+@media (max-width: 1200px) {
+    .home-latest-blog-card { flex: 0 0 calc((100% - 3 * 20px) / 4); }
+}
+@media (max-width: 991px) {
+    .home-latest-blog-card { flex: 0 0 calc((100% - 2 * 20px) / 3); }
+}
+@media (max-width: 767px) {
+    .home-latest-blog-card { flex: 0 0 calc((100% - 20px) / 2); }
+}
+
+/* --------------------------------------------------------------------------
+   Bannières bouche-trou colonne gauche
+   -------------------------------------------------------------------------- */
+.home-sidebar-filler {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 12px;
+}
+.home-sidebar-filler-item { display: block; }
+.home-sidebar-filler-item img { width: 100%; height: auto; display: block; border-radius: 6px; }
+@media (max-width: 991px) {
+    .home-sidebar-filler {
+        display: none;
+    }
 }

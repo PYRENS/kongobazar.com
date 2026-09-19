@@ -1,0 +1,37 @@
+{% extends 'public/base.html.twig' %}
+{% block title %}{{ post.title }} — Blog KongoBazar{% endblock %}
+{% block body %}
+<link rel="stylesheet" href="{{ asset('styles/public/blog.css') }}">
+<div class="container-kb" style="padding-top:24px;padding-bottom:40px;max-width:1100px;">
+    <a href="{{ path('blog_index') }}" class="text-decoration-none">&larr; Retour au blog</a>
+    <h1 class="blog-page-title">{{ post.title }}</h1>
+    <p class="blog-page-meta">{{ post.publishedAt ? post.publishedAt|date('d F Y') : '' }}{% if post.author %} — {{ post.author.email }}{% endif %}</p>
+
+    {% if post.coverImageName %}
+        <img src="{{ vich_uploader_asset(post, 'coverImageFile') }}" alt="{{ post.title }}" class="blog-page-cover">
+    {% endif %}
+
+    <div class="blog-post-content">
+        {{ post.content|raw }}
+    </div>
+
+    {% if recentPosts|length > 0 %}
+        <hr class="my-5">
+        <h4>Autres articles</h4>
+        <div class="row g-3">
+            {% for other in recentPosts %}
+                {% if other.id != post.id %}
+                    <div class="col-md-4">
+                        <a href="{{ path('blog_show', { slug: other.slug }) }}" class="text-decoration-none text-reset">
+                            {% if other.coverImageName %}
+                                <img src="{{ vich_uploader_asset(other, 'coverImageFile') }}" alt="" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px;">
+                            {% endif %}
+                            <p class="mt-2 mb-0">{{ other.title }}</p>
+                        </a>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% extends 'manage/base.html.twig' %}
+{% block title %}Bannières bouche-trou — Colonne gauche accueil{% endblock %}
+{% block page_icon %}bi-images{% endblock %}
+{% block page_title %}Bannières bouche-trou — colonne gauche accueil (largeur {{ requiredWidth }}px imposée, hauteur libre){% endblock %}
+{% block body %}
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-plus-circle text-primary me-2"></i>Ajouter une bannière</h6></div>
+        <div class="card-body">
+            <form method="post" action="{{ path('manage_sidebar_filler_add') }}" enctype="multipart/form-data">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Image ({{ requiredWidth }}px de large exactement, hauteur libre)</label>
+                        <small class="text-muted d-block mb-1" id="sfImageStatus">Aucune image choisie</small>
+                        <div class="kb-image-uploader">
+                            <div class="kb-image-uploader-thumb" id="sfImageCurrent" style="display:none;">
+                                <img id="sfImagePreview" src="" alt="">
+                                <button type="button" class="kb-image-uploader-remove" id="sfImageRemove" aria-label="Retirer">×</button>
+                            </div>
+                            <label class="kb-image-uploader-dropzone" for="sfImageInput">
+                                <i class="bi bi-camera"></i>
+                                <span>Upload</span>
+                            </label>
+                            <input type="file" name="image" id="sfImageInput" accept="image/*" required hidden>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Titre (texte alternatif)</label>
+                        <input type="text" name="title" class="form-control">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Lien cible (optionnel)</label>
+                        <div class="d-flex align-items-center gap-3">
+                            <input type="url" name="target_url" class="form-control" placeholder="https://...">
+                            <div class="form-check text-nowrap mb-0">
+                                <input type="checkbox" name="open_in_new_tab" value="1" class="form-check-input" id="sfOpenNewTab">
+                                <label class="form-check-label" for="sfOpenNewTab">Nouvel onglet</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success mt-3">Ajouter</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="sw-card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Aperçu</th>
+                        <th>Titre</th>
+                        <th>Lien</th>
+                        <th>Actif</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for banner in banners %}
+                        <tr>
+                            <td><img src="{{ vich_uploader_asset(banner, 'imageFile') }}" style="width:90px;height:auto;border-radius:4px;" alt=""></td>
+                            <td>{{ banner.title }}</td>
+                            <td>{{ banner.targetUrl }}</td>
+                            <td>
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" class="form-check-input sf-toggle" role="switch" {{ banner.active ? 'checked' : '' }} data-toggle-url="{{ path('manage_sidebar_filler_toggle', { id: banner.id }) }}">
+                                </div>
+                            </td>
+                            <td>
+                                <form method="post" action="{{ path('manage_sidebar_filler_remove', { id: banner.id }) }}" onsubmit="return confirm('Retirer cette bannière ?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Retirer</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="5" class="text-center text-muted py-4">Aucune bannière.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const input = document.getElementById('sfImageInput');
+            const currentBlock = document.getElementById('sfImageCurrent');
+            const preview = document.getElementById('sfImagePreview');
+            const removeBtn = document.getElementById('sfImageRemove');
+            const status = document.getElementById('sfImageStatus');
+
+            input.addEventListener('change', function () {
+                const file = this.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    preview.src = e.target.result;
+                    currentBlock.style.display = 'block';
+                    status.textContent = 'Nouvelle image sélectionnée';
+                };
+                reader.readAsDataURL(file);
+            });
+
+            removeBtn.addEventListener('click', () => {
+                input.value = '';
+                preview.src = '';
+                currentBlock.style.display = 'none';
+                status.textContent = 'Aucune image choisie';
+            });
+        })();
+
+        document.querySelectorAll('.sf-toggle').forEach((sw) => {
+            sw.addEventListener('change', function () {
+                fetch(this.dataset.toggleUrl, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => { this.checked = data.active; });
+            });
+        });
+    </script>
+{% endblock %}

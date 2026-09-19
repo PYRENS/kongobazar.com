@@ -1,0 +1,39 @@
+{# ==========================================================================
+   "Derniers articles" — carrousel pleine largeur, glissement natif.
+   Contexte : recentBlogPosts (BlogPost[])
+   ========================================================================== #}
+{% if recentBlogPosts|default([])|length > 0 %}
+<section class="home-latest-blogs">
+    <div class="home-deals-head">
+        <span class="home-section-badge">{{ 'home.latest_blogs'|trans|default('Derniers articles') }}</span>
+        <span class="home-deals-head-line"></span>
+        {% if recentBlogPosts|length > 1 %}
+            <div class="home-carousel-nav">
+                <button type="button" class="carousel-arrow" data-blog-prev aria-label="{{ 'home.prev'|trans }}"><i class="bi bi-chevron-left"></i></button>
+                <button type="button" class="carousel-arrow" data-blog-next aria-label="{{ 'home.next'|trans }}"><i class="bi bi-chevron-right"></i></button>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="home-latest-blogs-viewport">
+        <div class="home-latest-blogs-track" data-blog-track>
+            {% for post in recentBlogPosts %}
+                <a href="{{ path('blog_show', { slug: post.slug }) }}" class="home-latest-blog-card">
+                    {% if post.coverImageName %}
+                        <img src="{{ vich_uploader_asset(post, 'coverImageFile') }}" alt="{{ post.title }}" loading="lazy">
+                    {% endif %}
+                    <div class="home-latest-blog-info">
+                        {% if post.publishedAt %}
+                            <span class="home-latest-blog-date">
+                                <strong>{{ post.publishedAt|date('d') }}</strong>
+                                <small>{{ post.publishedAt|date('M')|upper }}</small>
+                            </span>
+                        {% endif %}
+                        <span class="home-latest-blog-title">{{ post.title }}</span>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}

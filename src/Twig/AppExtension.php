@@ -3,6 +3,7 @@
 namespace App\Twig;
 
 use App\Repository\AdvertisementRepository;
+use App\Repository\BrandRepository;
 use App\Repository\CartRepository;
 use App\Repository\CategoryRepository;
 use App\Repository\CustomMenuItemRepository;
@@ -39,6 +40,9 @@ class AppExtension extends AbstractExtension
         private readonly CartService $cartService,
         private readonly ProductRepository $productRepository,
         private readonly \App\Repository\PartCatalogEntryRepository $partCatalogEntryRepository,
+        private readonly BrandRepository $brandRepository,
+        private readonly \App\Repository\FooterSettingRepository $footerSettingRepository,
+        private readonly \App\Repository\PaymentMethodRepository $paymentMethodRepository,
     ) {
     }
 
@@ -65,6 +69,7 @@ class AppExtension extends AbstractExtension
             new TwigFunction('product_sidebar_ad', [$this, 'getProductSidebarAd']),
             new TwigFunction('top_rayons', [$this, 'getTopRayons']),
             new TwigFunction('part_catalog_root_categories', [$this, 'getPartCatalogRootCategories']),
+            new TwigFunction('footer_data', [$this, 'getFooterData']),
         ];
     }
 
@@ -193,5 +198,33 @@ class AppExtension extends AbstractExtension
     public function getTopRayons(): array
     {
         return $this->categoryRepository->findTopRayons();
+    }
+
+    /**
+     * Toutes les données du footer, calculées une seule fois et disponibles sur
+     * TOUTES les pages (auparavant, seule la page d'accueil les transmettait —
+     * le footer était donc vide partout ailleurs).
+     */
+    public function getFooterData(): array
+    {
+        $columns = [];
+        for ($i = 1; $i <= 8; $i++) {
+            $columns["footer_col_{$i}"] = $this->customMenuItemRepository->findByLocationAndSpace("footer_col_{$i}", 'public');
+        }
+
+        return [
+            'columns' => $columns,
+            'socialAd' => $this->adZonePicker->pick('footer_social_banner', 'public'),
+            'brands' => $this->brandRepository->findFeaturedHomepage(),
+            'mosaicAds' => (function () {
+                $ads = $this->advertisementRepository->findActiveByZone('footer_mosaic', 'public');
+                $this->adZonePicker->recordImpressions($ads, 'footer_mosaic');
+                return $ads;
+            })(),
+            'bottomLinks' => $this->customMenuItemRepository->findByLocationAndSpace('footer_bottom_links', 'public'),
+            'socialLinks' => $this->socialLinkRepository->findActiveOrdered(),
+            'settings' => $this->footerSettingRepository->getSingleton(),
+            'paymentMethods' => $this->paymentMethodRepository->findActiveOrdered(),
+        ];
     }
 }
