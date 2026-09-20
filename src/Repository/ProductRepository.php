@@ -523,6 +523,9 @@ class ProductRepository extends ServiceEntityRepository
         $now = new \DateTimeImmutable();
         $qb = $this->createQueryBuilder('p')
             ->join('p.discountCampaigns', 'd')
+            ->join('p.sellerProfile', 's')
+            // Campagnes : uniquement les produits des boutiques et des vendeurs Pro
+            ->andWhere('(s INSTANCE OF App\Entity\StoreProfile OR s INSTANCE OF App\Entity\ProProfile)')
             ->andWhere('p.status = :pstatus')
             ->andWhere('d.status = :dstatus')
             ->andWhere('d.startAt <= :now')
@@ -553,14 +556,69 @@ class ProductRepository extends ServiceEntityRepository
     }
 
     /** @return Product[] */
-    public function findSaleProductsBatch(?int $categoryId, ?int $brandId, ?float $minPrice, ?float $maxPrice, int $limit, int $offset): array
+    public function findSaleProductsBatch(?int $categoryId, ?int $brandId, ?float $minPrice, ?float $maxPrice, int $limit, int $offset, array $priorityIds = []): array
     {
-        return $this->buildSaleQuery($categoryId, $brandId, $minPrice, $maxPrice)
+        $qb = $this->buildSaleQuery($categoryId, $brandId, $minPrice, $maxPrice)
+            ->orderBy('d.startAt', 'DESC');
+
+        if (!$priorityIds) {
+            return $qb->setFirstResult($offset)->setMaxResults($limit)->getQuery()->getResult();
+        }
+
+        // Avec des produits prioritaires : ils passent en premier, dans l'ordre choisi en admin,
+        // puis le reste dans l'ordre normal. Tri en PHP : la liste des produits soldés est déjà
+        // chargée en entier pour le comptage (countSaleProducts).
+        $rank = array_flip($priorityIds);
+        $priority = [];
+        $others = [];
+        $seen = [];
+        foreach ($qb->getQuery()->getResult() as $product) {
+            if (isset($seen[$product->getId()])) {
+                continue;
+            }
+            $seen[$product->getId()] = true;
+            if (isset($rank[$product->getId()])) {
+                $priority[$rank[$product->getId()]] = $product;
+            } else {
+                $others[] = $product;
+            }
+        }
+        ksort($priority);
+
+        return array_slice(array_merge(array_values($priority), $others), $offset, $limit);
+    }
+
+    /** @return int[] IDs des produits soldés d'un vendeur (les plus récents d'abord), limités à $limit. */
+    public function findSaleProductIdsBySeller(int $sellerId, int $limit): array
+    {
+        $products = $this->buildSaleQuery(null, null, null, null)
+            ->andWhere('s.id = :sellerId')->setParameter('sellerId', $sellerId)
             ->orderBy('d.startAt', 'DESC')
-            ->setFirstResult($offset)
-            ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
+
+        $ids = [];
+        foreach ($products as $product) {
+            $ids[$product->getId()] = true;
+        }
+
+        return array_slice(array_keys($ids), 0, $limit);
+    }
+
+    /** @return int[] IDs des catégories qui contiennent un produit soldé, ancêtres inclus (pour filtrer les Top Catégories). */
+    public function getSaleCategoryIdsWithAncestors(): array
+    {
+        $ids = [];
+        foreach ($this->buildSaleQuery(null, null, null, null)->getQuery()->getResult() as $product) {
+            for ($category = $product->getCategory(); $category; $category = $category->getParent()) {
+                if (isset($ids[$category->getId()])) {
+                    break;
+                }
+                $ids[$category->getId()] = true;
+            }
+        }
+
+        return array_keys($ids);
     }
 
     /**
@@ -571,7 +629,7 @@ class ProductRepository extends ServiceEntityRepository
      */
     public function getSaleFilterOptions(): array
     {
-        $products = $this->findAllActiveDeals();
+        $products = $this->buildSaleQuery(null, null, null, null)->getQuery()->getResult();
 
         $categories = [];
         $brands = [];

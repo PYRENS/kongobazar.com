@@ -36,7 +36,12 @@
         <div class="sw-card mb-3">
             <div class="card-body row g-3">
                 <div class="col-md-4">
-                    <label class="form-label">Bannière de tête (1920 × 420px conseillé)</label>
+                    <div class="form-check form-switch mb-2">
+                        <input type="hidden" name="banner_enabled" value="0">
+                        <input class="form-check-input" type="checkbox" name="banner_enabled" value="1" id="bannerEnabledInput" {{ (campaign ? campaign.bannerEnabled : true) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="bannerEnabledInput">Afficher la bannière (masque aussi le badge et les textes)</label>
+                    </div>
+                    <label class="form-label">Bannière de tête (2560 × 560px conseillé, ratio 4,57:1 — texte important à gauche, le badge % est incrusté à droite)</label>
                     <small class="text-muted d-block mb-1" id="campaignImageStatus">
                         {{ campaign and campaign.bannerImageName ? 'Image actuelle' : 'Aucune image choisie' }}
                     </small>
@@ -57,6 +62,586 @@
                 </div>
             </div>
         </div>
+
+        {% set badgePos = campaign ? campaign.badgePosition : 'middle-right' %}
+        {% set badgeOn = campaign ? campaign.badgeVisible : true %}
+        <div class="sw-card mb-3">
+            <div class="card-body row g-3">
+                <div class="col-12">
+                    <label class="form-label mb-0">Badge « Jusqu'à -X% » sur la bannière</label>
+                    <small class="text-muted">Choisis l'emplacement qui ne cache rien d'important, ou masque-le.</small>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-check form-switch mb-3">
+                        <input type="hidden" name="badge_visible" value="0">
+                        <input class="form-check-input" type="checkbox" name="badge_visible" value="1" id="badgeVisibleInput" {{ badgeOn ? 'checked' : '' }}>
+                        <label class="form-check-label" for="badgeVisibleInput">Afficher le badge</label>
+                    </div>
+                    <div class="badge-pos-grid">
+                        {% for pos in ['top-left','top-center','top-right','middle-left','middle-center','middle-right','bottom-left','bottom-center','bottom-right'] %}
+                            <label title="{{ pos }}">
+                                <input type="radio" name="badge_position" value="{{ pos }}" {{ badgePos == pos ? 'checked' : '' }}>
+                                <span></span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-9">
+                    <div class="badge-preview">
+                        <img id="badgePreviewImg" src="{{ campaign and campaign.bannerImageName ? vich_uploader_asset(campaign, 'bannerImageFile') : '' }}" alt="">
+                        <div class="badge-preview-mock" id="badgePreviewMock" data-pos="{{ badgePos }}" style="{{ badgeOn ? '' : 'display:none;' }}">Jusqu'à -40%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <style>
+            .badge-pos-grid { display: grid; grid-template-columns: repeat(3, 40px); gap: 6px; }
+            .badge-pos-grid label { margin: 0; cursor: pointer; }
+            .badge-pos-grid input { display: none; }
+            .badge-pos-grid span { display: block; width: 40px; height: 26px; border: 1px solid #ced4da; border-radius: 4px; background: #fff; }
+            .badge-pos-grid input:checked + span { background: #e11d1d; border-color: #e11d1d; }
+            .badge-preview { position: relative; aspect-ratio: 1920 / 420; background: #e9ecef; border-radius: 6px; overflow: hidden; max-width: 720px; container-type: inline-size; }
+            .badge-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+            .badge-preview img[src=""] { display: none; }
+            .badge-preview-mock { position: absolute; background: #e11d1d; color: #fff; font-weight: 800; font-size: 1.55cqw; line-height: 1.2; padding: 0.5em 1em; border-radius: 0.3em; white-space: nowrap; }
+            .badge-preview-mock[data-pos="top-left"]      { top: 6%; left: 2%; }
+            .badge-preview-mock[data-pos="top-center"]    { top: 6%; left: 50%; transform: translateX(-50%); }
+            .badge-preview-mock[data-pos="top-right"]     { top: 6%; right: 2%; }
+            .badge-preview-mock[data-pos="middle-left"]   { top: 50%; left: 2%; transform: translateY(-50%); }
+            .badge-preview-mock[data-pos="middle-center"] { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+            .badge-preview-mock[data-pos="middle-right"]  { top: 50%; right: 2%; transform: translateY(-50%); }
+            .badge-preview-mock[data-pos="bottom-left"]   { bottom: 6%; left: 2%; }
+            .badge-preview-mock[data-pos="bottom-center"] { bottom: 6%; left: 50%; transform: translateX(-50%); }
+            .badge-preview-mock[data-pos="bottom-right"]  { bottom: 6%; right: 2%; }
+        </style>
+        <script>
+            (function () {
+                const mock = document.getElementById('badgePreviewMock');
+                document.querySelectorAll('input[name="badge_position"]').forEach((r) => {
+                    r.addEventListener('change', () => { mock.dataset.pos = r.value; });
+                });
+                document.getElementById('badgeVisibleInput').addEventListener('change', function () {
+                    mock.style.display = this.checked ? '' : 'none';
+                });
+                document.getElementById('campaignImageInput').addEventListener('change', function () {
+                    const file = this.files[0];
+                    if (!file) return;
+                    document.getElementById('badgePreviewImg').src = URL.createObjectURL(file);
+                });
+            })();
+        </script>
+
+        <div class="sw-card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <div class="form-check form-switch mb-1">
+                            <input type="hidden" name="texts_enabled" value="0">
+                            <input class="form-check-input" type="checkbox" name="texts_enabled" value="1" id="textsEnabledInput" {{ (campaign ? campaign.textsEnabled : true) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="textsEnabledInput">Afficher les textes</label>
+                        </div>
+                        <label class="form-label mb-0">Textes sur la bannière</label>
+                        <small class="text-muted d-block">Jusqu'à 8 textes. Plusieurs textes au même emplacement s'empilent. Vérifie l'aperçu ci-dessus.</small>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="bannerTextAdd"><i class="bi bi-plus-lg"></i> Ajouter un texte</button>
+                </div>
+                <div id="bannerTextsList"></div>
+            </div>
+        </div>
+
+        <style>
+            .kb-zone { position: absolute; display: flex; flex-direction: column; gap: 0.4cqw; max-width: 45%; }
+            .kb-zone[data-pos^="top"] { top: 6%; }
+            .kb-zone[data-pos^="bottom"] { bottom: 6%; }
+            .kb-zone[data-pos^="middle"] { top: 50%; translate: 0 -50%; }
+            .kb-zone[data-pos$="left"] { left: 2%; align-items: flex-start; text-align: left; }
+            .kb-zone[data-pos$="right"] { right: 2%; align-items: flex-end; text-align: right; }
+            .kb-zone[data-pos$="center"] { left: 50%; translate: -50% 0; align-items: center; text-align: center; }
+            .kb-zone[data-pos="middle-center"] { translate: -50% -50%; }
+            .kb-text { font-weight: 800; line-height: 1.2; padding: 0.25em 0.6em; border-radius: 0.3em; }
+            .kb-text--s { font-size: 1cqw; }
+            .kb-text--m { font-size: 1.5cqw; }
+            .kb-text--l { font-size: 2.4cqw; }
+            .kb-text--xl { font-size: 3.4cqw; }
+        </style>
+        <script>
+            (function () {
+                const LABELS = {
+                    'top-left': 'Haut gauche', 'top-center': 'Haut centre', 'top-right': 'Haut droite',
+                    'middle-left': 'Milieu gauche', 'middle-center': 'Milieu centre', 'middle-right': 'Milieu droite',
+                    'bottom-left': 'Bas gauche', 'bottom-center': 'Bas centre', 'bottom-right': 'Bas droite'
+                };
+                const SIZES = { s: 'Petit', m: 'Moyen', l: 'Grand', xl: 'Très grand' };
+                const initial = {{ (campaign ? campaign.bannerTexts : [])|json_encode(constant('JSON_HEX_TAG'))|raw }};
+                const list = document.getElementById('bannerTextsList');
+                const preview = document.querySelector('.badge-preview');
+                let idx = 0;
+
+                function addRow(t) {
+                    t = Object.assign({ text: '', pos: 'middle-left', size: 'm', color: '#ffffff', bg: null }, t || {});
+                    const i = idx++;
+                    const row = document.createElement('div');
+                    row.className = 'row g-2 align-items-center mb-2 banner-text-row';
+                    row.innerHTML =
+                        '<div class="col-md-4"><input type="text" class="form-control form-control-sm" name="texts[' + i + '][text]" maxlength="120" placeholder="Ex : Livraison offerte"></div>' +
+                        '<div class="col-md-2"><select class="form-select form-select-sm" name="texts[' + i + '][pos]">' +
+                            Object.keys(LABELS).map((k) => '<option value="' + k + '">' + LABELS[k] + '</option>').join('') + '</select></div>' +
+                        '<div class="col-md-2"><select class="form-select form-select-sm" name="texts[' + i + '][size]">' +
+                            Object.keys(SIZES).map((k) => '<option value="' + k + '">' + SIZES[k] + '</option>').join('') + '</select></div>' +
+                        '<div class="col-auto"><input type="color" class="form-control form-control-color" name="texts[' + i + '][color]" title="Couleur du texte"></div>' +
+                        '<div class="col-auto d-flex align-items-center gap-1"><input type="hidden" name="texts[' + i + '][bg]"><input type="color" class="form-control form-control-color bg-picker" title="Couleur du fond (cliquer pour choisir)"><button type="button" class="btn btn-sm btn-outline-secondary bg-clear" title="Retirer le fond">Sans fond</button></div>' +
+                        '<div class="col-auto"><button type="button" class="btn btn-sm btn-outline-danger" data-remove><i class="bi bi-trash"></i></button></div>';
+                    const q = (n) => row.querySelector('[name$="[' + n + ']"]');
+                    q('text').value = t.text;
+                    q('pos').value = t.pos;
+                    q('size').value = t.size;
+                    q('color').value = t.color;
+                    const bgHidden = q('bg'), bgPicker = row.querySelector('.bg-picker'), bgClear = row.querySelector('.bg-clear');
+                    const syncBg = () => { bgPicker.style.opacity = bgHidden.value ? '1' : '0.35'; bgClear.style.display = bgHidden.value ? '' : 'none'; };
+                    bgHidden.value = t.bg || '';
+                    bgPicker.value = t.bg || '#e11d1d';
+                    bgPicker.addEventListener('input', () => { bgHidden.value = bgPicker.value; syncBg(); refresh(); });
+                    bgClear.addEventListener('click', () => { bgHidden.value = ''; syncBg(); refresh(); });
+                    syncBg();
+                    row.addEventListener('input', refresh);
+                    row.addEventListener('change', refresh);
+                    row.querySelector('[data-remove]').addEventListener('click', () => { row.remove(); refresh(); });
+                    list.appendChild(row);
+                }
+
+                function refresh() {
+                    if (!preview) return;
+                    preview.querySelectorAll('.kb-zone').forEach((z) => z.remove());
+                    const zones = {};
+                    list.querySelectorAll('.banner-text-row').forEach((row) => {
+                        const g = (n) => row.querySelector('[name$="[' + n + ']"]');
+                        const text = g('text').value.trim();
+                        if (!text) return;
+                        const pos = g('pos').value;
+                        if (!zones[pos]) {
+                            zones[pos] = document.createElement('div');
+                            zones[pos].className = 'kb-zone';
+                            zones[pos].dataset.pos = pos;
+                            preview.appendChild(zones[pos]);
+                        }
+                        const s = document.createElement('span');
+                        s.className = 'kb-text kb-text--' + g('size').value;
+                        s.textContent = text;
+                        s.style.color = g('color').value;
+                        if (g('bg').value) s.style.background = g('bg').value;
+                        zones[pos].appendChild(s);
+                    });
+                }
+
+                initial.forEach(addRow);
+                document.getElementById('bannerTextAdd').addEventListener('click', () => {
+                    if (list.children.length < 8) { addRow(); refresh(); }
+                });
+                refresh();
+            })();
+        </script>
+
+        <div class="sw-card mb-3">
+            <div class="card-body row g-3">
+                <div class="col-12">
+                    <div class="form-check form-switch mb-1">
+                        <input type="hidden" name="theme_top_enabled" value="0">
+                        <input class="form-check-input" type="checkbox" name="theme_top_enabled" value="1" id="themeTopEnabledInput" {{ (campaign ? campaign.themeTopEnabled : true) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="themeTopEnabledInput">Afficher le décor du haut</label>
+                    </div>
+                    <label class="form-label mb-0">Décor du haut (affiché une seule fois, pleine largeur, sans répétition)</label>
+                    <small class="text-muted d-block">
+                        Se place tout en haut des marges, sous la bannière, au-dessus du décor répété ci-dessous.
+                        Conseillé : PNG ou WebP transparent de 2560px de large, avec la décoration (guirlandes, etc.) dans les 500 à 600px de chaque bord.
+                    </small>
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted d-block mb-1" id="themeTopImageStatus">
+                        {{ campaign and campaign.themeTopImageName ? 'Image actuelle' : 'Aucune image choisie' }}
+                    </small>
+                    <div class="kb-image-uploader">
+                        <div class="kb-image-uploader-thumb" id="themeTopImageCurrent" style="{{ campaign and campaign.themeTopImageName ? '' : 'display:none;' }} width:160px;height:70px;">
+                            <img id="themeTopImagePreview" src="{{ campaign and campaign.themeTopImageName ? vich_uploader_asset(campaign, 'themeTopImageFile') : '' }}" alt="">
+                        </div>
+                        <label class="kb-image-uploader-dropzone" for="themeTopImageInput">
+                            <i class="bi bi-camera"></i>
+                            <span>Upload</span>
+                        </label>
+                        <input type="file" name="theme_top_image" id="themeTopImageInput" accept="image/*" hidden>
+                    </div>
+                    {% if campaign and campaign.themeTopImageName %}
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" name="theme_top_image_remove" value="1" id="themeTopImageRemove">
+                            <label class="form-check-label" for="themeTopImageRemove">Supprimer l'image</label>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <script>
+            document.getElementById('themeTopImageInput').addEventListener('change', function () {
+                const file = this.files[0];
+                if (!file) return;
+                document.getElementById('themeTopImagePreview').src = URL.createObjectURL(file);
+                document.getElementById('themeTopImageCurrent').style.display = 'block';
+                document.getElementById('themeTopImageStatus').textContent = 'Nouvelle image sélectionnée';
+            });
+        </script>
+
+        <div class="sw-card mb-3">
+            <div class="card-body row g-3">
+                <div class="col-12">
+                    <div class="form-check form-switch mb-1">
+                        <input type="hidden" name="theme_enabled" value="0">
+                        <input class="form-check-input" type="checkbox" name="theme_enabled" value="1" id="themeEnabledInput" {{ (campaign ? campaign.themeEnabled : true) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="themeEnabledInput">Afficher le décor de fond</label>
+                    </div>
+                    <label class="form-label mb-0">Décor de fond (marges gauche et droite de la page)</label>
+                    <small class="text-muted d-block">
+                        Visible seulement sur les écrans de plus de 1366px de large, sous la bannière. Le centre de la page reste blanc.
+                        Conseillé : image de 2560px de large (JPG/WebP, moins de 500 Ko), avec le décor placé dans les 500 à 600px de chaque bord.
+                    </small>
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted d-block mb-1" id="themeImageStatus">
+                        {{ campaign and campaign.themeImageName ? 'Image actuelle' : 'Aucune image choisie' }}
+                    </small>
+                    <div class="kb-image-uploader">
+                        <div class="kb-image-uploader-thumb" id="themeImageCurrent" style="{{ campaign and campaign.themeImageName ? '' : 'display:none;' }} width:160px;height:70px;">
+                            <img id="themeImagePreview" src="{{ campaign and campaign.themeImageName ? vich_uploader_asset(campaign, 'themeImageFile') : '' }}" alt="">
+                        </div>
+                        <label class="kb-image-uploader-dropzone" for="themeImageInput">
+                            <i class="bi bi-camera"></i>
+                            <span>Upload</span>
+                        </label>
+                        <input type="file" name="theme_image" id="themeImageInput" accept="image/*" hidden>
+                    </div>
+                    {% if campaign and campaign.themeImageName %}
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" name="theme_image_remove" value="1" id="themeImageRemove">
+                            <label class="form-check-label" for="themeImageRemove">Supprimer l'image</label>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label">Mode d'affichage</label>
+                    <select name="theme_mode" class="form-select">
+                        {% for key, label in constant('App\\Entity\\Campaign::THEME_MODES') %}
+                            <option value="{{ key }}" {{ (campaign ? campaign.themeMode : 'width-repeat') == key ? 'selected' : '' }}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Couleur de fond (optionnelle)</label>
+                    <div class="d-flex align-items-center gap-1">
+                        <input type="hidden" name="theme_bg_color" id="themeBgHidden" value="{{ campaign ? campaign.themeBgColor : '' }}">
+                        <input type="color" class="form-control form-control-color" id="themeBgPicker" value="{{ campaign and campaign.themeBgColor ? campaign.themeBgColor : '#ffffff' }}">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="themeBgClear">Aucune</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            (function () {
+                document.getElementById('themeImageInput').addEventListener('change', function () {
+                    const file = this.files[0];
+                    if (!file) return;
+                    document.getElementById('themeImagePreview').src = URL.createObjectURL(file);
+                    document.getElementById('themeImageCurrent').style.display = 'block';
+                    document.getElementById('themeImageStatus').textContent = 'Nouvelle image sélectionnée';
+                });
+                const hidden = document.getElementById('themeBgHidden');
+                const picker = document.getElementById('themeBgPicker');
+                const clear = document.getElementById('themeBgClear');
+                const sync = () => { picker.style.opacity = hidden.value ? '1' : '0.35'; clear.style.display = hidden.value ? '' : 'none'; };
+                picker.addEventListener('input', () => { hidden.value = picker.value; sync(); });
+                clear.addEventListener('click', () => { hidden.value = ''; sync(); });
+                sync();
+            })();
+        </script>
+
+        <div class="sw-card mb-3">
+            <div class="card-body">
+                <div class="form-check form-switch mb-1">
+                    <input type="hidden" name="priority_products_enabled" value="0">
+                    <input class="form-check-input" type="checkbox" name="priority_products_enabled" value="1" id="priorityProductsEnabledInput" {{ (campaign ? campaign.priorityProductsEnabled : true) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="priorityProductsEnabledInput">Activer les produits prioritaires</label>
+                </div>
+                <label class="form-label mb-0">Produits prioritaires (affichés en tout premier)</label>
+                <small class="text-muted d-block mb-2">
+                    Boutiques et vendeurs Pro uniquement. Ils passent en tête de la grille, dans l'ordre ci-dessous (↑ ↓).
+                    Un produit « hors solde » n'apparaîtra que lorsqu'il aura une réduction en cours.
+                </small>
+                <div class="position-relative mb-2">
+                    <input type="text" class="form-control" id="prioProductSearch" placeholder="Rechercher un produit (nom ou KBZ-000123)…" autocomplete="off">
+                    <div class="prio-results" id="prioProductResults"></div>
+                </div>
+                <div id="prioProductList">
+                    {% if campaign %}
+                        {% for it in campaign.priorityProducts %}
+                            {% set img = it.product.images|first %}
+                            <div class="prio-row" data-id="{{ it.product.id }}">
+                                <input type="hidden" name="priority_products[]" value="{{ it.product.id }}">
+                                {% if img %}<img src="/media/products/{{ img.imageName }}" alt="">{% endif %}
+                                <span class="prio-title">{{ it.product.title }}<small>{{ it.product.kongobazarReference }} — {{ it.product.sellerProfile.displayName }}</small></span>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-up>↑</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-down>↓</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-del>✕</button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="sw-card mb-3">
+            <div class="card-body">
+                <div class="form-check form-switch mb-1">
+                    <input type="hidden" name="priority_sellers_enabled" value="0">
+                    <input class="form-check-input" type="checkbox" name="priority_sellers_enabled" value="1" id="prioritySellersEnabledInput" {{ (campaign ? campaign.prioritySellersEnabled : true) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="prioritySellersEnabledInput">Activer les boutiques prioritaires</label>
+                </div>
+                <label class="form-label mb-0">Boutiques / vendeurs Pro prioritaires</label>
+                <small class="text-muted d-block mb-2">
+                    Pour chaque vendeur, indique combien de ses produits soldés sont mis en avant (après les produits prioritaires ci-dessus).
+                </small>
+                <div class="position-relative mb-2">
+                    <input type="text" class="form-control" id="prioSellerSearch" placeholder="Rechercher une boutique ou un vendeur Pro…" autocomplete="off">
+                    <div class="prio-results" id="prioSellerResults"></div>
+                </div>
+                <div id="prioSellerList">
+                    {% if campaign %}
+                        {% for it in campaign.prioritySellers %}
+                            <div class="prio-row" data-id="{{ it.sellerProfile.id }}">
+                                <input type="hidden" name="priority_sellers[{{ loop.index0 }}][id]" value="{{ it.sellerProfile.id }}">
+                                <span class="prio-title">{{ it.sellerProfile.displayName }}<small>{{ it.sellerProfile.typeLabel }}</small></span>
+                                <span class="text-muted small">Produits :</span>
+                                <input type="number" min="1" max="50" class="form-control form-control-sm prio-limit" name="priority_sellers[{{ loop.index0 }}][limit]" value="{{ it.productLimit }}">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-up>↑</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-down>↓</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-del>✕</button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="sw-card mb-3">
+            <div class="card-body">
+                <div class="form-check form-switch mb-1">
+                    <input type="hidden" name="top_categories_enabled" value="0">
+                    <input class="form-check-input" type="checkbox" name="top_categories_enabled" value="1" id="topCategoriesEnabledInput" {{ (campaign ? campaign.topCategoriesEnabled : true) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="topCategoriesEnabledInput">Afficher les Top Catégories sur la page</label>
+                </div>
+                <label class="form-label mb-0">Top Catégories</label>
+                <small class="text-muted d-block">
+                    Le carrousel de catégories au-dessus de la grille de produits. Seules les catégories qui contiennent au moins un produit soldé y apparaissent.
+                </small>
+            </div>
+        </div>
+
+        <style>
+            .prio-results { position: absolute; left: 0; right: 0; top: 100%; z-index: 50; background: #fff; border: 1px solid #dee2e6; border-radius: 6px; max-height: 260px; overflow-y: auto; box-shadow: 0 6px 16px rgba(0,0,0,.12); }
+            .prio-results:empty { display: none; }
+            .prio-result { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 8px 12px; font-size: 13px; }
+            .prio-result:hover { background: #f1f5f9; }
+            .prio-row { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 6px; background: #fff; }
+            .prio-row img { width: 36px; height: 36px; object-fit: cover; border-radius: 4px; }
+            .prio-title { flex: 1; font-size: 13px; font-weight: 600; }
+            .prio-title small { display: block; font-weight: 400; color: #6c757d; }
+            .prio-limit { width: 80px; }
+        </style>
+        <script>
+            (function () {
+                const productsUrl = '{{ path("manage_campaign_search_products") }}';
+                const sellersUrl = '{{ path("manage_campaign_search_sellers") }}';
+
+                function el(tag, cls, text) {
+                    const e = document.createElement(tag);
+                    if (cls) e.className = cls;
+                    if (text) e.textContent = text;
+                    return e;
+                }
+                function debounce(fn, ms) {
+                    let t;
+                    return function () { clearTimeout(t); t = setTimeout(fn, ms); };
+                }
+                function addControls(row) {
+                    [['data-up', '↑'], ['data-down', '↓'], ['data-del', '✕']].forEach(function (pair) {
+                        const b = el('button', 'btn btn-sm btn-outline-secondary', pair[1]);
+                        b.type = 'button';
+                        b.setAttribute(pair[0], '');
+                        row.appendChild(b);
+                    });
+                }
+                function bindReorder(list) {
+                    list.addEventListener('click', function (e) {
+                        const row = e.target.closest('.prio-row');
+                        if (!row) return;
+                        if (e.target.closest('[data-del]')) row.remove();
+                        else if (e.target.closest('[data-up]') && row.previousElementSibling) list.insertBefore(row, row.previousElementSibling);
+                        else if (e.target.closest('[data-down]') && row.nextElementSibling) list.insertBefore(row.nextElementSibling, row);
+                    });
+                }
+                function makeSearch(input, box, url, minLen, onPick) {
+                    const run = debounce(async function () {
+                        const q = input.value.trim();
+                        if (q.length < minLen) { box.innerHTML = ''; return; }
+                        try {
+                            const res = await fetch(url + '?q=' + encodeURIComponent(q));
+                            const data = await res.json();
+                            box.innerHTML = '';
+                            (data.results || []).forEach(function (r) {
+                                const b = el('button', 'prio-result', r.label);
+                                b.type = 'button';
+                                b.addEventListener('click', function () { onPick(r); box.innerHTML = ''; input.value = ''; });
+                                box.appendChild(b);
+                            });
+                        } catch (err) { box.innerHTML = ''; }
+                    }, 250);
+                    input.addEventListener('input', run);
+                    input.addEventListener('focus', run);
+                    document.addEventListener('click', function (e) {
+                        if (e.target !== input && !box.contains(e.target)) box.innerHTML = '';
+                    });
+                }
+                function baseRow(r) {
+                    const row = el('div', 'prio-row');
+                    row.dataset.id = r.id;
+                    if (r.imageUrl) { const img = el('img'); img.src = r.imageUrl; img.alt = ''; row.appendChild(img); }
+                    const t = el('span', 'prio-title', r.title);
+                    t.appendChild(el('small', '', r.sub));
+                    row.appendChild(t);
+                    return row;
+                }
+
+                const productList = document.getElementById('prioProductList');
+                const sellerList = document.getElementById('prioSellerList');
+                bindReorder(productList);
+                bindReorder(sellerList);
+
+                makeSearch(document.getElementById('prioProductSearch'), document.getElementById('prioProductResults'), productsUrl, 2, function (r) {
+                    if (productList.querySelector('[data-id="' + r.id + '"]')) return;
+                    const row = baseRow(r);
+                    const hidden = document.createElement('input');
+                    hidden.type = 'hidden'; hidden.name = 'priority_products[]'; hidden.value = r.id;
+                    row.insertBefore(hidden, row.firstChild);
+                    addControls(row);
+                    productList.appendChild(row);
+                });
+
+                let sellerIdx = 1000;
+                makeSearch(document.getElementById('prioSellerSearch'), document.getElementById('prioSellerResults'), sellersUrl, 0, function (r) {
+                    if (sellerList.querySelector('[data-id="' + r.id + '"]')) return;
+                    const i = sellerIdx++;
+                    const row = baseRow(r);
+                    const hidden = document.createElement('input');
+                    hidden.type = 'hidden'; hidden.name = 'priority_sellers[' + i + '][id]'; hidden.value = r.id;
+                    row.insertBefore(hidden, row.firstChild);
+                    row.appendChild(el('span', 'text-muted small', 'Produits :'));
+                    const num = document.createElement('input');
+                    num.type = 'number'; num.min = 1; num.max = 50; num.value = 4;
+                    num.className = 'form-control form-control-sm prio-limit';
+                    num.name = 'priority_sellers[' + i + '][limit]';
+                    row.appendChild(num);
+                    addControls(row);
+                    sellerList.appendChild(row);
+                });
+            })();
+        </script>
+
+        <div class="sw-card mb-3">
+            <div class="card-body row g-3">
+                <div class="col-12">
+                    <div class="form-check form-switch mb-1">
+                        <input type="hidden" name="batch_banners_enabled" value="0">
+                        <input class="form-check-input" type="checkbox" name="batch_banners_enabled" value="1" id="batchBannersEnabledInput" {{ (campaign ? campaign.batchBannersEnabled : true) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="batchBannersEnabledInput">Afficher des bannières entre les lots de produits</label>
+                    </div>
+                    <label class="form-label mb-0">Bannières entre les lots de produits</label>
+                    <small class="text-muted d-block">
+                        S'intercalent pendant le défilement, jamais avant le premier lot. Pour créer ou programmer une bannière, va dans
+                        <a href="{{ path('manage_ads_index') }}" target="_blank" rel="noopener">Publicités</a>
+                        et choisis la zone « Solde — bannière entre les lots de produits ».
+                    </small>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Une bannière tous les</label>
+                    <select name="batch_banner_every" class="form-select">
+                        {% for n in 1..5 %}
+                            <option value="{{ n }}" {{ (campaign ? campaign.batchBannerEvery : 1) == n ? 'selected' : '' }}>{{ n == 1 ? 'chaque lot' : n ~ ' lots' }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Ordre d'affichage</label>
+                    <select name="batch_banner_mode" class="form-select">
+                        <option value="random" {{ (campaign ? campaign.batchBannerMode : 'random') == 'random' ? 'selected' : '' }}>Aléatoire</option>
+                        <option value="order" {{ (campaign ? campaign.batchBannerMode : 'random') == 'order' ? 'selected' : '' }}>Dans l'ordre (position définie dans Publicités)</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label mb-0">Bannières utilisées</label>
+                    <small class="text-muted d-block mb-2">Aucune case cochée = toutes les bannières actives de la zone.</small>
+                    <div id="batchBannerList" class="batch-banner-list" data-url="{{ path('manage_campaign_batch_banners') }}" data-selected="{{ (campaign ? campaign.batchBannerAdIds : [])|json_encode|e('html_attr') }}">
+                        <span class="text-muted small">Chargement…</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <style>
+            .batch-banner-list { display: flex; flex-direction: column; gap: 8px; }
+            .batch-banner-item { display: flex; align-items: center; gap: 12px; padding: 8px; border: 1px solid #e5e7eb; border-radius: 6px; background: #fff; cursor: pointer; margin: 0; }
+            .batch-banner-item img { width: 260px; max-width: 40%; aspect-ratio: 1044 / 200; object-fit: cover; border-radius: 4px; background: #f1f5f9; }
+            .batch-banner-title { font-size: 13px; font-weight: 600; }
+            .batch-banner-title small { display: block; font-weight: 400; color: #6c757d; }
+        </style>
+        <script>
+            (function () {
+                const box = document.getElementById('batchBannerList');
+                const selected = JSON.parse(box.dataset.selected || '[]').map(Number);
+                fetch(box.dataset.url)
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        box.innerHTML = '';
+                        const results = data.results || [];
+                        if (!results.length) {
+                            const p = document.createElement('span');
+                            p.className = 'text-muted small';
+                            p.textContent = 'Aucune bannière dans cette zone pour le moment. Ajoute-en dans Publicités.';
+                            box.appendChild(p);
+                            return;
+                        }
+                        results.forEach(function (ad) {
+                            const label = document.createElement('label');
+                            label.className = 'batch-banner-item';
+                            const cb = document.createElement('input');
+                            cb.type = 'checkbox'; cb.className = 'form-check-input mt-0';
+                            cb.name = 'batch_banner_ads[]'; cb.value = ad.id;
+                            cb.checked = selected.indexOf(Number(ad.id)) !== -1;
+                            label.appendChild(cb);
+                            if (ad.imageUrl) {
+                                const img = document.createElement('img');
+                                img.src = ad.imageUrl; img.alt = '';
+                                label.appendChild(img);
+                            }
+                            const t = document.createElement('span');
+                            t.className = 'batch-banner-title';
+                            t.textContent = ad.title || ('Bannière #' + ad.id);
+                            const s = document.createElement('small');
+                            s.textContent = ad.status;
+                            t.appendChild(s);
+                            label.appendChild(t);
+                            box.appendChild(label);
+                        });
+                    })
+                    .catch(function () { box.textContent = 'Impossible de charger les bannières.'; });
+            })();
+        </script>
 
         <button type="submit" class="btn btn-success">Enregistrer</button>
         <a href="{{ path('manage_campaign_index') }}" class="btn btn-outline-secondary">Annuler</a>

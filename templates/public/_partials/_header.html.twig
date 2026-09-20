@@ -317,13 +317,15 @@
         <i class="bi bi-star"></i> {{ 'menu.top_rayons'|trans }}
     </button>
 
+    {% set trends = trending_categories() %}
+    {% if trends|length > 0 %}
     <div class="mobile-trends-bar">
-        {% set trends = trending_categories() %}
         {% for item in trends %}
             <a href="{{ path('catalog_category', { slug: item.category.slug }) }}">{{ item.category.name }}</a>
             {% if not loop.last %}<span class="trends-sep">•</span>{% endif %}
         {% endfor %}
     </div>
+    {% endif %}
 </header>
 
 {# --- Tiroir latéral partagé : menu mobile / hamburger du header condensé --- #}

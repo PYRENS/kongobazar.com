@@ -5,29 +5,50 @@
 <link rel="stylesheet" href="{{ asset('styles/public/solde.css') }}">
 
 {# --- Bannière pleine largeur + pourcentage réel incrusté --- #}
-<div class="solde-hero">
+<div class="solde-hero{{ campaign.bannerEnabled ? '' : ' solde-hero--off' }}">
     {% if campaign.bannerImageName %}
         <img src="{{ vich_uploader_asset(campaign, 'bannerImageFile') }}" alt="{{ campaign.title }}" class="solde-hero-img">
     {% endif %}
-    {% if filters.maxDiscountPercent > 0 %}
-        <div class="solde-hero-badge">Jusqu'à -{{ filters.maxDiscountPercent }}%</div>
+    {% if filters.maxDiscountPercent > 0 and campaign.badgeVisible %}
+        <div class="solde-hero-badge" data-pos="{{ campaign.badgePosition }}">Jusqu'à -{{ filters.maxDiscountPercent }}%</div>
+    {% endif %}
+
+    {% set bannerTexts = campaign.textsEnabled ? campaign.bannerTexts : [] %}
+    {% if bannerTexts|length > 0 %}
+        {% for pos in ['top-left','top-center','top-right','middle-left','middle-center','middle-right','bottom-left','bottom-center','bottom-right'] %}
+            {% set items = bannerTexts|filter(t => t.pos == pos) %}
+            {% if items|length > 0 %}
+                <div class="solde-hero-zone" data-pos="{{ pos }}">
+                    {% for t in items %}
+                        <span class="solde-hero-text solde-hero-text--{{ t.size }}" style="color: {{ t.color }};{% if t.bg %} background: {{ t.bg }};{% endif %}">{{ t.text }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endfor %}
     {% endif %}
 </div>
 
-<div class="container-kb">
+{% set showBg = campaign.themeEnabled and campaign.themeImageName %}
+{% set showTop = campaign.themeTopEnabled and campaign.themeTopImageName %}
+{% set hasTheme = showBg or showTop %}
+<div class="solde-theme{{ hasTheme ? ' solde-theme--on' : '' }}" data-theme-mode="{{ campaign.themeMode }}"{% if hasTheme %} style="{% if showBg %}--solde-theme-image: url('{{ vich_uploader_asset(campaign, 'themeImageFile') }}');{% endif %}{% if showTop %} --solde-theme-top: url('{{ vich_uploader_asset(campaign, 'themeTopImageFile') }}');{% endif %}{% if campaign.themeEnabled and campaign.themeBgColor %} --solde-theme-bg: {{ campaign.themeBgColor }};{% endif %}"{% endif %}>
+
+<div class="container-kb solde-aligned">
     {% include 'public/_partials/_home_top_categories_vendors.html.twig' %}
 </div>
 
-<div class="container-kb solde-content-head">
+<div class="container-kb solde-aligned solde-content-head">
     <h2 class="solde-title">Tous les produits en solde</h2>
     <button type="button" class="solde-filter-trigger" id="soldeFilterTrigger">
         <i class="bi bi-sliders"></i> Filtrer
     </button>
 </div>
 
-<div class="container-kb" id="soldeProductsContainer">
+<div class="container-kb solde-aligned" id="soldeProductsContainer">
     {% include 'public/_partials/_solde_products_batch.html.twig' with { products: products, ad: null, hasMore: hasMore, nextOffset: nextOffset } %}
 </div>
+
+</div>{# /.solde-theme #}
 
 {# --- Tiroir de filtres --- #}
 <div class="solde-filter-overlay" id="soldeFilterOverlay">

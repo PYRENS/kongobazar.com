@@ -32,7 +32,7 @@ class AdvertisementManagementController extends AbstractController
         'homepage_lifestyle_right' => ['label' => 'Mosaïque lifestyle — droite', 'width' => 255, 'height' => 220, 'page' => 'Accueil'],
         'footer_social_banner' => ['label' => 'Footer — bannière sociale', 'width' => 270, 'height' => 130, 'page' => 'Footer (toutes pages)'],
         'footer_mosaic' => ['label' => 'Footer — mosaïque photos', 'width' => 200, 'height' => 90, 'page' => 'Footer (toutes pages)'],
-        'solde_between_batches' => ['label' => 'Solde — bannière entre les lots de produits', 'width' => 1044, 'height' => 200, 'page' => 'Accueil (Solde)'],
+        'solde_between_batches' => ['label' => 'Solde — bannière entre les lots de produits', 'width' => 1366, 'height' => 262, 'page' => 'Accueil (Solde)'],
         'mega_menu_catalogue_1' => ['label' => 'Méga-menu — bannière 1', 'width' => 320, 'height' => 180, 'page' => 'Méga-menu (toutes pages)'],
         'mega_menu_catalogue_2' => ['label' => 'Méga-menu — bannière 2', 'width' => 320, 'height' => 180, 'page' => 'Méga-menu (toutes pages)'],
         'mega_menu_catalogue_3' => ['label' => 'Méga-menu — bannière 3', 'width' => 320, 'height' => 180, 'page' => 'Méga-menu (toutes pages)'],

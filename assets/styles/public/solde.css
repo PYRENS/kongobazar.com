@@ -9,34 +9,146 @@
     margin-right: calc(50% - 50vw);
     background: #f7f7f7;
 }
+.solde-hero--off { display: none; }
 .solde-hero-img {
     width: 100%;
     height: auto;
     display: block;
-    max-height: 420px;
-    object-fit: cover;
 }
 .solde-hero-badge {
     position: absolute;
     top: 50%;
-    right: 40px;
+    right: 2.2vw;
     transform: translateY(-50%);
     background: #e11d1d;
     color: #fff;
-    font-size: 28px;
+    /* Taille fluide : suit la largeur d'écran, donc la taille de la bannière.
+       28px à ~1800px de large, jamais sous 9px ni au-dessus de 60px. */
+    font-size: clamp(9px, 1.55vw, 60px);
     font-weight: 800;
-    padding: 14px 28px;
-    border-radius: 8px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+    line-height: 1.2;
+    white-space: nowrap;
+    padding: 0.5em 1em;
+    border-radius: 0.3em;
+    box-shadow: 0 0.2em 0.7em rgba(0, 0, 0, 0.25);
 }
 
+/* Positions du badge (réglable par campagne en admin) — milieu-droite = défaut */
+.solde-hero-badge[data-pos="top-left"]      { top: 6%;  bottom: auto; left: 2.2vw; right: auto; transform: none; }
+.solde-hero-badge[data-pos="top-center"]    { top: 6%;  bottom: auto; left: 50%;   right: auto; transform: translateX(-50%); }
+.solde-hero-badge[data-pos="top-right"]     { top: 6%;  bottom: auto; transform: none; }
+.solde-hero-badge[data-pos="middle-left"]   { left: 2.2vw; right: auto; }
+.solde-hero-badge[data-pos="middle-center"] { left: 50%; right: auto; transform: translate(-50%, -50%); }
+.solde-hero-badge[data-pos="bottom-left"]   { top: auto; bottom: 6%; left: 2.2vw; right: auto; transform: none; }
+.solde-hero-badge[data-pos="bottom-center"] { top: auto; bottom: 6%; left: 50%;   right: auto; transform: translateX(-50%); }
+.solde-hero-badge[data-pos="bottom-right"]  { top: auto; bottom: 6%; transform: none; }
+
+/* Textes libres sur la bannière (gérés en admin) — suivent la largeur d'écran comme le badge */
+.solde-hero .solde-hero-zone {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4vw;
+    max-width: 45%;
+    width: max-content;
+    z-index: 2;
+}
+.solde-hero .solde-hero-zone[data-pos^="top"]    { top: 6%; }
+.solde-hero .solde-hero-zone[data-pos^="bottom"] { bottom: 6%; }
+.solde-hero .solde-hero-zone[data-pos^="middle"] { top: 50%; translate: 0 -50%; }
+.solde-hero .solde-hero-zone[data-pos$="left"]   { left: 2.2vw; align-items: flex-start; text-align: left; }
+.solde-hero .solde-hero-zone[data-pos$="right"]  { right: 2.2vw; align-items: flex-end; text-align: right; }
+.solde-hero .solde-hero-zone[data-pos$="center"] { left: 50%; translate: -50% 0; align-items: center; text-align: center; }
+.solde-hero .solde-hero-zone[data-pos="middle-center"] { translate: -50% -50%; }
+
+.solde-hero-text {
+    font-weight: 800;
+    line-height: 1.2;
+    padding: 0.25em 0.6em;
+    border-radius: 0.3em;
+}
+.solde-hero-text--s  { font-size: clamp(8px, 1vw, 26px); }
+.solde-hero-text--m  { font-size: clamp(9px, 1.5vw, 40px); }
+.solde-hero-text--l  { font-size: clamp(10px, 2.4vw, 64px); }
+.solde-hero-text--xl { font-size: clamp(12px, 3.4vw, 90px); }
+
+/* Aligne le contenu de la page Solde sur le header (logo à gauche, panier à droite).
+   Annule le padding du .container-kb (16px) et le padding du .site-main (16px),
+   même principe que .home-layout sur l'accueil. */
+.solde-aligned {
+    width: auto;
+    max-width: none;
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: -16px;
+    margin-right: -16px;
+}
+@media (max-width: 1366px) {
+    .solde-aligned {
+        margin-left: 0;
+        margin-right: 0;
+    }
+}
+
+/* Top Catégories sur la page Solde : cartes alignées sur les mêmes marges que le reste */
+.solde-aligned .home-top-categories-track {
+    padding-left: 0;
+    padding-right: 0;
+}
+.solde-aligned .carousel-arrow--edge.left  { left: -16px; }
+.solde-aligned .carousel-arrow--edge.right { right: -16px; }
+.solde-aligned .see-all-link { margin-right: 0; }
+
 .solde-content-head {
-    margin: 24px auto 16px;
+    margin-top: 24px;
+    margin-bottom: 16px;
+}
+
+/* --- Décor de fond de la campagne (marges gauche/droite au-delà de 1366px) --- */
+.solde-theme {
+    position: relative;
+    isolation: isolate;
+    display: flow-root; /* empêche les marges internes de "sortir" du conteneur */
+}
+.solde-theme--on::before,
+.solde-theme--on::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+}
+/* Couche 1 : le décor, sur toute la largeur de l'écran */
+.solde-theme--on::before {
+    left: 50%;
+    width: 100vw;
+    margin-left: -50vw;
+    z-index: -2;
+    background-color: var(--solde-theme-bg, transparent);
+    /* 2 couches : le décor du haut (1re, au-dessus) et le décor répété (2e, en dessous) */
+    background-image: var(--solde-theme-top, none), var(--solde-theme-image, none);
+    background-repeat: no-repeat, repeat-y;
+    background-position: center top, center top;
+    background-size: 100% auto, 100% auto;
+}
+/* Couche 2 : panneau blanc central, même largeur que le header */
+.solde-theme--on::after {
+    left: -16px;
+    right: -16px;
+    background: #fff;
+    z-index: -1;
+}
+/* Le mode d'affichage ne concerne que la 2e image (celle du dessous) ; celle du haut reste toujours en no-repeat 100% */
+.solde-theme--on[data-theme-mode="top"]::before   { background-repeat: no-repeat, no-repeat; }
+.solde-theme--on[data-theme-mode="tile"]::before  { background-repeat: no-repeat, repeat; background-size: 100% auto, auto; }
+.solde-theme--on[data-theme-mode="fixed"]::before {
+    background-repeat: no-repeat, no-repeat;
+    background-size: 100% auto, cover;
+    background-attachment: scroll, fixed;
 }
 .solde-title { font-size: 20px; font-weight: 800; margin: 0; }
 .solde-filter-trigger {
     position: fixed;
-    bottom: 24px;
+    bottom: 84px; /* au-dessus de la flèche "retour en haut" (24px + 48px + 12px d'écart) */
     right: 24px;
     z-index: 1500;
     background: var(--kb-theme-color);
@@ -54,6 +166,88 @@
 .solde-filter-trigger:hover { opacity: 0.9; }
 
 .solde-product-grid { margin-bottom: 20px; }
+
+/* ≤796px : 4 cartes par ligne dans "Tous les produits en solde" */
+@media (max-width: 796px) {
+    .home-product-grid.solde-product-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+    }
+    .solde-product-grid .product-card-media { padding: 4px; }
+    .solde-product-grid .product-card-media img {
+        height: auto;
+        aspect-ratio: 1 / 1;
+    }
+    .solde-product-grid .product-card-body { padding: 6px; }
+    .solde-product-grid .product-card-title {
+        font-size: 11px;
+        margin-bottom: 4px;
+    }
+    .solde-product-grid .price-now { font-size: 11px; }
+    .solde-product-grid .price-old {
+        display: block;
+        margin-left: 0;
+        font-size: 9px;
+    }
+    .solde-product-grid .badge-solde {
+        top: 4px;
+        left: 4px;
+        font-size: 8px;
+        padding: 2px 4px;
+    }
+    .solde-product-grid .product-card-brand-logo {
+        bottom: 4px;
+        left: 4px;
+        max-width: 28px;
+        max-height: 14px;
+    }
+}
+
+/* ≤599px : 3 cartes par ligne dans "Tous les produits en solde" */
+@media (max-width: 599px) {
+    .home-product-grid.solde-product-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+    }
+    .solde-product-grid .product-card-media { padding: 6px; }
+    .solde-product-grid .product-card-body { padding: 8px; }
+    .solde-product-grid .product-card-title { font-size: 12px; }
+    .solde-product-grid .price-now { font-size: 12px; }
+    .solde-product-grid .price-old { font-size: 10px; }
+    .solde-product-grid .badge-solde {
+        font-size: 9px;
+        padding: 2px 5px;
+    }
+    .solde-product-grid .product-card-brand-logo {
+        max-width: 34px;
+        max-height: 16px;
+    }
+}
+
+/* ≤414px : 2 cartes par ligne dans "Tous les produits en solde" */
+@media (max-width: 414px) {
+    .home-product-grid.solde-product-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+    .solde-product-grid .product-card-media { padding: 8px; }
+    .solde-product-grid .product-card-body { padding: 10px; }
+    .solde-product-grid .product-card-title { font-size: 13px; }
+    .solde-product-grid .price-now { font-size: 13px; }
+    .solde-product-grid .price-old { font-size: 11px; }
+    .solde-product-grid .badge-solde {
+        top: 6px;
+        left: 6px;
+        font-size: 10px;
+        padding: 3px 6px;
+    }
+    .solde-product-grid .product-card-brand-logo {
+        bottom: 6px;
+        left: 6px;
+        max-width: 44px;
+        max-height: 20px;
+    }
+}
 .badge-solde {
     position: absolute;
     top: 8px;
@@ -118,12 +312,4 @@
     gap: 10px;
     padding: 16px 20px;
     border-top: 1px solid var(--kb-border);
-}
-
-@media (max-width: 767px) {
-    .solde-hero-badge {
-        right: 16px;
-        font-size: 18px;
-        padding: 10px 18px;
-    }
 }
