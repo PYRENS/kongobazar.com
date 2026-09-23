@@ -1,0 +1,119 @@
+{% extends 'manage/base.html.twig' %}
+{% block title %}Navbar — Éléments{% endblock %}
+{% block page_icon %}bi-menu-button-wide{% endblock %}
+{% block page_title %}Navbar — Éléments de navigation{% endblock %}
+{% block body %}
+    <div class="d-flex justify-content-between align-items-center mb-3 gap-3">
+        <p class="text-muted mb-0">
+            Barre de navigation du site (sous le logo). Change l'ordre avec ↑ ↓ et masque ou affiche un élément avec l'interrupteur.
+            Les éléments « Système » ne peuvent pas être supprimés ni modifiés.
+        </p>
+        <a href="{{ path('manage_navbar_new') }}" class="btn btn-success text-nowrap"><i class="bi bi-plus-circle"></i> Ajouter un élément</a>
+    </div>
+
+    <div class="sw-card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th style="width:110px;">Ordre</th>
+                        <th>Libellé</th>
+                        <th>Type</th>
+                        <th>Destination</th>
+                        <th>Afficher</th>
+                        <th>Menu mobile</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody data-navbar-list>
+                    {% for item in items %}
+                        <tr data-item-id="{{ item.id }}">
+                            <td>
+                                <div class="d-flex gap-1">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary navbar-move" data-move-url="{{ path('manage_navbar_move', { id: item.id, direction: 'up' }) }}">↑</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary navbar-move" data-move-url="{{ path('manage_navbar_move', { id: item.id, direction: 'down' }) }}">↓</button>
+                                </div>
+                            </td>
+                            <td class="fw-semibold">{{ item.label }}</td>
+                            <td>
+                                {% if item.isSystem %}
+                                    <span class="badge bg-secondary"><i class="bi bi-lock"></i> Système</span>
+                                {% else %}
+                                    <span class="badge bg-info">Personnalisé</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-muted small">
+                                {% if item.isSystem %}
+                                    Géré par le site
+                                {% elseif item.internalRoute %}
+                                    {{ internalRoutes[item.internalRoute] ?? item.internalRoute }}
+                                {% else %}
+                                    {{ item.url }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="form-check form-switch m-0">
+                                    <input type="checkbox" class="form-check-input navbar-toggle" role="switch" {{ item.active ? 'checked' : '' }} data-toggle-url="{{ path('manage_navbar_toggle', { id: item.id }) }}">
+                                </div>
+                            </td>
+                            <td>
+                                <div class="form-check form-switch m-0">
+                                    <input type="checkbox" class="form-check-input navbar-toggle-mobile" role="switch" {{ item.showInMobileMenu ? 'checked' : '' }} {{ item.systemKey == 'all_rayons' ? 'disabled title="Non applicable : c\'est le tiroir de menu lui-même"' : '' }} data-toggle-url="{{ path('manage_navbar_toggle_mobile', { id: item.id }) }}">
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                {% if not item.isSystem %}
+                                    <div class="d-inline-flex gap-1">
+                                        <a href="{{ path('manage_navbar_edit', { id: item.id }) }}" class="btn btn-sm btn-outline-primary" title="Modifier"><i class="bi bi-pencil"></i></a>
+                                        <form method="post" action="{{ path('manage_navbar_delete', { id: item.id }) }}" onsubmit="return confirm('Supprimer cet élément du navbar ?');">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted small"><i class="bi bi-lock"></i></span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="7" class="text-center text-muted py-4">Aucun élément.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.querySelectorAll('.navbar-toggle').forEach((sw) => {
+            sw.addEventListener('change', function () {
+                fetch(this.dataset.toggleUrl, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => { this.checked = data.active; })
+                    .catch(() => { this.checked = !this.checked; });
+            });
+        });
+
+        document.querySelectorAll('.navbar-toggle-mobile').forEach((sw) => {
+            sw.addEventListener('change', function () {
+                fetch(this.dataset.toggleUrl, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => { this.checked = data.showInMobileMenu; })
+                    .catch(() => { this.checked = !this.checked; });
+            });
+        });
+
+        document.querySelectorAll('.navbar-move').forEach((btn) => {
+            btn.addEventListener('click', function () {
+                const list = this.closest('[data-navbar-list]');
+                fetch(this.dataset.moveUrl, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => {
+                        if (!data.ok) return;
+                        data.order.forEach((id) => {
+                            const row = list.querySelector('[data-item-id="' + id + '"]');
+                            if (row) list.appendChild(row);
+                        });
+                    });
+            });
+        });
+    </script>
+{% endblock %}

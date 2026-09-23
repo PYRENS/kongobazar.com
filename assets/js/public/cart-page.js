@@ -9,6 +9,7 @@ function initCartPageSteppers() {
         const increaseBtn = line.querySelector('[data-qty-increase]');
         const qtyValue = line.querySelector('[data-qty-value]');
         const lineTotal = line.querySelector('[data-line-total]');
+        const lineOldTotal = line.querySelector('[data-line-old-total]');
 
         let busy = false;
 
@@ -25,7 +26,7 @@ function initCartPageSteppers() {
                 .then((data) => {
                     if (!data.success) return;
 
-                    updateGlobalCartIndicators(data.itemCount, data.displayAmount, data.displayCurrency);
+                    updateGlobalCartIndicators(data.itemCount, data.displayFormatted);
 
                     if (data.removed) {
                         line.remove();
@@ -34,7 +35,8 @@ function initCartPageSteppers() {
                     }
 
                     qtyValue.textContent = data.quantity;
-                    if (lineTotal) lineTotal.textContent = data.lineTotal;
+                    if (lineTotal && data.lineTotalDisplay) lineTotal.textContent = data.lineTotalDisplay;
+                    if (lineOldTotal && data.oldTotalDisplay) lineOldTotal.textContent = data.oldTotalDisplay;
                 })
                 .finally(() => { busy = false; });
         }
@@ -56,13 +58,15 @@ function initCartPageSteppers() {
     });
 }
 
-function updateGlobalCartIndicators(itemCount, displayAmount, displayCurrency) {
+function updateGlobalCartIndicators(itemCount, displayFormatted) {
     document.querySelectorAll('[data-cart-count]').forEach((el) => {
         el.textContent = itemCount;
     });
-    document.querySelectorAll('[data-cart-summary-total]').forEach((el) => {
-        el.textContent = displayAmount;
-    });
+    if (displayFormatted) {
+        document.querySelectorAll('[data-cart-summary-total], [data-cart-total]').forEach((el) => {
+            el.textContent = displayFormatted;
+        });
+    }
 
     const offcanvasBody = document.querySelector('[data-cart-offcanvas-body]');
     if (offcanvasBody) {

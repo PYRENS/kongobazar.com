@@ -31,7 +31,7 @@ class CampaignController extends AbstractController
 
         $stats = [];
         foreach ($campaigns as $campaign) {
-            $articleCount = 'solde' === $campaign->getType() ? count($productRepository->findAllActiveDeals()) : null;
+            $articleCount = $productRepository->countSaleProducts(null, null, null, null);
 
             $soldCount = $em->createQueryBuilder()
                 ->select('COALESCE(SUM(oi.quantity), 0)')
@@ -115,7 +115,8 @@ class CampaignController extends AbstractController
     private function save(Campaign $campaign, Request $request, EntityManagerInterface $em, bool $isNew): RedirectResponse
     {
         $title = trim((string) $request->request->get('title', ''));
-        $startAt = $request->request->get('start_at');
+        $startNow = $request->request->getBoolean('start_now');
+        $startAt = $startNow ? (new \DateTimeImmutable())->format('Y-m-d\TH:i:s') : $request->request->get('start_at');
         $endAt = $request->request->get('end_at');
 
         if ('' === $title || !$startAt || !$endAt) {
@@ -136,6 +137,17 @@ class CampaignController extends AbstractController
         $campaign->setStartAt($startAtDate);
         $campaign->setEndAt($endAtDate);
         $campaign->setBatchSize((int) $request->request->get('batch_size', 12));
+
+        // "Débuter maintenant" : la campagne devient active tout de suite, et (une seule campagne
+        // active à la fois) les autres sont désactivées, comme dans le bouton activer/désactiver.
+        if ($startNow) {
+            $campaign->setActive(true);
+            foreach ($em->getRepository(Campaign::class)->findAllOrdered() as $other) {
+                if ($other->getId() !== $campaign->getId() && $other->isActive()) {
+                    $other->setActive(false);
+                }
+            }
+        }
         $campaign->setBadgePosition((string) $request->request->get('badge_position', 'middle-right'));
         $campaign->setBadgeVisible($request->request->getBoolean('badge_visible'));
         $campaign->setBannerEnabled($request->request->getBoolean('banner_enabled'));
@@ -145,6 +157,8 @@ class CampaignController extends AbstractController
         $campaign->setPriorityProductsEnabled($request->request->getBoolean('priority_products_enabled'));
         $campaign->setPrioritySellersEnabled($request->request->getBoolean('priority_sellers_enabled'));
         $campaign->setTopCategoriesEnabled($request->request->getBoolean('top_categories_enabled'));
+        $campaign->setCardModel((string) $request->request->get('card_model', 'classic'));
+        $campaign->setAutoLoadBatches((int) $request->request->get('auto_load_batches', 3));
         $campaign->setBatchBannersEnabled($request->request->getBoolean('batch_banners_enabled'));
         $campaign->setBatchBannerEvery((int) $request->request->get('batch_banner_every', 1));
         $campaign->setBatchBannerMode((string) $request->request->get('batch_banner_mode', 'random'));
@@ -198,7 +212,7 @@ class CampaignController extends AbstractController
         }
         $em->flush();
 
-        $this->addFlash('success', 'Campagne ' . ($isNew ? 'créée' : 'mise à jour') . '.');
+        $this->addFlash('success', 'Campagne ' . ($isNew ? 'créée' : 'mise à jour') . ' — statut : ' . $campaign->getStatusLabel() . '.');
         return $this->redirectToRoute('manage_campaign_index');
     }
 

@@ -82,9 +82,9 @@
             </div>
 
             <div class="product-price-block">
-                <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+                <span class="price-now">{{ product.displayCurrentPrice|price(product.currency) }}</span>
                 {% if product.displayOldPrice %}
-                    <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
+                    <span class="price-old">{{ product.displayOldPrice|price(product.currency) }}</span>
                 {% endif %}
                 {% if product.getCurrentDiscountedPrice() %}
                     <span class="badge-discount-inline">-{{ product.getActiveDiscountPercent() }}%</span>
@@ -201,7 +201,7 @@
                      data-entity-id="{{ product.id }}"
                      data-admin-label="{{ product.title }}"
                      data-share-title="{{ product.title }}"
-                     data-share-text="{{ product.title }} — {{ product.basePrice }} {{ product.currency }} sur KongoBazar">
+                     data-share-text="{{ product.title }} — {{ product.basePrice|price(product.currency) }} sur KongoBazar">
                     <a class="share-menu-item" data-share-platform="facebook" target="_blank" rel="noopener">
                         <i class="bi bi-facebook"></i> Facebook
                     </a>
@@ -271,9 +271,9 @@
                             <div class="product-card-body">
                                 <a href="{{ path('catalog_product', { slug: reco.slug }) }}" class="product-card-title">{{ reco.title }}</a>
                                 <div class="product-card-price">
-                                    <span class="price-now">{{ reco.basePrice }} {{ reco.currency }}</span>
+                                    <span class="price-now">{{ reco.basePrice|price(reco.currency) }}</span>
                                     {% if reco.compareAtPrice %}
-                                        <span class="price-old">{{ reco.compareAtPrice }} {{ reco.currency }}</span>
+                                        <span class="price-old">{{ reco.compareAtPrice|price(reco.currency) }}</span>
                                     {% endif %}
                                 </div>
                             </div>

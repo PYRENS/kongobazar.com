@@ -28,7 +28,7 @@
             <div class="top-bar-links">
                 <div class="topbar-dropdown">
                     <button type="button" class="topbar-dropdown-toggle">
-                        <i class="bi bi-person"></i> {{ 'header.my_account'|trans }} <i class="bi bi-chevron-down"></i>
+                        <i class="bi bi-person"></i> {{ app.user ? (app.user.firstName ?: 'header.my_account'|trans) : 'header.my_account'|trans }} <i class="bi bi-chevron-down"></i>
                     </button>
                     <div class="topbar-dropdown-panel">
                         {% if app.user %}
@@ -130,7 +130,7 @@
                         <strong data-cart-count>{{ cartSummary.itemCount }}</strong> {{ 'cart.items_suffix'|trans }}
                         <span class="cart-trigger-sep">-</span>
                         {% set display = cart_display_subtotal() %}
-                        <strong data-cart-total>{{ display.amount }}</strong> {{ display.currency }}
+                        <strong data-cart-total>{{ display.amount|price(display.currency) }}</strong>
                     </span>
                 </span>
             </button>
@@ -141,38 +141,42 @@
     <nav class="main-nav">
         <div class="container-kb main-nav-inner">
             <ul class="nav-items">
-                <li>
-                    <button type="button" class="nav-rayons-trigger" data-bs-toggle="offcanvas" data-bs-target="#mainMenuOffcanvas">
-                        <i class="bi bi-list"></i> {{ 'nav.all_rayons'|trans }}
-                    </button>
-                </li>
-                <li class="{{ app.request.attributes.get('_route') == 'public_home' ? 'active' : '' }}">
-                    <a href="{{ path('public_home') }}">{{ 'nav.home'|trans }}</a>
-                </li>
-                <li class="has-mega-menu">
-                    <a href="{{ path('catalog_index') }}">{{ 'nav.catalogue'|trans }}</a>
-                    {% include 'public/_partials/_mega_menu_catalogue.html.twig' %}
-                </li>
-
-                <li class="nav-simple-dropdown">
-                    <button type="button" class="nav-simple-dropdown-toggle">
-                        {{ 'nav.offers'|trans }} <i class="bi bi-chevron-down"></i>
-                    </button>
-                    <div class="nav-simple-dropdown-panel">
-                        <a href="{{ path('catalog_offers_individual') }}"><i class="bi bi-person"></i> {{ 'nav.offers_individual'|trans }}</a>
-                        <a href="{{ path('catalog_offers_professional') }}"><i class="bi bi-briefcase"></i> {{ 'nav.offers_professional'|trans }}</a>
-                        <a href="{{ path('catalog_offers_store') }}"><i class="bi bi-shop"></i> {{ 'nav.offers_store'|trans }}</a>
-                        <a href="{{ path('catalog_offers_kongobazar') }}"><i class="bi bi-award"></i> {{ 'nav.offers_kongobazar'|trans }}</a>
-                    </div>
-                </li>
-
-                {% for item in header_custom_menu() %}
-                    <li>
-                        <a href="{{ item.internalRoute ? path(item.internalRoute) : item.url }}"
-                           {% if item.openInNewTab %}target="_blank" rel="noopener"{% endif %}>
-                            {{ item.label }}
-                        </a>
-                    </li>
+                {% for nav in navbar_items() %}
+                    {% if nav.systemKey == 'all_rayons' %}
+                        <li>
+                            <button type="button" class="nav-rayons-trigger" data-bs-toggle="offcanvas" data-bs-target="#mainMenuOffcanvas">
+                                <i class="bi bi-list"></i> {{ 'nav.all_rayons'|trans }}
+                            </button>
+                        </li>
+                    {% elseif nav.systemKey == 'home' %}
+                        <li class="{{ app.request.attributes.get('_route') == 'public_home' ? 'active' : '' }}">
+                            <a href="{{ path('public_home') }}">{{ 'nav.home'|trans }}</a>
+                        </li>
+                    {% elseif nav.systemKey == 'catalogue' %}
+                        <li class="has-mega-menu">
+                            <a href="{{ path('catalog_index') }}">{{ 'nav.catalogue'|trans }}</a>
+                            {% include 'public/_partials/_mega_menu_catalogue.html.twig' %}
+                        </li>
+                    {% elseif nav.systemKey == 'offers' %}
+                        <li class="nav-simple-dropdown">
+                            <button type="button" class="nav-simple-dropdown-toggle">
+                                {{ 'nav.offers'|trans }} <i class="bi bi-chevron-down"></i>
+                            </button>
+                            <div class="nav-simple-dropdown-panel">
+                                <a href="{{ path('catalog_offers_individual') }}"><i class="bi bi-person"></i> {{ 'nav.offers_individual'|trans }}</a>
+                                <a href="{{ path('catalog_offers_professional') }}"><i class="bi bi-briefcase"></i> {{ 'nav.offers_professional'|trans }}</a>
+                                <a href="{{ path('catalog_offers_store') }}"><i class="bi bi-shop"></i> {{ 'nav.offers_store'|trans }}</a>
+                                <a href="{{ path('catalog_offers_kongobazar') }}"><i class="bi bi-award"></i> {{ 'nav.offers_kongobazar'|trans }}</a>
+                            </div>
+                        </li>
+                    {% else %}
+                        <li>
+                            <a href="{{ nav.internalRoute ? path(nav.internalRoute) : nav.url }}"
+                               {% if nav.openInNewTab %}target="_blank" rel="noopener"{% endif %}>
+                                {{ nav.label }}
+                            </a>
+                        </li>
+                    {% endif %}
                 {% endfor %}
             </ul>
         </div>
@@ -207,9 +211,24 @@
             <button type="button" class="condensed-icon-btn" id="mobileSearchToggle" aria-label="{{ 'header.search_placeholder'|trans }}">
                 <i class="bi bi-search"></i>
             </button>
-            <a href="{{ app.user ? path('account_index') : path('public_login') }}" class="condensed-icon-btn" aria-label="{{ 'header.my_account'|trans }}">
-                <i class="bi bi-person"></i>
-            </a>
+            {% if app.user %}
+                <div class="topbar-dropdown condensed-account-dropdown">
+                    <button type="button" class="condensed-icon-btn condensed-icon-btn--account topbar-dropdown-toggle" aria-label="{{ 'header.my_account'|trans }}">
+                        <i class="bi bi-person"></i>
+                        <span class="condensed-account-dot" aria-hidden="true"></span>
+                    </button>
+                    <div class="topbar-dropdown-panel condensed-account-panel">
+                        <a href="{{ path('account_index') }}"><i class="bi bi-person-circle"></i> {{ 'header.my_account'|trans }}</a>
+                        <a href="{{ path('account_index') }}"><i class="bi bi-bag-check"></i> {{ 'header.order_history'|trans }}</a>
+                        <a href="{{ path('wishlist_index') }}"><i class="bi bi-heart"></i> {{ 'header.my_wishlist'|trans }}</a>
+                        <a href="{{ path('public_logout') }}"><i class="bi bi-box-arrow-right"></i> {{ 'header.logout'|trans }}</a>
+                    </div>
+                </div>
+            {% else %}
+                <a href="{{ path('public_login') }}" class="condensed-icon-btn" aria-label="{{ 'header.my_account'|trans }}">
+                    <i class="bi bi-person"></i>
+                </a>
+            {% endif %}
             <a href="{{ path('wishlist_index') }}" class="condensed-icon-btn" aria-label="{{ 'header.my_wishlist'|trans }}">
                 <i class="bi bi-heart"></i>
             </a>
@@ -251,9 +270,23 @@
             <div class="search-suggestions" hidden></div>
         </form>
         <div class="condensed-desktop-links">
-            <a href="{{ app.user ? path('account_index') : path('public_login') }}" class="condensed-desktop-link">
-                <i class="bi bi-person"></i> {{ 'header.my_account'|trans }}
-            </a>
+            {% if app.user %}
+                <div class="topbar-dropdown condensed-account-dropdown">
+                    <button type="button" class="condensed-desktop-link topbar-dropdown-toggle">
+                        <i class="bi bi-person"></i> {{ app.user.firstName ?: 'header.my_account'|trans }} <i class="bi bi-chevron-down condensed-account-caret"></i>
+                    </button>
+                    <div class="topbar-dropdown-panel condensed-account-panel">
+                        <a href="{{ path('account_index') }}"><i class="bi bi-person-circle"></i> {{ 'header.my_account'|trans }}</a>
+                        <a href="{{ path('account_index') }}"><i class="bi bi-bag-check"></i> {{ 'header.order_history'|trans }}</a>
+                        <a href="{{ path('wishlist_index') }}"><i class="bi bi-heart"></i> {{ 'header.my_wishlist'|trans }}</a>
+                        <a href="{{ path('public_logout') }}"><i class="bi bi-box-arrow-right"></i> {{ 'header.logout'|trans }}</a>
+                    </div>
+                </div>
+            {% else %}
+                <a href="{{ path('public_login') }}" class="condensed-desktop-link">
+                    <i class="bi bi-person"></i> {{ 'header.my_account'|trans }}
+                </a>
+            {% endif %}
             {% set languages = [
                 { code: 'fr', abbr: 'FR', label: 'Français', flag: 'fi-fr', enabled: true },
                 { code: 'en', abbr: 'EN', label: 'English', flag: 'fi-gb', enabled: false },
@@ -332,11 +365,6 @@
 <div class="offcanvas offcanvas-start" tabindex="-1" id="mainMenuOffcanvas">
     <div class="offcanvas-header">
         <h5 class="offcanvas-title">{{ 'menu.title'|trans }}</h5>
-        <button type="button" class="btn-close-custom" data-bs-dismiss="offcanvas" aria-label="{{ 'menu.close'|trans }}">
-            <i class="bi bi-x-lg"></i>
-        </button>
-    </div>
-    <div class="offcanvas-body">
         <div class="offcanvas-lang-currency">
             {% set languages = [
                 { code: 'fr', abbr: 'FR', label: 'Français', flag: 'fi-fr', enabled: true },
@@ -391,7 +419,69 @@
                 </div>
             </div>
         </div>
+        <button type="button" class="btn-close-custom" data-bs-dismiss="offcanvas" aria-label="{{ 'menu.close'|trans }}">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+    <div class="offcanvas-body">
+        {# Éléments du navbar : affichés uniquement à ≤991px, avant les rayons #}
+        <ul class="offcanvas-nav-items">
+            {% for nav in navbar_mobile_items() %}
+                {% if nav.systemKey == 'home' %}
+                    <li class="{{ app.request.attributes.get('_route') == 'public_home' ? 'active' : '' }}">
+                        <a href="{{ path('public_home') }}">{{ 'nav.home'|trans }}</a>
+                    </li>
+                {% elseif nav.systemKey == 'catalogue' %}
+                    <li><a href="{{ path('catalog_index') }}">{{ 'nav.catalogue'|trans }}</a></li>
+                {% elseif nav.systemKey == 'offers' %}
+                    <li>
+                        <button type="button" class="offcanvas-nav-collapse-toggle" data-bs-toggle="collapse" data-bs-target="#offcanvasOffersList" aria-expanded="false">
+                            {{ 'nav.offers'|trans }} <i class="bi bi-chevron-down"></i>
+                        </button>
+                        <div class="collapse" id="offcanvasOffersList">
+                            <ul class="offcanvas-nav-sub">
+                                <li><a href="{{ path('catalog_offers_individual') }}"><i class="bi bi-person"></i> {{ 'nav.offers_individual'|trans }}</a></li>
+                                <li><a href="{{ path('catalog_offers_professional') }}"><i class="bi bi-briefcase"></i> {{ 'nav.offers_professional'|trans }}</a></li>
+                                <li><a href="{{ path('catalog_offers_store') }}"><i class="bi bi-shop"></i> {{ 'nav.offers_store'|trans }}</a></li>
+                                <li><a href="{{ path('catalog_offers_kongobazar') }}"><i class="bi bi-award"></i> {{ 'nav.offers_kongobazar'|trans }}</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                {% elseif not nav.systemKey %}
+                    <li>
+                        <a href="{{ nav.internalRoute ? path(nav.internalRoute) : nav.url }}"{% if nav.openInNewTab %} target="_blank" rel="noopener"{% endif %}>{{ nav.label }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+
         {{ menu.drillMenu(root_categories()) }}
+
+        {# Liens utiles : visibles uniquement sur mobile (le footer est long à atteindre) #}
+        <div class="offcanvas-info-links">
+            <a href="#" data-scroll-to-footer><i class="bi bi-info-circle"></i> Infos &amp; aide</a>
+            {% for item in footer_bottom_links() %}
+                <a href="{{ item.internalRoute ? path(item.internalRoute) : item.url }}"{% if item.openInNewTab %} target="_blank" rel="noopener"{% endif %}>{{ item.label }}</a>
+            {% endfor %}
+        </div>
+        <script>
+            document.querySelectorAll('[data-scroll-to-footer]').forEach(function (link) {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    var drawer = link.closest('.offcanvas');
+                    var closeBtn = drawer && drawer.querySelector('[data-bs-dismiss="offcanvas"]');
+                    if (closeBtn) closeBtn.click();
+                    // On attend la fermeture du tiroir avant de défiler
+                    setTimeout(function () {
+                        // Page campagne : même saut que le bouton flottant (chargement automatique en pause)
+                        var shortcut = document.getElementById('soldeFooterShortcut');
+                        if (shortcut) { shortcut.click(); return; }
+                        var footer = document.querySelector('footer.site-footer');
+                        if (footer) footer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 350);
+                });
+            });
+        </script>
     </div>
 </div>
 

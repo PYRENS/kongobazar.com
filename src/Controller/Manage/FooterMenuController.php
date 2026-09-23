@@ -69,6 +69,25 @@ class FooterMenuController extends AbstractController
         return $this->redirectToRoute('manage_footer_menu_index');
     }
 
+    #[Route('/parametres/footer/rubriques/{id}/modifier', name: 'manage_footer_menu_edit', host: 'manage.kongobazar.com', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function edit(CustomMenuItem $item, Request $request, EntityManagerInterface $em): RedirectResponse
+    {
+        $label = trim((string) $request->request->get('label', ''));
+        $url = trim((string) $request->request->get('url', ''));
+        if ('' === $label || '' === $url) {
+            $this->addFlash('error', 'Le libellé et le lien sont obligatoires.');
+            return $this->redirectToRoute('manage_footer_menu_index');
+        }
+
+        $item->setLabel($label);
+        $item->setUrl($url);
+        $item->setOpenInNewTab((bool) $request->request->get('open_in_new_tab'));
+        $em->flush();
+
+        $this->addFlash('success', 'Lien mis à jour.');
+        return $this->redirectToRoute('manage_footer_menu_index');
+    }
+
     #[Route('/parametres/footer/rubriques/{id}/supprimer', name: 'manage_footer_menu_remove', host: 'manage.kongobazar.com', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function remove(CustomMenuItem $item, EntityManagerInterface $em): RedirectResponse
     {

@@ -10,15 +10,31 @@
     </a>
 {% endif %}
 
-<div class="home-product-grid solde-product-grid">
+{% set model = cardModel|default(campaign.cardModel|default('classic')) %}
+{% set ctype = campaignType|default(campaign.type|default('solde')) %}
+{% set cEnd = campaignEnd|default(campaign.endAt|default(null)) %}
+<div class="home-product-grid solde-product-grid solde-card--{{ model }}">
     {% for product in products %}
         <div class="product-card">
+            {% if ctype == 'vente_flash' %}
+                {% set flashEnd = product.activeDiscountEndAt ?? cEnd %}
+                {% if flashEnd %}
+                    <div class="home-deal-countdown flash-countdown" data-flash-end="{{ flashEnd|date('c') }}">
+                        <div class="countdown-boxes">
+                            <div><span data-cd-days>--</span><small>{{ 'home.days'|trans|default('Jours') }}</small></div>
+                            <div><span data-cd-hours>--</span><small>{{ 'home.hours'|trans|default('Heures') }}</small></div>
+                            <div><span data-cd-mins>--</span><small>{{ 'home.mins'|trans|default('Min') }}</small></div>
+                            <div><span data-cd-secs>--</span><small>{{ 'home.secs'|trans|default('Sec') }}</small></div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endif %}
             <div class="product-card-media">
                 <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}"
                      alt="{{ product.title }}"
                      class="product-card-main-image"
                      loading="lazy">
-                <span class="badge-solde">SOLDE -{{ product.activeDiscountPercent }}%</span>
+                <span class="badge-solde">{{ ctype == 'solde' ? 'SOLDE' : (ctype == 'vente_flash' ? 'FLASH' : 'PROMO') }} -{{ product.activeDiscountPercent }}%</span>
                 {% if product.brand and product.brand.logoName %}
                     <img src="{{ vich_uploader_asset(product.brand, 'logoFile') }}" alt="{{ product.brand.name }}" class="product-card-brand-logo">
                 {% endif %}
@@ -26,9 +42,9 @@
             <div class="product-card-body">
                 <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="product-card-title">{{ product.title }}</a>
                 <div class="product-card-price">
-                    <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+                    <span class="price-now">{{ product.displayCurrentPrice|price(product.currency) }}</span>
                     {% if product.displayOldPrice %}
-                        <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
+                        <span class="price-old">{{ product.displayOldPrice|price(product.currency) }}</span>
                     {% endif %}
                 </div>
             </div>

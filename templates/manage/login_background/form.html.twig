@@ -1,0 +1,61 @@
+{% extends 'manage/base.html.twig' %}
+{% block title %}{{ image ? 'Modifier' : 'Ajouter' }} une image — Connexion{% endblock %}
+{% block page_icon %}bi-images{% endblock %}
+{% block page_title %}{{ image ? 'Modifier l\'image' : 'Nouvelle image de fond' }}{% endblock %}
+{% block body %}
+    <form method="post" action="{{ image ? path('manage_login_background_edit', { id: image.id }) : path('manage_login_background_new') }}" enctype="multipart/form-data">
+        <div class="sw-card mb-3">
+            <div class="card-body row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Image (portrait conseillé, ex. 1200 × 1600px)</label>
+                    <small class="text-muted d-block mb-1" id="lbiImageStatus">{{ image and image.imageName ? 'Image actuelle' : 'Aucune image choisie' }}</small>
+                    <div class="kb-image-uploader">
+                        <div class="kb-image-uploader-thumb" id="lbiImageCurrent" style="{{ image and image.imageName ? '' : 'display:none;' }}">
+                            <img id="lbiImagePreview" src="{{ image and image.imageName ? vich_uploader_asset(image, 'imageFile') : '' }}" alt="">
+                        </div>
+                        <label class="kb-image-uploader-dropzone" for="lbiImageInput">
+                            <i class="bi bi-camera"></i>
+                            <span>Upload</span>
+                        </label>
+                        <input type="file" name="image" id="lbiImageInput" accept="image/*" {{ image ? '' : 'required' }} hidden>
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label">Titre (texte alternatif, facultatif)</label>
+                    <input type="text" name="title" class="form-control" maxlength="150" value="{{ image ? image.title : '' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label d-block">Statut</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="active" value="1" id="lbiActive" {{ (image ? image.active : true) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="lbiActive">Image active</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-success">Enregistrer</button>
+        <a href="{{ path('manage_login_background_index') }}" class="btn btn-outline-secondary">Annuler</a>
+    </form>
+
+    <script>
+        (function () {
+            const input = document.getElementById('lbiImageInput');
+            const currentBlock = document.getElementById('lbiImageCurrent');
+            const preview = document.getElementById('lbiImagePreview');
+            const status = document.getElementById('lbiImageStatus');
+
+            input.addEventListener('change', function () {
+                const file = this.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    preview.src = e.target.result;
+                    currentBlock.style.display = 'block';
+                    status.textContent = 'Nouvelle image sélectionnée';
+                };
+                reader.readAsDataURL(file);
+            });
+        })();
+    </script>
+{% endblock %}

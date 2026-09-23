@@ -50,6 +50,14 @@ class CustomMenuItem
     #[ORM\Column]
     private ?bool $active = null;
 
+    /** Éléments "système" du navbar (non supprimables) : all_rayons | home | catalogue | offers. null = lien personnalisé. */
+    #[ORM\Column(length: 30, nullable: true)]
+    private ?string $systemKey = null;
+
+    /** Navbar : afficher aussi cet élément dans le tiroir de menu mobile (≤991px). */
+    #[ORM\Column(options: ['default' => true])]
+    private bool $showInMobileMenu = true;
+
     public function __construct()
     {
         $this->children = new ArrayCollection();
@@ -171,6 +179,35 @@ class CustomMenuItem
         $this->active = $active;
 
         return $this;
+    }
+
+    public function getSystemKey(): ?string
+    {
+        return $this->systemKey;
+    }
+
+    public function setSystemKey(?string $systemKey): static
+    {
+        $this->systemKey = $systemKey;
+
+        return $this;
+    }
+
+    public function isShowInMobileMenu(): bool
+    {
+        return $this->showInMobileMenu;
+    }
+
+    public function setShowInMobileMenu(bool $showInMobileMenu): static
+    {
+        $this->showInMobileMenu = $showInMobileMenu;
+
+        return $this;
+    }
+
+    public function isSystem(): bool
+    {
+        return null !== $this->systemKey;
     }
 
     public function __toString(): string

@@ -39,13 +39,13 @@
                             <td>{{ campaign.startAt|date('d/m/Y H:i') }} → {{ campaign.endAt|date('d/m/Y H:i') }}</td>
                             <td>
                                 {% set status = campaign.statusLabel %}
-                                <span class="badge bg-{{ status == 'En cours' ? 'success' : (status == 'À venir' ? 'info' : (status == 'Terminée' ? 'secondary' : 'dark')) }}">{{ status }}</span>
+                                <span id="campaignStatus{{ campaign.id }}" class="badge bg-{{ status == 'En cours' ? 'success' : (status == 'À venir' ? 'info' : (status == 'Terminée' ? 'secondary' : 'dark')) }}">{{ status }}</span>
                             </td>
                             <td>{{ stats[campaign.id].articleCount ?? '—' }}</td>
                             <td>{{ stats[campaign.id].soldCount }}</td>
                             <td>
                                 <div class="form-check form-switch">
-                                    <input type="checkbox" class="form-check-input campaign-toggle" role="switch" {{ campaign.active ? 'checked' : '' }} data-toggle-url="{{ path('manage_campaign_toggle', { id: campaign.id }) }}">
+                                    <input type="checkbox" class="form-check-input campaign-toggle" role="switch" {{ campaign.active ? 'checked' : '' }} data-toggle-url="{{ path('manage_campaign_toggle', { id: campaign.id }) }}" data-campaign-id="{{ campaign.id }}">
                                 </div>
                             </td>
                             <td class="text-end">
@@ -56,7 +56,7 @@
                             </td>
                         </tr>
                     {% else %}
-                        <tr><td colspan="8" class="text-center text-muted py-4">Aucune campagne créée.</td></tr>
+                        <tr><td colspan="9" class="text-center text-muted py-4">Aucune campagne créée.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -80,18 +80,40 @@
             this.classList.remove('kb-panel-open');
         });
 
+        const CAMPAIGN_STATUS_CLASSES = {
+            'En cours': 'bg-success',
+            'À venir': 'bg-info',
+            'Terminée': 'bg-secondary',
+            'Désactivée': 'bg-dark',
+        };
+
+        function setCampaignStatus(id, label) {
+            const badge = document.getElementById('campaignStatus' + id);
+            if (!badge) return;
+            badge.textContent = label;
+            badge.className = 'badge ' + (CAMPAIGN_STATUS_CLASSES[label] || 'bg-dark');
+        }
+
         document.querySelectorAll('.campaign-toggle').forEach((sw) => {
-            sw.dataset.campaignId = sw.closest('tr').querySelector('a[href*="modifier"]')?.href.match(/\/campagnes\/(\d+)\//)?.[1] || '';
             sw.addEventListener('change', function () {
+                const id = this.dataset.campaignId;
+                this.disabled = true;
+
                 fetch(this.dataset.toggleUrl, { method: 'POST' })
                     .then((r) => r.json())
                     .then((data) => {
                         this.checked = data.active;
-                        (data.deactivatedIds || []).forEach((id) => {
-                            const otherSw = document.querySelector('.campaign-toggle[data-campaign-id="' + id + '"]');
+                        setCampaignStatus(id, data.statusLabel);
+
+                        // Une seule campagne active à la fois : les autres sont désactivées côté serveur
+                        (data.deactivatedIds || []).forEach((otherId) => {
+                            const otherSw = document.querySelector('.campaign-toggle[data-campaign-id="' + otherId + '"]');
                             if (otherSw) otherSw.checked = false;
+                            setCampaignStatus(otherId, 'Désactivée');
                         });
-                    });
+                    })
+                    .catch(() => { this.checked = !this.checked; })
+                    .finally(() => { this.disabled = false; });
             });
         });
     </script>

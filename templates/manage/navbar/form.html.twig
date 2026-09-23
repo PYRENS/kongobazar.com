@@ -1,0 +1,69 @@
+{% extends 'manage/base.html.twig' %}
+{% block title %}{{ item ? 'Modifier' : 'Ajouter' }} un élément du navbar{% endblock %}
+{% block page_icon %}bi-menu-button-wide{% endblock %}
+{% block page_title %}{{ item ? 'Modifier l\'élément' : 'Nouvel élément du navbar' }}{% endblock %}
+{% block body %}
+    {% set isPost = app.request.method == 'POST' %}
+    {% set curLabel = isPost ? app.request.request.get('label', '') : (item ? item.label : '') %}
+    {% set curRoute = isPost ? app.request.request.get('internal_route', '') : (item ? item.internalRoute : '') %}
+    {% set curUrl = isPost ? app.request.request.get('url', '') : (item ? item.url : '') %}
+    {% set curNewTab = isPost ? app.request.request.getBoolean('open_in_new_tab') : (item ? item.openInNewTab : false) %}
+    {% set curActive = isPost ? app.request.request.getBoolean('active') : (item ? item.active : true) %}
+    {% set curMobile = isPost ? app.request.request.getBoolean('show_in_mobile_menu') : (item ? item.showInMobileMenu : true) %}
+
+    <form method="post" action="{{ item ? path('manage_navbar_edit', { id: item.id }) : path('manage_navbar_new') }}">
+        <div class="sw-card mb-3">
+            <div class="card-body row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Libellé affiché</label>
+                    <input type="text" name="label" class="form-control" maxlength="100" value="{{ curLabel }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Page du site</label>
+                    <select name="internal_route" class="form-select" id="navInternalRoute">
+                        <option value="">— Adresse libre (ci-dessous) —</option>
+                        {% for routeName, routeLabel in internalRoutes %}
+                            <option value="{{ routeName }}" {{ curRoute == routeName ? 'selected' : '' }}>{{ routeLabel }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12" id="navUrlWrap">
+                    <label class="form-label">Adresse (si aucune page du site n'est choisie)</label>
+                    <input type="text" name="url" class="form-control" placeholder="/chemin ou https://..." value="{{ curUrl }}">
+                    <small class="text-muted">Doit commencer par / (page du site) ou https:// (lien externe).</small>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="open_in_new_tab" value="1" id="navNewTab" {{ curNewTab ? 'checked' : '' }}>
+                        <label class="form-check-label" for="navNewTab">Ouvrir dans un nouvel onglet</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="active" value="1" id="navActive" {{ curActive ? 'checked' : '' }}>
+                        <label class="form-check-label" for="navActive">Afficher dans le navbar</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="show_in_mobile_menu" value="1" id="navMobile" {{ curMobile ? 'checked' : '' }}>
+                        <label class="form-check-label" for="navMobile">Afficher dans le menu mobile (≤991px)</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-success">Enregistrer</button>
+        <a href="{{ path('manage_navbar_index') }}" class="btn btn-outline-secondary">Annuler</a>
+    </form>
+
+    <script>
+        (function () {
+            const select = document.getElementById('navInternalRoute');
+            const urlWrap = document.getElementById('navUrlWrap');
+            function sync() { urlWrap.style.display = select.value ? 'none' : ''; }
+            select.addEventListener('change', sync);
+            sync();
+        })();
+    </script>
+{% endblock %}

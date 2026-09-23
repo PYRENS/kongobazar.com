@@ -52,9 +52,9 @@
                             </p>
                         {% endif %}
                         <div class="home-deal-price">
-                            <span class="price-now">{{ deal.displayCurrentPrice }} {{ deal.currency }}</span>
+                            <span class="price-now">{{ deal.displayCurrentPrice|price(deal.currency) }}</span>
                             {% if deal.displayOldPrice %}
-                                <span class="price-old">{{ deal.displayOldPrice }} {{ deal.currency }}</span>
+                                <span class="price-old">{{ deal.displayOldPrice|price(deal.currency) }}</span>
                             {% endif %}
                         </div>
                         <div class="home-deal-countdown-row">

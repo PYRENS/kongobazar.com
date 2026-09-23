@@ -28,7 +28,7 @@
                     <img src="{{ p.images|length > 0 ? vich_uploader_asset(p.images|first, 'imageFile') : '' }}" alt="{{ p.title }}" loading="lazy">
                 </span>
                 <span class="home-mini-product-title">{{ p.title }}</span>
-                <span class="home-mini-product-price">{{ p.basePrice }} {{ p.currency }}</span>
+                <span class="home-mini-product-price">{{ p.basePrice|price(p.currency) }}</span>
             </a>
         {% endfor %}
     </div>

@@ -1,0 +1,38 @@
+{% extends 'manage/base.html.twig' %}
+{% block title %}Nouveau document légal{% endblock %}
+{% block page_icon %}bi-file-earmark-text{% endblock %}
+{% block page_title %}Nouveau document légal{% endblock %}
+{% block body %}
+    <form method="post" action="{{ path('manage_legal_document_new') }}">
+        <div class="sw-card mb-3">
+            <div class="card-body row g-3">
+                <div class="col-md-5">
+                    <label class="form-label">Libellé (ex. "Conditions Générales de Vente")</label>
+                    <input type="text" name="label" class="form-control" maxlength="150" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Code (identifiant technique, ex. "cgv")</label>
+                    <input type="text" name="code" class="form-control" pattern="[a-z0-9_-]+" placeholder="cgv" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Espace</label>
+                    <select name="target_space" class="form-select">
+                        <option value="public">Acheteur</option>
+                        <option value="pro">Pro</option>
+                        <option value="store">Boutique</option>
+                        <option value="relay">Point relais</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label d-block">Acceptation</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="requires_acceptance" value="1" id="reqAccept" checked>
+                        <label class="form-check-label" for="reqAccept">Bloquante</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-success">Créer le document</button>
+        <a href="{{ path('manage_legal_index') }}" class="btn btn-outline-secondary">Annuler</a>
+    </form>
+{% endblock %}

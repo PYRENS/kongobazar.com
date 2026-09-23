@@ -1,0 +1,86 @@
+{% extends 'manage/base.html.twig' %}
+{% block title %}Historique — {{ document.label }}{% endblock %}
+{% block page_icon %}bi-clock-history{% endblock %}
+{% block page_title %}Historique des versions — {{ document.label }}{% endblock %}
+{% block body %}
+    <p class="text-muted"><a href="{{ path('manage_legal_index') }}">&larr; Retour aux documents légaux</a></p>
+
+    <div class="mb-3" style="max-width:320px;">
+        <input type="text" class="form-control" id="legalHistorySearch" placeholder="Rechercher (version, statut, date)…">
+    </div>
+
+    <div class="sw-card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle" id="legalHistoryTable">
+                <thead>
+                    <tr>
+                        <th class="legal-sortable" data-sort="number" style="cursor:pointer;">Version <i class="bi bi-arrow-down-up"></i></th>
+                        <th class="legal-sortable" data-sort="text" style="cursor:pointer;">Statut <i class="bi bi-arrow-down-up"></i></th>
+                        <th class="legal-sortable" data-sort="date" style="cursor:pointer;">Publiée le <i class="bi bi-arrow-down-up"></i></th>
+                        <th>Résumé des changements</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for version in versions %}
+                        {% set statusLabel = version.status == 'published' ? 'Publiée (en vigueur)' : (version.status == 'archived' ? 'Archivée' : 'Brouillon') %}
+                        <tr data-search="{{ (version.versionNumber ~ ' ' ~ statusLabel ~ ' ' ~ (version.publishedAt ? version.publishedAt|date('d/m/Y') : ''))|lower }}"
+                            data-number="{{ version.versionNumber }}" data-text="{{ statusLabel }}" data-date="{{ version.publishedAt ? version.publishedAt|date('U') : 0 }}">
+                            <td class="fw-semibold">v{{ version.versionNumber }}</td>
+                            <td>
+                                {% if version.status == 'published' %}
+                                    <span class="badge bg-success">Publiée (en vigueur)</span>
+                                {% elseif version.status == 'archived' %}
+                                    <span class="badge bg-secondary">Archivée</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">Brouillon</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ version.publishedAt ? version.publishedAt|date('d/m/Y H:i') : '—' }}</td>
+                            <td>{{ version.changeSummary ?: '—' }}</td>
+                            <td class="text-end">
+                                <a href="{{ path('manage_legal_version_edit', { id: version.id }) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-{{ version.isDraft ? 'pencil' : 'eye' }}"></i> {{ version.isDraft ? 'Modifier' : 'Voir le contenu' }}
+                                </a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="5" class="text-center text-muted py-4">Aucune version pour ce document.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const search = document.getElementById('legalHistorySearch');
+            const table = document.getElementById('legalHistoryTable');
+            const tbody = table.querySelector('tbody');
+
+            search.addEventListener('input', function () {
+                const term = this.value.trim().toLowerCase();
+                tbody.querySelectorAll('tr[data-search]').forEach((row) => {
+                    row.style.display = row.dataset.search.includes(term) ? '' : 'none';
+                });
+            });
+
+            table.querySelectorAll('.legal-sortable').forEach((th) => {
+                let asc = true;
+                th.addEventListener('click', function () {
+                    const key = this.dataset.sort;
+                    const rows = Array.from(tbody.querySelectorAll('tr[data-search]'));
+                    rows.sort((a, b) => {
+                        let va = a.dataset[key], vb = b.dataset[key];
+                        if (key === 'number' || key === 'date') { va = Number(va); vb = Number(vb); }
+                        if (va < vb) return asc ? -1 : 1;
+                        if (va > vb) return asc ? 1 : -1;
+                        return 0;
+                    });
+                    rows.forEach((row) => tbody.appendChild(row));
+                    asc = !asc;
+                });
+            });
+        })();
+    </script>
+{% endblock %}

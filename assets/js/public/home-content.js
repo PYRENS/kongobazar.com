@@ -606,6 +606,7 @@ function initHotDealCard() {
     }
 
     let current = 0;
+    let restoreSnapTimer = null;
 
     function regroup() {
         const shouldPage = window.innerWidth <= 991;
@@ -647,7 +648,18 @@ function initHotDealCard() {
         const slides = Array.from(track.children);
         if (slides.length <= 1) return;
         current = (index + slides.length) % slides.length;
+
+        track.style.scrollSnapType = 'none';
         track.scrollTo({ left: slides[current].offsetLeft, behavior: 'smooth' });
+
+        // Force le navigateur à repeindre l'écran tout de suite : sur certaines machines/GPU,
+        // scrollLeft change en interne mais l'affichage ne se met pas à jour tant que rien d'autre
+        // ne force un nouveau rendu — ce que les DevTools ouverts font sans qu'on s'en rende compte,
+        // d'où le fonctionnement "normal" pendant l'inspection et le blocage une fois fermés.
+        void track.offsetHeight;
+
+        clearTimeout(restoreSnapTimer);
+        restoreSnapTimer = setTimeout(() => { track.style.scrollSnapType = ''; }, 600);
     }
 
     regroup();

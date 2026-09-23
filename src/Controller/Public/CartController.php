@@ -152,6 +152,7 @@ class CartController extends AbstractController
         Request $request,
         CartItemRepository $itemRepository,
         CartService $cartService,
+        \App\Service\PriceFormatter $priceFormatter,
     ): JsonResponse {
         $item = $itemRepository->find($id);
         if (!$item) {
@@ -172,6 +173,7 @@ class CartController extends AbstractController
                 'itemCount' => $summary['itemCount'],
                 'displayAmount' => $display['amount'],
                 'displayCurrency' => $display['currency'],
+                'displayFormatted' => $priceFormatter->format($display['amount'], $display['currency']),
             ]);
         }
 
@@ -181,6 +183,8 @@ class CartController extends AbstractController
         $summary = $cartService->getSummary($cart);
         $display = $cartService->getDisplaySubtotal($summary);
 
+        $product = $item->getVariant()->getProduct();
+        $oldTotal = $product->getCompareAtPrice() ? bcmul($product->getCompareAtPrice(), (string) $item->getQuantity(), 2) : null;
         $lineTotal = null;
         foreach ($summary['lines'] as $line) {
             if ($line['item']->getId() === $item->getId()) {
@@ -194,14 +198,17 @@ class CartController extends AbstractController
             'removed' => false,
             'quantity' => $item->getQuantity(),
             'lineTotal' => $lineTotal,
+            'lineTotalDisplay' => null !== $lineTotal ? $priceFormatter->display($lineTotal, $product->getCurrency()) : null,
+            'oldTotalDisplay' => null !== $oldTotal ? $priceFormatter->display($oldTotal, $product->getCurrency()) : null,
             'itemCount' => $summary['itemCount'],
             'displayAmount' => $display['amount'],
             'displayCurrency' => $display['currency'],
+            'displayFormatted' => $priceFormatter->format($display['amount'], $display['currency']),
         ]);
     }
 
     #[Route('/panier/retirer-ajax/{id}', name: 'cart_remove_ajax', host: 'kongobazar.com', methods: ['POST'])]
-    public function removeAjax(int $id, CartItemRepository $itemRepository, CartService $cartService): JsonResponse
+    public function removeAjax(int $id, CartItemRepository $itemRepository, CartService $cartService, \App\Service\PriceFormatter $priceFormatter): JsonResponse
     {
         $item = $itemRepository->find($id);
         if (!$item) {
@@ -219,6 +226,7 @@ class CartController extends AbstractController
             'itemCount' => $summary['itemCount'],
             'displayAmount' => $display['amount'],
             'displayCurrency' => $display['currency'],
+            'displayFormatted' => $priceFormatter->format($display['amount'], $display['currency']),
         ]);
     }
 

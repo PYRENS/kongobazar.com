@@ -1,0 +1,261 @@
+/* ==========================================================================
+   Page de connexion (Acheteur) — image à gauche (ou logo) + formulaire à droite
+   sur ordinateur ; image en haut (ou logo hors formulaire) sur mobile.
+   ========================================================================== */
+
+body.login-body {
+    margin: 0;
+    min-height: 100vh;
+    background: #f7f7f7;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+}
+
+.login-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* --- Colonne gauche : photo (aléatoire, jamais cliquable) ou logo de repli --- */
+.login-visual {
+    display: none; /* masquée par défaut ; activée sur ordinateur ci-dessous */
+    flex: 1 1 50%;
+    position: relative;
+    align-items: center;
+    justify-content: center;
+    background: var(--kb-theme-color, #2FA8E0);
+}
+.login-visual-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 15%;
+    display: block;
+}
+.login-visual-logo {
+    font-size: 42px;
+    font-weight: 800;
+    color: #fff;
+}
+.login-visual-logo span:first-child { color: #1a1a1a; }
+
+/* --- Colonne droite : formulaire --- */
+.login-form-col {
+    flex: 1 1 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+}
+.login-card {
+    width: 100%;
+    max-width: 400px;
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px 28px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+}
+.login-card-eyebrow {
+    color: var(--kb-theme-color, #2FA8E0);
+    font-size: 14px;
+    margin: 0 0 4px;
+}
+.login-card-eyebrow--logo {
+    font-size: 17px;
+    font-weight: 800;
+}
+.login-card-eyebrow--logo .is-kongo { color: #1a1a1a; }
+.login-card-eyebrow--logo .is-bazar { color: var(--kb-theme-color, #2FA8E0); }
+.login-card-title {
+    font-size: clamp(17px, 5.4vw, 23px);
+    font-weight: 800;
+    line-height: 1.25;
+    color: #1a1a1a;
+    white-space: nowrap;
+    margin: 0 0 24px;
+}
+.login-field { margin-bottom: 16px; }
+.login-field label {
+    display: block;
+    font-size: 12px;
+    color: #8a8f98;
+    margin-bottom: 4px;
+}
+.login-field-input-wrap { position: relative; }
+.login-field input {
+    width: 100%;
+    border: 1px solid #e3e6ea;
+    border-radius: 30px;
+    padding: 12px 18px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+.login-field input:focus {
+    outline: none;
+    border-color: var(--kb-theme-color, #2FA8E0);
+}
+.login-field-password-toggle {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--kb-theme-color, #2FA8E0);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+}
+.login-remember {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #555;
+    margin-bottom: 18px;
+}
+/* Le style de la case à cocher est mutualisé dans checkbox.css (classe .kb-checkbox),
+   chargé via <link> dans le <head> de chaque page utilisant une case à cocher. */
+.login-submit {
+    width: 100%;
+    border: none;
+    border-radius: 30px;
+    padding: 13px;
+    background: var(--kb-theme-color, #2FA8E0);
+    color: #fff;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+}
+.login-submit:hover { opacity: 0.92; }
+.login-links {
+    text-align: center;
+    margin-top: 16px;
+    font-size: 13px;
+}
+.login-links a { color: var(--kb-theme-color, #2FA8E0); text-decoration: none; }
+.login-links a:hover { text-decoration: underline; }
+.login-links-sep { color: #ccc; margin: 0 6px; }
+
+/* ≥444px : "S'inscrire" (texte complet) passe sur sa propre ligne, sous "Mot de passe oublié ?" */
+@media (min-width: 444px) {
+    .login-links-sep { display: none; }
+    .login-links-register { display: block; margin-top: 6px; }
+    .login-links-register-short { display: none; }
+}
+
+/* ≤443px : texte court "S'inscrire", sur la même ligne que "Mot de passe oublié ?" */
+@media (max-width: 443px) {
+    .login-links-register { display: inline; }
+    .login-links-register-full { display: none; }
+}
+.login-alert {
+    background: #fdecea;
+    color: #b3261e;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-bottom: 18px;
+}
+
+/* --- Animation de chargement pendant la connexion (même esprit que celle des lots de produits
+   Solde) : "KongoBazar" ondule lettre par lettre, Kongo en noir, Bazar en bleu. --- */
+.login-loading-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    background: rgba(255, 255, 255, 0.92);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+.login-loading-overlay.is-visible { display: flex; }
+.login-loading-word {
+    display: flex;
+    gap: 1px;
+    font-size: 30px;
+    font-weight: 800;
+}
+.ll-letter {
+    display: inline-block;
+    color: var(--kb-theme-color, #2FA8E0);
+    animation: llWave 1s ease-in-out infinite;
+}
+.ll-letter.is-kongo { color: #1a1a1a; }
+.login-loading-caption {
+    margin: 0;
+    font-size: 13px;
+    color: #8a8f98;
+}
+@keyframes llWave {
+    0%, 100% { transform: translateY(0); opacity: 0.55; }
+    50% { transform: translateY(-10px); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ll-letter { animation: none; }
+}
+/* --- Mobile : logo simple hors formulaire (pas d'image) --- */
+.login-mobile-logo {
+    display: none;
+    text-align: center;
+    padding: 28px 0 14px;
+    font-size: 26px;
+    font-weight: 800;
+}
+.login-mobile-logo span:first-child { color: #1a1a1a; }
+.login-mobile-logo span:last-child { color: var(--kb-theme-color, #2FA8E0); }
+
+/* --- Mobile : image plein écran, fixe, avec la carte du formulaire flottant par-dessus --- */
+.login-mobile-photo {
+    display: none;
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    object-fit: cover;
+    object-position: center 12%;
+    z-index: 0;
+}
+
+@media (min-width: 992px) {
+    .login-layout { height: 100vh; height: 100dvh; overflow: hidden; }
+    .login-visual { display: flex; height: 100%; }
+    .login-form-col { height: 100%; overflow-y: auto; }
+}
+@media (max-width: 991px) {
+    .login-layout { flex-direction: column; min-height: 0; }
+    .login-form-col { padding: 0 16px 32px; }
+    .login-card { max-width: 460px; margin: 0 auto; }
+
+    /* Avec image : photo plein écran fixe, formulaire flottant par-dessus, ancré en bas */
+    body.login-has-image { overflow-x: hidden; }
+    body.login-has-image .login-mobile-photo { display: block; }
+    body.login-has-image .login-layout { position: relative; min-height: 100vh; min-height: 100dvh; }
+    body.login-has-image .login-form-col {
+        position: relative;
+        z-index: 1;
+        min-height: 100vh;
+        min-height: 100dvh;
+        display: flex;
+        align-items: flex-end;
+        padding: 0 14px max(12px, env(safe-area-inset-bottom, 0px));
+    }
+    body.login-has-image .login-card {
+        max-width: none;
+        width: 100%;
+        border-radius: 24px;
+        padding: 26px 24px;
+        box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.15);
+    }
+    body.login-has-image .login-card-eyebrow { margin-bottom: 2px; }
+    body.login-has-image .login-card-title { margin-bottom: 18px; }
+    body.login-has-image .login-field { margin-bottom: 13px; }
+    body.login-has-image .login-remember { margin-bottom: 14px; }
+
+    /* Sans image : logo simple au-dessus, carte normale (pas de recouvrement) */
+    body:not(.login-has-image) .login-mobile-logo { display: block; }
+}

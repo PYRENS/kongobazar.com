@@ -29,6 +29,7 @@ class UserManagementController extends AbstractController
         ProductRepository $productRepository,
         OrderRepository $orderRepository,
         \App\Repository\AdministrativeUnitRepository $administrativeUnitRepository,
+        \App\Repository\LegalAcceptanceRepository $legalAcceptanceRepository,
     ): Response {
         $term = $request->query->get('q');
         $sortField = $request->query->get('sort', 'id');
@@ -151,6 +152,7 @@ class UserManagementController extends AbstractController
         OrderRepository $orderRepository,
         ProductRepository $productRepository,
         \App\Repository\AdministrativeUnitRepository $administrativeUnitRepository,
+        \App\Repository\LegalAcceptanceRepository $legalAcceptanceRepository,
     ): Response {
         $sellerProfile = $sellerProfileRepository->findOneByUser($user);
 
@@ -178,6 +180,7 @@ class UserManagementController extends AbstractController
             'ordersCount' => $ordersByUser[$user->getId()] ?? 0,
             'productsSold' => $productsSold,
             'productsActive' => $productsActive,
+            'legalAcceptances' => $legalAcceptanceRepository->findForUser($user),
         ]);
     }
 

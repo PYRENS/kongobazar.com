@@ -1,5 +1,5 @@
 {% extends 'public/base.html.twig' %}
-{% block title %}Solde — KongoBazar{% endblock %}
+{% block title %}{{ campaign.title }} — KongoBazar{% endblock %}
 
 {% block body %}
 <link rel="stylesheet" href="{{ asset('styles/public/solde.css') }}">
@@ -38,13 +38,20 @@
 </div>
 
 <div class="container-kb solde-aligned solde-content-head">
-    <h2 class="solde-title">Tous les produits en solde</h2>
-    <button type="button" class="solde-filter-trigger" id="soldeFilterTrigger">
-        <i class="bi bi-sliders"></i> Filtrer
+    <button type="button" class="solde-footer-shortcut" id="soldeFooterShortcut" aria-label="Aller aux informations et à l'aide en bas de page">
+        <i class="bi bi-info-circle"></i> <span>Infos &amp; aide</span>
+    </button>
+    <h2 class="solde-title">
+        {% if campaign.type == 'solde' %}Tous les produits en solde
+        {% elseif campaign.type == 'vente_flash' %}Toutes les ventes flash
+        {% else %}Toutes les offres — {{ campaign.typeLabel }}{% endif %}
+    </h2>
+<button type="button" class="solde-filter-trigger" id="soldeFilterTrigger" aria-label="Filtrer les produits">
+        <i class="bi bi-sliders"></i> <span>Filtrer</span>
     </button>
 </div>
 
-<div class="container-kb solde-aligned" id="soldeProductsContainer">
+<div class="container-kb solde-aligned" id="soldeProductsContainer" data-auto-batches="{{ campaign.autoLoadBatches }}">
     {% include 'public/_partials/_solde_products_batch.html.twig' with { products: products, ad: null, hasMore: hasMore, nextOffset: nextOffset } %}
 </div>
 
@@ -93,5 +100,8 @@
     </div>
 </div>
 
+{% if campaign.type == 'vente_flash' %}
+    <script src="{{ asset('js/public/flash-countdown.js') }}" data-server-now="{{ 'now'|date('c') }}"></script>
+{% endif %}
 <script src="{{ asset('js/public/solde.js') }}"></script>
 {% endblock %}

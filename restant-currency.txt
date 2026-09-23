@@ -1,0 +1,38 @@
+C:\Users\mat_l\Desktop\kongobazar\templates\public\cart.html.twig:61: <span class="price-old">{{ (product.compareAtPrice * item.quantity)|number_format(2) }} {{ line.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\cart.html.twig:63: <span class="price-now"><span data-line-total>{{ line.lineTotal }}</span> {{ line.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\cart.html.twig:82: <strong><span data-cart-summary-total>{{ display.amount }}</span> {{ display.currency }}</strong>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\product.html.twig:34: "priceCurrency": {{ product.currency|json_encode|raw }},
+C:\Users\mat_l\Desktop\kongobazar\templates\public\product.html.twig:85: <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\product.html.twig:87: <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\product.html.twig:204: data-share-text="{{ product.title }} — {{ product.basePrice }} {{ product.currency }} sur KongoBazar">
+C:\Users\mat_l\Desktop\kongobazar\templates\public\product.html.twig:274: <span class="price-now">{{ reco.basePrice }} {{ reco.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\product.html.twig:276: <span class="price-old">{{ reco.compareAtPrice }} {{ reco.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\search_results.html.twig:20: <span class="price-now">{{ product.basePrice }} {{ product.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_cart_offcanvas_body.html.twig:18: <span class="cart-item-qty">{{ item.quantity }} x {{ line.unitPrice }} {{ line.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_cart_offcanvas_body.html.twig:36: <span>{{ display.amount }} {{ display.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_header.html.twig:133: <strong data-cart-total>{{ display.amount }}</strong> {{ display.currency }}
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_home_category_block_products.html.twig:27: <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_home_category_block_products.html.twig:29: <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_home_center_top.html.twig:55: <span class="price-now">{{ deal.displayCurrentPrice }} {{ deal.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_home_center_top.html.twig:57: <span class="price-old">{{ deal.displayOldPrice }} {{ deal.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_home_coming_soon.html.twig:75: <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_home_coming_soon.html.twig:77: <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_home_hot_deal.html.twig:39: <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_home_hot_deal.html.twig:41: <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_home_individual.html.twig:72: <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_home_individual.html.twig:74: <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_home_left_column.html.twig:43: <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_home_left_column.html.twig:45: <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_home_left_column.html.twig:132: <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_home_left_column.html.twig:134: <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_home_most_viewed.html.twig:25: <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_home_most_viewed.html.twig:27: <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_home_new_items.html.twig:89: <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_home_new_items.html.twig:91: <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_home_trending_tabs.html.twig:107: <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_home_trending_tabs.html.twig:109: <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_offers_product_cards.html.twig:18: <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_offers_product_cards.html.twig:20: <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_product_sidebar.html.twig:31: <span class="home-mini-product-price">{{ p.basePrice }} {{ p.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_solde_products_batch.html.twig:29: <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+C:\Users\mat_l\Desktop\kongobazar\templates\public\_partials\_solde_products_batch.html.twig:31: <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>

@@ -1,0 +1,64 @@
+{% extends 'manage/base.html.twig' %}
+{% block title %}Textes légaux{% endblock %}
+{% block page_icon %}bi-file-earmark-text{% endblock %}
+{% block page_title %}Textes légaux — CGV, CGU, Politique de confidentialité...{% endblock %}
+{% block body %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <p class="text-muted mb-0">Chaque document a des versions successives, jamais modifiées après publication. Une nouvelle version, une fois publiée, doit être acceptée par les clients concernés.</p>
+        <a href="{{ path('manage_legal_document_new') }}" class="btn btn-success text-nowrap"><i class="bi bi-plus-circle"></i> Nouveau document</a>
+    </div>
+
+    <div class="sw-card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th>Document</th>
+                        <th>Espace</th>
+                        <th>Version publiée</th>
+                        <th>Brouillon</th>
+                        <th>Bloquant</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for document in documents %}
+                        {% set latest = latestByDocument[document.id] %}
+                        {% set draft = draftByDocument[document.id] %}
+                        <tr>
+                            <td class="fw-semibold">{{ document.label }}<br><small class="text-muted">{{ document.code }}</small></td>
+                            <td><span class="badge bg-secondary">{{ document.targetSpace }}</span></td>
+                            <td>
+                                {% if latest %}
+                                    v{{ latest.versionNumber }} — {{ latest.publishedAt|date('d/m/Y') }}
+                                {% else %}
+                                    <span class="text-muted">Aucune</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if draft %}
+                                    <a href="{{ path('manage_legal_version_edit', { id: draft.id }) }}">v{{ draft.versionNumber }} (brouillon)</a>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ document.requiresAcceptance ? 'Oui' : 'Non' }}</td>
+                            <td class="text-end">
+                                <a href="{{ path('manage_legal_document_history', { id: document.id }) }}" class="btn btn-sm btn-outline-secondary me-1"><i class="bi bi-clock-history"></i> Historique</a>
+                                {% if not draft %}
+                                    <form method="post" action="{{ path('manage_legal_version_new', { id: document.id }) }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg"></i> Nouvelle version</button>
+                                    </form>
+                                {% else %}
+                                    <a href="{{ path('manage_legal_version_edit', { id: draft.id }) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i> Continuer le brouillon</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="6" class="text-center text-muted py-4">Aucun document légal créé.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

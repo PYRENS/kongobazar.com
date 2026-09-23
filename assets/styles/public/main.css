@@ -459,6 +459,141 @@ html, body {
     min-height: 40px;
 }
 
+/* Lisibilité des montants (surtout en CDF) : chiffres de largeur fixe et groupes de milliers plus espacés */
+.price-now,
+.price-old,
+.home-mini-product-price,
+.cart-item-qty,
+.cart-line-price,
+.cart-subtotal,
+.cart-summary-row strong,
+.cart-trigger-detail strong {
+    font-variant-numeric: tabular-nums;
+    word-spacing: 0.14em;
+}
+
+/* Liens utiles en bas du tiroir de menu : mobile uniquement, texte gris, collés en bas du tiroir */
+.offcanvas-info-links { display: none; }
+@media (max-width: 991px) {
+    #mainMenuOffcanvas .offcanvas-body {
+        display: flex;
+        flex-direction: column;
+    }
+    .offcanvas-info-links {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        margin-top: auto;
+        padding: 16px 4px 8px;
+        border-top: 1px solid var(--kb-border);
+    }
+    .offcanvas-info-links a {
+        color: #8a8f98;
+        font-size: 13px;
+        text-decoration: none;
+        padding: 7px 0;
+    }
+    .offcanvas-info-links a:hover { color: var(--kb-text); }
+    .offcanvas-info-links i { margin-right: 6px; }
+}
+
+/* Tiroir de menu : titre à gauche, langue + devise au milieu, bouton fermer à droite (même ligne) */
+#mainMenuOffcanvas .offcanvas-header {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 10px;
+    overflow: visible;
+}
+#mainMenuOffcanvas .offcanvas-header .offcanvas-title { margin: 0; }
+#mainMenuOffcanvas .offcanvas-header .offcanvas-lang-currency {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    grid-column: 2;
+}
+#mainMenuOffcanvas .offcanvas-header .btn-close-custom { justify-self: end; }
+#mainMenuOffcanvas .offcanvas-header .topbar-dropdown { position: relative; }
+#mainMenuOffcanvas .offcanvas-header .topbar-dropdown-panel {
+    right: 0;
+    left: auto;
+    z-index: 1070;
+}
+
+/* Éléments du navbar dans le tiroir : mobile uniquement (≤991px), avant les rayons */
+.offcanvas-nav-items { display: none; }
+@media (max-width: 991px) {
+    .offcanvas-nav-items {
+        display: block;
+        list-style: none;
+        margin: 0 0 12px;
+        padding: 6px;
+        background: var(--kb-blue);
+        border-radius: 8px;
+    }
+    .offcanvas-nav-items > li > a,
+    .offcanvas-nav-collapse-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 11px 10px;
+        border: 0;
+        border-radius: 0;
+        background: none;
+        color: #fff;
+        font-size: 15px;
+        font-weight: 700;
+        text-align: left;
+        text-decoration: none;
+    }
+    .offcanvas-nav-items > li:not(:last-child) {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+    }
+    .offcanvas-nav-items > li.active > a { font-weight: 800; }
+    .offcanvas-nav-collapse-toggle .bi { color: #fff; transition: transform 0.2s ease; }
+    .offcanvas-nav-collapse-toggle[aria-expanded="true"] .bi { transform: rotate(180deg); }
+    .offcanvas-nav-sub {
+        list-style: none;
+        margin: 0;
+        padding: 0 0 8px 10px;
+    }
+    .offcanvas-nav-sub a {
+        display: block;
+        padding: 8px 10px;
+        color: #fff;
+        font-size: 14px;
+        text-decoration: none;
+    }
+    .offcanvas-nav-sub .bi { margin-right: 6px; color: #fff; }
+}
+
+/* Icône compte connecté : pastille de couleur (mobile) + repositionnement du menu déroulant */
+.condensed-account-dropdown { position: relative; }
+.condensed-icon-btn--account { position: relative; }
+.condensed-account-dot {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #1fb35a;
+    border: 2px solid #fff;
+}
+.condensed-account-caret { font-size: 11px; margin-left: 2px; }
+.condensed-account-dropdown .topbar-dropdown-panel {
+    top: 100%;
+    right: 0;
+    left: auto;
+    margin-top: 8px;
+}
+.condensed-account-dropdown.open .topbar-dropdown-panel { display: block; }
+
 .back-to-top {
     position: fixed;
     bottom: 24px;

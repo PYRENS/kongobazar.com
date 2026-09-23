@@ -40,9 +40,9 @@
                                 <div class="home-mini-product-info">
                                     <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="home-mini-product-title">{{ product.title }}</a>
                                     <span class="home-mini-product-price">
-                                        <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+                                        <span class="price-now">{{ product.displayCurrentPrice|price(product.currency) }}</span>
                                         {% if product.displayOldPrice %}
-                                            <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
+                                            <span class="price-old">{{ product.displayOldPrice|price(product.currency) }}</span>
                                         {% endif %}
                                     </span>
                                 </div>
@@ -129,9 +129,9 @@
                                 <div class="home-mini-product-info">
                                     <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="home-mini-product-title">{{ product.title }}</a>
                                     <span class="home-mini-product-price">
-                                        <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+                                        <span class="price-now">{{ product.displayCurrentPrice|price(product.currency) }}</span>
                                         {% if product.displayOldPrice %}
-                                            <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
+                                            <span class="price-old">{{ product.displayOldPrice|price(product.currency) }}</span>
                                         {% endif %}
                                     </span>
                                 </div>

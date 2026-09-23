@@ -241,6 +241,9 @@
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_sidebar_filler' ? 'active' : '' }}">
                             <a href="{{ path('manage_sidebar_filler_index') }}"><i class="bi bi-images"></i> <span class="hide-menu">Bannières bouche-trou (col. gauche)</span></a>
                         </li>
+                        <li class="{{ app.request.attributes.get('_route') starts with 'manage_login_background' ? 'active' : '' }}">
+                            <a href="{{ path('manage_login_background_index') }}"><i class="bi bi-person-badge"></i> <span class="hide-menu">Connexion — Images de fond</span></a>
+                        </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_sidebar_new_arrivals' ? 'active' : '' }}">
                             <a href="{{ path('manage_sidebar_new_arrivals_setting') }}"><i class="bi bi-stars"></i> <span class="hide-menu">Nouveaux articles (col. gauche)</span></a>
                         </li>
@@ -266,6 +269,12 @@
 
                 <li class="{{ app.request.attributes.get('_route') starts with 'manage_blog' ? 'active' : '' }}">
                     <a href="{{ path('manage_blog_index') }}"><i class="bi bi-journal-text"></i> <span class="hide-menu">Blog</span></a>
+                </li>
+                <li class="{{ app.request.attributes.get('_route') starts with 'manage_legal' ? 'active' : '' }}">
+                    <a href="{{ path('manage_legal_index') }}"><i class="bi bi-file-earmark-text"></i> <span class="hide-menu">Textes légaux</span></a>
+                </li>
+                <li class="{{ app.request.attributes.get('_route') starts with 'manage_navbar' ? 'active' : '' }}">
+                    <a href="{{ path('manage_navbar_index') }}"><i class="bi bi-menu-button-wide"></i> <span class="hide-menu">Navbar — Éléments</span></a>
                 </li>
                 <li class="{{ app.request.attributes.get('_route') starts with 'manage_footer_setting' ? 'active' : '' }}">
                     <a href="{{ path('manage_footer_setting') }}"><i class="bi bi-layout-text-window-reverse"></i> <span class="hide-menu">Footer — Réglages</span></a>

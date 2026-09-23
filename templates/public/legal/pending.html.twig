@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Nouvelles conditions à accepter — KongoBazar</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{{ asset('styles/public/checkbox.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/public/login.css') }}">
+    <style>
+        .legal-pending-page { max-width: 720px; margin: 40px auto; padding: 0 16px; }
+        .legal-pending-card { background: #fff; border-radius: 16px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.06); }
+        .legal-pending-summary { background: #f0f8fc; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px; font-size: 14px; }
+        .legal-article { padding: 16px 0; }
+        .legal-article-badge { font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 700; margin-left: 8px; }
+        .legal-article-badge--added { background: #e6f4ea; color: #1e7e34; }
+        .legal-article-badge--modified { background: #fff4e5; color: #b06a00; }
+        .legal-article-badge--removed { background: #fdecea; color: #b3261e; text-decoration: line-through; }
+        .legal-accept-form { margin-top: 24px; padding-top: 20px; border-top: 1px solid #eee; }
+        .legal-accept-checkbox-row { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; font-size: 14px; }
+    </style>
+</head>
+<body class="login-body">
+    <div class="legal-pending-page">
+        <div class="legal-pending-card">
+            <p class="login-card-eyebrow"><span style="color:#1a1a1a;font-weight:800;">Kongo</span><span style="color:var(--kb-theme-color,#2FA8E0);font-weight:800;">Bazar</span></p>
+            <h1 class="login-card-title">{{ version.document.label }} — nouvelle version</h1>
+
+            {% if version.changeSummary %}
+                <div class="legal-pending-summary"><strong>Ce qui change :</strong> {{ version.changeSummary }}</div>
+            {% endif %}
+
+            {% for article in version.articles %}
+                <div class="legal-article">
+                    <strong>{{ article.title }}</strong>
+                    {% if article.changeType != 'unchanged' %}
+                        <span class="legal-article-badge legal-article-badge--{{ article.changeType }}">
+                            {{ constant('App\\Entity\\LegalArticle::CHANGE_LABELS')[article.changeType] }}
+                        </span>
+                    {% endif %}
+                    <div class="mt-1">{{ article.body|raw }}</div>
+                </div>
+            {% endfor %}
+
+            <form method="post" action="{{ path('public_legal_accept', { id: version.id }) }}" class="legal-accept-form">
+                <label class="legal-accept-checkbox-row">
+                    <input type="checkbox" required class="kb-checkbox">
+                    J'ai lu et j'accepte ces nouvelles conditions.
+                </label>
+                <button type="submit" class="login-submit">Continuer</button>
+            </form>
+
+            {% if remainingCount > 1 %}
+                <p class="text-muted mt-2" style="font-size:12px;">{{ remainingCount - 1 }} autre(s) document(s) à accepter ensuite.</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

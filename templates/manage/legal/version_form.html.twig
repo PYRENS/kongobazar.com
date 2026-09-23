@@ -1,0 +1,138 @@
+{% extends 'manage/base.html.twig' %}
+{% block title %}Version {{ version.versionNumber }} — {{ version.document.label }}{% endblock %}
+{% block page_icon %}bi-file-earmark-text{% endblock %}
+{% block page_title %}{{ version.document.label }} — Version {{ version.versionNumber }}{{ readOnly is not defined or not readOnly ? ' (brouillon)' : '' }}{% endblock %}
+{% block body %}
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <p class="text-muted mb-0"><a href="{{ path('manage_legal_document_history', { id: version.document.id }) }}">&larr; Retour à l'historique</a></p>
+        <div class="d-flex gap-2 align-items-center">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer"></i> Imprimer</button>
+            <a href="{{ path('manage_legal_version_pdf', { id: version.id }) }}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="bi bi-filetype-pdf"></i> PDF</a>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="legalAdminSendToggle"><i class="bi bi-envelope"></i> Envoyer</button>
+        </div>
+    </div>
+
+    <form method="post" action="{{ path('manage_legal_version_send', { id: version.id }) }}" class="d-none gap-2 mb-3" id="legalAdminSendForm">
+        <input type="email" name="email" class="form-control" style="max-width:320px;" placeholder="destinataire@exemple.com" required>
+        <button type="submit" class="btn btn-primary">Envoyer le PDF</button>
+    </form>
+
+    <style media="print">
+        .kb-sidebar, .kb-topbar, .btn, form#legalAdminSendForm, .card-header, nav { display: none !important; }
+    </style>
+    <script>
+        document.getElementById('legalAdminSendToggle').addEventListener('click', function () {
+            const form = document.getElementById('legalAdminSendForm');
+            form.classList.toggle('d-none');
+            form.classList.toggle('d-flex');
+        });
+    </script>
+
+    {% if readOnly is defined and readOnly %}
+        <div class="alert alert-secondary">
+            Version {{ version.status == 'published' ? 'publiée' : 'archivée' }}, en lecture seule — les versions figées ne peuvent plus être modifiées.
+            {% if version.changeSummary %}<br><strong>Résumé des changements :</strong> {{ version.changeSummary }}{% endif %}
+        </div>
+        {% for article in version.articles %}
+            <div class="sw-card mb-2">
+                <div class="card-body">
+                    <strong>{{ article.title }}</strong>
+                    {% if article.changeType != 'unchanged' %}
+                        <span class="badge bg-info ms-2">{{ constant('App\\Entity\\LegalArticle::CHANGE_LABELS')[article.changeType] }}</span>
+                    {% endif %}
+                    <div class="mt-2">{{ article.body|raw }}</div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
+
+    <form method="post" action="{{ path('manage_legal_version_edit', { id: version.id }) }}" id="legalVersionForm">
+        <div class="sw-card mb-3">
+            <div class="card-body">
+                <label class="form-label">Résumé des changements (affiché au client avant le détail des articles)</label>
+                <textarea name="change_summary" class="form-control" rows="2" placeholder="Ex : Mise à jour de la politique de retour et des frais de livraison.">{{ version.changeSummary }}</textarea>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <label class="form-label mb-0">Articles</label>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="legalAddArticle"><i class="bi bi-plus-lg"></i> Ajouter un article</button>
+        </div>
+        <div id="legalArticlesList"></div>
+
+        <div class="mt-3">
+            <button type="submit" class="btn btn-success">Enregistrer le brouillon</button>
+            <a href="{{ path('manage_legal_index') }}" class="btn btn-outline-secondary">Retour</a>
+        </div>
+    </form>
+
+    {% if version.articles|length > 0 %}
+        <form method="post" action="{{ path('manage_legal_version_publish', { id: version.id }) }}" class="mt-2" onsubmit="return confirm('Publier cette version ? Les clients concernés devront l\'accepter à leur prochaine connexion, et la version précédente sera archivée.');">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-send-check"></i> Publier cette version</button>
+        </form>
+    {% endif %}
+    {% endif %}
+
+    <style>
+        .legal-article-row { border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px; margin-bottom: 14px; background: #fff; }
+        .legal-article-row .ql-editor { min-height: 160px; }
+    </style>
+
+    {% if readOnly is not defined or not readOnly %}
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+    <script>
+        (function () {
+            const list = document.getElementById('legalArticlesList');
+            const initial = {{ version.articles|map(a => { title: a.title, body: a.body, changeType: a.changeType })|json_encode|raw }};
+            const CHANGE_LABELS = { unchanged: 'Inchangé', added: 'Nouveau', modified: 'Modifié', removed: 'Supprimé' };
+            let idx = 0;
+            const editors = [];
+
+            function addRow(article) {
+                article = Object.assign({ title: '', body: '', changeType: 'unchanged' }, article || {});
+                const i = idx++;
+                const row = document.createElement('div');
+                row.className = 'legal-article-row';
+                row.innerHTML =
+                    '<div class="row g-2 align-items-center mb-2">' +
+                    '  <div class="col-md-6"><input type="text" class="form-control" name="article_title[]" placeholder="Titre de l\'article" required></div>' +
+                    '  <div class="col-md-3"><select class="form-select" name="article_change_type[]">' +
+                    Object.keys(CHANGE_LABELS).map((k) => '<option value="' + k + '">' + CHANGE_LABELS[k] + '</option>').join('') +
+                    '  </select></div>' +
+                    '  <div class="col-auto ms-auto d-flex gap-1">' +
+                    '    <button type="button" class="btn btn-sm btn-outline-secondary" data-up>↑</button>' +
+                    '    <button type="button" class="btn btn-sm btn-outline-secondary" data-down>↓</button>' +
+                    '    <button type="button" class="btn btn-sm btn-outline-danger" data-del>✕</button>' +
+                    '  </div>' +
+                    '</div>' +
+                    '<div class="legal-quill" id="legalQuill' + i + '"></div>' +
+                    '<textarea name="article_body[]" hidden></textarea>';
+
+                row.querySelector('[name="article_title[]"]').value = article.title;
+                row.querySelector('[name="article_change_type[]"]').value = article.changeType;
+                row.querySelector('[data-del]').addEventListener('click', () => row.remove());
+                row.querySelector('[data-up]').addEventListener('click', () => { if (row.previousElementSibling) list.insertBefore(row, row.previousElementSibling); });
+                row.querySelector('[data-down]').addEventListener('click', () => { if (row.nextElementSibling) list.insertBefore(row.nextElementSibling, row); });
+
+                list.appendChild(row);
+
+                const quill = new Quill('#legalQuill' + i, { theme: 'snow' });
+                quill.clipboard.dangerouslyPasteHTML(article.body || '');
+                editors.push({ quill, textarea: row.querySelector('textarea[name="article_body[]"]') });
+            }
+
+            document.getElementById('legalAddArticle').addEventListener('click', () => addRow());
+            document.getElementById('legalVersionForm').addEventListener('submit', () => {
+                editors.forEach((e) => { e.textarea.value = e.quill.root.innerHTML; });
+            });
+
+            if (initial.length > 0) {
+                initial.forEach(addRow);
+            } else {
+                addRow();
+            }
+        })();
+    </script>
+    {% endif %}
+{% endblock %}

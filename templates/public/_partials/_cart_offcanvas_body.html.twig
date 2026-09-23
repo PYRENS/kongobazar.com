@@ -15,7 +15,7 @@
                             {% if variant.size %}{{ variant.size.name }}{% endif %}
                         </span>
                     {% endif %}
-                    <span class="cart-item-qty">{{ item.quantity }} x {{ line.unitPrice }} {{ line.currency }}</span>
+                    <span class="cart-item-qty">{{ item.quantity }} x {{ line.unitPrice|price(line.currency) }}</span>
                     {% if not line.available %}
                         <span class="cart-item-warning">{{ 'cart.stock_reduced'|trans }}</span>
                     {% endif %}
@@ -33,7 +33,7 @@
         <div class="cart-subtotal">
             <span>{{ 'cart.subtotal'|trans }}</span>
             {% set display = cart_display_subtotal() %}
-            <span>{{ display.amount }} {{ display.currency }}</span>
+            <span>{{ display.amount|price(display.currency) }}</span>
         </div>
     </div>
 

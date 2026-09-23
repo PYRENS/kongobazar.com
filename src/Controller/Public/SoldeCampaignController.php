@@ -24,7 +24,7 @@ class SoldeCampaignController extends AbstractController
         SalePriorityResolver $priorityResolver,
     ): Response {
         $campaign = $campaignRepository->findCurrentlyLive();
-        if (!$campaign || 'solde' !== $campaign->getType()) {
+        if (!$campaign) {
             return $this->redirectToRoute('public_home');
         }
 
@@ -85,6 +85,9 @@ class SoldeCampaignController extends AbstractController
         return $this->render('public/_partials/_solde_products_batch.html.twig', [
             'products' => $products,
             'ad' => $ad,
+            'cardModel' => $campaign ? $campaign->getCardModel() : 'classic',
+            'campaignType' => $campaign ? $campaign->getType() : 'solde',
+            'campaignEnd' => $campaign?->getEndAt(),
             'hasMore' => $newOffset < $totalCount,
             'nextOffset' => $newOffset,
         ]);

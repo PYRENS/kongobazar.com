@@ -68,7 +68,7 @@ class HomeController extends AbstractController
         \App\Repository\PartnerSectionSettingRepository $partnerSectionSettingRepository,
     ): Response {
         $liveCampaign = $campaignRepository->findCurrentlyLive();
-        if ($liveCampaign && 'solde' === $liveCampaign->getType()) {
+        if ($liveCampaign) {
             return $this->redirectToRoute('home_solde');
         }
         $rootCategories = $categoryRepository->findRootCategories();

@@ -98,6 +98,14 @@ class Campaign
     #[ORM\Column(options: ['default' => true])]
     private bool $topCategoriesEnabled = true;
 
+    /** Modèle de carte produit utilisé dans la grille de la campagne (voir CARD_MODELS). */
+    #[ORM\Column(length: 20, options: ['default' => 'classic'])]
+    private string $cardModel = 'classic';
+
+    /** Nombre de lots chargés automatiquement au défilement avant le bouton "Voir plus" (0 = bouton seulement). */
+    #[ORM\Column(options: ['default' => 3])]
+    private int $autoLoadBatches = 3;
+
     /** Bannières publicitaires intercalées entre les lots de produits (zone "solde_between_batches"). */
     #[ORM\Column(options: ['default' => true])]
     private bool $batchBannersEnabled = true;
@@ -246,6 +254,23 @@ class Campaign
 
     public function isTopCategoriesEnabled(): bool { return $this->topCategoriesEnabled; }
     public function setTopCategoriesEnabled(bool $v): static { $this->topCategoriesEnabled = $v; return $this; }
+
+    public const CARD_MODELS = [
+        'classic' => 'Classique',
+        'minimal' => 'Épuré',
+        'poster' => 'Affiche (texte sur la photo)',
+        'price' => 'Prix en évidence',
+    ];
+
+    public function getAutoLoadBatches(): int { return $this->autoLoadBatches; }
+    public function setAutoLoadBatches(int $v): static { $this->autoLoadBatches = max(0, min(20, $v)); return $this; }
+
+    public function getCardModel(): string { return $this->cardModel; }
+    public function setCardModel(string $v): static
+    {
+        $this->cardModel = array_key_exists($v, self::CARD_MODELS) ? $v : 'classic';
+        return $this;
+    }
 
     public function isBatchBannersEnabled(): bool { return $this->batchBannersEnabled; }
     public function setBatchBannersEnabled(bool $v): static { $this->batchBannersEnabled = $v; return $this; }

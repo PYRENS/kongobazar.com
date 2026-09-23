@@ -70,6 +70,7 @@ class AppExtension extends AbstractExtension
             new TwigFunction('top_rayons', [$this, 'getTopRayons']),
             new TwigFunction('part_catalog_root_categories', [$this, 'getPartCatalogRootCategories']),
             new TwigFunction('footer_data', [$this, 'getFooterData']),
+            new TwigFunction('footer_bottom_links', [$this, 'getFooterBottomLinks']),
         ];
     }
 
@@ -205,6 +206,12 @@ class AppExtension extends AbstractExtension
      * TOUTES les pages (auparavant, seule la page d'accueil les transmettait —
      * le footer était donc vide partout ailleurs).
      */
+    /** Liens rapides du bas de page (CGV, CGU, contact…), réutilisés dans le menu tiroir mobile. */
+    public function getFooterBottomLinks(): array
+    {
+        return $this->customMenuItemRepository->findByLocationAndSpace('footer_bottom_links', 'public');
+    }
+
     public function getFooterData(): array
     {
         $columns = [];

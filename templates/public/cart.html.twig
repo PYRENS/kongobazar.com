@@ -58,9 +58,9 @@
 
                     <div class="cart-line-price">
                         {% if product.compareAtPrice %}
-                            <span class="price-old">{{ (product.compareAtPrice * item.quantity)|number_format(2) }} {{ line.currency }}</span>
+                            <span class="price-old" data-line-old-total>{{ (product.compareAtPrice * item.quantity)|price(line.currency) }}</span>
                         {% endif %}
-                        <span class="price-now"><span data-line-total>{{ line.lineTotal }}</span> {{ line.currency }}</span>
+                        <span class="price-now" data-line-total>{{ line.lineTotal|price(line.currency) }}</span>
                     </div>
                 </div>
             {% endfor %}
@@ -79,7 +79,7 @@
                 <h6>Récapitulatif ({{ summary.itemCount }} produit{{ summary.itemCount > 1 ? 's' : '' }})</h6>
                 <div class="cart-summary-row">
                     <span>Prix total</span>
-                    <strong><span data-cart-summary-total>{{ display.amount }}</span> {{ display.currency }}</strong>
+                    <strong data-cart-summary-total>{{ display.amount|price(display.currency) }}</strong>
                 </div>
                 <a href="{{ path('checkout_index') }}" class="btn btn-primary cart-checkout-btn">Passer commande</a>
             </div>

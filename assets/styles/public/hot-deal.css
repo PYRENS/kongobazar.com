@@ -44,6 +44,10 @@
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
+    /* Force ce bloc sur sa propre couche de rendu GPU : évite un bug d'affichage sur certaines
+       machines où le défilement change en interne sans se repeindre visuellement à l'écran. */
+    will-change: scroll-position;
+    transform: translateZ(0);
 }
 .hot-deal-slides::-webkit-scrollbar { display: none; }
 .hot-deal-slide {

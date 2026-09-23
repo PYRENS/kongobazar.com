@@ -1,0 +1,34 @@
+/* ==========================================================================
+   Case à cocher standard du site public — même design que celle du formulaire
+   de connexion ("Se souvenir de moi"). À utiliser via la classe .kb-checkbox
+   sur tout <input type="checkbox"> destiné au client (formulaires, consentements...).
+   ========================================================================== */
+
+.kb-checkbox {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 17px;
+    height: 17px;
+    margin: 0;
+    border: 1.5px solid #c7cbd1;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+}
+.kb-checkbox:checked {
+    background: var(--kb-theme-color, #2FA8E0);
+    border-color: var(--kb-theme-color, #2FA8E0);
+}
+.kb-checkbox:checked::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 1px;
+    width: 4px;
+    height: 8px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}

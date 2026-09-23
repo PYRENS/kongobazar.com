@@ -1,0 +1,77 @@
+{% extends 'manage/base.html.twig' %}
+{% block title %}Connexion — Images de fond{% endblock %}
+{% block page_icon %}bi-images{% endblock %}
+{% block page_title %}Page de connexion — Images de fond (Acheteur){% endblock %}
+{% block body %}
+    <div class="sw-card mb-3">
+        <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <div class="form-check form-switch mb-1">
+                    <input type="checkbox" class="form-check-input" role="switch" id="loginBgSectionToggle" {{ setting.enabled ? 'checked' : '' }} data-toggle-url="{{ path('manage_login_background_toggle_section') }}">
+                    <label class="form-check-label fw-bold" for="loginBgSectionToggle">Afficher des photos de fond sur la page de connexion</label>
+                </div>
+                <small class="text-muted">
+                    Désactivé (ou aucune image active) : le logo KongoBazar s'affiche à la place. Sur ordinateur, quand une image est utilisée,
+                    elle occupe le côté gauche de la page et le formulaire le côté droit. Sur mobile, elle s'affiche en haut, avec le formulaire par-dessus.
+                </small>
+            </div>
+            <a href="{{ path('manage_login_background_new') }}" class="btn btn-success text-nowrap"><i class="bi bi-plus-circle"></i> Ajouter une image</a>
+        </div>
+    </div>
+
+    <div class="sw-card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th>Aperçu</th>
+                        <th>Titre</th>
+                        <th>Actif</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for image in images %}
+                        <tr>
+                            <td><img src="{{ vich_uploader_asset(image, 'imageFile') }}" style="width:90px;height:110px;object-fit:cover;border-radius:6px;" alt=""></td>
+                            <td>{{ image.title ?: '—' }}</td>
+                            <td>
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" class="form-check-input lbi-toggle" role="switch" {{ image.active ? 'checked' : '' }} data-toggle-url="{{ path('manage_login_background_toggle', { id: image.id }) }}">
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                <div class="d-inline-flex gap-1">
+                                    <a href="{{ path('manage_login_background_edit', { id: image.id }) }}" class="btn btn-sm btn-outline-primary" title="Modifier"><i class="bi bi-pencil"></i></a>
+                                    <form method="post" action="{{ path('manage_login_background_delete', { id: image.id }) }}" onsubmit="return confirm('Supprimer cette image ?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Supprimer"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="4" class="text-center text-muted py-4">Aucune image.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginBgSectionToggle').addEventListener('change', function () {
+            fetch(this.dataset.toggleUrl, { method: 'POST' })
+                .then((r) => r.json())
+                .then((data) => { this.checked = data.enabled; })
+                .catch(() => { this.checked = !this.checked; });
+        });
+
+        document.querySelectorAll('.lbi-toggle').forEach((sw) => {
+            sw.addEventListener('change', function () {
+                fetch(this.dataset.toggleUrl, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => { this.checked = data.active; })
+                    .catch(() => { this.checked = !this.checked; });
+            });
+        });
+    </script>
+{% endblock %}

@@ -24,6 +24,11 @@
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Début</label>
+                    <div class="form-check form-switch mb-1">
+                        <input class="form-check-input" type="checkbox" name="start_now" value="1" id="startNowInput" {{ campaign ? '' : 'checked' }}>
+                        <label class="form-check-label small" for="startNowInput">Débuter maintenant</label>
+                    </div>
+                    <small class="text-muted d-block mb-1">Heure du serveur : {{ 'now'|date('d/m/Y H:i') }} ({{ 'now'|date('e') }})</small>
                     <input type="datetime-local" name="start_at" class="form-control" value="{{ campaign and campaign.startAt ? campaign.startAt|date('Y-m-d\\TH:i') : '' }}" required>
                 </div>
                 <div class="col-md-2">
@@ -57,8 +62,28 @@
                     </div>
                 </div>
                 <div class="col-md-3">
+                </div>
+            </div>
+        </div>
+
+        <div class="sw-card mb-3">
+            <div class="card-body row g-3">
+                <div class="col-12">
+                    <label class="form-label mb-0">Options de chargement des produits</label>
+                    <small class="text-muted d-block">
+                        La liste « Tous les produits » se charge par lots quand le visiteur descend dans la page.
+                        Exemple avec 12 produits par lot et 3 lots automatiques : la page affiche 12 produits, puis ajoute seule 3 lots de 12
+                        (48 produits au total), puis un bouton « Voir plus de produits » prend le relais.
+                    </small>
+                </div>
+                <div class="col-md-3">
                     <label class="form-label">Produits par lot (défilement infini)</label>
                     <input type="number" name="batch_size" class="form-control" min="1" value="{{ campaign ? campaign.batchSize : 12 }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Lots chargés automatiquement au défilement</label>
+                    <input type="number" name="auto_load_batches" class="form-control" min="0" max="20" value="{{ campaign ? campaign.autoLoadBatches : 3 }}">
+                    <small class="text-muted">Après ces lots, un bouton « Voir plus de produits » apparaît. 0 = bouton dès le premier lot.</small>
                 </div>
             </div>
         </div>
@@ -443,6 +468,54 @@
             </div>
         </div>
 
+        {% set currentModel = campaign ? campaign.cardModel : 'classic' %}
+        <div class="sw-card mb-3">
+            <div class="card-body">
+                <label class="form-label mb-0">Modèle de carte produit</label>
+                <small class="text-muted d-block mb-3">
+                    Apparence des cartes dans la grille « Tous les produits en solde » de cette campagne.
+                </small>
+                <div class="card-model-grid">
+                    {% for key, label in constant('App\\Entity\\Campaign::CARD_MODELS') %}
+                        <label class="card-model-tile">
+                            <input type="radio" name="card_model" value="{{ key }}" {{ currentModel == key ? 'checked' : '' }}>
+                            <span class="card-model-box">
+                                <span class="cm-preview cm-preview--{{ key }}">
+                                    <span class="cm-img"></span>
+                                    <span class="cm-body">
+                                        <span class="cm-line cm-line--title"></span>
+                                        <span class="cm-line cm-line--price"></span>
+                                    </span>
+                                </span>
+                                <span class="card-model-name">{{ label }}</span>
+                            </span>
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <style>
+            .card-model-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+            .card-model-tile { margin: 0; cursor: pointer; }
+            .card-model-tile input { display: none; }
+            .card-model-box { display: block; border: 2px solid #e5e7eb; border-radius: 8px; padding: 12px 10px; background: #fff; text-align: center; }
+            .card-model-tile input:checked + .card-model-box { border-color: #2FA8E0; box-shadow: 0 0 0 3px rgba(47, 168, 224, .18); }
+            .card-model-name { display: block; margin-top: 10px; font-size: 13px; font-weight: 600; }
+            .cm-preview { display: block; position: relative; width: 90px; margin: 0 auto; border: 1px solid #d1d5db; border-radius: 6px; overflow: hidden; background: #fff; }
+            .cm-img { display: block; height: 70px; background: #e5e7eb; }
+            .cm-body { display: flex; flex-direction: column; gap: 4px; padding: 6px; }
+            .cm-line { display: block; height: 6px; border-radius: 3px; background: #cbd5e1; }
+            .cm-line--price { width: 50%; background: #e11d1d; }
+            .cm-preview--minimal { border: 0; }
+            .cm-preview--minimal .cm-img { height: 80px; border-radius: 8px; }
+            .cm-preview--poster { border: 0; border-radius: 10px; }
+            .cm-preview--poster .cm-img { height: 110px; background: #94a3b8; }
+            .cm-preview--poster .cm-body { position: absolute; left: 0; right: 0; bottom: 0; padding-top: 18px; background: linear-gradient(to top, rgba(0, 0, 0, .75), rgba(0, 0, 0, 0)); }
+            .cm-preview--poster .cm-line { background: #fff; }
+            .cm-preview--price .cm-line--price { order: -1; height: 9px; width: 65%; }
+        </style>
+
         <style>
             .prio-results { position: absolute; left: 0; right: 0; top: 100%; z-index: 50; background: #fff; border: 1px solid #dee2e6; border-radius: 6px; max-height: 260px; overflow-y: auto; box-shadow: 0 6px 16px rgba(0,0,0,.12); }
             .prio-results:empty { display: none; }
@@ -648,6 +721,17 @@
     </form>
 
     <script>
+        (function () {
+            const startNow = document.getElementById('startNowInput');
+            const startAt = document.querySelector('input[name="start_at"]');
+            function syncStartNow() {
+                startAt.disabled = startNow.checked;
+                startAt.style.opacity = startNow.checked ? '0.45' : '1';
+            }
+            startNow.addEventListener('change', syncStartNow);
+            syncStartNow();
+        })();
+
         document.getElementById('campaignTypeSelect').addEventListener('change', function () {
             document.getElementById('campaignCustomTypeWrap').style.display = this.value === 'autre' ? 'block' : 'none';
         });
