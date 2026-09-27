@@ -24,7 +24,7 @@ class SecurityController extends AbstractController
             'error' => $authenticationUtils->getLastAuthenticationError(),
             'spaceLabel' => 'Espace Acheteur',
             'accentColor' => '#2FA8E0',
-            'loginImage' => $sectionEnabled ? $imageRepository->pickActiveRandom() : null,
+            'loginImage' => $sectionEnabled ? $imageRepository->pickActiveRandom('login') : null,
         ]);
     }
 

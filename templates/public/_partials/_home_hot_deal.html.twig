@@ -22,6 +22,16 @@
                     {% if product.activeDiscountPercent %}
                         <span class="badge-discount">-{{ product.activeDiscountPercent }}%</span>
                     {% endif %}
+                    {% if product.brand and product.brand.logoName %}
+                        <img src="{{ vich_uploader_asset(product.brand, 'logoFile') }}" alt="{{ product.brand.name }}" class="product-card-brand-logo">
+                    {% endif %}
+                    {% set stats = product_review_stats(product) %}
+                    {% if stats.count > 0 %}
+                        <div class="product-card-rating-badge">
+                            {% include 'public/_partials/_star_rating.html.twig' with { average: stats.average, count: stats.count } %}
+                        </div>
+                    {% endif %}
+                    <span class="hot-deal-wishlist-dot" data-wishlist-indicator="{{ product.id }}" aria-hidden="true"{{ is_wishlisted(product) ? '' : ' hidden' }}><i class="bi bi-heart-fill"></i></span>
                 </div>
                 {% if product.activeDiscountEndAt %}
                     <div class="home-deal-countdown" data-countdown-end="{{ product.activeDiscountEndAt|date('c') }}">

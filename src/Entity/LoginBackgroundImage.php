@@ -32,6 +32,21 @@ class LoginBackgroundImage
     #[ORM\Column(options: ['default' => true])]
     private bool $active = true;
 
+    /**
+     * Pages publiques sur lesquelles cette image peut être utilisée. Ajouter une page ici
+     * (ex. "forgot_password" => "Mot de passe oublié") suffit à la proposer dans l'admin —
+     * il faut ensuite appeler pickActiveRandom() avec cette clé sur la page concernée.
+     */
+    public const PAGES = [
+        'login' => 'Page de connexion',
+        'register' => 'Page d\'inscription',
+        'complete_profile' => 'Compléter le profil',
+    ];
+
+    /** @var string[] */
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $usedOnPages = ['login'];
+
     public function getId(): ?int { return $this->id; }
 
     public function getTitle(): ?string { return $this->title; }
@@ -49,4 +64,19 @@ class LoginBackgroundImage
 
     public function isActive(): bool { return $this->active; }
     public function setActive(bool $v): static { $this->active = $v; return $this; }
+
+    /** @return string[] */
+    public function getUsedOnPages(): array { return $this->usedOnPages ?? ['login']; }
+
+    /** @param string[] $pages */
+    public function setUsedOnPages(array $pages): static
+    {
+        $this->usedOnPages = array_values(array_intersect($pages, array_keys(self::PAGES)));
+        return $this;
+    }
+
+    public function isUsedOnPage(string $page): bool
+    {
+        return in_array($page, $this->usedOnPages, true);
+    }
 }

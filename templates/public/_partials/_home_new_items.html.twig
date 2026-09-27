@@ -60,17 +60,14 @@
                                 {% if product.brand and product.brand.logoName %}
                                     <img src="{{ vich_uploader_asset(product.brand, 'logoFile') }}" alt="{{ product.brand.name }}" class="product-card-brand-logo">
                                 {% endif %}
-                                <div class="product-card-actions-left">
-                                    <button type="button" class="card-action" data-add-to-cart="{{ product.id }}" aria-label="{{ 'product.add_to_cart'|trans }}">
-                                        <i class="bi bi-cart3"></i>
-                                    </button>
-                                    <button type="button" class="card-action" data-quick-view="{{ product.id }}" aria-label="{{ 'product.quick_view'|trans }}">
-                                        <i class="bi bi-search"></i>
-                                    </button>
-                                    <button type="button" class="card-action" data-add-to-wishlist="{{ product.id }}" aria-label="{{ 'product.add_to_wishlist'|trans }}">
-                                        <i class="bi bi-heart"></i>
-                                    </button>
-                                </div>
+                                {% set stats = product_review_stats(product) %}
+                                {% if stats.count > 0 %}
+                                    <div class="product-card-rating-badge">
+                                        {% include 'public/_partials/_star_rating.html.twig' with { average: stats.average, count: stats.count } %}
+                                    </div>
+                                {% endif %}
+                                {# Cœur "liste de souhaits" : à part, toujours visible et rouge si déjà en liste #}
+                                {% include 'public/_partials/_product_icons_wishlist.html.twig' with { product: product } %}
                                 {% if product.images|length > 1 %}
                                     <div class="product-card-gallery-thumbs">
                                         {% for image in product.images|slice(0, 4) %}

@@ -15,20 +15,32 @@
         <div class="most-viewed-track" data-scroll-track>
             {% for item in mostViewedProducts %}
                 {% set product = item.product %}
-                <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="most-viewed-card">
-                    <div class="most-viewed-media">
-                        <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
-                    </div>
-                    <div class="most-viewed-info">
-                        <p class="most-viewed-title">{{ product.title }}</p>
-                        <div class="new-items-price">
-                            <span class="price-now">{{ product.displayCurrentPrice|price(product.currency) }}</span>
-                            {% if product.displayOldPrice %}
-                                <span class="price-old">{{ product.displayOldPrice|price(product.currency) }}</span>
+                <div class="most-viewed-card-wrap product-card">
+                    <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="most-viewed-card">
+                        <div class="most-viewed-media product-card-media">
+                            <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
+                            {% if product.brand and product.brand.logoName %}
+                                <img src="{{ vich_uploader_asset(product.brand, 'logoFile') }}" alt="{{ product.brand.name }}" class="product-card-brand-logo">
                             {% endif %}
+                            {% set stats = product_review_stats(product) %}
+                            {% if stats.count > 0 %}
+                                <div class="product-card-rating-badge">
+                                    {% include 'public/_partials/_star_rating.html.twig' with { average: stats.average, count: stats.count } %}
+                                </div>
+                            {% endif %}
+                            {% include 'public/_partials/_product_icons_wishlist.html.twig' with { product: product, asButton: true } %}
                         </div>
-                    </div>
-                </a>
+                        <div class="most-viewed-info">
+                            <p class="most-viewed-title">{{ product.title }}</p>
+                            <div class="new-items-price">
+                                <span class="price-now">{{ product.displayCurrentPrice|price(product.currency) }}</span>
+                                {% if product.displayOldPrice %}
+                                    <span class="price-old">{{ product.displayOldPrice|price(product.currency) }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </a>
+                </div>
             {% endfor %}
         </div>
         <button type="button" class="carousel-arrow carousel-arrow--edge right" data-carousel-next aria-label="{{ 'home.next'|trans }}"><i class="bi bi-chevron-right"></i></button>

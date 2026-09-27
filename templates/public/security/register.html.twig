@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Créer un compte — KongoBazar</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('styles/public/checkbox.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/public/login.css') }}">
+</head>
+<body class="login-body{{ loginImage ? ' login-has-image' : '' }}">
+
+    <div class="login-layout">
+        <div class="login-visual">
+            {% if loginImage %}
+                <img class="login-visual-photo" src="{{ vich_uploader_asset(loginImage, 'imageFile') }}" alt="{{ loginImage.title|default('') }}">
+            {% else %}
+                <a href="{{ path('public_home') }}" class="login-visual-logo"><span>Kongo</span><span>Bazar</span></a>
+            {% endif %}
+        </div>
+        {% if loginImage %}
+            <img class="login-mobile-photo" src="{{ vich_uploader_asset(loginImage, 'imageFile') }}" alt="{{ loginImage.title|default('') }}">
+        {% endif %}
+
+        <a href="{{ path('public_home') }}" class="login-mobile-logo"><span>Kongo</span><span>Bazar</span></a>
+
+        <div class="login-form-col">
+            <div class="login-card">
+                {% if loginImage %}
+                    <a href="{{ path('public_home') }}" class="login-card-eyebrow login-card-eyebrow--logo" style="text-decoration:none;display:block;"><span class="is-kongo">Kongo</span><span class="is-bazar">Bazar</span></a>
+                {% else %}
+                    <p class="login-card-eyebrow">Bienvenue,</p>
+                {% endif %}
+                <h1 class="login-card-title">Créer un compte</h1>
+
+                {% if error %}
+                    <div class="login-alert">{{ error }}</div>
+                {% endif %}
+
+                <form method="post">
+                    <div class="login-field">
+                        <label for="first_name">Prénom</label>
+                        <input type="text" name="first_name" id="first_name" value="{{ old.first_name }}" required autofocus>
+                    </div>
+                    <div class="login-field">
+                        <label for="last_name">Nom</label>
+                        <input type="text" name="last_name" id="last_name" value="{{ old.last_name }}" required>
+                    </div>
+                    <div class="login-field">
+                        <label for="email">Adresse e-mail</label>
+                        <input type="email" name="email" id="email" value="{{ old.email }}" required>
+                    </div>
+                    <div class="login-field">
+                        <label for="password">Mot de passe (8 caractères minimum)</label>
+                        <div class="login-field-input-wrap">
+                            <input type="password" name="password" id="password" minlength="8" required>
+                            <button type="button" class="login-field-password-toggle" data-toggle-for="password" aria-label="Afficher le mot de passe">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="login-field">
+                        <label for="password_confirm">Confirmer le mot de passe</label>
+                        <div class="login-field-input-wrap">
+                            <input type="password" name="password_confirm" id="password_confirm" minlength="8" required>
+                            <button type="button" class="login-field-password-toggle" data-toggle-for="password_confirm" aria-label="Afficher le mot de passe">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <label class="login-remember">
+                        <input type="checkbox" name="terms_accepted" class="kb-checkbox" required>
+                        <span>J'accepte les <a href="{{ path('public_legal_document_show', { code: 'cgv' }) }}" target="_blank">CGV</a> et les <a href="{{ path('public_legal_document_show', { code: 'cgu' }) }}" target="_blank">CGU</a>.</span>
+                    </label>
+
+                    <button type="submit" class="login-submit">Créer mon compte</button>
+                </form>
+
+                <p class="login-links">
+                    <a href="{{ path('public_login') }}">Déjà un compte ? Se connecter</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="login-loading-overlay" id="loginLoadingOverlay" role="status" aria-live="polite">
+        <div class="login-loading-word">
+            <span class="ll-letter is-kongo" style="animation-delay:0.00s">K</span><span class="ll-letter is-kongo" style="animation-delay:0.09s">o</span><span class="ll-letter is-kongo" style="animation-delay:0.18s">n</span><span class="ll-letter is-kongo" style="animation-delay:0.27s">g</span><span class="ll-letter is-kongo" style="animation-delay:0.36s">o</span><span class="ll-letter is-bazar" style="animation-delay:0.45s">B</span><span class="ll-letter is-bazar" style="animation-delay:0.54s">a</span><span class="ll-letter is-bazar" style="animation-delay:0.63s">z</span><span class="ll-letter is-bazar" style="animation-delay:0.72s">a</span><span class="ll-letter is-bazar" style="animation-delay:0.81s">r</span>
+        </div>
+        <p class="login-loading-caption">Création du compte…</p>
+    </div>
+
+    <script>
+        document.querySelectorAll('.login-field-password-toggle').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const input = document.getElementById(this.dataset.toggleFor);
+                const icon = this.querySelector('i');
+                const show = input.type === 'password';
+                input.type = show ? 'text' : 'password';
+                icon.className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
+            });
+        });
+
+        document.querySelector('.login-card form').addEventListener('submit', function () {
+            document.getElementById('loginLoadingOverlay').classList.add('is-visible');
+            const btn = this.querySelector('.login-submit');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Création…';
+            }
+        });
+    </script>
+</body>
+</html>

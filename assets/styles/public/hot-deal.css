@@ -113,12 +113,12 @@
     .hot-deal-slide.hot-deal-page {
         display: flex;
         align-items: flex-start;
-        gap: 0;
+        gap: 20px;
         height: auto !important;
     }
     .hot-deal-slide.hot-deal-page .hot-deal-slide-inner {
-        flex: 0 1 calc(50% - 5px);
-        max-width: calc(50% - 5px);
+        flex: 0 1 calc(50% - 10px);
+        max-width: calc(50% - 10px);
         min-width: 0;
         height: auto !important;
         text-decoration: none;
@@ -186,6 +186,33 @@
     padding: 16px;
 }
 .hot-deal-media img { max-width: 90%; max-height: 90%; width: auto; height: auto; object-fit: contain; }
+
+/* La règle générique ci-dessus vise l'image principale du produit ; le logo de marque et le
+   badge d'étoiles, ajoutés dans la même zone, ont besoin d'une taille fixe qui l'emporte dessus. */
+.hot-deal-media img.product-card-brand-logo {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    max-width: 50px;
+    max-height: 24px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    z-index: 2;
+}
+.hot-deal-media .product-card-rating-badge {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+}
+.hot-deal-wishlist-dot {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 2;
+    color: #e11d1d;
+    font-size: 18px;
+}
 
 .home-deal-countdown {
     margin-top: 12px;

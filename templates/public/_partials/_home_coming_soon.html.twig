@@ -56,7 +56,17 @@
                                 {% if product.brand and product.brand.logoName %}
                                     <img src="{{ vich_uploader_asset(product.brand, 'logoFile') }}" alt="{{ product.brand.name }}" class="product-card-brand-logo">
                                 {% endif %}
+                                {% set stats = product_review_stats(product) %}
+                                {% if stats.count > 0 %}
+                                    <div class="product-card-rating-badge">
+                                        {% include 'public/_partials/_star_rating.html.twig' with { average: stats.average, count: stats.count } %}
+                                    </div>
+                                {% endif %}
                                 <div class="product-card-coming-soon-actions">
+                                    <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="card-action card-action--expandable">
+                                        <i class="bi bi-search"></i>
+                                        <span class="card-action-label">Voir le produit</span>
+                                    </a>
                                     <a href="{{ path('product_follow_availability', { slug: product.slug }) }}" class="card-action card-action--expandable" title="Me prévenir" onclick="event.stopPropagation();">
                                         <i class="bi bi-bell"></i>
                                         <span class="card-action-label">Me prévenir</span>

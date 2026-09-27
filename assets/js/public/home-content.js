@@ -48,7 +48,6 @@ function shortenDealCurrencyOnSmallScreens() {
 
 function initDealsCarousel() {
     const AUTOPLAY_DELAY = 4000;
-    const GAP = window.innerWidth <= 496 ? 10 : 20;
 
     document.querySelectorAll('[data-deals-carousel]').forEach((carousel) => {
         const viewport = carousel.querySelector('.home-deals-viewport');
@@ -65,9 +64,16 @@ function initDealsCarousel() {
         let currentIndex = 0;
         let timer = null;
 
+        // Lit l'espacement réellement appliqué par le CSS (.home-deals-track { gap }), au lieu
+        // de le deviner avec un seuil séparé qui peut se désynchroniser du CSS.
+        function currentGap() {
+            return parseFloat(getComputedStyle(track).columnGap) || 0;
+        }
+
         function layout() {
+            const gap = currentGap();
             itemsPerView = Math.min(cards.length, 2);
-            cardWidth = (viewport.offsetWidth - GAP * (itemsPerView - 1)) / itemsPerView;
+            cardWidth = (viewport.offsetWidth - gap * (itemsPerView - 1)) / itemsPerView;
             cards.forEach((card) => {
                 card.style.width = cardWidth + 'px';
             });
@@ -76,8 +82,9 @@ function initDealsCarousel() {
         }
 
         function applyPosition(animate) {
+            const gap = currentGap();
             track.style.transition = animate ? 'margin-left 0.4s ease' : 'none';
-            track.style.marginLeft = `-${currentIndex * (cardWidth + GAP)}px`;
+            track.style.marginLeft = `-${currentIndex * (cardWidth + gap)}px`;
         }
 
         function totalPositions() {
@@ -121,7 +128,7 @@ function initDealsCarousel() {
         viewport.addEventListener('touchmove', (e) => {
             if (!isDragging) return;
             touchDeltaX = e.touches[0].clientX - touchStartX;
-            const basePosition = -currentIndex * (cardWidth + GAP);
+            const basePosition = -currentIndex * (cardWidth + currentGap());
             track.style.marginLeft = `${basePosition + touchDeltaX}px`;
         }, { passive: true });
 
@@ -781,28 +788,7 @@ function initCountdowns() {
     tick();
     setInterval(tick, 1000);
 }
-function initAddToCartButtons() {
-    document.querySelectorAll('[data-add-to-cart]').forEach((btn) => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const variantId = btn.dataset.addToCart;
-            fetch(`/panier/ajouter-ajax/${variantId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'quantity=1',
-            })
-                .then((response) => response.json())
-                .then((data) => {
-                    if (data.success) {
-                        document.querySelectorAll('[data-cart-count]').forEach((el) => {
-                            el.textContent = data.itemCount;
-                        });
-                        refreshCartOffcanvas();
-                    }
-                });
-        });
-    });
-}
+
 function refreshCartOffcanvas() {
     fetch('/panier/offcanvas-fragment')
         .then((response) => response.text())
@@ -813,3 +799,134 @@ function refreshCartOffcanvas() {
             }
         });
 }
+
+// Cœur (liste de souhaits) : présent sur toutes les cartes produit de l'accueil, des campagnes, etc.
+document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-add-to-wishlist]');
+        if (!btn) return;
+
+        e.preventDefault();
+        const productId = btn.dataset.addToWishlist;
+
+        fetch(`/wishlist/basculer-ajax/${productId}`, { method: 'POST' })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                    return;
+                }
+                if (data.limitReached) {
+                    showWishlistLimitModal();
+                    return;
+                }
+                if (!data.success) return;
+
+                document.querySelectorAll(`[data-add-to-wishlist="${productId}"]`).forEach((el) => {
+                    el.classList.toggle('is-wishlisted', data.added);
+                    const icon = el.querySelector('i');
+                    if (icon) {
+                        icon.classList.toggle('bi-heart', !data.added);
+                        icon.classList.toggle('bi-heart-fill', data.added);
+                    }
+
+                    // Sur tactile : si on vient d'AJOUTER aux souhaits, le cœur rouge doit rester
+                    // seul (on referme le groupe pour cacher panier/loupe). Si on vient de RETIRER,
+                    // on garde le groupe ouvert pour montrer les 3 icônes redevenues normales.
+                    const card = el.closest('.product-card, .home-deal-card');
+                    if (card) {
+                        card.classList.toggle('is-touch-active', !data.added);
+                    }
+                });
+                document.querySelectorAll(`[data-wishlist-indicator="${productId}"]`).forEach((el) => {
+                    el.hidden = !data.added;
+                });
+            });
+    });
+});
+
+function showWishlistLimitModal() {
+    let overlay = document.getElementById('wishlistLimitOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'wishlistLimitOverlay';
+        overlay.className = 'wishlist-limit-overlay';
+        overlay.innerHTML = `
+            <div class="wishlist-limit-modal">
+                <p>Le nombre maximum d'articles dans votre liste de souhaits a été atteint (20). Retirez-en un pour en ajouter un nouveau.</p>
+                <button type="button" class="wishlist-limit-close">Compris</button>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        overlay.querySelector('.wishlist-limit-close').addEventListener('click', () => overlay.remove());
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    }
+}
+
+// Sur tactile, :hover reste bloqué indéfiniment après un tap (comportement des navigateurs
+// mobiles, pas un bug). On gère donc l'ouverture/fermeture des icônes explicitement :
+// un tap sur la carte les révèle, un tap ailleurs les referme.
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) return; // ordinateur : rien à faire, :hover suffit
+
+    document.addEventListener('click', (e) => {
+        const actionBtn = e.target.closest('[data-add-to-cart], [data-add-to-wishlist], .card-action--expandable');
+        const card = e.target.closest('.product-card, .home-deal-card');
+
+        if (actionBtn) return; // un tap sur une icône exécute son action, ne fait que la refermer ensuite
+        document.querySelectorAll('.product-card.is-touch-active, .home-deal-card.is-touch-active').forEach((el) => {
+            if (el !== card) el.classList.remove('is-touch-active');
+        });
+        if (card) card.classList.toggle('is-touch-active');
+    }, true);
+
+    // Après un tap sur le panier (confirmation via la modale), on referme la carte.
+    // Le cœur, lui, garde le groupe ouvert : on veut voir immédiatement le nouvel état
+    // (redevenu Panier/Loupe/Cœur normal, ou réduit au cœur rouge épinglé).
+    document.addEventListener('click', (e) => {
+        const cartBtn = e.target.closest('[data-add-to-cart]');
+        if (!cartBtn) return;
+        const card = e.target.closest('.product-card, .home-deal-card');
+        if (card) card.classList.remove('is-touch-active');
+    });
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-recently-viewed-widget]').forEach((track) => {
+        const pages = Array.from(track.querySelectorAll('.recently-viewed-page'));
+        if (pages.length <= 1) return;
+
+        const body = track.parentElement; // .recently-viewed-widget-body, overflow:hidden
+        let current = 0;
+        let containerWidth = 0;
+
+        const head = body.previousElementSibling;
+        const prevBtn = head ? head.querySelector('[data-recently-viewed-prev]') : null;
+        const nextBtn = head ? head.querySelector('[data-recently-viewed-next]') : null;
+
+        // Mesure la vraie largeur intérieure disponible (padding déjà déduit par clientWidth),
+        // et fixe chaque largeur en pixels exacts — plus aucun calcul en pourcentage, donc
+        // plus aucune place pour l'écart qu'on n'arrivait pas à localiser.
+        function measure() {
+            containerWidth = body.clientWidth;
+            pages.forEach((page) => { page.style.width = containerWidth + 'px'; });
+            track.style.width = (containerWidth * pages.length) + 'px';
+            applyPosition();
+        }
+
+        function applyPosition() {
+            track.style.transform = `translateX(-${current * containerWidth}px)`;
+        }
+
+        function show(index) {
+            current = ((index % pages.length) + pages.length) % pages.length;
+            applyPosition();
+        }
+
+        if (prevBtn) prevBtn.addEventListener('click', () => show(current - 1));
+        if (nextBtn) nextBtn.addEventListener('click', () => show(current + 1));
+
+        window.addEventListener('resize', measure);
+        measure();
+    });
+});

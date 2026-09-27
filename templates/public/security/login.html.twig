@@ -19,19 +19,19 @@
             {% if loginImage %}
                 <img class="login-visual-photo" src="{{ vich_uploader_asset(loginImage, 'imageFile') }}" alt="{{ loginImage.title|default('') }}">
             {% else %}
-                <div class="login-visual-logo"><span>Kongo</span><span>Bazar</span></div>
+                <a href="{{ path('public_home') }}" class="login-visual-logo"><span>Kongo</span><span>Bazar</span></a>
             {% endif %}
         </div>
         {% if loginImage %}
             <img class="login-mobile-photo" src="{{ vich_uploader_asset(loginImage, 'imageFile') }}" alt="{{ loginImage.title|default('') }}">
         {% endif %}
 
-        <div class="login-mobile-logo"><span>Kongo</span><span>Bazar</span></div>
+        <a href="{{ path('public_home') }}" class="login-mobile-logo"><span>Kongo</span><span>Bazar</span></a>
 
         <div class="login-form-col">
             <div class="login-card">
                 {% if loginImage %}
-                    <p class="login-card-eyebrow login-card-eyebrow--logo"><span class="is-kongo">Kongo</span><span class="is-bazar">Bazar</span></p>
+                    <a href="{{ path('public_home') }}" class="login-card-eyebrow login-card-eyebrow--logo" style="text-decoration:none;display:block;"><span class="is-kongo">Kongo</span><span class="is-bazar">Bazar</span></a>
                 {% else %}
                     <p class="login-card-eyebrow">Bienvenue,</p>
                 {% endif %}

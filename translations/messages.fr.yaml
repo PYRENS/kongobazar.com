@@ -19,6 +19,9 @@ header.logout: "Se déconnecter"
 
 search.results_for: "Résultats pour \"%term%\""
 search.no_results: "Aucun produit trouvé pour cette recherche."
+search.no_categories: "Aucune catégorie trouvée pour cette recherche."
+search.no_sellers: "Aucun vendeur trouvé pour cette recherche."
+search.no_relays: "Aucun point relais trouvé pour cette recherche."
 
 # --- Navigation ---
 nav.home: "Accueil"
@@ -125,7 +128,7 @@ home.badge.support: "Support 24/7"
 # --- Produit ---
 product.add_to_cart: "Ajouter au panier"
 product.quick_view: "Aperçu rapide"
-product.add_to_wishlist: "Ajouter à la wishlist"
+product.add_to_wishlist: "Liste de souhaits"
 
 # --- Footer ---
 footer.newsletter: "Newsletter"

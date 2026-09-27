@@ -5,10 +5,13 @@ namespace App\Controller\Public;
 use App\Repository\BlogPostRepository;
 use App\Repository\BrandRepository;
 use App\Repository\CategoryRepository;
+use App\Entity\User;
 use App\Repository\ProductRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class StubPagesController extends AbstractController
 {
@@ -34,9 +37,20 @@ class StubPagesController extends AbstractController
         ]);
     }
 
+    #[IsGranted('ROLE_USER')]
     #[Route('/commande', name: 'checkout_index', host: 'kongobazar.com')]
     public function checkout(): Response
     {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        if (!$user->isVerified()) {
+            return $this->render('public/security/verify_notice.html.twig');
+        }
+        if (!$user->isProfileComplete()) {
+            return $this->redirectToRoute('public_complete_profile', ['required' => 1]);
+        }
+
         return $this->render('public/stub_generic.html.twig', [
             'title' => 'Passer commande',
             'breadcrumbs' => [

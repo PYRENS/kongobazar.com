@@ -25,25 +25,14 @@
                         {% if deal.activeDiscountPercent %}
                             <span class="badge-discount">-{{ deal.activeDiscountPercent }}%</span>
                         {% endif %}
-
-                        <div class="home-deal-actions-left">
-                            <button type="button" class="card-action card-action--expandable" data-add-to-cart="{{ deal.id }}" aria-label="{{ 'product.add_to_cart'|trans }}" onclick="event.preventDefault();">
-                                <i class="bi bi-cart3"></i>
-                                <span class="card-action-label">{{ 'product.add_to_cart'|trans }}</span>
-                            </button>
-                            <button type="button" class="card-action card-action--expandable" data-quick-view="{{ deal.id }}" aria-label="{{ 'product.quick_view'|trans }}" onclick="event.preventDefault(); window.location.href='{{ path('catalog_product', { slug: deal.slug }) }}';">
-                                <i class="bi bi-search"></i>
-                                <span class="card-action-label">{{ 'product.quick_view'|trans }}</span>
-                            </button>
-                            <button type="button" class="card-action card-action--expandable" data-add-to-wishlist="{{ deal.id }}" aria-label="{{ 'product.add_to_wishlist'|trans }}" onclick="event.preventDefault();">
-                                <i class="bi bi-heart"></i>
-                                <span class="card-action-label">{{ 'product.add_to_wishlist'|trans }}</span>
-                            </button>
-                        </div>
+                        {% include 'public/_partials/_product_icons_wishlist.html.twig' with { product: deal, asButton: true } %}
                     </a>
                     <div class="home-deal-info">
                         <h5>{{ deal.title }}</h5>
-                        <div class="home-deal-rating">★★★★☆</div>
+                        {% set stats = product_review_stats(deal) %}
+                        {% if stats.count > 0 %}
+                            {% include 'public/_partials/_star_rating.html.twig' with { average: stats.average, count: stats.count } %}
+                        {% endif %}
                         <p class="home-deal-desc">{{ deal.description|striptags|slice(0, 90) }}…</p>
                         {% if deal.getShippingDelayLabel() %}
                             <p class="home-deal-shipping">

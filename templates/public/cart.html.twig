@@ -5,7 +5,7 @@
 {% block body %}
 {% set display = cart_display_subtotal() %}
 <div class="cart-page-title-block">
-    <h4 class="cart-page-title">Mon Panier <span class="cart-page-count">({{ summary.itemCount }} article{{ summary.itemCount > 1 ? 's' : '' }})</span></h4>
+    <h4 class="cart-page-title">Mon Panier <span class="cart-page-count" data-cart-header-count>({{ summary.itemCount }} article{{ summary.itemCount > 1 ? 's' : '' }})</span></h4>
 </div>
 
 <div class="cart-page">
@@ -57,10 +57,10 @@
                     </div>
 
                     <div class="cart-line-price">
+                        <span class="price-now" data-line-total>{{ line.lineTotal|price(line.currency) }}</span>
                         {% if product.compareAtPrice %}
                             <span class="price-old" data-line-old-total>{{ (product.compareAtPrice * item.quantity)|price(line.currency) }}</span>
                         {% endif %}
-                        <span class="price-now" data-line-total>{{ line.lineTotal|price(line.currency) }}</span>
                     </div>
                 </div>
             {% endfor %}
@@ -76,11 +76,16 @@
     {% if summary.lines|length > 0 %}
         <aside class="cart-page-summary">
             <div class="cart-summary-card">
-                <h6>Récapitulatif ({{ summary.itemCount }} produit{{ summary.itemCount > 1 ? 's' : '' }})</h6>
+                <h6>Récapitulatif <span data-cart-summary-count>({{ summary.itemCount }} produit{{ summary.itemCount > 1 ? 's' : '' }})</span></h6>
                 <div class="cart-summary-row">
                     <span>Prix total</span>
                     <strong data-cart-summary-total>{{ display.amount|price(display.currency) }}</strong>
                 </div>
+                {% if display.oldAmount and display.oldAmount > display.amount %}
+                    <p class="cart-summary-old-total" data-cart-summary-old-total>
+                        <span class="price-old">{{ display.oldAmount|price(display.currency) }}</span>
+                    </p>
+                {% endif %}
                 <a href="{{ path('checkout_index') }}" class="btn btn-primary cart-checkout-btn">Passer commande</a>
             </div>
 

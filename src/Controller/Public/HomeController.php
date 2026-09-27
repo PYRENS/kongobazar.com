@@ -53,6 +53,8 @@ class HomeController extends AbstractController
         \App\Repository\TopCategoryItemRepository $topCategoryItemRepository,
         \App\Repository\TopCategorySectionSettingRepository $topCategorySectionSettingRepository,
         \App\Service\TopVendorSelector $topVendorSelector,
+        \App\Repository\RecentlyViewedSettingRepository $recentlyViewedSettingRepository,
+        \Symfony\Component\HttpFoundation\Request $request,
         \App\Repository\TopVendorSettingRepository $topVendorSettingRepository,
         \App\Service\NewItemsTabSelector $newItemsTabSelector,
         \App\Repository\NewItemsTabRepository $newItemsTabRepository,
@@ -245,6 +247,25 @@ class HomeController extends AbstractController
             'individual' => $mostViewedSettings->isIncludeIndividual(),
         ]);
 
+        // --- Consulté récemment (historique par cookie, ordre préservé, produits toujours actifs) ---
+        $recentlyViewedSettings = $recentlyViewedSettingRepository->getSingleton();
+        $recentlyViewedProducts = [];
+        if ($recentlyViewedSettings->isEnabled()) {
+            $recentIds = json_decode($request->cookies->get('kb_recently_viewed', '[]'), true) ?: [];
+            $recentIds = array_slice($recentIds, 0, $recentlyViewedSettings->getDisplayCount());
+            if ($recentIds) {
+                $found = $productRepository->createQueryBuilder('p')
+                    ->andWhere('p.id IN (:ids)')->setParameter('ids', $recentIds)
+                    ->andWhere('p.status = :status')->setParameter('status', 'active')
+                    ->getQuery()->getResult();
+                $byId = [];
+                foreach ($found as $p) { $byId[$p->getId()] = $p; }
+                foreach ($recentIds as $id) {
+                    if (isset($byId[$id])) { $recentlyViewedProducts[] = $byId[$id]; }
+                }
+            }
+        }
+
         // --- Tendances (bandeau du header) ---
         $trendingCategories = $categoryViewLogRepository->findMostVisited(7, 8);
 
@@ -318,6 +339,8 @@ class HomeController extends AbstractController
             'adLifestyleRight' => $adLifestyleRight,
             'mostViewedProducts' => $mostViewedProducts,
             'mostViewedEnabled' => $mostViewedSettings->isEnabled(),
+            'recentlyViewedProducts' => $recentlyViewedProducts,
+            'recentlyViewedEnabled' => $recentlyViewedSettings->isEnabled(),
             'bestSellersEnabled' => $bestSellersSetting->isEnabled(),
             'hotDealProducts' => $hotDealProducts,
             'sidebarNewArrivalsEnabled' => $sidebarNewArrivalsSetting->isEnabled(),

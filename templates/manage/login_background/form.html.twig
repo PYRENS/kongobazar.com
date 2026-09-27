@@ -24,12 +24,22 @@
                     <label class="form-label">Titre (texte alternatif, facultatif)</label>
                     <input type="text" name="title" class="form-control" maxlength="150" value="{{ image ? image.title : '' }}">
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-2">
                     <label class="form-label d-block">Statut</label>
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" name="active" value="1" id="lbiActive" {{ (image ? image.active : true) ? 'checked' : '' }}>
                         <label class="form-check-label" for="lbiActive">Image active</label>
                     </div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label d-block">Utiliser sur</label>
+                    {% set usedPages = image ? image.usedOnPages : ['login'] %}
+                    {% for key, pageLabel in constant('App\\Entity\\LoginBackgroundImage::PAGES') %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="used_on_pages[]" value="{{ key }}" id="lbiPage{{ key }}" {{ key in usedPages ? 'checked' : '' }}>
+                            <label class="form-check-label" for="lbiPage{{ key }}">{{ pageLabel }}</label>
+                        </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>

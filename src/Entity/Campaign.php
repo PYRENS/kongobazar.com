@@ -57,6 +57,13 @@ class Campaign
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $bannerImageName = null;
 
+    /** Bannière de tête, version mobile (≤991px). Obligatoire dès qu'une bannière desktop est utilisée. */
+    #[Vich\UploadableField(mapping: 'product_images', fileNameProperty: 'bannerImageMobileName')]
+    private ?File $bannerImageMobileFile = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $bannerImageMobileName = null;
+
     #[ORM\Column(options: ['default' => 12])]
     private int $batchSize = 12;
 
@@ -72,6 +79,17 @@ class Campaign
 
     #[ORM\Column(length: 20, options: ['default' => 'middle-right'])]
     private string $badgePosition = 'middle-right';
+
+    /** Position du badge sur mobile (≤991px) ; null = identique à la position desktop. */
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $badgePositionMobile = null;
+
+    #[ORM\Column(length: 5, options: ['default' => 'm'])]
+    private string $badgeSize = 'm';
+
+    /** Taille du badge sur mobile ; null = identique à la taille desktop. */
+    #[ORM\Column(length: 5, nullable: true)]
+    private ?string $badgeSizeMobile = null;
 
     #[ORM\Column(options: ['default' => true])]
     private bool $badgeVisible = true;
@@ -197,6 +215,16 @@ class Campaign
     public function getBannerImageName(): ?string { return $this->bannerImageName; }
     public function setBannerImageName(?string $name): static { $this->bannerImageName = $name; return $this; }
 
+    public function setBannerImageMobileFile(?File $file = null): static
+    {
+        $this->bannerImageMobileFile = $file;
+        return $this;
+    }
+    public function getBannerImageMobileFile(): ?File { return $this->bannerImageMobileFile; }
+
+    public function getBannerImageMobileName(): ?string { return $this->bannerImageMobileName; }
+    public function setBannerImageMobileName(?string $name): static { $this->bannerImageMobileName = $name; return $this; }
+
     public function getBatchSize(): int { return $this->batchSize; }
     public function setBatchSize(int $v): static { $this->batchSize = max(1, $v); return $this; }
 
@@ -233,6 +261,29 @@ class Campaign
 
     public function isBadgeVisible(): bool { return $this->badgeVisible; }
     public function setBadgeVisible(bool $v): static { $this->badgeVisible = $v; return $this; }
+
+    public function getBadgePositionMobile(): ?string { return $this->badgePositionMobile; }
+    public function setBadgePositionMobile(?string $v): static
+    {
+        $this->badgePositionMobile = in_array($v, self::BADGE_POSITIONS, true) ? $v : null;
+        return $this;
+    }
+
+    public const BADGE_SIZES = ['s', 'm', 'l', 'xl'];
+
+    public function getBadgeSize(): string { return $this->badgeSize; }
+    public function setBadgeSize(string $v): static
+    {
+        $this->badgeSize = in_array($v, self::BADGE_SIZES, true) ? $v : 'm';
+        return $this;
+    }
+
+    public function getBadgeSizeMobile(): ?string { return $this->badgeSizeMobile; }
+    public function setBadgeSizeMobile(?string $v): static
+    {
+        $this->badgeSizeMobile = in_array($v, self::BADGE_SIZES, true) ? $v : null;
+        return $this;
+    }
 
     public function isBannerEnabled(): bool { return $this->bannerEnabled; }
     public function setBannerEnabled(bool $v): static { $this->bannerEnabled = $v; return $this; }

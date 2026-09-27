@@ -6,13 +6,18 @@ use App\Repository\ProductRecommendationRepository;
 use App\Repository\ProductRepository;
 use App\Service\SeoResolver;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Cookie;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 class ProductController extends AbstractController
 {
+    private const RECENTLY_VIEWED_COOKIE = 'kb_recently_viewed';
+    private const RECENTLY_VIEWED_MAX_STORED = 20;
+
     #[Route('/produit/{slug}', name: 'catalog_product', host: 'kongobazar.com')]
-    public function show(string $slug, ProductRepository $productRepository, ProductRecommendationRepository $recommendationRepository, SeoResolver $seoResolver, \Vich\UploaderBundle\Storage\StorageInterface $storage, \Doctrine\ORM\EntityManagerInterface $em): Response
+    public function show(string $slug, Request $request, ProductRepository $productRepository, ProductRecommendationRepository $recommendationRepository, SeoResolver $seoResolver, \Vich\UploaderBundle\Storage\StorageInterface $storage, \Doctrine\ORM\EntityManagerInterface $em): Response
     {
         $product = $productRepository->findOneBy(['slug' => $slug]);
 
@@ -26,6 +31,18 @@ class ProductController extends AbstractController
         $viewLog->setViewedAt(new \DateTimeImmutable());
         $em->persist($viewLog);
         $em->flush();
+
+        // "Consulté récemment" : historique par navigateur (cookie), pas lié au compte —
+        // fonctionne aussi bien pour un visiteur non connecté.
+        $recentIds = json_decode($request->cookies->get(self::RECENTLY_VIEWED_COOKIE, '[]'), true) ?: [];
+        $recentIds = array_values(array_diff($recentIds, [$product->getId()])); // retire l'éventuelle occurrence existante
+        array_unshift($recentIds, $product->getId());
+        $recentIds = array_slice($recentIds, 0, self::RECENTLY_VIEWED_MAX_STORED);
+
+        $recentlyViewedCookie = Cookie::create(self::RECENTLY_VIEWED_COOKIE)
+            ->withValue(json_encode($recentIds))
+            ->withExpires((new \DateTimeImmutable())->modify('+90 days'))
+            ->withPath('/');
 
         // Couleurs et tailles distinctes réellement disponibles sur ce produit
         $colors = [];
@@ -62,7 +79,7 @@ class ProductController extends AbstractController
             'ogImageUrl' => $firstImage ? $storage->resolveUri($firstImage, 'imageFile') : null,
         ]);
 
-        return $this->render('public/product.html.twig', [
+        $response = $this->render('public/product.html.twig', [
             'seoData' => $seoData,
             'product' => $product,
             'colors' => array_values($colors),
@@ -70,6 +87,9 @@ class ProductController extends AbstractController
             'breadcrumbs' => $breadcrumbs,
             'recommendations' => $recommendations,
         ]);
+        $response->headers->setCookie($recentlyViewedCookie);
+
+        return $response;
     }
 
 

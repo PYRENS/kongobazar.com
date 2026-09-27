@@ -94,16 +94,25 @@ class CampaignController extends AbstractController
                 continue;
             }
             $pos = (string) ($row['pos'] ?? '');
+            $posMobile = (string) ($row['posMobile'] ?? '');
             $size = (string) ($row['size'] ?? '');
+            $sizeMobile = (string) ($row['sizeMobile'] ?? '');
             $color = (string) ($row['color'] ?? '');
             $bg = (string) ($row['bg'] ?? '');
+            $sizes = ['s', 'm', 'l', 'xl'];
 
             $clean[] = [
                 'text' => mb_substr($text, 0, 120),
                 'pos' => in_array($pos, Campaign::BADGE_POSITIONS, true) ? $pos : 'middle-left',
-                'size' => in_array($size, ['s', 'm', 'l', 'xl'], true) ? $size : 'm',
+                // Position/taille mobile : "" = identique au desktop (pas de repli automatique sur une valeur par défaut)
+                'posMobile' => in_array($posMobile, Campaign::BADGE_POSITIONS, true) ? $posMobile : '',
+                'size' => in_array($size, $sizes, true) ? $size : 'm',
+                'sizeMobile' => in_array($sizeMobile, $sizes, true) ? $sizeMobile : '',
                 'color' => preg_match('/^#[0-9a-fA-F]{6}$/', $color) ? $color : '#ffffff',
                 'bg' => preg_match('/^#[0-9a-fA-F]{6}$/', $bg) ? $bg : null,
+                // Affichage indépendant de ce texte, en plus de l'interrupteur global "Afficher les textes"
+                'visibleDesktop' => !empty($row['visibleDesktop']),
+                'visibleMobile' => !empty($row['visibleMobile']),
             ];
             if (count($clean) >= 8) {
                 break;
@@ -149,6 +158,9 @@ class CampaignController extends AbstractController
             }
         }
         $campaign->setBadgePosition((string) $request->request->get('badge_position', 'middle-right'));
+        $campaign->setBadgePositionMobile((string) $request->request->get('badge_position_mobile', '') ?: null);
+        $campaign->setBadgeSize((string) $request->request->get('badge_size', 'm'));
+        $campaign->setBadgeSizeMobile((string) $request->request->get('badge_size_mobile', '') ?: null);
         $campaign->setBadgeVisible($request->request->getBoolean('badge_visible'));
         $campaign->setBannerEnabled($request->request->getBoolean('banner_enabled'));
         $campaign->setTextsEnabled($request->request->getBoolean('texts_enabled'));
@@ -196,12 +208,31 @@ class CampaignController extends AbstractController
 
         /** @var UploadedFile|null $file */
         $file = $request->files->get('banner_image');
+        /** @var UploadedFile|null $mobileFile */
+        $mobileFile = $request->files->get('banner_image_mobile');
+
+        if ($file && !$file->isValid()) {
+            $this->addFlash('error', 'Bannière (desktop) non enregistrée : ' . $file->getErrorMessage());
+            return $this->redirectToRoute($isNew ? 'manage_campaign_new' : 'manage_campaign_edit', $isNew ? [] : ['id' => $campaign->getId()]);
+        }
+        if ($mobileFile && !$mobileFile->isValid()) {
+            $this->addFlash('error', 'Bannière (mobile) non enregistrée : ' . $mobileFile->getErrorMessage());
+            return $this->redirectToRoute($isNew ? 'manage_campaign_new' : 'manage_campaign_edit', $isNew ? [] : ['id' => $campaign->getId()]);
+        }
+
+        // La bannière desktop et la bannière mobile vont toujours ensemble : soit les deux, soit aucune.
+        $willHaveDesktop = $file ? true : (bool) $campaign->getBannerImageName();
+        $willHaveMobile = $mobileFile ? true : (bool) $campaign->getBannerImageMobileName();
+        if ($willHaveDesktop !== $willHaveMobile) {
+            $this->addFlash('error', 'La bannière de tête doit avoir une version desktop ET une version mobile — les deux, ou aucune des deux.');
+            return $this->redirectToRoute($isNew ? 'manage_campaign_new' : 'manage_campaign_edit', $isNew ? [] : ['id' => $campaign->getId()]);
+        }
+
         if ($file) {
-            if ($file->isValid()) {
-                $campaign->setBannerImageFile($file);
-            } else {
-                $this->addFlash('error', 'Bannière non enregistrée : ' . $file->getErrorMessage());
-            }
+            $campaign->setBannerImageFile($file);
+        }
+        if ($mobileFile) {
+            $campaign->setBannerImageMobileFile($mobileFile);
         }
 
         $this->syncPriorities($campaign, $request, $em);

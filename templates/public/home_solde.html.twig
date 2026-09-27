@@ -7,20 +7,39 @@
 {# --- Bannière pleine largeur + pourcentage réel incrusté --- #}
 <div class="solde-hero{{ campaign.bannerEnabled ? '' : ' solde-hero--off' }}">
     {% if campaign.bannerImageName %}
-        <img src="{{ vich_uploader_asset(campaign, 'bannerImageFile') }}" alt="{{ campaign.title }}" class="solde-hero-img">
+        <picture>
+            {% if campaign.bannerImageMobileName %}
+                <source media="(max-width: 991px)" srcset="{{ vich_uploader_asset(campaign, 'bannerImageMobileFile') }}">
+            {% endif %}
+            <img src="{{ vich_uploader_asset(campaign, 'bannerImageFile') }}" alt="{{ campaign.title }}" class="solde-hero-img">
+        </picture>
     {% endif %}
     {% if filters.maxDiscountPercent > 0 and campaign.badgeVisible %}
-        <div class="solde-hero-badge" data-pos="{{ campaign.badgePosition }}">Jusqu'à -{{ filters.maxDiscountPercent }}%</div>
+        <div class="solde-hero-badge solde-hero-badge--desktop badge-size-{{ campaign.badgeSize }}" data-pos="{{ campaign.badgePosition }}">Jusqu'à -{{ filters.maxDiscountPercent }}%</div>
+        <div class="solde-hero-badge solde-hero-badge--mobile badge-size-{{ campaign.badgeSizeMobile ?: campaign.badgeSize }}" data-pos="{{ campaign.badgePositionMobile ?: campaign.badgePosition }}">Jusqu'à -{{ filters.maxDiscountPercent }}%</div>
     {% endif %}
 
     {% set bannerTexts = campaign.textsEnabled ? campaign.bannerTexts : [] %}
     {% if bannerTexts|length > 0 %}
-        {% for pos in ['top-left','top-center','top-right','middle-left','middle-center','middle-right','bottom-left','bottom-center','bottom-right'] %}
-            {% set items = bannerTexts|filter(t => t.pos == pos) %}
+        {% set positions = ['top-left','top-center','top-right','middle-left','middle-center','middle-right','bottom-left','bottom-center','bottom-right'] %}
+        {% set desktopTexts = bannerTexts|filter(t => t.visibleDesktop is not defined or t.visibleDesktop) %}
+        {% set mobileTexts = bannerTexts|filter(t => t.visibleMobile is not defined or t.visibleMobile) %}
+        {% for pos in positions %}
+            {% set items = desktopTexts|filter(t => t.pos == pos) %}
             {% if items|length > 0 %}
-                <div class="solde-hero-zone" data-pos="{{ pos }}">
+                <div class="solde-hero-zone solde-hero-zone--desktop" data-pos="{{ pos }}">
                     {% for t in items %}
                         <span class="solde-hero-text solde-hero-text--{{ t.size }}" style="color: {{ t.color }};{% if t.bg %} background: {{ t.bg }};{% endif %}">{{ t.text }}</span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endfor %}
+        {% for pos in positions %}
+            {% set items = mobileTexts|filter(t => (t.posMobile ?: t.pos) == pos) %}
+            {% if items|length > 0 %}
+                <div class="solde-hero-zone solde-hero-zone--mobile" data-pos="{{ pos }}">
+                    {% for t in items %}
+                        <span class="solde-hero-text solde-hero-text--{{ t.sizeMobile ?: t.size }}" style="color: {{ t.color }};{% if t.bg %} background: {{ t.bg }};{% endif %}">{{ t.text }}</span>
                     {% endfor %}
                 </div>
             {% endif %}

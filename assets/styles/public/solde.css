@@ -22,15 +22,27 @@
     transform: translateY(-50%);
     background: #e11d1d;
     color: #fff;
-    /* Taille fluide : suit la largeur d'écran, donc la taille de la bannière.
-       28px à ~1800px de large, jamais sous 9px ni au-dessus de 60px. */
-    font-size: clamp(9px, 1.55vw, 60px);
     font-weight: 800;
     line-height: 1.2;
     white-space: nowrap;
     padding: 0.5em 1em;
     border-radius: 0.3em;
     box-shadow: 0 0.2em 0.7em rgba(0, 0, 0, 0.25);
+}
+/* Taille du badge (réglable par campagne, desktop/mobile) — fluide, suit la largeur d'écran */
+.solde-hero-badge.badge-size-s  { font-size: clamp(7px, 1vw, 30px); }
+.solde-hero-badge.badge-size-m  { font-size: clamp(9px, 1.55vw, 60px); }
+.solde-hero-badge.badge-size-l  { font-size: clamp(11px, 2.2vw, 80px); }
+.solde-hero-badge.badge-size-xl { font-size: clamp(13px, 3vw, 100px); }
+
+/* Bascule desktop/mobile du badge et des textes : un seul des deux exemplaires visible à la fois */
+.solde-hero-badge--mobile,
+.solde-hero .solde-hero-zone--mobile { display: none !important; }
+@media (max-width: 991px) {
+    .solde-hero-badge--desktop,
+    .solde-hero .solde-hero-zone--desktop { display: none !important; }
+    .solde-hero-badge--mobile { display: block !important; }
+    .solde-hero .solde-hero-zone--mobile { display: flex !important; }
 }
 
 /* Positions du badge (réglable par campagne en admin) — milieu-droite = défaut */
@@ -261,6 +273,18 @@
     z-index: 2;
 }
 
+/* La colonne d'icônes (panier/loupe/cœur) doit descendre sous le badge SOLDE/FLASH/PROMO,
+   les deux étant sinon positionnés au même endroit (top-left). */
+.solde-product-grid .product-card-actions-left {
+    top: 38px;
+}
+@media (max-width: 796px) {
+    .solde-product-grid .product-card-actions-left { top: 30px; }
+}
+@media (max-width: 414px) {
+    .solde-product-grid .product-card-actions-left { top: 34px; }
+}
+
 .solde-batch-ad {
     display: block;
     width: 100%;
@@ -461,7 +485,8 @@
 .solde-product-grid.solde-card--poster .product-card-media img.product-card-main-image {
     height: auto;
     aspect-ratio: 4 / 5;
-    object-fit: cover;
+    object-fit: contain;
+    background: #e5e7eb;
     border-radius: 0;
 }
 .solde-product-grid.solde-card--poster .product-card-brand-logo {

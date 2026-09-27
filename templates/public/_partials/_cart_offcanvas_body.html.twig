@@ -35,6 +35,11 @@
             {% set display = cart_display_subtotal() %}
             <span>{{ display.amount|price(display.currency) }}</span>
         </div>
+        {% if display.oldAmount and display.oldAmount > display.amount %}
+            <div class="cart-subtotal-old">
+                <span class="price-old">{{ display.oldAmount|price(display.currency) }}</span>
+            </div>
+        {% endif %}
     </div>
 
     <div class="cart-actions">

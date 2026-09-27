@@ -891,10 +891,30 @@ class ProductRepository extends ServiceEntityRepository
             ->setParameter('term', '%' . $term . '%')
             ->orderBy('p.salesCount', 'DESC');
 
-        // La référence "KBZ-000123" est calculée depuis l'ID (pas une colonne en base) —
-        // si le terme tapé y correspond, on ajoute une recherche directe par ID.
-        if (preg_match('/kbz-?0*(\d+)/i', $term, $matches)) {
-            $qb->orWhere('p.id = :refId')->setParameter('refId', (int) $matches[1]);
+        // La référence "KBZ-000123" est calculée depuis l'ID (pas une colonne en base) — dès que
+        // "KBZ-" est suivi d'au moins un chiffre, on cherche tous les IDs qui COMMENCENT par ces
+        // chiffres (pas une correspondance exacte), pour filtrer dès la frappe sans attendre la
+        // référence complète.
+        // La référence "KBZ-000073" est calculée depuis l'ID, complétée à 6 chiffres (voir
+        // Product::getReferenceLabel()). On calcule la plage d'identifiants dont le préfixe,
+        // une fois complété à 6 chiffres, correspond à ce qui a déjà été tapé — pour que le
+        // filtrage fonctionne dès le premier zéro, pas seulement à partir du 1er chiffre non nul.
+        if (preg_match('/kbz-?(\d+)/i', $term, $matches)) {
+            $digits = $matches[1];
+            $len = strlen($digits);
+
+            if ($len <= 6) {
+                $factor = 10 ** (6 - $len);
+                $min = (int) $digits * $factor;
+                $max = $min + $factor - 1;
+                $qb->orWhere('p.id BETWEEN :refMin AND :refMax')
+                    ->setParameter('refMin', $min)
+                    ->setParameter('refMax', $max);
+            } else {
+                // Au-delà de 6 chiffres, la référence n'est plus complétée par des zéros
+                // (voir le commentaire dans Product::getReferenceLabel()) : simple préfixe direct.
+                $qb->orWhere("CONCAT(p.id, '') LIKE :refIdPrefix")->setParameter('refIdPrefix', $digits . '%');
+            }
         }
 
         if (null !== $limit) {

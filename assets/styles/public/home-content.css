@@ -337,6 +337,9 @@
 }
 .home-deals-viewport { overflow: hidden; }
 .home-deals-track { display: flex; gap: 20px; transition: margin-left 0.4s ease; }
+@media (max-width: 496px) {
+    .home-deals-track { gap: 10px; }
+}
 .home-deal-card {
     flex-shrink: 0;
     display: flex;
@@ -383,33 +386,14 @@
     }
 }
 
-.home-deal-actions-left {
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    opacity: 0;
-    transform: translateX(-8px);
-    transition: opacity 0.2s ease, transform 0.2s ease;
-}
-.home-deal-card:hover .home-deal-actions-left {
-    opacity: 1;
-    transform: translateX(0);
-}
-
-.home-deal-actions-left .card-action,
 .home-carousel-nav .carousel-arrow {
     transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
-.home-deal-actions-left .card-action:hover,
 .home-carousel-nav .carousel-arrow:hover {
     background-color: var(--kb-theme-color);
     border-color: var(--kb-theme-color);
     color: #fff;
 }
-
 .card-action--expandable {
     width: 34px;
     display: flex;
@@ -417,9 +401,21 @@
     justify-content: center;
     gap: 0;
     padding: 0;
+    text-decoration: none;
     transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, width 0.25s ease, padding 0.25s ease, border-radius 0.25s ease;
     overflow: hidden;
     white-space: nowrap;
+}
+@media (hover: hover) and (pointer: fine) {
+    .card-action--expandable:hover,
+    .card-action--expandable:hover .card-action-label {
+        text-decoration: none;
+    }
+    .card-action--expandable:hover {
+        background-color: var(--kb-theme-color, #2FA8E0);
+        border-color: var(--kb-theme-color, #2FA8E0);
+        color: #fff;
+    }
 }
 .card-action-label {
     max-width: 0;
@@ -429,16 +425,18 @@
     font-size: 12px;
     font-weight: 600;
 }
-.card-action--expandable:hover {
-    width: auto;
-    padding: 0 14px;
-    border-radius: 17px;
-    z-index: 5;
-}
-.card-action--expandable:hover .card-action-label {
-    max-width: 160px;
-    opacity: 1;
-    margin-left: 8px;
+@media (hover: hover) and (pointer: fine) {
+    .card-action--expandable:hover {
+        width: auto;
+        padding: 0 14px;
+        border-radius: 17px;
+        z-index: 5;
+    }
+    .card-action--expandable:hover .card-action-label {
+        max-width: 160px;
+        opacity: 1;
+        margin-left: 8px;
+    }
 }
 .home-deal-info { padding: 16px; flex: 1; min-width: 0; }
 .home-deal-info h5 { font-size: 15px; margin: 0 0 6px; }
@@ -705,6 +703,19 @@
     object-fit: contain;
     z-index: 2;
 }
+.product-card-rating-badge {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    z-index: 2;
+    background: rgba(255, 255, 255, 0.92);
+    border-radius: 4px;
+    padding: 2px 5px;
+}
+.product-card-rating-badge .star-rating {
+    margin: 0;
+    font-size: 10px;
+}
 .product-card-coming-soon-actions {
     position: absolute;
     top: 8px;
@@ -714,17 +725,29 @@
     flex-direction: column;
     gap: 6px;
 }
-.product-card-coming-soon-actions .card-action {
-    background: #fff;
-    border-color: #2FA8E0;
-    color: #2FA8E0;
+.product-card-coming-soon-actions .card-action--expandable:not(.card-action--preorder) {
     text-decoration: none;
 }
-.product-card-coming-soon-actions .card-action:hover {
-    background: #2FA8E0;
-    border-color: #2FA8E0;
-    color: #fff;
-    text-decoration: none;
+/* Seule la précommande reste visible en permanence, en première position. Les autres icônes
+   (loupe, cloche) restent masquées, et n'apparaissent qu'au survol/tap de la carte — même
+   mécanisme que les autres sections du site. */
+.product-card-coming-soon-actions .card-action--preorder {
+    order: -1;
+}
+.product-card-coming-soon-actions .card-action--expandable:not(.card-action--preorder) {
+    opacity: 0;
+    transform: translateX(-8px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+    .product-card:hover .product-card-coming-soon-actions .card-action--expandable:not(.card-action--preorder) {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+.product-card.is-touch-active .product-card-coming-soon-actions .card-action--expandable:not(.card-action--preorder) {
+    opacity: 1;
+    transform: translateX(0);
 }
 .product-card-coming-soon-actions .card-action--preorder,
 .product-card-coming-soon-actions .card-action--preorder:hover {
@@ -761,7 +784,8 @@
         height: 160px;
     }
 }
-.product-card-body { padding: 12px; }
+.product-card { min-width: 0; }
+.product-card-body { padding: 12px; min-width: 0; }
 .product-card-title {
     display: block;
     font-size: 13px;
@@ -780,9 +804,39 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+}
+.product-card-actions-left .card-action--expandable {
     opacity: 0;
     transform: translateX(-8px);
     transition: opacity 0.2s ease, transform 0.2s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+    .product-card:hover .product-card-actions-left .card-action--expandable,
+    .home-deal-card:hover .product-card-actions-left .card-action--expandable {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+/* Équivalent tactile : une classe posée par un tap volontaire (voir home-content.js),
+   jamais par un survol simulé qui resterait bloqué. */
+.product-card.is-touch-active .product-card-actions-left .card-action--expandable,
+.home-deal-card.is-touch-active .product-card-actions-left .card-action--expandable {
+    opacity: 1;
+    transform: translateX(0);
+}
+/* Ordre normal : Panier, Loupe, Cœur. Si le produit est déjà en liste de souhaits :
+   Cœur (rouge, toujours visible), Panier, Loupe. */
+.product-card-actions-left [data-add-to-cart] { order: 2; }
+.product-card-actions-left .card-action--quickview { order: 3; }
+.product-card-actions-left [data-add-to-wishlist] { order: 4; }
+.product-card-actions-left [data-add-to-wishlist].is-wishlisted {
+    order: 1;
+    opacity: 1 !important;
+    transform: translateX(0) !important;
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+    color: #e11d1d;
 }
 .product-card:hover .product-card-actions-left {
     opacity: 1;
@@ -796,8 +850,13 @@
     border: 1px solid var(--kb-border);
     box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     cursor: pointer;
+    color: var(--kb-text, #333); /* Fixe la couleur, qu'il s'agisse d'un <button> (panier/cœur) ou d'un <a> (loupe) */
 }
-
+.card-action.is-active {
+    background: #e11d1d;
+    border-color: #e11d1d;
+    color: #fff;
+}
 .product-card-gallery-thumbs {
     position: absolute;
     top: 8px;
@@ -910,6 +969,13 @@
     border-radius: 10px;
     padding: 20px 14px;
 }
+/* Cette grille réutilise les classes de "Top Catégories", pensées à l'origine avec un fond
+   gris et du padding — neutralisé ici, pour un simple résultat de recherche sans ce cadre. */
+.search-category-grid .top-category-item {
+    background: none;
+    padding: 0;
+    border-radius: 0;
+}
 @media (max-width: 414px) {
     .home-top-categories [data-carousel-prev],
     .home-top-categories [data-carousel-next] {
@@ -1021,7 +1087,7 @@
         padding: 12px;
     }
 }
-@media (max-width: 496px) {
+@media (max-width: 512px) {
     .home-deal-info h5 {
         white-space: nowrap;
         overflow: hidden;
@@ -1369,19 +1435,60 @@
    "Les plus consultés" — 6 cartes visibles, défilement horizontal
    -------------------------------------------------------------------------- */
 .most-viewed-track { display: flex; gap: 16px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; padding: 0 32px; }
+
+/* Cette section réutilise les classes génériques (logo, étoiles, icônes) des autres cartes produit,
+   mais sa tuile est plus étroite : on fige leur taille ici pour ne pas dépendre de l'ordre des
+   règles CSS définies ailleurs dans ce fichier pour les autres sections. */
+.most-viewed-media { position: relative; overflow: hidden; }
+.most-viewed-media .product-card-brand-logo {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    max-width: 50px;
+    max-height: 24px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+}
+.most-viewed-media .product-card-rating-badge {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    padding: 1px 4px;
+}
+.most-viewed-media .product-card-rating-badge .star-rating { font-size: 8px; }
+.most-viewed-media .product-card-actions-left {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
 .most-viewed-track::-webkit-scrollbar { display: none; }
-.most-viewed-card {
+.most-viewed-card-wrap {
     flex: 0 0 calc((100% - 5 * 16px) / 6);
+}
+.most-viewed-card {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
     border: 1px solid var(--kb-border);
     border-radius: 6px;
     overflow: hidden;
     text-decoration: none;
     color: inherit;
-    display: flex;
-    flex-direction: column;
 }
 .most-viewed-media { background: #f7f7f7; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; }
-.most-viewed-media img { max-width: 90%; max-height: 90%; object-fit: contain; }
+.most-viewed-media img:not(.product-card-brand-logo) {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: cover;
+}
 .most-viewed-info { padding: 10px; text-align: center; }
 .most-viewed-title {
     font-size: 12.5px;
@@ -1393,10 +1500,10 @@
     overflow: hidden;
 }
 @media (max-width: 991px) {
-    .most-viewed-card { flex: 0 0 calc((100% - 2 * 16px) / 3); }
+    .most-viewed-card-wrap { flex: 0 0 calc((100% - 2 * 16px) / 3); }
 }
 @media (max-width: 575px) {
-    .most-viewed-card { flex: 0 0 calc((100% - 16px) / 2); }
+    .most-viewed-card-wrap { flex: 0 0 calc((100% - 16px) / 2); }
 }
 /* --------------------------------------------------------------------------
    Section "Prochainement" — grille simple + bannière en bas
@@ -1716,4 +1823,21 @@
     .home-sidebar-filler {
         display: none;
     }
+}
+/* Le badge "Nouveau" occupe le coin haut-gauche de l'image : le cœur (permanent quand
+   le produit est en liste de souhaits) doit apparaître sous lui, pas par-dessus. */
+.home-new-items .product-card-actions-left [data-add-to-wishlist].is-wishlisted {
+    margin-top: 26px;
+}
+/* Une fois le cœur passé en rouge (produit en liste de souhaits), il reste un simple indicateur
+   fixe : plus jamais de texte ni d'élargissement au survol, même si la souris ou le doigt
+   se trouve encore dessus au moment du clic. */
+.card-action--expandable.is-wishlisted {
+    width: 34px !important;
+    padding: 0 !important;
+}
+.card-action--expandable.is-wishlisted .card-action-label {
+    max-width: 0 !important;
+    opacity: 0 !important;
+    margin-left: 0 !important;
 }

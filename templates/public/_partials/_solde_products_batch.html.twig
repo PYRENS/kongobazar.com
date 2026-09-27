@@ -38,6 +38,13 @@
                 {% if product.brand and product.brand.logoName %}
                     <img src="{{ vich_uploader_asset(product.brand, 'logoFile') }}" alt="{{ product.brand.name }}" class="product-card-brand-logo">
                 {% endif %}
+                {% set stats = product_review_stats(product) %}
+                {% if stats.count > 0 %}
+                    <div class="product-card-rating-badge">
+                        {% include 'public/_partials/_star_rating.html.twig' with { average: stats.average, count: stats.count } %}
+                    </div>
+                {% endif %}
+                {% include 'public/_partials/_product_icons_wishlist.html.twig' with { product: product } %}
             </div>
             <div class="product-card-body">
                 <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="product-card-title">{{ product.title }}</a>

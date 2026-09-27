@@ -26,6 +26,7 @@
                     <tr>
                         <th>Aperçu</th>
                         <th>Titre</th>
+                        <th>Utilisée sur</th>
                         <th>Actif</th>
                         <th></th>
                     </tr>
@@ -35,6 +36,13 @@
                         <tr>
                             <td><img src="{{ vich_uploader_asset(image, 'imageFile') }}" style="width:90px;height:110px;object-fit:cover;border-radius:6px;" alt=""></td>
                             <td>{{ image.title ?: '—' }}</td>
+                            <td>
+                                {% for page in image.usedOnPages %}
+                                    <span class="badge bg-info">{{ constant('App\\Entity\\LoginBackgroundImage::PAGES')[page] }}</span>
+                                {% else %}
+                                    <span class="text-muted">Aucune</span>
+                                {% endfor %}
+                            </td>
                             <td>
                                 <div class="form-check form-switch">
                                     <input type="checkbox" class="form-check-input lbi-toggle" role="switch" {{ image.active ? 'checked' : '' }} data-toggle-url="{{ path('manage_login_background_toggle', { id: image.id }) }}">
@@ -50,7 +58,7 @@
                             </td>
                         </tr>
                     {% else %}
-                        <tr><td colspan="4" class="text-center text-muted py-4">Aucune image.</td></tr>
+                        <tr><td colspan="5" class="text-center text-muted py-4">Aucune image.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

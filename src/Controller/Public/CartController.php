@@ -174,6 +174,9 @@ class CartController extends AbstractController
                 'displayAmount' => $display['amount'],
                 'displayCurrency' => $display['currency'],
                 'displayFormatted' => $priceFormatter->format($display['amount'], $display['currency']),
+                'cartOldTotalDisplay' => $display['oldAmount'] > $display['amount']
+                    ? $priceFormatter->format($display['oldAmount'], $display['currency'])
+                    : null,
             ]);
         }
 
@@ -204,6 +207,9 @@ class CartController extends AbstractController
             'displayAmount' => $display['amount'],
             'displayCurrency' => $display['currency'],
             'displayFormatted' => $priceFormatter->format($display['amount'], $display['currency']),
+            'cartOldTotalDisplay' => $display['oldAmount'] > $display['amount']
+                ? $priceFormatter->format($display['oldAmount'], $display['currency'])
+                : null,
         ]);
     }
 

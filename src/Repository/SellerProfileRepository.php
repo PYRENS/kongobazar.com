@@ -96,10 +96,24 @@ class SellerProfileRepository extends ServiceEntityRepository
     }
 
     /** @return SellerProfile[] — boutiques, pros et points relais actifs, jamais les "Particulier". */
-    public function searchByTerm(string $term, int $limit = 5): array
+    /** Boutiques et vendeurs Pro uniquement (les points relais ont leur propre recherche, voir ci-dessous). */
+    public function searchSellersByTerm(string $term, int $limit = 5): array
     {
         return $this->createQueryBuilder('s')
-            ->andWhere('s INSTANCE OF App\Entity\StoreProfile OR s INSTANCE OF App\Entity\ProProfile OR s INSTANCE OF App\Entity\RelayProfile')
+            ->andWhere('s INSTANCE OF App\Entity\StoreProfile OR s INSTANCE OF App\Entity\ProProfile')
+            ->andWhere('s.status = :status')->setParameter('status', 'active')
+            ->andWhere('s.displayName LIKE :term OR s.referenceNumber LIKE :term')
+            ->setParameter('term', '%' . $term . '%')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** Points relais uniquement. */
+    public function searchRelaysByTerm(string $term, int $limit = 5): array
+    {
+        return $this->createQueryBuilder('s')
+            ->andWhere('s INSTANCE OF App\Entity\RelayProfile')
             ->andWhere('s.status = :status')->setParameter('status', 'active')
             ->andWhere('s.displayName LIKE :term OR s.referenceNumber LIKE :term')
             ->setParameter('term', '%' . $term . '%')

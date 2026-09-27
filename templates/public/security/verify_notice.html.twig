@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Confirme ton e-mail — KongoBazar</title>
+    <link rel="stylesheet" href="{{ asset('styles/public/login.css') }}">
+    <style>.profile-page { max-width: 480px; margin: 60px auto; padding: 0 16px; text-align: center; }</style>
+</head>
+<body class="login-body">
+    <div class="profile-page">
+        <div class="profile-card" style="background:#fff;border-radius:16px;padding:32px;box-shadow:0 10px 30px rgba(0,0,0,0.06);">
+            <p class="login-card-eyebrow login-card-eyebrow--logo"><span class="is-kongo">Kongo</span><span class="is-bazar">Bazar</span></p>
+            <h1 class="login-card-title">Confirme ton e-mail</h1>
+            <p>Pour passer commande, confirme d'abord ton adresse e-mail via le lien reçu à l'inscription.</p>
+            <a href="{{ path('public_home') }}" class="login-submit" style="display:inline-block;text-decoration:none;">Retour à l'accueil</a>
+        </div>
+    </div>
+</body>
+</html>

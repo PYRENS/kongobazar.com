@@ -118,6 +118,7 @@ class CartService
     {
         $lines = [];
         $subtotalUsd = '0';
+        $oldSubtotalUsd = '0'; // prix "normal" (avant réduction) de tout le panier, converti en USD
         $itemCount = 0;
 
         foreach ($cart->getItems() as $item) {
@@ -127,11 +128,21 @@ class CartService
             $unitPrice = $product->getCurrentDiscountedPrice() ?? $product->getBasePrice();
             $lineTotal = bcmul($unitPrice, (string) $item->getQuantity(), 2);
 
+            // Prix normal de la ligne : le prix barré s'il existe, sinon le prix actuel
+            // (une ligne sans réduction ne creuse pas d'écart artificiel).
+            $oldUnitPrice = $product->getCompareAtPrice() ?? $unitPrice;
+            $oldLineTotal = bcmul($oldUnitPrice, (string) $item->getQuantity(), 2);
+
             $lineTotalUsd = $product->getCurrency() === 'USD'
                 ? $lineTotal
                 : $this->convertToUsd($lineTotal, $product->getCurrency());
 
+            $oldLineTotalUsd = $product->getCurrency() === 'USD'
+                ? $oldLineTotal
+                : $this->convertToUsd($oldLineTotal, $product->getCurrency());
+
             $subtotalUsd = bcadd($subtotalUsd, $lineTotalUsd, 2);
+            $oldSubtotalUsd = bcadd($oldSubtotalUsd, $oldLineTotalUsd, 2);
             $itemCount += $item->getQuantity();
 
             $lines[] = [
@@ -147,6 +158,7 @@ class CartService
             'lines' => $lines,
             'itemCount' => $itemCount,
             'subtotalUsd' => $subtotalUsd,
+            'oldSubtotalUsd' => $oldSubtotalUsd,
         ];
     }
 
@@ -204,18 +216,20 @@ class CartService
     public function getDisplaySubtotal(array $summary): array
     {
         $currency = $this->requestStack->getSession()->get('_currency', 'USD');
+        $oldSubtotalUsd = $summary['oldSubtotalUsd'] ?? $summary['subtotalUsd'];
 
         if ($currency === 'USD') {
-            return ['amount' => $summary['subtotalUsd'], 'currency' => 'USD'];
+            return ['amount' => $summary['subtotalUsd'], 'oldAmount' => $oldSubtotalUsd, 'currency' => 'USD'];
         }
 
         $rate = $this->exchangeRateRepository->findCurrentRate();
         if (!$rate) {
-            return ['amount' => $summary['subtotalUsd'], 'currency' => 'USD']; // repli si aucun taux dispo
+            return ['amount' => $summary['subtotalUsd'], 'oldAmount' => $oldSubtotalUsd, 'currency' => 'USD']; // repli si aucun taux dispo
         }
 
         $amountCdf = bcmul($summary['subtotalUsd'], $rate->getRateUsdToCdf(), 2);
-        return ['amount' => $amountCdf, 'currency' => 'CDF'];
+        $oldAmountCdf = bcmul($oldSubtotalUsd, $rate->getRateUsdToCdf(), 2);
+        return ['amount' => $amountCdf, 'oldAmount' => $oldAmountCdf, 'currency' => 'CDF'];
     }
 
 

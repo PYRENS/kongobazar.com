@@ -229,6 +229,9 @@
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_most_viewed' ? 'active' : '' }}">
                             <a href="{{ path('manage_most_viewed_setting') }}"><i class="bi bi-eye"></i> <span class="hide-menu">Plus consultés accueil</span></a>
                         </li>
+                        <li class="{{ app.request.attributes.get('_route') starts with 'manage_recently_viewed' ? 'active' : '' }}">
+                            <a href="{{ path('manage_recently_viewed_setting') }}"><i class="bi bi-clock-history"></i> <span class="hide-menu">Consulté récemment accueil</span></a>
+                        </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_best_sellers' ? 'active' : '' }}">
                             <a href="{{ path('manage_best_sellers_setting') }}"><i class="bi bi-graph-up-arrow"></i> <span class="hide-menu">Meilleures ventes accueil</span></a>
                         </li>
@@ -241,9 +244,6 @@
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_sidebar_filler' ? 'active' : '' }}">
                             <a href="{{ path('manage_sidebar_filler_index') }}"><i class="bi bi-images"></i> <span class="hide-menu">Bannières bouche-trou (col. gauche)</span></a>
                         </li>
-                        <li class="{{ app.request.attributes.get('_route') starts with 'manage_login_background' ? 'active' : '' }}">
-                            <a href="{{ path('manage_login_background_index') }}"><i class="bi bi-person-badge"></i> <span class="hide-menu">Connexion — Images de fond</span></a>
-                        </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_sidebar_new_arrivals' ? 'active' : '' }}">
                             <a href="{{ path('manage_sidebar_new_arrivals_setting') }}"><i class="bi bi-stars"></i> <span class="hide-menu">Nouveaux articles (col. gauche)</span></a>
                         </li>
@@ -254,6 +254,10 @@
                             <a href="{{ path('manage_individual_section_setting') }}"><i class="bi bi-person"></i> <span class="hide-menu">Particulier accueil</span></a>
                         </li>
                     </ul>
+                </li>
+
+                <li class="{{ app.request.attributes.get('_route') starts with 'manage_login_background' ? 'active' : '' }}">
+                    <a href="{{ path('manage_login_background_index') }}"><i class="bi bi-person-badge"></i> <span class="hide-menu">Connexion — Images de fond</span></a>
                 </li>
 
                 <li class="admin-nav-group {{ app.request.attributes.get('_route') starts with 'manage_seller_privilege' or app.request.attributes.get('_route') starts with 'manage_preorder' ? 'open' : '' }}">

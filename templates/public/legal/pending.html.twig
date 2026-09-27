@@ -11,6 +11,8 @@
         .legal-pending-page { max-width: 720px; margin: 40px auto; padding: 0 16px; }
         .legal-pending-card { background: #fff; border-radius: 16px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.06); }
         .legal-pending-summary { background: #f0f8fc; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px; font-size: 14px; }
+        /* Le titre peut être long (nom du document) : on annule le "nowrap" hérité de la page de connexion */
+        .legal-pending-card .login-card-title { white-space: normal; font-size: clamp(17px, 4.5vw, 23px); }
         .legal-article { padding: 16px 0; }
         .legal-article-badge { font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 700; margin-left: 8px; }
         .legal-article-badge--added { background: #e6f4ea; color: #1e7e34; }

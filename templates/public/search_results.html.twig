@@ -1,30 +1,156 @@
 {% extends 'public/base.html.twig' %}
 
 {% block title %}Résultats pour "{{ term }}" — KongoBazar{% endblock %}
-{% block meta_description %}Découvrez les produits correspondant à "{{ term }}" sur KongoBazar, la marketplace de référence en RDC.{% endblock %}
+{% block meta_description %}Découvrez les produits, catégories, vendeurs et points relais correspondant à "{{ term }}" sur KongoBazar, la marketplace de référence en RDC.{% endblock %}
 
 {% block body %}
     <div class="container-kb" style="padding: 30px 0;">
-        <h4>{{ 'search.results_for'|trans({'%term%': term}) }} ({{ products|length }})</h4>
+        <h4>{{ 'search.results_for'|trans({'%term%': term}) }}</h4>
 
-        {% if products|length > 0 %}
-            <div class="home-product-grid" style="margin-top: 20px;">
-                {% for product in products %}
-                    <div class="product-card">
-                        <div class="product-card-media">
-                            <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
+        <div class="search-layout">
+            <div class="search-results-col">
+                <div class="search-tabs" style="display:flex; gap:8px; flex-wrap:wrap; margin:16px 0 24px; border-bottom:1px solid var(--kb-border);">
+                    {% set counts = { products: products|length, categories: categories|length, sellers: sellers|length, relays: relays|length } %}
+                    {% for key, label in tabs %}
+                        <a href="{{ path('catalog_search', { q: term, type: key }) }}"
+                           class="search-tab{{ tab == key ? ' search-tab--active' : '' }}"
+                           style="padding:10px 16px; text-decoration:none; font-weight:600; font-size:14px; color:{{ tab == key ? 'var(--kb-theme-color, #2FA8E0)' : '#6c757d' }}; border-bottom:2px solid {{ tab == key ? 'var(--kb-theme-color, #2FA8E0)' : 'transparent' }};">
+                            {{ label }} ({{ counts[key] }})
+                        </a>
+                    {% endfor %}
+                </div>
+
+                {% if tab == 'products' %}
+                    {% if products|length > 0 %}
+                        <div class="home-product-grid" style="margin-top: 20px;">
+                            {% for product in products %}
+                                <div class="product-card">
+                                    <div class="product-card-media">
+                                        <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" class="product-card-main-image" loading="lazy">
+                                        {% if product.activeDiscountPercent %}
+                                            <span class="badge-discount">-{{ product.activeDiscountPercent }}%</span>
+                                        {% elseif product.compareAtPrice %}
+                                            <span class="badge-discount">-{{ ((1 - (product.basePrice / product.compareAtPrice)) * 100)|round }}%</span>
+                                        {% endif %}
+                                        {% if product.brand and product.brand.logoName %}
+                                            <img src="{{ vich_uploader_asset(product.brand, 'logoFile') }}" alt="{{ product.brand.name }}" class="product-card-brand-logo">
+                                        {% endif %}
+                                        {% set stats = reviewStats[product.id]|default(null) %}
+                                        {% if stats and stats.count > 0 %}
+                                            <div class="product-card-rating-badge">
+                                                {% include 'public/_partials/_star_rating.html.twig' with { average: stats.average, count: stats.count } %}
+                                            </div>
+                                        {% endif %}
+                                        {% include 'public/_partials/_product_icons_wishlist.html.twig' with { product: product } %}
+                                    </div>
+                                    <div class="product-card-body">
+                                        <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="product-card-title">{{ product.title }}</a>
+                                        <div class="product-card-price">
+                                            <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+                                            {% if product.displayOldPrice %}
+                                                <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
                         </div>
-                        <div class="product-card-body">
-                            <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="product-card-title">{{ product.title }}</a>
-                            <div class="product-card-price">
-                                <span class="price-now">{{ product.basePrice|price(product.currency) }}</span>
+                    {% else %}
+                        <p class="text-muted" style="margin-top:20px;">{{ 'search.no_results'|trans }}</p>
+                    {% endif %}
+
+                {% elseif tab == 'categories' %}
+                    {% if categories|length > 0 %}
+                        <div class="search-category-grid">
+                            {% for category in categories %}
+                                <a href="{{ path('catalog_category', { slug: category.slug }) }}" class="top-category-item">
+                                    <span class="top-category-circle" style="background:{{ category.effectiveColor }};">
+                                        {% if category.imageName %}
+                                            <img src="{{ vich_uploader_asset(category, 'imageFile') }}" alt="{{ category.name }}" loading="lazy">
+                                        {% else %}
+                                            <i class="bi {{ category.icon|default('bi-tag') }}"></i>
+                                        {% endif %}
+                                    </span>
+                                    <span class="top-category-label">{{ category.name }}</span>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted" style="margin-top:20px;">{{ 'search.no_categories'|trans }}</p>
+                    {% endif %}
+
+                {% elseif tab == 'sellers' %}
+                    {% if sellers|length > 0 %}
+                        <div class="search-results-list" style="display:flex; flex-direction:column; gap:8px;">
+                            {% for seller in sellers %}
+                                <a href="{{ path('partner_show', { slug: seller.slug }) }}" class="search-result-row" style="display:flex; align-items:center; gap:12px; padding:12px 16px; border:1px solid var(--kb-border); border-radius:8px; text-decoration:none; color:inherit;">
+                                    {% if seller.logoName %}<img src="/media/products/{{ seller.logoName }}" alt="" style="width:36px;height:36px;object-fit:cover;border-radius:50%;">{% endif %}
+                                    <span>{{ seller.displayName }}</span>
+                                    <span class="text-muted" style="font-size:12px;">{{ seller.typeLabel }}</span>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted" style="margin-top:20px;">{{ 'search.no_sellers'|trans }}</p>
+                    {% endif %}
+
+                {% elseif tab == 'relays' %}
+                    {% if relays|length > 0 %}
+                        <div class="search-results-list" style="display:flex; flex-direction:column; gap:8px;">
+                            {% for relay in relays %}
+                                <a href="{{ path('partner_show', { slug: relay.slug }) }}" class="search-result-row" style="display:flex; align-items:center; gap:12px; padding:12px 16px; border:1px solid var(--kb-border); border-radius:8px; text-decoration:none; color:inherit;">
+                                    {% if relay.logoName %}<img src="/media/products/{{ relay.logoName }}" alt="" style="width:36px;height:36px;object-fit:cover;border-radius:50%;">{% endif %}
+                                    <span>{{ relay.displayName }}</span>
+                                    <span class="text-muted" style="font-size:12px;">{{ relay.typeLabel }}</span>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted" style="margin-top:20px;">{{ 'search.no_relays'|trans }}</p>
+                    {% endif %}
+                {% endif %}
+            </div>
+
+            <aside class="search-sidebar-col">
+                {% if recentlyViewedProducts|default([])|length > 0 %}
+                    <div class="recently-viewed-widget">
+                        {% set recentlyViewedPages = recentlyViewedProducts|batch(5) %}
+                        <div class="recently-viewed-widget-head">
+                            <span><i class="bi bi-clock-history" style="margin-right: 6px;"></i>Consulté récemment</span
+                            {% if recentlyViewedPages|length > 1 %}
+                                <div class="recently-viewed-widget-nav">
+                                    <button type="button" class="recently-viewed-arrow" data-recently-viewed-prev aria-label="{{ 'home.prev'|trans }}"><i class="bi bi-chevron-left"></i></button>
+                                    <button type="button" class="recently-viewed-arrow" data-recently-viewed-next aria-label="{{ 'home.next'|trans }}"><i class="bi bi-chevron-right"></i></button>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="recently-viewed-widget-body">
+                            <div class="recently-viewed-widget-track" data-recently-viewed-widget>
+                            {% for page in recentlyViewedPages %}
+                                <div class="recently-viewed-page{{ loop.first ? ' active' : '' }}">
+                                    {% for product in page %}
+                                        {% set stats = product_review_stats(product) %}
+                                        <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="recently-viewed-row">
+                                            <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
+                                            <div class="recently-viewed-row-info">
+                                                <span class="recently-viewed-row-title">{{ product.title }}</span>
+                                                {% include 'public/_partials/_star_rating.html.twig' with { average: stats.average, count: stats.count } %}
+                                                <span class="recently-viewed-row-price">
+                                                    <span class="price-now">{{ product.displayCurrentPrice|price(product.currency) }}</span>
+                                                    {% if product.displayOldPrice %}
+                                                        <span class="price-old">{{ product.displayOldPrice|price(product.currency) }}</span>
+                                                    {% endif %}
+                                                </span>
+                                            </div>
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            {% endfor %}
                             </div>
                         </div>
                     </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p class="text-muted" style="margin-top:20px;">{{ 'search.no_results'|trans }}</p>
-        {% endif %}
+                {% endif %}
+            </aside>
+        </div>
     </div>
 {% endblock %}

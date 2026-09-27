@@ -34,6 +34,7 @@
                         {% if app.user %}
                             <a href="{{ path('account_index') }}"><i class="bi bi-person-circle"></i> {{ 'header.my_space'|trans }}</a>
                             <a href="{{ path('account_index') }}"><i class="bi bi-bag-check"></i> {{ 'header.order_history'|trans }}</a>
+                            <a href="{{ path('wishlist_index') }}"><i class="bi bi-heart"></i> {{ 'header.my_wishlist'|trans }}</a>
                             <a href="{{ path('public_logout') }}"><i class="bi bi-box-arrow-right"></i> {{ 'header.logout'|trans }}</a>
                         {% else %}
                             <a href="{{ path('public_login') }}"><i class="bi bi-box-arrow-in-right"></i> {{ 'header.login'|trans }}</a>

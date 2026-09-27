@@ -82,6 +82,21 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $address = null;
 
+    #[ORM\Column(length: 10, nullable: true)]
+    private ?string $civility = null; // 'm' | 'mme' | 'autre'
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $dateOfBirth = null;
+
+    #[ORM\Column(options: ['default' => false])]
+    private bool $acceptsNewsletter = false;
+
+    #[ORM\Column(length: 64, nullable: true, unique: true)]
+    private ?string $verificationToken = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $verificationTokenExpiresAt = null;
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
@@ -339,6 +354,39 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $this->address = $address;
         return $this;
+    }
+
+    public const CIVILITIES = ['m' => 'M.', 'mme' => 'Mme'];
+
+    public function getCivility(): ?string { return $this->civility; }
+    public function setCivility(?string $v): static
+    {
+        $this->civility = array_key_exists($v, self::CIVILITIES) ? $v : null;
+        return $this;
+    }
+
+    public function getDateOfBirth(): ?\DateTimeImmutable { return $this->dateOfBirth; }
+    public function setDateOfBirth(?\DateTimeImmutable $v): static { $this->dateOfBirth = $v; return $this; }
+
+    public function isAcceptsNewsletter(): bool { return $this->acceptsNewsletter; }
+    public function setAcceptsNewsletter(bool $v): static { $this->acceptsNewsletter = $v; return $this; }
+
+    public function getVerificationToken(): ?string { return $this->verificationToken; }
+    public function setVerificationToken(?string $v): static { $this->verificationToken = $v; return $this; }
+
+    public function getVerificationTokenExpiresAt(): ?\DateTimeImmutable { return $this->verificationTokenExpiresAt; }
+    public function setVerificationTokenExpiresAt(?\DateTimeImmutable $v): static { $this->verificationTokenExpiresAt = $v; return $this; }
+
+    public function isVerified(): bool { return 'pending' !== $this->status; }
+
+    /** Civilité, date de naissance, téléphone, zone géographique et adresse doivent être renseignés. */
+    public function isProfileComplete(): bool
+    {
+        return null !== $this->civility
+            && null !== $this->dateOfBirth
+            && null !== $this->phone
+            && null !== $this->administrativeUnit
+            && null !== $this->address && '' !== trim($this->address);
     }
 
 }

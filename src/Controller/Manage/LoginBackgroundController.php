@@ -80,6 +80,7 @@ class LoginBackgroundController extends AbstractController
 
             $image->setTitle('' !== $title ? $title : null);
             $image->setActive($request->request->getBoolean('active', true));
+            $image->setUsedOnPages($request->request->all('used_on_pages'));
             if ($file) {
                 $image->setImageFile($file);
             }

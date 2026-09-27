@@ -32,9 +32,11 @@ body.login-body {
     display: block;
 }
 .login-visual-logo {
+    display: block;
     font-size: 42px;
     font-weight: 800;
     color: #fff;
+    text-decoration: none;
 }
 .login-visual-logo span:first-child { color: #1a1a1a; }
 
@@ -62,6 +64,7 @@ body.login-body {
 .login-card-eyebrow--logo {
     font-size: 17px;
     font-weight: 800;
+    margin-bottom: 12px;
 }
 .login-card-eyebrow--logo .is-kongo { color: #1a1a1a; }
 .login-card-eyebrow--logo .is-bazar { color: var(--kb-theme-color, #2FA8E0); }
@@ -204,6 +207,7 @@ body.login-body {
     padding: 28px 0 14px;
     font-size: 26px;
     font-weight: 800;
+    text-decoration: none;
 }
 .login-mobile-logo span:first-child { color: #1a1a1a; }
 .login-mobile-logo span:last-child { color: var(--kb-theme-color, #2FA8E0); }
@@ -253,7 +257,8 @@ body.login-body {
     }
     body.login-has-image .login-card-eyebrow { margin-bottom: 2px; }
     body.login-has-image .login-card-title { margin-bottom: 18px; }
-    body.login-has-image .login-field { margin-bottom: 13px; }
+    body.login-has-image .login-field { margin-bottom: 10px; }
+    body.login-has-image .login-card { max-height: 92vh; overflow-y: auto; }
     body.login-has-image .login-remember { margin-bottom: 14px; }
 
     /* Sans image : logo simple au-dessus, carte normale (pas de recouvrement) */

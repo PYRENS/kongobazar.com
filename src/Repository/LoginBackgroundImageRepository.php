@@ -22,13 +22,13 @@ class LoginBackgroundImageRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    /** Une image active tirée au hasard, ou null s'il n'y en a aucune. */
-    public function pickActiveRandom(): ?LoginBackgroundImage
+    /** Une image active tirée au hasard parmi celles cochées pour cette page, ou null s'il n'y en a aucune. */
+    public function pickActiveRandom(string $page): ?LoginBackgroundImage
     {
-        $images = $this->createQueryBuilder('i')
-            ->andWhere('i.active = true')
-            ->getQuery()
-            ->getResult();
+        $images = array_values(array_filter(
+            $this->createQueryBuilder('i')->andWhere('i.active = true')->getQuery()->getResult(),
+            fn (LoginBackgroundImage $img) => $img->isUsedOnPage($page)
+        ));
 
         return $images ? $images[array_rand($images)] : null;
     }

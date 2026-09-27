@@ -1,0 +1,27 @@
+{# ==========================================================================
+   Groupe d'icônes d'action sur une carte produit : panier (optionnel), loupe, cœur.
+   Usage : {% include 'public/_partials/_product_icons_wishlist.html.twig' with { product: product } %}
+   Pour une carte sans panier (ex. annonces de particuliers) :
+   {% include 'public/_partials/_product_icons_wishlist.html.twig' with { product: product, showCart: false } %}
+   ========================================================================== #}
+<div class="product-card-actions-left">
+    {% if showCart|default(true) %}
+        <button type="button" class="card-action card-action--expandable" data-add-to-cart="{{ product.id }}" aria-label="{{ 'product.add_to_cart'|trans }}">
+            <i class="bi bi-cart3"></i><span class="card-action-label">Ajouter au panier</span>
+        </button>
+    {% endif %}
+    {% if asButton|default(false) %}
+        {# Nécessaire quand toute la carte est déjà un grand <a> : un <a> dans un <a> est invalide en HTML
+           et le navigateur réorganise silencieusement le DOM, cassant l'affichage sans erreur visible. #}
+        <button type="button" class="card-action card-action--expandable card-action--quickview" onclick="window.location.href='{{ path('catalog_product', { slug: product.slug }) }}'">
+            <i class="bi bi-search"></i><span class="card-action-label">Voir le produit</span>
+        </button>
+    {% else %}
+        <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="card-action card-action--expandable card-action--quickview">
+            <i class="bi bi-search"></i><span class="card-action-label">Voir le produit</span>
+        </a>
+    {% endif %}
+    <button type="button" class="card-action card-action--expandable{{ is_wishlisted(product) ? ' is-wishlisted' : '' }}" data-add-to-wishlist="{{ product.id }}" aria-label="{{ 'product.add_to_wishlist'|trans }}">
+        <i class="bi bi-heart{{ is_wishlisted(product) ? '-fill' : '' }}"></i><span class="card-action-label">Liste de souhaits</span>
+    </button>
+</div>
