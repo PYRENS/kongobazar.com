@@ -1,0 +1,78 @@
+{# ==========================================================================
+   Enveloppe complète du filtre (cascade de lieu, corps, pied de page,
+   bouton flottant, fond assombri) — partagée entre /recherche et toute
+   autre page qui filtre des produits (ex: /categorie).
+   Attendu : formAction, resetUrl, liveFilterTarget, locations,
+   currentLocationId, searchFilters, selectedBrandIds, selectedMinPrice,
+   selectedMaxPrice, selectedSellerTypes, selectedConditions,
+   selectedCategoryIds, subcategories (optionnel), hideCategoryFilter
+   ========================================================================== #}
+{% if searchFilters.brands|length > 0 or searchFilters.maxPrice > searchFilters.minPrice or (subcategories is defined and subcategories|length > 0) %}
+    <div class="search-filter-inline">
+        <button type="button" id="searchFilterCloseBtn" class="btn-close-custom search-filter-inline-close" aria-label="Fermer">
+            <i class="bi bi-x-lg"></i>
+        </button>
+        <div class="search-filter-inline-head">
+            <span><i class="bi bi-sliders"></i> Filtrer</span>
+            <div class="search-filter-inline-head-actions">
+                <a href="{{ resetUrl }}" class="search-filter-reset-icon" data-live-filter-reset aria-label="Réinitialiser les filtres" title="Réinitialiser les filtres" hidden>
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </a>
+            </div>
+        </div>
+        <form method="get" action="{{ formAction }}" data-live-filter data-live-filter-target="{{ liveFilterTarget|default('searchProductsResults') }}" data-live-filter-count-target="products" data-live-filter-self-target="searchFiltersBody">
+            <h6>Lieu de livraison</h6>
+            <button type="button" id="filterGeoBtn" class="search-filter-geo-btn">
+                <i class="bi bi-geo-alt"></i> Autour de moi
+            </button>
+            <div class="location-cascade mb-3" data-geo-cascade>
+                <select data-geo-level="1" class="form-select">
+                    <option value="">Province</option>
+                    {% for loc in locations %}
+                        <option value="{{ loc.id }}" {{ currentLocationId == loc.id ? 'selected' : '' }}>{{ loc.name }}</option>
+                    {% endfor %}
+                </select>
+                <div class="geo-cascade-extra" data-geo-extra></div>
+            </div>
+
+            <div class="search-filter-body" id="searchFiltersBody">
+                {% include 'public/_partials/_search_filters_body.html.twig' %}
+            </div>
+            <hr class="search-filter-drawer-separator">
+            <div class="search-filter-footer">
+                <a href="{{ resetUrl }}" class="btn btn-outline-secondary search-filter-reset-link is-disabled" data-live-filter-reset><i class="bi bi-arrow-counterclockwise"></i> Réinitialiser</a>
+                <button type="button" class="search-filter-quit-btn" id="searchFilterQuitBtn">Quitter</button>
+            </div>
+        </form>
+    </div>
+{% endif %}
+
+<button type="button" id="searchFilterFloatingBtn" class="search-filter-floating-btn" aria-label="Filtrer les produits">
+    <i class="bi bi-sliders"></i>
+</button>
+<div class="search-filter-backdrop" id="searchFilterBackdrop"></div>
+
+<script>
+    (function () {
+        const floatBtn = document.getElementById('searchFilterFloatingBtn');
+        const closeBtn = document.getElementById('searchFilterCloseBtn');
+        const quitBtn = document.getElementById('searchFilterQuitBtn');
+        const backdrop = document.getElementById('searchFilterBackdrop');
+        const panel = document.querySelector('.search-filter-inline');
+        if (!floatBtn || !panel) return;
+
+        function open() {
+            panel.classList.add('open');
+            backdrop.classList.add('open');
+        }
+        function close() {
+            panel.classList.remove('open');
+            backdrop.classList.remove('open');
+        }
+
+        floatBtn.addEventListener('click', open);
+        if (closeBtn) closeBtn.addEventListener('click', close);
+        if (quitBtn) quitBtn.addEventListener('click', close);
+        if (backdrop) backdrop.addEventListener('click', close);
+    })();
+</script>

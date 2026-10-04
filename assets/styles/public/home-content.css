@@ -493,7 +493,7 @@
 /* --------------------------------------------------------------------------
    Articles tendances (onglets)
    -------------------------------------------------------------------------- */
-.home-trending { margin-top: 30px; }
+.home-trending { margin-top: 50px; }
 .home-trending-head {
     position: relative;
     display: flex;
@@ -835,8 +835,18 @@
     transform: translateX(0) !important;
     background: transparent;
     border-color: transparent;
+    border-radius: 50%;
     box-shadow: none;
     color: #e11d1d;
+}
+@media (max-width: 767px) {
+    /* Zone de clic agrandie au doigt, sans rien changer visuellement (toujours transparent) —
+       le cercle cliquable dépasse légèrement l'icône elle-même. */
+    .product-card-actions-left [data-add-to-wishlist].is-wishlisted {
+        width: 44px !important;
+        height: 44px;
+        margin: -5px;
+    }
 }
 .product-card:hover .product-card-actions-left {
     opacity: 1;
@@ -884,7 +894,7 @@
 /* --------------------------------------------------------------------------
    Blocs catégorie complets (Electronics / Fashion / Furniture / Collections)
    -------------------------------------------------------------------------- */
-.home-category-block { margin-top: 30px; }
+.home-category-block { margin-top: 50px; }
 .category-block-grid {
     display: grid;
     grid-template-columns: 200px 1fr;
@@ -933,7 +943,7 @@
 /* --------------------------------------------------------------------------
    Top Catégories
    -------------------------------------------------------------------------- */
-.home-top-categories { margin-top: 30px; }
+.home-top-categories { margin-top: 50px; }
 .home-top-categories-wrap {
     position: relative;
     margin-top: 24px;
@@ -1022,7 +1032,7 @@
 /* --------------------------------------------------------------------------
    Top Vendeur
    -------------------------------------------------------------------------- */
-.home-top-vendors { margin-top: 30px; }
+.home-top-vendors { margin-top: 50px; }
 .home-top-vendors-head { text-align: center; margin-bottom: 20px; }
 .home-vendors-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
 .vendor-card {
@@ -1341,7 +1351,7 @@
 /* --------------------------------------------------------------------------
    Most Viewed
    -------------------------------------------------------------------------- */
-.home-most-viewed { margin-top: 30px; margin-bottom: 30px; }
+.home-most-viewed { margin-top: 50px; margin-bottom: 50px; }
 .most-viewed-head {
     background: #222;
     color: #fff;
@@ -1356,7 +1366,10 @@
 /* --------------------------------------------------------------------------
    Section "Nouveauté" — 4 petites | grande carte | 4 petites (9 au total)
    -------------------------------------------------------------------------- */
-.home-new-items { margin-top: 30px; }
+.home-new-items { margin-top: 50px; }
+@media (max-width: 991px) {
+    .search-layout .home-new-items { margin-top: 10px; }
+}
 .new-items-tabs { display: flex; gap: 10px; }
 .new-items-panel { display: none; }
 .new-items-panel.active { display: block; }
@@ -1702,6 +1715,45 @@
     }
 }
 @media (max-width: 991px) {
+    #recentlyViewedMiniCarousel .home-mini-carousel-track {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        overscroll-behavior-x: contain;
+        transform: none !important;
+        transition: none !important;
+    }
+    #recentlyViewedMiniCarousel .home-mini-carousel-track::-webkit-scrollbar { display: none; }
+    #recentlyViewedMiniCarousel .home-mini-carousel-page {
+        flex: 0 0 100% !important;
+        width: 100% !important;
+        scroll-snap-align: start;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-content: start;
+        gap: 12px;
+        padding: 4px 8px;
+    }
+    #recentlyViewedMiniCarousel .home-mini-product {
+        border-bottom: none;
+    }
+    #recentlyViewedMiniCarousel .home-mini-product-img {
+        width: 60px;
+        height: 60px;
+    }
+    #recentlyViewedMiniCarousel .home-mini-product-price {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+    #recentlyViewedMiniCarousel .price-now { font-size: 13px; }
+    #recentlyViewedMiniCarousel .price-old { font-size: 11px; margin-left: 0; }
+}
+
+@media (max-width: 991px) {
     #newArrivalsMiniCarousel .home-mini-carousel-track {
         display: flex;
         overflow-x: auto;
@@ -1763,7 +1815,7 @@
         margin-right: 0;
     }
 }
-.home-latest-blogs { margin-top: 30px; }
+.home-latest-blogs { margin-top: 50px; }
 .home-latest-blogs-viewport { overflow: hidden; }
 .home-latest-blogs-track {
     display: flex;

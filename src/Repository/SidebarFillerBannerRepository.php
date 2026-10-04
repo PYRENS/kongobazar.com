@@ -34,4 +34,36 @@ class SidebarFillerBannerRepository extends ServiceEntityRepository
 
         return $banners;
     }
+
+    /** @return SidebarFillerBanner[] — pour une catégorie donnée : priorité aux bannières
+     *  dédiées à cette catégorie ou l'un de ses ancêtres, puis toutes les autres en repli
+     *  (généralistes ou dédiées ailleurs) si la première liste ne suffit pas à combler. */
+    public function findForCategory(\App\Entity\Category $category): array
+    {
+        $chainIds = [$category->getId()];
+        foreach ($category->getAncestors() as $ancestor) {
+            $chainIds[] = $ancestor->getId();
+        }
+
+        $all = $this->createQueryBuilder('b')
+            ->andWhere('b.active = true')
+            ->getQuery()
+            ->getResult();
+
+        $dedicated = [];
+        $others = [];
+        foreach ($all as $banner) {
+            $bannerCategoryIds = array_map(fn ($c) => $c->getId(), $banner->getCategories()->toArray());
+            if ($bannerCategoryIds && array_intersect($bannerCategoryIds, $chainIds)) {
+                $dedicated[] = $banner;
+            } else {
+                $others[] = $banner;
+            }
+        }
+
+        shuffle($dedicated);
+        shuffle($others);
+
+        return array_merge($dedicated, $others);
+    }
 }

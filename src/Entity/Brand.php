@@ -34,6 +34,11 @@ class Brand
     #[ORM\Column(options: ['default' => false])]
     private bool $premium = false;
 
+    /** Rang de prestige de la marque : plus petit = plus "luxe", affiché en premier dans les
+     *  filtres. Laissé vide (null) pour une marque non classée, toujours affichée en dernier. */
+    #[ORM\Column(nullable: true)]
+    private ?int $classe = null;
+
     #[ORM\Column(options: ['default' => true])]
     private bool $active = true;
 
@@ -133,6 +138,17 @@ class Brand
     public function setPremium(bool $premium): static
     {
         $this->premium = $premium;
+        return $this;
+    }
+
+    public function getClasse(): ?int
+    {
+        return $this->classe;
+    }
+
+    public function setClasse(?int $classe): static
+    {
+        $this->classe = $classe;
         return $this;
     }
 

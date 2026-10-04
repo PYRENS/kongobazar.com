@@ -1,63 +1,50 @@
 {% extends 'public/base.html.twig' %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/public/checkbox.css') }}">
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('js/public/live-filter.js') }}" defer></script>
+{% endblock %}
+
 {% block title %}Résultats pour "{{ term }}" — KongoBazar{% endblock %}
 {% block meta_description %}Découvrez les produits, catégories, vendeurs et points relais correspondant à "{{ term }}" sur KongoBazar, la marketplace de référence en RDC.{% endblock %}
 
 {% block body %}
-    <div class="container-kb" style="padding: 30px 0;">
+    <div class="container-kb search-page-header" style="padding: 30px 0;">
         <h4>{{ 'search.results_for'|trans({'%term%': term}) }}</h4>
 
         <div class="search-layout">
             <div class="search-results-col">
-                <div class="search-tabs" style="display:flex; gap:8px; flex-wrap:wrap; margin:16px 0 24px; border-bottom:1px solid var(--kb-border);">
-                    {% set counts = { products: products|length, categories: categories|length, sellers: sellers|length, relays: relays|length } %}
-                    {% for key, label in tabs %}
-                        <a href="{{ path('catalog_search', { q: term, type: key }) }}"
-                           class="search-tab{{ tab == key ? ' search-tab--active' : '' }}"
-                           style="padding:10px 16px; text-decoration:none; font-weight:600; font-size:14px; color:{{ tab == key ? 'var(--kb-theme-color, #2FA8E0)' : '#6c757d' }}; border-bottom:2px solid {{ tab == key ? 'var(--kb-theme-color, #2FA8E0)' : 'transparent' }};">
-                            {{ label }} ({{ counts[key] }})
+                <div class="search-top-row">
+                    {% set tabIcons = { products: 'bi-box-seam', categories: 'bi-grid', sellers: 'bi-shop', relays: 'bi-geo-alt', marque: 'bi-award', lieu: 'bi-truck' } %}
+                    <div class="search-tabs-reset-row">
+                        <a href="{{ path('catalog_search', { q: term, type: 'products' }) }}" class="search-tabs-reset-btn" data-live-filter-reset hidden>
+                            <i class="bi bi-arrow-counterclockwise"></i> Réinitialiser
                         </a>
-                    {% endfor %}
+                    </div>
+                    <div class="search-tabs" style="display:flex; gap:8px; flex-wrap:wrap; margin:16px 0 24px; padding-bottom:12px; border-bottom:1px solid var(--kb-border);">
+                        {% set counts = { products: productsTotalCount, categories: categoriesTotalCount, sellers: sellersTotalCount, relays: relaysTotalCount, marque: marqueCount, lieu: lieuCount } %}
+                        {% for key, label in tabs %}
+                            <a href="{{ path('catalog_search', { q: term, type: key }) }}"
+                               class="search-tab{{ tab == key ? ' search-tab--active' : '' }}"
+                               style="padding:10px 16px; text-decoration:none; font-weight:600; font-size:14px; color:{{ tab == key ? 'var(--kb-theme-color, #2FA8E0)' : '#6c757d' }}; border-bottom:2px solid {{ tab == key ? 'var(--kb-theme-color, #2FA8E0)' : 'transparent' }};">
+                                <i class="bi {{ tabIcons[key] }}"></i> {{ label }} (<span data-live-filter-count="{{ key }}">{{ counts[key] }}</span>)
+                            </a>
+                        {% endfor %}
+                    </div>
+
                 </div>
 
+                <div class="search-tab-content">
+                <div class="search-tab-main">
                 {% if tab == 'products' %}
-                    {% if products|length > 0 %}
-                        <div class="home-product-grid" style="margin-top: 20px;">
-                            {% for product in products %}
-                                <div class="product-card">
-                                    <div class="product-card-media">
-                                        <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" class="product-card-main-image" loading="lazy">
-                                        {% if product.activeDiscountPercent %}
-                                            <span class="badge-discount">-{{ product.activeDiscountPercent }}%</span>
-                                        {% elseif product.compareAtPrice %}
-                                            <span class="badge-discount">-{{ ((1 - (product.basePrice / product.compareAtPrice)) * 100)|round }}%</span>
-                                        {% endif %}
-                                        {% if product.brand and product.brand.logoName %}
-                                            <img src="{{ vich_uploader_asset(product.brand, 'logoFile') }}" alt="{{ product.brand.name }}" class="product-card-brand-logo">
-                                        {% endif %}
-                                        {% set stats = reviewStats[product.id]|default(null) %}
-                                        {% if stats and stats.count > 0 %}
-                                            <div class="product-card-rating-badge">
-                                                {% include 'public/_partials/_star_rating.html.twig' with { average: stats.average, count: stats.count } %}
-                                            </div>
-                                        {% endif %}
-                                        {% include 'public/_partials/_product_icons_wishlist.html.twig' with { product: product } %}
-                                    </div>
-                                    <div class="product-card-body">
-                                        <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="product-card-title">{{ product.title }}</a>
-                                        <div class="product-card-price">
-                                            <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
-                                            {% if product.displayOldPrice %}
-                                                <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <p class="text-muted" style="margin-top:20px;">{{ 'search.no_results'|trans }}</p>
-                    {% endif %}
+                    <div id="searchProductsResults">
+                        {% include 'public/_partials/_search_products_results.html.twig' %}
+                    </div>
 
                 {% elseif tab == 'categories' %}
                     {% if categories|length > 0 %}
@@ -94,6 +81,20 @@
                         <p class="text-muted" style="margin-top:20px;">{{ 'search.no_sellers'|trans }}</p>
                     {% endif %}
 
+                {% elseif tab == 'marque' %}
+                    {% set products = marqueProducts %}
+                    {% set productsHasMore = marqueHasMore %}
+                    <div id="searchProductsResults">
+                        {% include 'public/_partials/_search_products_results.html.twig' %}
+                    </div>
+
+                {% elseif tab == 'lieu' %}
+                    {% set products = lieuProducts %}
+                    {% set productsHasMore = lieuHasMore %}
+                    <div id="searchProductsResults">
+                        {% include 'public/_partials/_search_products_results.html.twig' %}
+                    </div>
+
                 {% elseif tab == 'relays' %}
                     {% if relays|length > 0 %}
                         <div class="search-results-list" style="display:flex; flex-direction:column; gap:8px;">
@@ -109,48 +110,254 @@
                         <p class="text-muted" style="margin-top:20px;">{{ 'search.no_relays'|trans }}</p>
                     {% endif %}
                 {% endif %}
+
+                </div>
+
+                {% if searchBanners|default([])|length > 0 %}
+                    <hr class="search-ads-separator">
+                    <div class="search-ads-strip">
+                        {% for ad in searchBanners %}
+                            <a {% if ad.targetUrl %}href="{{ path('ads_click', { id: ad.id, zoneKey: ad.zoneKey }) }}"{% endif %}{% if ad.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="search-ads-strip-item{{ ad.targetUrl ? ' ad-clickable' : '' }}">
+                                <img src="{{ vich_uploader_asset(ad, 'imageFile') }}" alt="{{ ad.title }}" loading="lazy">
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <hr class="search-ads-separator">
+                <div class="search-around-me" id="aroundMeSection">
+                    <div class="home-deals-head">
+                        <span class="home-section-badge">Autour de moi</span>
+                        <span class="home-deals-head-line"></span>
+                    </div>
+                    {% if aroundMeProducts|default([])|length > 0 %}
+                        {% include 'public/_partials/_around_me_grid.html.twig' %}
+                        {% if aroundMeTotalPages|default(1) > 1 %}
+                            <nav class="search-pagination" aria-label="Pages autour de moi">
+                                {% for p in 1..aroundMeTotalPages %}
+                                    <a href="{{ path('catalog_search', { q: term, type: tab, category: selectedCategoryIds, brand: selectedBrandIds, min_price: selectedMinPrice, max_price: selectedMaxPrice, around_page: p }) }}#aroundMeSection" class="search-pagination-link{{ p == aroundMeCurrentPage ? ' active' : '' }}">
+                                        {{ p }}
+                                    </a>
+                                {% endfor %}
+                            </nav>
+                        {% endif %}
+                    {% else %}
+                        <div id="aroundMeFallback">
+                            <p class="search-around-me-empty">
+                                {% if isLoggedIn|default(false) %}
+                                    Complétez votre profil avec votre lieu de résidence pour voir les produits livrés autour de vous, ou
+                                {% else %}
+                                    <a href="{{ path('public_login') }}">Connectez-vous</a>, <a href="{{ path('public_register') }}">inscrivez-vous</a>, ou
+                                {% endif %}
+                                <button type="button" id="aroundMeGeoBtn" class="search-around-me-geo-btn">
+                                    <i class="bi bi-geo-alt"></i> activez votre position pour voir les offres autour de vous.
+                                </button>
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% include 'public/_partials/_home_new_items.html.twig' %}
+
+                <script>
+                    (function () {
+                        const btn = document.getElementById('aroundMeGeoBtn');
+                        if (!btn || !navigator.geolocation) return;
+
+                        btn.addEventListener('click', () => {
+                            btn.disabled = true;
+                            btn.textContent = 'Localisation en cours...';
+
+                            navigator.geolocation.getCurrentPosition(
+                                (position) => {
+                                    const { latitude, longitude } = position.coords;
+                                    fetch(`/recherche/autour-de-moi?lat=${latitude}&lon=${longitude}`)
+                                        .then((r) => r.json())
+                                        .then((data) => {
+                                            const fallback = document.getElementById('aroundMeFallback');
+                                            if (fallback && data.html) {
+                                                fallback.outerHTML = data.html;
+                                            }
+                                        });
+                                },
+                                () => {
+                                    btn.disabled = false;
+                                    btn.innerHTML = '<i class="bi bi-geo-alt"></i> Réessayer d\'activer votre position';
+                                }
+                            );
+                        });
+                    })();
+                </script>
+                </div>
             </div>
 
+            <button type="button" id="searchFilterFloatingBtn" class="search-filter-floating-btn" aria-label="Filtrer les produits">
+                <i class="bi bi-sliders"></i>
+            </button>
+            <div class="search-filter-backdrop" id="searchFilterBackdrop"></div>
+
             <aside class="search-sidebar-col">
-                {% if recentlyViewedProducts|default([])|length > 0 %}
-                    <div class="recently-viewed-widget">
-                        {% set recentlyViewedPages = recentlyViewedProducts|batch(5) %}
-                        <div class="recently-viewed-widget-head">
-                            <span><i class="bi bi-clock-history" style="margin-right: 6px;"></i>Consulté récemment</span
-                            {% if recentlyViewedPages|length > 1 %}
-                                <div class="recently-viewed-widget-nav">
-                                    <button type="button" class="recently-viewed-arrow" data-recently-viewed-prev aria-label="{{ 'home.prev'|trans }}"><i class="bi bi-chevron-left"></i></button>
-                                    <button type="button" class="recently-viewed-arrow" data-recently-viewed-next aria-label="{{ 'home.next'|trans }}"><i class="bi bi-chevron-right"></i></button>
-                                </div>
-                            {% endif %}
+                {% if tab == 'products' and (searchFilters.categories|length > 0 or searchFilters.brands|length > 0 or searchFilters.maxPrice > searchFilters.minPrice) %}
+                    <div class="search-filter-inline">
+                        <div class="search-filter-inline-head">
+                            <span><i class="bi bi-sliders"></i> Filtrer</span>
+                            <div class="search-filter-inline-head-actions">
+                                <a href="{{ path('catalog_search', { q: term, type: 'products' }) }}" class="search-filter-reset-icon" data-live-filter-reset aria-label="Réinitialiser les filtres" title="Réinitialiser les filtres" hidden>
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                </a>
+                                <button type="button" id="searchFilterCloseBtn" class="btn-close-custom search-filter-inline-close" aria-label="Fermer">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
                         </div>
-                        <div class="recently-viewed-widget-body">
-                            <div class="recently-viewed-widget-track" data-recently-viewed-widget>
-                            {% for page in recentlyViewedPages %}
-                                <div class="recently-viewed-page{{ loop.first ? ' active' : '' }}">
-                                    {% for product in page %}
-                                        {% set stats = product_review_stats(product) %}
-                                        <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="recently-viewed-row">
-                                            <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" loading="lazy">
-                                            <div class="recently-viewed-row-info">
-                                                <span class="recently-viewed-row-title">{{ product.title }}</span>
-                                                {% include 'public/_partials/_star_rating.html.twig' with { average: stats.average, count: stats.count } %}
-                                                <span class="recently-viewed-row-price">
+                        <form method="get" action="{{ path('catalog_search') }}" data-live-filter data-live-filter-target="searchProductsResults" data-live-filter-count-target="products" data-live-filter-self-target="searchFiltersBody">
+                            <input type="hidden" name="q" value="{{ term }}">
+                            <input type="hidden" name="type" value="products">
+
+                            <h6>Lieu de livraison</h6>
+                            <button type="button" id="filterGeoBtn" class="search-filter-geo-btn">
+                                <i class="bi bi-geo-alt"></i> Autour de moi
+                            </button>
+                            <div class="location-cascade mb-3" data-geo-cascade>
+                                <select data-geo-level="1" class="form-select">
+                                    <option value="">Province</option>
+                                    {% for loc in locations %}
+                                        <option value="{{ loc.id }}" {{ currentLocationId == loc.id ? 'selected' : '' }}>{{ loc.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="geo-cascade-extra" data-geo-extra></div>
+                            </div>
+
+                            <div class="search-filter-body" id="searchFiltersBody">
+                                {% include 'public/_partials/_search_filters_body.html.twig' %}
+                            </div>
+                            <hr class="search-filter-drawer-separator">
+                            <div class="search-filter-footer">
+                                <a href="{{ path('catalog_search', { q: term, type: 'products' }) }}" class="btn btn-outline-secondary search-filter-reset-link is-disabled" data-live-filter-reset><i class="bi bi-arrow-counterclockwise"></i> Réinitialiser</a>
+                                <button type="button" class="search-filter-quit-btn" id="searchFilterQuitBtn">Quitter</button>
+                            </div>
+                        </form>
+                        </div>
+
+                    <script>
+                        (function () {
+
+                            // "Voir tout" : révèle les cases au-delà des 5 premières
+                            document.querySelectorAll('[data-see-all]').forEach((btn) => {
+                                btn.addEventListener('click', () => {
+                                    btn.parentElement.querySelectorAll('.filter-checkbox-extra').forEach((el) => { el.hidden = false; });
+                                    btn.remove();
+                                });
+                            });
+
+                            // Barre de prix à double curseur : synchronise les 2 poignées, empêche
+                            // qu'elles se croisent, et remplit les 2 champs cachés envoyés au serveur.
+                            document.querySelectorAll('[data-price-range]').forEach((wrap) => {
+                                const minInput = wrap.querySelector('[data-price-range-min]');
+                                const maxInput = wrap.querySelector('[data-price-range-max]');
+                                const minLabel = wrap.querySelector('[data-price-range-min-label]');
+                                const maxLabel = wrap.querySelector('[data-price-range-max-label]');
+                                const minHidden = wrap.querySelector('[data-price-range-min-hidden]');
+                                const maxHidden = wrap.querySelector('[data-price-range-max-hidden]');
+                                const fill = wrap.querySelector('[data-price-range-fill]');
+                                const rangeMin = parseFloat(wrap.dataset.min);
+                                const rangeMax = parseFloat(wrap.dataset.max);
+
+                                function update() {
+                                    let minVal = parseFloat(minInput.value);
+                                    let maxVal = parseFloat(maxInput.value);
+                                    if (minVal > maxVal) { [minVal, maxVal] = [maxVal, minVal]; }
+                                    minInput.value = minVal;
+                                    maxInput.value = maxVal;
+                                    minLabel.textContent = minVal;
+                                    maxLabel.textContent = maxVal;
+                                    minHidden.value = minVal;
+                                    maxHidden.value = maxVal;
+                                    const left = ((minVal - rangeMin) / (rangeMax - rangeMin)) * 100;
+                                    const right = ((maxVal - rangeMin) / (rangeMax - rangeMin)) * 100;
+                                    fill.style.left = left + '%';
+                                    fill.style.width = (right - left) + '%';
+                                }
+
+                                minInput.addEventListener('input', update);
+                                maxInput.addEventListener('input', update);
+                                update();
+                            });
+                        })();
+                    </script>
+                {% endif %}
+
+                {% if recentlyViewedProducts|default([])|length > 0 %}
+                    {% set recentlyViewedGroups = recentlyViewedProducts|batch(5) %}
+                    <div class="home-mini-carousel" id="recentlyViewedMiniCarousel" data-mini-carousel style="margin-top: 32px;">
+                        <div class="home-mini-carousel-head">
+                            <h6>Consulté récemment</h6>
+                            <div class="home-mini-carousel-dots">
+                                {% for group in recentlyViewedGroups %}
+                                    <button type="button" class="dot{{ loop.first ? ' active' : '' }}" data-page="{{ loop.index0 }}"></button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="home-mini-carousel-track">
+                            {% for group in recentlyViewedGroups %}
+                                <div class="home-mini-carousel-page">
+                                    {% for product in group %}
+                                        <div class="home-mini-product">
+                                            <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="home-mini-product-img">
+                                                <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}">
+                                            </a>
+                                            <div class="home-mini-product-info">
+                                                <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="home-mini-product-title">{{ product.title }}</a>
+                                                <span class="home-mini-product-price">
                                                     <span class="price-now">{{ product.displayCurrentPrice|price(product.currency) }}</span>
                                                     {% if product.displayOldPrice %}
                                                         <span class="price-old">{{ product.displayOldPrice|price(product.currency) }}</span>
                                                     {% endif %}
                                                 </span>
                                             </div>
-                                        </a>
+                                        </div>
                                     {% endfor %}
                                 </div>
                             {% endfor %}
-                            </div>
                         </div>
+                    </div>
+                {% endif %}
+
+                {% if sidebarFillerBanners|default([])|length > 0 %}
+                    <div class="home-sidebar-filler" id="searchSidebarFiller">
+                        {% for banner in sidebarFillerBanners %}
+                            <a {% if banner.targetUrl %}href="{{ banner.targetUrl }}"{% endif %}{% if banner.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="home-sidebar-filler-item" hidden>
+                                <img src="{{ vich_uploader_asset(banner, 'imageFile') }}" alt="{{ banner.title }}">
+                            </a>
+                        {% endfor %}
                     </div>
                 {% endif %}
             </aside>
         </div>
     </div>
+
+    <script>
+        (function () {
+            const floatBtn = document.getElementById('searchFilterFloatingBtn');
+            const closeBtn = document.getElementById('searchFilterCloseBtn');
+            const quitBtn = document.getElementById('searchFilterQuitBtn');
+            const backdrop = document.getElementById('searchFilterBackdrop');
+            const panel = document.querySelector('.search-filter-inline');
+            if (!floatBtn || !panel) return;
+
+            function open() {
+                panel.classList.add('open');
+                backdrop.classList.add('open');
+            }
+            function close() {
+                panel.classList.remove('open');
+                backdrop.classList.remove('open');
+            }
+
+            floatBtn.addEventListener('click', open);
+            if (closeBtn) closeBtn.addEventListener('click', close);
+            if (quitBtn) quitBtn.addEventListener('click', close);
+            if (backdrop) backdrop.addEventListener('click', close);
+        })();
+    </script>
 {% endblock %}

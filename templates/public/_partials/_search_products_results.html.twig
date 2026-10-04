@@ -1,0 +1,74 @@
+{# ==========================================================================
+   Grille de résultats produits + "Voir plus" — extrait pour être réutilisable
+   en chargement normal ET en mise à jour en direct (sans recharger la page).
+   Contexte attendu : products, reviewStats, productsHasMore, term,
+   selectedCategoryIds, selectedBrandIds, selectedMinPrice, selectedMaxPrice, productsNextShow
+   ========================================================================== #}
+{% if products|length > 0 %}
+    <div class="home-product-grid" style="margin-top: 20px;">
+        {% for product in products %}
+            <div class="product-card">
+                <div class="product-card-media">
+                    <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" class="product-card-main-image" loading="lazy">
+                    {% if product.activeDiscountPercent %}
+                        <span class="badge-discount">-{{ product.activeDiscountPercent }}%</span>
+                    {% elseif product.compareAtPrice %}
+                        <span class="badge-discount">-{{ ((1 - (product.basePrice / product.compareAtPrice)) * 100)|round }}%</span>
+                    {% endif %}
+                    {% if product.brand and product.brand.logoName %}
+                        <img src="{{ vich_uploader_asset(product.brand, 'logoFile') }}" alt="{{ product.brand.name }}" class="product-card-brand-logo">
+                    {% endif %}
+                    {% set stats = reviewStats[product.id]|default(null) %}
+                    {% if stats and stats.count > 0 %}
+                        <div class="product-card-rating-badge">
+                            {% include 'public/_partials/_star_rating.html.twig' with { average: stats.average, count: stats.count } %}
+                        </div>
+                    {% endif %}
+                    {% include 'public/_partials/_product_icons_wishlist.html.twig' with { product: product } %}
+                </div>
+                <div class="product-card-body">
+                    <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="product-card-title">{{ product.title }}</a>
+                    <div class="product-card-price">
+                        <span class="price-now">{{ product.displayCurrentPrice }} {{ product.currency }}</span>
+                        {% if product.displayOldPrice %}
+                            <span class="price-old">{{ product.displayOldPrice }} {{ product.currency }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    {% if tab == 'products' and totalPages|default(1) > 1 %}
+        <nav class="search-pagination" aria-label="Pages de résultats">
+            {% if currentPage > 1 %}
+                <a href="{{ path('catalog_search', { q: term, type: tab, category: selectedCategoryIds, brand: selectedBrandIds, min_price: selectedMinPrice, max_price: selectedMaxPrice, page: currentPage - 1 }) }}" class="search-pagination-link" data-live-filter-loadmore>
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            {% endif %}
+
+            {% for p in 1..totalPages %}
+                {% if p == 1 or p == totalPages or (p >= currentPage - 1 and p <= currentPage + 1) %}
+                    <a href="{{ path('catalog_search', { q: term, type: tab, category: selectedCategoryIds, brand: selectedBrandIds, min_price: selectedMinPrice, max_price: selectedMaxPrice, page: p }) }}" class="search-pagination-link{{ p == currentPage ? ' active' : '' }}" data-live-filter-loadmore>
+                        {{ p }}
+                    </a>
+                {% elseif p == currentPage - 2 or p == currentPage + 2 %}
+                    <span class="search-pagination-dots">…</span>
+                {% endif %}
+            {% endfor %}
+
+            {% if currentPage < totalPages %}
+                <a href="{{ path('catalog_search', { q: term, type: tab, category: selectedCategoryIds, brand: selectedBrandIds, min_price: selectedMinPrice, max_price: selectedMaxPrice, page: currentPage + 1 }) }}" class="search-pagination-link" data-live-filter-loadmore>
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            {% endif %}
+        </nav>
+    {% elseif productsHasMore|default(false) %}
+        <div style="text-align:center; margin-top:24px;">
+            <a href="{{ path('catalog_search', { q: term, type: tab, category: selectedCategoryIds, brand: selectedBrandIds, min_price: selectedMinPrice, max_price: selectedMaxPrice, show: productsNextShow }) }}" class="btn btn-outline offers-load-more" data-live-filter-loadmore>
+                {{ 'offers.load_more'|trans }}
+            </a>
+        </div>
+    {% endif %}
+{% else %}
+    <p class="text-muted" style="margin-top:20px;">{{ 'search.no_results'|trans }}</p>
+{% endif %}

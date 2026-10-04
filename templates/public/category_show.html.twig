@@ -1,0 +1,221 @@
+{% extends 'public/base.html.twig' %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/public/checkbox.css') }}">
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('js/public/live-filter.js') }}" defer></script>
+{% endblock %}
+
+{% block title %}{{ category.name }} — KongoBazar{% endblock %}
+
+{% block body %}
+    <div class="container-kb search-page-header" style="padding: 30px 0;">
+        <div class="category-hero">
+            {% if category.imageName %}
+                <img src="{{ vich_uploader_asset(category, 'imageFile') }}" alt="{{ category.name }}" class="category-hero-image">
+            {% else %}
+                <span class="category-hero-icon" style="background:{{ category.effectiveColor }};">
+                    <i class="bi {{ category.icon|default('bi-tag') }}"></i>
+                </span>
+            {% endif %}
+            <div class="category-hero-info">
+                <h4>{{ category.name }}</h4>
+                <span class="category-hero-count">{{ articleCount }} article{{ articleCount != 1 ? 's' : '' }} disponible{{ articleCount != 1 ? 's' : '' }}</span>
+            </div>
+        </div>
+        <hr class="category-hero-separator">
+
+        <div class="search-layout">
+            <div class="search-results-col">
+                <div class="search-top-row">
+                    {% if children|length > 0 %}
+                        <div class="search-category-grid" style="margin-top: 20px; margin-bottom: 40px;">
+                            {% for child in children %}
+                                <a href="{{ path('catalog_category', { slug: child.slug }) }}" class="top-category-item">
+                                    <span class="top-category-circle" style="background:{{ child.effectiveColor }};">
+                                        {% if child.imageName %}
+                                            <img src="{{ vich_uploader_asset(child, 'imageFile') }}" alt="{{ child.name }}" loading="lazy">
+                                        {% else %}
+                                            <i class="bi {{ child.icon|default('bi-tag') }}"></i>
+                                        {% endif %}
+                                    </span>
+                                    <span class="top-category-label">{{ child.name }}</span>
+                                </a>
+                            {% endfor %}
+                        </div>
+                        <hr class="category-hero-separator" style="margin-bottom: 0;">
+                    {% endif %}
+                </div>
+
+                <div class="search-tab-content">
+                    <div id="searchProductsResults" style="margin-top: 30px;">
+                        {% if products|length > 0 %}
+                            <div class="home-product-grid" style="margin-top: 20px;">
+                                {% for product in products %}
+                                    <div class="product-card">
+                                        <div class="product-card-media">
+                                            <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" class="product-card-main-image" loading="lazy">
+                                            {% if product.activeDiscountPercent %}
+                                                <span class="badge-discount">-{{ product.activeDiscountPercent }}%</span>
+                                            {% elseif product.compareAtPrice %}
+                                                <span class="badge-discount">-{{ ((1 - (product.basePrice / product.compareAtPrice)) * 100)|round }}%</span>
+                                            {% endif %}
+                                            {% if product.brand and product.brand.logoName %}
+                                                <img src="{{ vich_uploader_asset(product.brand, 'logoFile') }}" alt="{{ product.brand.name }}" class="product-card-brand-logo">
+                                            {% endif %}
+                                            {% include 'public/_partials/_product_icons_wishlist.html.twig' with { product: product } %}
+                                        </div>
+                                        <div class="product-card-body">
+                                            <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="product-card-title">{{ product.title }}</a>
+                                            <div class="product-card-price">
+                                                <span class="price-now">{{ product.displayCurrentPrice|price(product.currency) }}</span>
+                                                {% if product.displayOldPrice %}
+                                                    <span class="price-old">{{ product.displayOldPrice|price(product.currency) }}</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                            {% if totalPages > 1 %}
+                                <nav class="search-pagination" aria-label="Pages de résultats">
+                                    {% if currentPage > 1 %}
+                                        <a href="{{ path('catalog_category', { slug: category.slug, brand: selectedBrandIds, min_price: selectedMinPrice, max_price: selectedMaxPrice, page: currentPage - 1 }) }}" class="search-pagination-link" data-live-filter-loadmore>
+                                            <i class="bi bi-chevron-left"></i>
+                                        </a>
+                                    {% endif %}
+                                    {% for p in 1..totalPages %}
+                                        {% if p == 1 or p == totalPages or (p >= currentPage - 1 and p <= currentPage + 1) %}
+                                            <a href="{{ path('catalog_category', { slug: category.slug, brand: selectedBrandIds, min_price: selectedMinPrice, max_price: selectedMaxPrice, page: p }) }}" class="search-pagination-link{{ p == currentPage ? ' active' : '' }}" data-live-filter-loadmore>
+                                                {{ p }}
+                                            </a>
+                                        {% elseif p == currentPage - 2 or p == currentPage + 2 %}
+                                            <span class="search-pagination-dots">…</span>
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% if currentPage < totalPages %}
+                                        <a href="{{ path('catalog_category', { slug: category.slug, brand: selectedBrandIds, min_price: selectedMinPrice, max_price: selectedMaxPrice, page: currentPage + 1 }) }}" class="search-pagination-link" data-live-filter-loadmore>
+                                            <i class="bi bi-chevron-right"></i>
+                                        </a>
+                                    {% endif %}
+                                </nav>
+                            {% endif %}
+                        {% else %}
+                            <p class="text-muted" style="margin-top:20px;">Aucun produit dans cette catégorie pour le moment.</p>
+                        {% endif %}
+                    </div>
+
+                    <hr class="search-ads-separator">
+                    <div class="search-around-me" id="aroundMeSection">
+                        <div class="home-deals-head">
+                            <span class="home-section-badge">Autour de moi</span>
+                            <span class="home-deals-head-line"></span>
+                        </div>
+                        {% if aroundMeProducts|default([])|length > 0 %}
+                            {% include 'public/_partials/_around_me_grid.html.twig' %}
+                            {% if aroundMeTotalPages|default(1) > 1 %}
+                                <nav class="search-pagination" aria-label="Pages autour de moi">
+                                    {% for p in 1..aroundMeTotalPages %}
+                                        <a href="{{ path('catalog_category', { slug: category.slug, brand: selectedBrandIds, min_price: selectedMinPrice, max_price: selectedMaxPrice, around_page: p }) }}#aroundMeSection" class="search-pagination-link{{ p == aroundMeCurrentPage ? ' active' : '' }}">
+                                            {{ p }}
+                                        </a>
+                                    {% endfor %}
+                                </nav>
+                            {% endif %}
+                        {% else %}
+                            <div id="aroundMeFallback">
+                                <p class="search-around-me-empty">
+                                    {% if isLoggedIn|default(false) %}
+                                        Complétez votre profil avec votre lieu de résidence pour voir les produits livrés autour de vous, ou
+                                    {% else %}
+                                        <a href="{{ path('public_login') }}">Connectez-vous</a>, <a href="{{ path('public_register') }}">inscrivez-vous</a>, ou
+                                    {% endif %}
+                                    <button type="button" id="aroundMeGeoBtn" class="search-around-me-geo-btn">
+                                        <i class="bi bi-geo-alt"></i> activez votre position pour voir les offres autour de vous.
+                                    </button>
+                                </p>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <script>
+                        (function () {
+                            const btn = document.getElementById('aroundMeGeoBtn');
+                            if (!btn || !navigator.geolocation) return;
+
+                            btn.addEventListener('click', () => {
+                                btn.disabled = true;
+                                btn.textContent = 'Localisation en cours...';
+
+                                navigator.geolocation.getCurrentPosition(
+                                    (position) => {
+                                        const { latitude, longitude } = position.coords;
+                                        fetch(`/recherche/autour-de-moi?lat=${latitude}&lon=${longitude}`)
+                                            .then((r) => r.json())
+                                            .then((data) => {
+                                                const fallback = document.getElementById('aroundMeFallback');
+                                                if (fallback && data.html) {
+                                                    fallback.outerHTML = data.html;
+                                                }
+                                            });
+                                    },
+                                    () => {
+                                        btn.disabled = false;
+                                        btn.innerHTML = '<i class="bi bi-geo-alt"></i> Réessayer d\'activer votre position';
+                                    }
+                                );
+                            });
+                        })();
+                    </script>
+                </div>
+            </div>
+
+            <aside class="search-sidebar-col">
+                {% include 'public/_partials/_filters_sidebar.html.twig' with {
+                    formAction: path('catalog_category', { slug: category.slug }),
+                    resetUrl: path('catalog_category', { slug: category.slug }),
+                } %}
+
+                {% if sidebarFillerBanners|default([])|length > 0 %}
+                    <div class="home-sidebar-filler" id="categorySidebarFiller">
+                        {% for banner in sidebarFillerBanners %}
+                            <a {% if banner.targetUrl %}href="{{ banner.targetUrl }}"{% endif %}{% if banner.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="home-sidebar-filler-item" hidden>
+                                <img src="{{ vich_uploader_asset(banner, 'imageFile') }}" alt="{{ banner.title }}">
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </aside>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const floatBtn = document.getElementById('searchFilterFloatingBtn');
+            const closeBtn = document.getElementById('searchFilterCloseBtn');
+            const quitBtn = document.getElementById('searchFilterQuitBtn');
+            const backdrop = document.getElementById('searchFilterBackdrop');
+            const panel = document.querySelector('.search-filter-inline');
+            if (!floatBtn || !panel) return;
+
+            function open() {
+                panel.classList.add('open');
+                backdrop.classList.add('open');
+            }
+            function close() {
+                panel.classList.remove('open');
+                backdrop.classList.remove('open');
+            }
+
+            floatBtn.addEventListener('click', open);
+            if (closeBtn) closeBtn.addEventListener('click', close);
+            if (quitBtn) quitBtn.addEventListener('click', close);
+            if (backdrop) backdrop.addEventListener('click', close);
+        })();
+    </script>
+{% endblock %}

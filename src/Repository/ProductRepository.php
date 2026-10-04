@@ -13,8 +13,10 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class ProductRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
-    {
+    public function __construct(
+        ManagerRegistry $registry,
+        private readonly \App\Repository\AdministrativeUnitRepository $administrativeUnitRepository,
+    ) {
         parent::__construct($registry, Product::class);
     }
 
@@ -646,7 +648,7 @@ class ProductRepository extends ServiceEntityRepository
 
             $brand = $product->getBrand();
             if ($brand) {
-                $brands[$brand->getId()] ??= ['id' => $brand->getId(), 'name' => $brand->getName(), 'count' => 0];
+                $brands[$brand->getId()] ??= ['id' => $brand->getId(), 'name' => $brand->getName(), 'count' => 0, 'classe' => $brand->getClasse()];
                 $brands[$brand->getId()]['count']++;
             }
 
@@ -882,23 +884,263 @@ class ProductRepository extends ServiceEntityRepository
     }
 
 
-    public function searchByTerm(string $term, ?int $limit = null): array
-    {
-        $qb = $this->createQueryBuilder('p')
-            ->andWhere('p.status = :status')
-            ->andWhere('p.title LIKE :term OR p.reference LIKE :term OR p.ean LIKE :term')
-            ->setParameter('status', 'active')
-            ->setParameter('term', '%' . $term . '%')
+    public function searchByTerm(
+        string $term,
+        ?int $limit = null,
+        ?int $offset = null,
+        array $categoryIds = [],
+        array $brandIds = [],
+        ?float $minPrice = null,
+        ?float $maxPrice = null,
+        ?int $locationId = null,
+        array $sellerTypes = [],
+        array $conditions = [],
+    ): array {
+        $qb = $this->buildSearchQuery($term, $categoryIds, $brandIds, $minPrice, $maxPrice, $locationId, $sellerTypes, $conditions)
             ->orderBy('p.salesCount', 'DESC');
 
-        // La référence "KBZ-000123" est calculée depuis l'ID (pas une colonne en base) — dès que
-        // "KBZ-" est suivi d'au moins un chiffre, on cherche tous les IDs qui COMMENCENT par ces
-        // chiffres (pas une correspondance exacte), pour filtrer dès la frappe sans attendre la
-        // référence complète.
+        if (null !== $limit) {
+            $qb->setMaxResults($limit);
+        }
+        if (null !== $offset) {
+            $qb->setFirstResult($offset);
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /** Détermine UNE FOIS la zone de recherche (élargie par rayon réel, ou repli province),
+     *  pour qu'on puisse ensuite paginer dedans normalement, sans relancer l'élargissement à
+     *  chaque page — les résultats restent cohérents d'une page à l'autre. */
+    public function resolveAroundLocationZoneIds(\App\Entity\AdministrativeUnit $startUnit, \App\Repository\AdministrativeUnitRepository $administrativeUnitRepository, int $pageSize = 30): array
+    {
+        $radiusSteps = [3, 8, 15, 30];
+
+        foreach ($radiusSteps as $radiusKm) {
+            $nearbyIds = $administrativeUnitRepository->findWithinRadius($startUnit, $radiusKm);
+            if (!in_array($startUnit->getId(), $nearbyIds, true)) {
+                $nearbyIds[] = $startUnit->getId();
+            }
+
+            if ($this->countByDeliveryZoneIds($nearbyIds) >= $pageSize) {
+                return $nearbyIds;
+            }
+        }
+
+        // Repli final : toute la province (jamais au-delà).
+        $unit = $startUnit;
+        while ($unit->getParent() && 1 !== $unit->getLevel()) {
+            $unit = $unit->getParent();
+        }
+        return $administrativeUnitRepository->getDescendantIds($unit->getId());
+    }
+
+    public function countByDeliveryZoneIds(array $ids): int
+    {
+        if (!$ids) {
+            return 0;
+        }
+        return (int) $this->createQueryBuilder('p')
+            ->select('COUNT(p.id)')
+            ->join('p.sellerProfile', 'sp')
+            ->join('sp.deliveryZones', 'dz')
+            ->andWhere('p.status = :status')->setParameter('status', 'active')
+            ->andWhere('dz.id IN (:ids)')->setParameter('ids', $ids)
+            ->getQuery()->getSingleScalarResult();
+    }
+
+    /** Une vraie page de résultats (limit/offset classiques), à l'intérieur d'une zone déjà
+     *  déterminée par resolveAroundLocationZoneIds(). Chaque résultat porte son "zoneLabel"
+     *  (ex: "Lemba / Salongo"), le lieu précis du vendeur qui a permis le rapprochement. */
+    public function findByDeliveryZoneIdsPaginated(array $ids, int $limit, int $offset): array
+    {
+        if (!$ids) {
+            return [];
+        }
+
+        $found = $this->createQueryBuilder('p')
+            ->join('p.sellerProfile', 'sp')
+            ->join('sp.deliveryZones', 'dz')
+            ->andWhere('p.status = :status')->setParameter('status', 'active')
+            ->andWhere('dz.id IN (:ids)')->setParameter('ids', $ids)
+            ->orderBy('p.salesCount', 'DESC')
+            ->setMaxResults($limit)
+            ->setFirstResult($offset)
+            ->getQuery()
+            ->getResult();
+
+        return array_map(function ($product) {
+            $zoneLabel = null;
+            foreach ($product->getSellerProfile()?->getDeliveryZones() ?? [] as $zone) {
+                $parentName = $zone->getParent()?->getName();
+                $zoneLabel = $parentName ? "{$parentName} / {$zone->getName()}" : $zone->getName();
+                break;
+            }
+            return ['product' => $product, 'zoneLabel' => $zoneLabel];
+        }, $found);
+    }
+
+    /** Même principe, mais à partir de coordonnées GPS brutes (visiteur non identifié) plutôt
+     *  que d'un lieu déjà connu en base. */
+    public function findAroundCoordinates(float $lat, float $lon, \App\Repository\AdministrativeUnitRepository $administrativeUnitRepository, int $limit = 15): array
+    {
+        $nearestUnit = $administrativeUnitRepository->findNearestUnit($lat, $lon);
+        if (!$nearestUnit) {
+            return [];
+        }
+
+        $zoneIds = $this->resolveAroundLocationZoneIds($nearestUnit, $administrativeUnitRepository, $limit);
+        return $this->findByDeliveryZoneIdsPaginated($zoneIds, $limit, 0);
+    }
+
+    public function countSearchProducts(string $term, array $categoryIds, array $brandIds, ?float $minPrice, ?float $maxPrice, ?int $locationId = null, array $sellerTypes = [], array $productConditions = []): int
+    {
+        return count($this->buildSearchQuery($term, $categoryIds, $brandIds, $minPrice, $maxPrice, $locationId, $sellerTypes, $productConditions)->getQuery()->getResult());
+    }
+
+    /** Options de filtre disponibles pour un terme de recherche donné — calculées sur TOUS les
+     *  résultats du terme, avant application des filtres eux-mêmes (comme sur la page Solde). */
+    public function getSearchFilterOptions(string $term, array $categoryIds = [], array $brandIds = [], ?float $minPrice = null, ?float $maxPrice = null, ?int $locationId = null, array $sellerTypes = [], array $productConditions = []): array
+    {
+        $products = $this->buildSearchQuery($term, $categoryIds, $brandIds, $minPrice, $maxPrice, $locationId, $sellerTypes, $productConditions)->getQuery()->getResult();
+
+        $categories = [];
+        $brands = [];
+        $minPrice = null;
+        $maxPrice = null;
+
+        foreach ($products as $product) {
+            $category = $product->getCategory();
+            if ($category) {
+                $categories[$category->getId()] ??= ['id' => $category->getId(), 'name' => $category->getName(), 'count' => 0];
+                $categories[$category->getId()]['count']++;
+            }
+
+            $brand = $product->getBrand();
+            if ($brand) {
+                $brands[$brand->getId()] ??= ['id' => $brand->getId(), 'name' => $brand->getName(), 'count' => 0, 'classe' => $brand->getClasse()];
+                $brands[$brand->getId()]['count']++;
+            }
+
+            $price = (float) ($product->getCurrentDiscountedPrice() ?? $product->getBasePrice());
+            $minPrice = null === $minPrice ? $price : min($minPrice, $price);
+            $maxPrice = null === $maxPrice ? $price : max($maxPrice, $price);
+        }
+
+        usort($brands, fn ($a, $b) => ($a['classe'] ?? PHP_INT_MAX) <=> ($b['classe'] ?? PHP_INT_MAX));
+
+        return [
+            'categories' => array_values($categories),
+            'brands' => array_values($brands),
+            'minPrice' => $minPrice ?? 0,
+            'maxPrice' => $maxPrice ?? 0,
+        ];
+    }
+
+    /** Produits dont la marque correspond au terme tapé (pas forcément le titre du produit). */
+    public function findByBrandNameMatch(string $term, ?int $limit = null, ?int $offset = null): array
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->join('p.brand', 'b')
+            ->andWhere('p.status = :status')->setParameter('status', 'active')
+            ->andWhere('b.name LIKE :term')->setParameter('term', '%' . $term . '%')
+            ->orderBy('p.salesCount', 'DESC');
+
+        if (null !== $limit) { $qb->setMaxResults($limit); }
+        if (null !== $offset) { $qb->setFirstResult($offset); }
+
+        return $qb->getQuery()->getResult();
+    }
+
+    public function countByBrandNameMatch(string $term): int
+    {
+        return (int) $this->createQueryBuilder('p')
+            ->select('COUNT(p.id)')
+            ->join('p.brand', 'b')
+            ->andWhere('p.status = :status')->setParameter('status', 'active')
+            ->andWhere('b.name LIKE :term')->setParameter('term', '%' . $term . '%')
+            ->getQuery()->getSingleScalarResult();
+    }
+
+    /** Produits dont le vendeur livre vers l'un des lieux dont le nom correspond au terme tapé. */
+    public function findByLocationNameMatch(array $locationIds, ?int $limit = null, ?int $offset = null): array
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->join('p.sellerProfile', 'sp')
+            ->join('sp.deliveryZones', 'dz')
+            ->andWhere('p.status = :status')->setParameter('status', 'active')
+            ->andWhere('dz.id IN (:locationIds)')->setParameter('locationIds', $locationIds)
+            ->orderBy('p.salesCount', 'DESC');
+
+        if (null !== $limit) { $qb->setMaxResults($limit); }
+        if (null !== $offset) { $qb->setFirstResult($offset); }
+
+        return $qb->getQuery()->getResult();
+    }
+
+    public function countByLocationNameMatch(array $locationIds): int
+    {
+        return (int) $this->createQueryBuilder('p')
+            ->select('COUNT(p.id)')
+            ->join('p.sellerProfile', 'sp')
+            ->join('sp.deliveryZones', 'dz')
+            ->andWhere('p.status = :status')->setParameter('status', 'active')
+            ->andWhere('dz.id IN (:locationIds)')->setParameter('locationIds', $locationIds)
+            ->getQuery()->getSingleScalarResult();
+    }
+
+    private function buildSearchQuery(string $term, array $categoryIds, array $brandIds, ?float $minPrice, ?float $maxPrice, ?int $locationId = null, array $sellerTypes = [], array $productConditions = [])
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->leftJoin('p.brand', 'bsearch')
+            ->leftJoin('p.sellerProfile', 'spsearch')
+            ->leftJoin('spsearch.location', 'locsearch')
+            ->leftJoin('spsearch.deliveryZones', 'dzsearch')
+            ->andWhere('p.status = :status')
+            ->andWhere('p.title LIKE :term OR p.reference LIKE :term OR p.ean LIKE :term OR bsearch.name LIKE :term OR locsearch.name LIKE :term OR dzsearch.name LIKE :term')
+            ->setParameter('status', 'active')
+            ->setParameter('term', '%' . $term . '%');
+
+        if ($locationId) {
+            // Un vendeur livre vers certaines zones précises (deliveryZones) : on élargit le
+            // lieu choisi à tout ce qu'il contient (une Province englobe ses villes/communes),
+            // pour qu'un vendeur livrant à une commune précise ressorte quand on filtre large.
+            $locationIds = $this->administrativeUnitRepository->getDescendantIds($locationId);
+            $qb->leftJoin('p.sellerProfile', 'sp')
+                ->join('sp.deliveryZones', 'dz')
+                ->andWhere('dz.id IN (:locationIds)')->setParameter('locationIds', $locationIds);
+        }
+
+        if ($sellerTypes) {
+            $sellerConditions = [];
+            $alias = $locationId ? 'sp' : 'sp2';
+            if (!$locationId) {
+                $qb->leftJoin('p.sellerProfile', $alias);
+            }
+            if (in_array('kbz', $sellerTypes, true)) {
+                $sellerConditions[] = "{$alias}.isKbz = true";
+            }
+            if (in_array('store', $sellerTypes, true)) {
+                $sellerConditions[] = "({$alias} INSTANCE OF App\\Entity\\StoreProfile AND {$alias}.isKbz = false)";
+            }
+            if (in_array('pro', $sellerTypes, true)) {
+                $sellerConditions[] = "{$alias} INSTANCE OF App\\Entity\\ProProfile";
+            }
+            if (in_array('individual', $sellerTypes, true)) {
+                $sellerConditions[] = "{$alias} INSTANCE OF App\\Entity\\IndividualProfile";
+            }
+            if ($sellerConditions) {
+                $qb->andWhere(implode(' OR ', $sellerConditions));
+            }
+        }
+
+        if ($productConditions) {
+            $qb->andWhere('p.condition IN (:productConditions)')->setParameter('productConditions', $productConditions);
+        }
+
         // La référence "KBZ-000073" est calculée depuis l'ID, complétée à 6 chiffres (voir
         // Product::getReferenceLabel()). On calcule la plage d'identifiants dont le préfixe,
-        // une fois complété à 6 chiffres, correspond à ce qui a déjà été tapé — pour que le
-        // filtrage fonctionne dès le premier zéro, pas seulement à partir du 1er chiffre non nul.
+        // une fois complété à 6 chiffres, correspond à ce qui a déjà été tapé.
         if (preg_match('/kbz-?(\d+)/i', $term, $matches)) {
             $digits = $matches[1];
             $len = strlen($digits);
@@ -911,17 +1153,24 @@ class ProductRepository extends ServiceEntityRepository
                     ->setParameter('refMin', $min)
                     ->setParameter('refMax', $max);
             } else {
-                // Au-delà de 6 chiffres, la référence n'est plus complétée par des zéros
-                // (voir le commentaire dans Product::getReferenceLabel()) : simple préfixe direct.
                 $qb->orWhere("CONCAT(p.id, '') LIKE :refIdPrefix")->setParameter('refIdPrefix', $digits . '%');
             }
         }
 
-        if (null !== $limit) {
-            $qb->setMaxResults($limit);
+        if ($categoryIds) {
+            $qb->andWhere('p.category IN (:categoryIds)')->setParameter('categoryIds', $categoryIds);
+        }
+        if ($brandIds) {
+            $qb->andWhere('p.brand IN (:brandIds)')->setParameter('brandIds', $brandIds);
+        }
+        if (null !== $minPrice) {
+            $qb->andWhere('p.basePrice >= :minPrice')->setParameter('minPrice', $minPrice);
+        }
+        if (null !== $maxPrice) {
+            $qb->andWhere('p.basePrice <= :maxPrice')->setParameter('maxPrice', $maxPrice);
         }
 
-        return $qb->getQuery()->getResult();
+        return $qb;
     }
 
     public function findInStockByCategory(int $categoryId, int $limit = 50): array

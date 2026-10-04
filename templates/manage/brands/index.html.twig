@@ -87,6 +87,7 @@
                             <th>{{ self.sortLink('sigle', 'Sigle', currentSort, currentDir) }}</th>
                             <th>{{ self.sortLink('pays', 'Pays', currentSort, currentDir) }}</th>
                             <th>{{ self.sortLink('type', 'Type', currentSort, currentDir) }}</th>
+                            <th>{{ self.sortLink('classe', 'Classe', currentSort, currentDir) }}</th>
                             <th>{{ self.sortLink('verified', 'Vérifiée', currentSort, currentDir) }}</th>
                             <th>{{ self.sortLink('productCount', 'Produits', currentSort, currentDir) }}</th>
                             <th>{{ self.sortLink('modelCount', 'Modèles', currentSort, currentDir) }}</th>
@@ -121,6 +122,7 @@
                                     {% else %}—{% endif %}
                                 </td>
                                 <td>{{ brand.type ? brand.type|join(', ') : '—' }}</td>
+                                <td>{{ brand.classe is not null ? brand.classe : '—' }}</td>
                                 <td>
                                     {% if brand.verified %}
                                         <span class="ctb-status-badge ctb-status-active"><i class="bi bi-patch-check"></i> Vérifiée</span>

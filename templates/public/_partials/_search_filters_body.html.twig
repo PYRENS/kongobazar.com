@@ -1,0 +1,106 @@
+{# ==========================================================================
+   Contenu du filtre (catégories/marques/prix) — extrait pour pouvoir être
+   remplacé en direct à chaque changement, puisque les options disponibles
+   doivent suivre les produits déjà filtrés.
+   Contexte attendu : searchFilters, selectedCategoryIds, selectedBrandIds,
+   selectedMinPrice, selectedMaxPrice
+   ========================================================================== #}
+<h6>Type de vendeur</h6>
+<div class="mb-3 filter-checkbox-group">
+    <label class="filter-checkbox-row" for="vendeur-kbz">
+        <input type="checkbox" class="kb-checkbox" id="vendeur-kbz" name="vendeur[]" value="kbz" {{ 'kbz' in selectedSellerTypes ? 'checked' : '' }}>
+        KongoBazar
+    </label>
+    <label class="filter-checkbox-row" for="vendeur-store">
+        <input type="checkbox" class="kb-checkbox" id="vendeur-store" name="vendeur[]" value="store" {{ 'store' in selectedSellerTypes ? 'checked' : '' }}>
+        Boutiques
+    </label>
+    <label class="filter-checkbox-row" for="vendeur-pro">
+        <input type="checkbox" class="kb-checkbox" id="vendeur-pro" name="vendeur[]" value="pro" {{ 'pro' in selectedSellerTypes ? 'checked' : '' }}>
+        Professionnels
+    </label>
+    <label class="filter-checkbox-row" for="vendeur-individual">
+        <input type="checkbox" class="kb-checkbox" id="vendeur-individual" name="vendeur[]" value="individual" {{ 'individual' in selectedSellerTypes ? 'checked' : '' }}>
+        Particulier
+    </label>
+</div>
+
+<h6>État</h6>
+<div class="mb-3 filter-checkbox-group">
+    <label class="filter-checkbox-row" for="etat-new">
+        <input type="checkbox" class="kb-checkbox" id="etat-new" name="etat[]" value="new" {{ 'new' in selectedConditions ? 'checked' : '' }}>
+        Neuf
+    </label>
+    <label class="filter-checkbox-row" for="etat-used">
+        <input type="checkbox" class="kb-checkbox" id="etat-used" name="etat[]" value="used" {{ 'used' in selectedConditions ? 'checked' : '' }}>
+        Occasion
+    </label>
+</div>
+
+{% if subcategories is defined and subcategories|length > 0 %}
+    <h6>Sous-catégorie</h6>
+    <div class="mb-3 filter-checkbox-group">
+        {% for sub in subcategories %}
+            <label class="filter-checkbox-row{{ loop.index > 5 ? ' filter-checkbox-extra' : '' }}"{{ loop.index > 5 ? ' hidden' : '' }} for="subcat-{{ sub.id }}">
+                <input type="checkbox" class="kb-checkbox" id="subcat-{{ sub.id }}" name="category[]" value="{{ sub.id }}" {{ sub.id in selectedCategoryIds ? 'checked' : '' }}>
+                {{ sub.name }} ({{ sub.count }})
+            </label>
+        {% endfor %}
+        {% if subcategories|length > 5 %}
+            <button type="button" class="filter-see-all-btn" data-see-all><i class="bi bi-chevron-down"></i> Voir tout ({{ subcategories|length }})</button>
+        {% endif %}
+    </div>
+{% endif %}
+
+{% if not hideCategoryFilter|default(false) and searchFilters.categories|length > 0 %}
+    <h6>Catégorie</h6>
+    <div class="mb-3 filter-checkbox-group">
+        {% for cat in searchFilters.categories %}
+            <label class="filter-checkbox-row{{ loop.index > 5 ? ' filter-checkbox-extra' : '' }}"{{ loop.index > 5 ? ' hidden' : '' }} for="cat-{{ cat.id }}">
+                <input type="checkbox" class="kb-checkbox" id="cat-{{ cat.id }}" name="category[]" value="{{ cat.id }}" {{ cat.id in selectedCategoryIds ? 'checked' : '' }}>
+                {{ cat.name }} ({{ cat.count }})
+            </label>
+        {% endfor %}
+        {% if searchFilters.categories|length > 5 %}
+            <button type="button" class="filter-see-all-btn" data-see-all><i class="bi bi-chevron-down"></i> Voir tout ({{ searchFilters.categories|length }})</button>
+        {% endif %}
+    </div>
+{% endif %}
+
+{% if searchFilters.brands|length > 0 %}
+    <h6>Marque</h6>
+    <div class="mb-3 filter-checkbox-group">
+        {% for brand in searchFilters.brands %}
+            <label class="filter-checkbox-row{{ loop.index > 5 ? ' filter-checkbox-extra' : '' }}"{{ loop.index > 5 ? ' hidden' : '' }} for="brand-{{ brand.id }}">
+                <input type="checkbox" class="kb-checkbox" id="brand-{{ brand.id }}" name="brand[]" value="{{ brand.id }}" {{ brand.id in selectedBrandIds ? 'checked' : '' }}>
+                {{ brand.name }} ({{ brand.count }})
+            </label>
+        {% endfor %}
+        {% if searchFilters.brands|length > 5 %}
+            <button type="button" class="filter-see-all-btn" data-see-all><i class="bi bi-chevron-down"></i> Voir tout ({{ searchFilters.brands|length }})</button>
+        {% endif %}
+    </div>
+{% endif %}
+
+{% if searchFilters.maxPrice > searchFilters.minPrice %}
+    <h6>Prix</h6>
+    <div class="price-range-filter mb-3" data-price-range data-min="{{ searchFilters.minPrice|round }}" data-max="{{ searchFilters.maxPrice|round }}">
+        <div class="price-range-values">
+            <span data-price-range-min-label>{{ (selectedMinPrice ?? searchFilters.minPrice)|round }}</span>
+            <span>—</span>
+            <span data-price-range-max-label>{{ (selectedMaxPrice ?? searchFilters.maxPrice)|round }}</span>
+            <span>USD</span>
+        </div>
+        <div class="price-range-track">
+            <div class="price-range-track-fill" data-price-range-fill></div>
+            <input type="range" class="price-range-input" data-price-range-min
+                min="{{ searchFilters.minPrice|round }}" max="{{ searchFilters.maxPrice|round }}"
+                value="{{ selectedMinPrice ?? searchFilters.minPrice|round }}">
+            <input type="range" class="price-range-input" data-price-range-max
+                min="{{ searchFilters.minPrice|round }}" max="{{ searchFilters.maxPrice|round }}"
+                value="{{ selectedMaxPrice ?? searchFilters.maxPrice|round }}">
+        </div>
+        <input type="hidden" name="min_price" data-price-range-min-hidden value="{{ selectedMinPrice ?? searchFilters.minPrice|round }}">
+        <input type="hidden" name="max_price" data-price-range-max-hidden value="{{ selectedMaxPrice ?? searchFilters.maxPrice|round }}">
+    </div>
+{% endif %}

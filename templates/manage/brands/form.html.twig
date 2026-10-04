@@ -122,6 +122,12 @@
                     <small class="text-muted d-block">Apparaît en tête (par ordre alphabétique) dans les listes de marques, avant les autres.</small>
                 </div>
 
+                <div class="mb-3">
+                    <label class="acc-form-label">Classe</label>
+                    <input type="number" name="classe" class="acc-form-input" style="max-width:160px;" value="{{ brand and brand.classe is not null ? brand.classe : '' }}" min="1" placeholder="Non classée">
+                    <small class="text-muted d-block">Rang de prestige : plus la valeur est petite, plus la marque est considérée comme luxe et apparaît en premier dans les filtres (catalogue, recherche). Laisser vide pour une marque non classée — elle apparaîtra après toutes les marques classées.</small>
+                </div>
+
                 <div class="mb-3 form-check">
                     <input type="checkbox" name="active" value="1" class="form-check-input" id="active"
                         {{ brand is null or brand.active ? 'checked' : '' }}>

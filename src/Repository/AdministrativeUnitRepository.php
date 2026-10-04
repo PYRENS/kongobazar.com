@@ -117,6 +117,85 @@ class AdministrativeUnitRepository extends ServiceEntityRepository
         return $count;
     }
 
+    /** Un lieu choisi (ex. une Province) + tous les lieux qu'il contient (villes, communes...),
+     *  pour qu'un vendeur livrant à une commune précise ressorte quand on filtre sur sa province. */
+    public function getDescendantIds(int $unitId): array
+    {
+        $ids = [$unitId];
+        $children = $this->findBy(['parent' => $unitId]);
+        foreach ($children as $child) {
+            $ids = array_merge($ids, $this->getDescendantIds($child->getId()));
+        }
+        return $ids;
+    }
+
+    /** Un ensemble de lieux + tout ce qu'ils contiennent chacun (utile quand plusieurs lieux
+     *  correspondent au terme tapé, contrairement à getDescendantIds qui n'en prend qu'un). */
+    /** Distance réelle en kilomètres entre 2 points GPS (formule de Haversine). */
+    public static function haversineKm(float $lat1, float $lon1, float $lat2, float $lon2): float
+    {
+        $earthRadius = 6371;
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+        $a = sin($dLat / 2) ** 2 + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon / 2) ** 2;
+        return $earthRadius * (2 * atan2(sqrt($a), sqrt(1 - $a)));
+    }
+
+    /** Le lieu le plus proche (toutes niveaux confondus) d'un point GPS donné — utilisé pour un
+     *  visiteur non identifié, dont on ne connaît que la position réelle du navigateur. */
+    public function findNearestUnit(float $lat, float $lon): ?AdministrativeUnit
+    {
+        $candidates = $this->createQueryBuilder('a')
+            ->andWhere('a.latitude IS NOT NULL')
+            ->andWhere('a.longitude IS NOT NULL')
+            ->andWhere('a.level = 4') // on cherche au niveau le plus précis (Quartier)
+            ->getQuery()->getResult();
+
+        $nearest = null;
+        $nearestDistance = null;
+        foreach ($candidates as $unit) {
+            $distance = self::haversineKm($lat, $lon, $unit->getLatitude(), $unit->getLongitude());
+            if (null === $nearestDistance || $distance < $nearestDistance) {
+                $nearestDistance = $distance;
+                $nearest = $unit;
+            }
+        }
+
+        return $nearest;
+    }
+
+    /** Tous les lieux du même niveau que $center, situés dans un rayon donné (en kilomètres). */
+    public function findWithinRadius(AdministrativeUnit $center, float $radiusKm): array
+    {
+        if (null === $center->getLatitude() || null === $center->getLongitude()) {
+            return [];
+        }
+
+        $candidates = $this->createQueryBuilder('a')
+            ->andWhere('a.level = :level')->setParameter('level', $center->getLevel())
+            ->andWhere('a.latitude IS NOT NULL')
+            ->andWhere('a.longitude IS NOT NULL')
+            ->getQuery()->getResult();
+
+        $nearbyIds = [];
+        foreach ($candidates as $unit) {
+            if (self::haversineKm($center->getLatitude(), $center->getLongitude(), $unit->getLatitude(), $unit->getLongitude()) <= $radiusKm) {
+                $nearbyIds[] = $unit->getId();
+            }
+        }
+
+        return $nearbyIds;
+    }
+
+    public function getDescendantIdsForMany(array $unitIds): array
+    {
+        $all = [];
+        foreach ($unitIds as $id) {
+            $all = array_merge($all, $this->getDescendantIds($id));
+        }
+        return array_unique($all);
+    }
+
     public function searchByName(string $term): array
     {
         return $this->createQueryBuilder('a')

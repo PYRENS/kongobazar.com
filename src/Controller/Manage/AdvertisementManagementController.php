@@ -40,6 +40,9 @@ class AdvertisementManagementController extends AbstractController
         'rayon_flyout_ad_droite' => ['label' => 'Flyout rayon — position droite (liée à une catégorie précise)', 'width' => 220, 'height' => 400, 'page' => 'Catégorie'],
         'rayon_flyout_ad_bas' => ['label' => 'Flyout rayon — position bas (liée à une catégorie précise)', 'width' => 480, 'height' => 120, 'page' => 'Catégorie'],
         'mobile_top_rayons_offcanvas' => ['label' => 'Tiroir "Top Rayons" mobile', 'width' => 335, 'height' => 100, 'page' => 'Mobile (toutes pages)'],
+        'search_results_banner_1' => ['label' => 'Recherche — bannière 1', 'width' => 440, 'height' => 160, 'page' => 'Recherche'],
+        'search_results_banner_2' => ['label' => 'Recherche — bannière 2', 'width' => 440, 'height' => 160, 'page' => 'Recherche'],
+        'search_results_banner_3' => ['label' => 'Recherche — bannière 3', 'width' => 440, 'height' => 160, 'page' => 'Recherche'],
     ];
 
     #[Route('/publicites', name: 'manage_ads_index', host: 'manage.kongobazar.com', methods: ['GET'])]

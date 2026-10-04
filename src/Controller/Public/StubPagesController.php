@@ -86,31 +86,6 @@ class StubPagesController extends AbstractController
         ]);
     }
 
-    #[Route('/categorie/{slug}', name: 'catalog_category', host: 'kongobazar.com')]
-    public function category(string $slug, CategoryRepository $categoryRepository): Response
-    {
-        $category = $categoryRepository->findOneBy(['slug' => $slug]);
-        $name = $category ? $category->getName() : $slug;
-
-        $breadcrumbs = [];
-        if ($category) {
-            foreach ($category->getAncestors() as $ancestor) {
-                $breadcrumbs[] = [
-                    'label' => $ancestor->getName(),
-                    'url' => $this->generateUrl('catalog_category', ['slug' => $ancestor->getSlug()]),
-                ];
-            }
-        } else {
-            $breadcrumbs[] = ['label' => $name, 'url' => null];
-        }
-
-        return $this->render('public/stub_generic.html.twig', [
-            'title' => "Catégorie : {$name}",
-            'breadcrumbs' => $breadcrumbs,
-        ]);
-    }
-
-
     #[Route('/marque/{slug}', name: 'catalog_brand', host: 'kongobazar.com')]
     public function brand(string $slug, BrandRepository $brandRepository): Response
     {

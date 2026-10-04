@@ -106,6 +106,7 @@
                             </td>
                         </tr>
                         <tr><td class="text-muted">Type</td><td>{{ brand.type ? brand.type|join(', ') : 'Générique' }}</td></tr>
+                        <tr><td class="text-muted">Classe</td><td>{{ brand.classe is not null ? brand.classe : 'Non classée' }}</td></tr>
                         <tr>
                             <td class="text-muted">Vérifiée</td>
                             <td>

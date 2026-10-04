@@ -195,7 +195,7 @@ class BrandManagementController extends AbstractController
 
     private function sortRows(array $rows, string $field, string $dir): array
     {
-        $allowed = ['name', 'sigle', 'pays', 'type', 'verified', 'productCount', 'modelCount', 'active', 'createdAt'];
+        $allowed = ['name', 'sigle', 'pays', 'type', 'classe', 'verified', 'productCount', 'modelCount', 'active', 'createdAt'];
         if (!in_array($field, $allowed, true)) {
             $field = 'name';
         }
@@ -206,6 +206,7 @@ class BrandManagementController extends AbstractController
                 'sigle' => $a['brand']->getSigle() ?? '',
                 'pays' => $a['brand']->getPays()?->getName() ?? '',
                 'type' => $a['brand']->getType() ? implode(',', $a['brand']->getType()) : '',
+                'classe' => $a['brand']->getClasse() ?? PHP_INT_MAX,
                 'verified' => (int) $a['brand']->isVerified(),
                 'productCount' => $a['productCount'],
                 'modelCount' => $a['modelCount'] ?? -1,
@@ -217,6 +218,7 @@ class BrandManagementController extends AbstractController
                 'sigle' => $b['brand']->getSigle() ?? '',
                 'pays' => $b['brand']->getPays()?->getName() ?? '',
                 'type' => $b['brand']->getType() ? implode(',', $b['brand']->getType()) : '',
+                'classe' => $b['brand']->getClasse() ?? PHP_INT_MAX,
                 'verified' => (int) $b['brand']->isVerified(),
                 'productCount' => $b['productCount'],
                 'modelCount' => $b['modelCount'] ?? -1,
@@ -311,6 +313,8 @@ class BrandManagementController extends AbstractController
         $brand->setName($name);
         $brand->setVerified((bool) $request->request->get('verified'));
         $brand->setPremium((bool) $request->request->get('premium'));
+        $classe = $request->request->get('classe');
+        $brand->setClasse(('' === $classe || null === $classe) ? null : (int) $classe);
 
         $logoFile = $request->files->get('logo');
         if ($logoFile) {

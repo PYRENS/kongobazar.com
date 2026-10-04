@@ -122,6 +122,30 @@ class SellerProfileRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    public function countSearchSellersByTerm(string $term): int
+    {
+        return (int) $this->createQueryBuilder('s')
+            ->select('COUNT(s.id)')
+            ->andWhere('s INSTANCE OF App\Entity\StoreProfile OR s INSTANCE OF App\Entity\ProProfile')
+            ->andWhere('s.status = :status')->setParameter('status', 'active')
+            ->andWhere('s.displayName LIKE :term OR s.referenceNumber LIKE :term')
+            ->setParameter('term', '%' . $term . '%')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function countSearchRelaysByTerm(string $term): int
+    {
+        return (int) $this->createQueryBuilder('s')
+            ->select('COUNT(s.id)')
+            ->andWhere('s INSTANCE OF App\Entity\RelayProfile')
+            ->andWhere('s.status = :status')->setParameter('status', 'active')
+            ->andWhere('s.displayName LIKE :term OR s.referenceNumber LIKE :term')
+            ->setParameter('term', '%' . $term . '%')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     public function searchByName(string $term, int $limit = 15): array
     {
         return $this->createQueryBuilder('s')

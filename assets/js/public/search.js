@@ -55,9 +55,11 @@ function renderSuggestions(data, term, box, form) {
         categories = [], categoriesHasMore = false,
         sellers = [], sellersHasMore = false,
         relays = [], relaysHasMore = false,
+        brands = [], brandsHasMore = false,
+        locations = [], locationsHasMore = false,
     } = data;
 
-    if (products.length === 0 && categories.length === 0 && sellers.length === 0 && relays.length === 0) {
+    if (products.length === 0 && categories.length === 0 && sellers.length === 0 && relays.length === 0 && brands.length === 0 && locations.length === 0) {
         box.hidden = true;
         return;
     }
@@ -77,10 +79,16 @@ function renderSuggestions(data, term, box, form) {
                 ? `<img src="${item.image}" class="suggestion-thumb" alt="">`
                 : `<span class="suggestion-thumb suggestion-thumb--empty"></span>`;
 
+            const oldPriceHtml = item.oldPrice
+                ? `<span class="suggestion-price-old">${item.oldPrice} ${item.currency}</span>`
+                : '';
             link.innerHTML = `
                 ${img}
                 <span class="suggestion-title">${item.title}</span>
-                <span class="suggestion-price">${item.price} ${item.currency}</span>
+                <span class="suggestion-price-wrap">
+                    ${oldPriceHtml}
+                    <span class="suggestion-price">${item.price} ${item.currency}</span>
+                </span>
             `;
             box.appendChild(link);
         });
@@ -116,7 +124,7 @@ function renderSuggestions(data, term, box, form) {
 
             const img = seller.logo
                 ? `<img src="${seller.logo}" class="suggestion-thumb" alt="">`
-                : `<span class="suggestion-thumb suggestion-thumb--empty"></span>`;
+                : `<span class="suggestion-thumb suggestion-thumb--empty"><i class="bi bi-shop"></i></span>`;
 
             link.innerHTML = `
                 ${img}
@@ -141,7 +149,7 @@ function renderSuggestions(data, term, box, form) {
 
             const img = relay.logo
                 ? `<img src="${relay.logo}" class="suggestion-thumb" alt="">`
-                : `<span class="suggestion-thumb suggestion-thumb--empty"></span>`;
+                : `<span class="suggestion-thumb suggestion-thumb--empty"><i class="bi bi-geo-alt-fill"></i></span>`;
 
             link.innerHTML = `
                 ${img}
@@ -151,6 +159,41 @@ function renderSuggestions(data, term, box, form) {
             box.appendChild(link);
         });
         if (relaysHasMore) addSectionSeeMore(box, term, 'relays');
+    }
+
+    if (brands.length > 0) {
+        const heading = document.createElement('div');
+        heading.className = 'suggestion-heading';
+        heading.textContent = 'Marque';
+        box.appendChild(heading);
+
+        brands.forEach((brand) => {
+            const link = document.createElement('a');
+            link.href = `/recherche?q=${encodeURIComponent(term)}&type=marque`;
+            link.className = 'search-suggestion-item';
+            const img = brand.logo
+                ? `<img src="${brand.logo}" class="suggestion-thumb" alt="">`
+                : `<span class="suggestion-thumb suggestion-thumb--empty"><i class="bi bi-award"></i></span>`;
+            link.innerHTML = `${img}<span class="suggestion-title">${brand.name}</span>`;
+            box.appendChild(link);
+        });
+        if (brandsHasMore) addSectionSeeMore(box, term, 'marque');
+    }
+
+    if (locations.length > 0) {
+        const heading = document.createElement('div');
+        heading.className = 'suggestion-heading';
+        heading.textContent = 'Lieu de livraison';
+        box.appendChild(heading);
+
+        locations.forEach((loc) => {
+            const link = document.createElement('a');
+            link.href = `/recherche?q=${encodeURIComponent(term)}&type=lieu`;
+            link.className = 'search-suggestion-item';
+            link.innerHTML = `<span class="suggestion-thumb suggestion-thumb--empty"><i class="bi bi-geo-alt"></i></span><span class="suggestion-title">${loc.name}</span>`;
+            box.appendChild(link);
+        });
+        if (locationsHasMore) addSectionSeeMore(box, term, 'lieu');
     }
 
     const seeAll = document.createElement('a');

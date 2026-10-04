@@ -276,6 +276,16 @@ class CategoryRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    public function countSearchByTerm(string $term): int
+    {
+        return (int) $this->createQueryBuilder('c')
+            ->select('COUNT(c.id)')
+            ->andWhere('c.name LIKE :term')
+            ->setParameter('term', '%' . $term . '%')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     public function findTopRayons(): array
     {
         return $this->createQueryBuilder('c')

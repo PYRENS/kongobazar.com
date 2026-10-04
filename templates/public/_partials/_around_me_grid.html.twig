@@ -1,0 +1,38 @@
+{% if aroundMeProducts|default([])|length > 0 %}
+    <div class="home-product-grid">
+        {% for item in aroundMeProducts %}
+            {% set product = item.product %}
+            <div class="product-card">
+                <div class="product-card-media">
+                    <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" class="product-card-main-image" loading="lazy">
+                    {% if product.activeDiscountPercent %}
+                        <span class="badge-discount">-{{ product.activeDiscountPercent }}%</span>
+                    {% elseif product.compareAtPrice %}
+                        <span class="badge-discount">-{{ ((1 - (product.basePrice / product.compareAtPrice)) * 100)|round }}%</span>
+                    {% endif %}
+                    {% if product.brand and product.brand.logoName %}
+                        <img src="{{ vich_uploader_asset(product.brand, 'logoFile') }}" alt="{{ product.brand.name }}" class="product-card-brand-logo">
+                    {% endif %}
+                    {% include 'public/_partials/_product_icons_wishlist.html.twig' with { product: product } %}
+                </div>
+                <div class="product-card-body">
+                    <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="product-card-title">{{ product.title }}</a>
+                    <div class="product-card-price">
+                        <span class="price-now">{{ product.displayCurrentPrice|price(product.currency) }}</span>
+                        {% if product.displayOldPrice %}
+                            <span class="price-old">{{ product.displayOldPrice|price(product.currency) }}</span>
+                        {% endif %}
+                    </div>
+                    {% if item.zoneLabel %}
+                        <div class="product-card-delivery-zone">
+                            Zone de livraison :
+                            <span class="product-card-delivery-zone-value">{{ item.zoneLabel }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <p class="search-around-me-empty">Aucune offre trouvée autour de votre position pour le moment.</p>
+{% endif %}

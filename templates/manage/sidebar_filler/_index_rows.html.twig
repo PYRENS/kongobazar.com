@@ -1,0 +1,49 @@
+{% macro bannerRow(banner) %}
+    <tr>
+        <td style="width:90px;">
+            <img src="{{ vich_uploader_asset(banner, 'imageFile') }}" style="width:70px;height:70px;object-fit:cover;border-radius:4px;display:block;" alt="">
+        </td>
+        <td>{{ banner.title }}</td>
+        <td>{{ banner.targetUrl }}</td>
+        <td>
+            {% if banner.categories|length > 0 %}
+                {% for cat in banner.categories %}<span class="badge bg-light text-dark border">{{ cat.name }}</span>{% endfor %}
+            {% else %}
+                <span class="text-muted">Toutes (généraliste)</span>
+            {% endif %}
+        </td>
+        <td>
+            <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input sf-toggle" role="switch" {{ banner.active ? 'checked' : '' }} data-toggle-url="{{ path('manage_sidebar_filler_toggle', { id: banner.id }) }}">
+            </div>
+        </td>
+        <td>
+            <div class="d-flex gap-2">
+                <a href="{{ path('manage_sidebar_filler_edit', { id: banner.id }) }}" class="btn btn-sm btn-outline-secondary">Modifier</a>
+                <form method="post" action="{{ path('manage_sidebar_filler_remove', { id: banner.id }) }}" onsubmit="return confirm('Retirer cette bannière ?');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Retirer</button>
+                </form>
+            </div>
+        </td>
+    </tr>
+{% endmacro %}
+{% import _self as self %}
+
+{% if selectedCategory is defined and selectedCategory %}
+    {% for banner in ownBanners %}{{ self.bannerRow(banner) }}{% endfor %}
+    {% if descendantBanners|length > 0 %}
+        <tr class="table-light">
+            <td colspan="6" class="text-center text-muted small py-2">
+                <i class="bi bi-arrow-down-short"></i> Héritées des sous-catégories de « {{ selectedCategory.name }} »
+            </td>
+        </tr>
+        {% for banner in descendantBanners %}{{ self.bannerRow(banner) }}{% endfor %}
+    {% endif %}
+    {% if ownBanners|length == 0 and descendantBanners|length == 0 %}
+        <tr><td colspan="6" class="text-center text-muted py-4">Aucune bannière.</td></tr>
+    {% endif %}
+{% else %}
+    {% for banner in banners %}{{ self.bannerRow(banner) }}{% else %}
+        <tr><td colspan="6" class="text-center text-muted py-4">Aucune bannière.</td></tr>
+    {% endfor %}
+{% endif %}

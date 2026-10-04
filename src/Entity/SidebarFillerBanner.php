@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\SidebarFillerBannerRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\HttpFoundation\File\File;
 use Vich\UploaderBundle\Mapping\Annotation as Vich;
@@ -41,6 +43,34 @@ class SidebarFillerBanner
 
     #[ORM\Column(options: ['default' => true])]
     private bool $active = true;
+
+    /** Catégories dédiées : vide = bannière généraliste (accueil + repli catégorie).
+     *  Renseignée = priorité sur ces catégories et leurs descendantes. */
+    #[ORM\ManyToMany(targetEntity: Category::class)]
+    #[ORM\JoinTable(name: 'sidebar_filler_banner_category')]
+    private Collection $categories;
+
+    public function __construct()
+    {
+        $this->categories = new ArrayCollection();
+    }
+
+    /** @return Collection<int, Category> */
+    public function getCategories(): Collection { return $this->categories; }
+
+    public function addCategory(Category $category): static
+    {
+        if (!$this->categories->contains($category)) {
+            $this->categories->add($category);
+        }
+        return $this;
+    }
+
+    public function removeCategory(Category $category): static
+    {
+        $this->categories->removeElement($category);
+        return $this;
+    }
 
     public function getId(): ?int { return $this->id; }
 

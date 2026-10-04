@@ -1,0 +1,145 @@
+{% extends 'manage/base.html.twig' %}
+{% block title %}{{ banner ? 'Modifier' : 'Ajouter' }} une bannière bouche-trou{% endblock %}
+{% block page_icon %}bi-images{% endblock %}
+{% block page_title %}{{ banner ? 'Modifier' : 'Ajouter' }} une bannière bouche-trou{% endblock %}
+{% block body %}
+    <div class="sw-card">
+        <div class="card-body">
+            <form method="post" action="{{ banner ? path('manage_sidebar_filler_update', { id: banner.id }) : path('manage_sidebar_filler_add') }}" enctype="multipart/form-data">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Image ({{ requiredWidth }}px de large exactement, hauteur libre){{ banner ? ' — laisser vide pour garder l\'actuelle' : '' }}</label>
+                        <small class="text-muted d-block mb-1" id="sfImageStatus">{{ banner ? 'Image actuelle conservée si rien n\'est choisi' : 'Aucune image choisie' }}</small>
+                        <div class="kb-image-uploader">
+                            <div class="kb-image-uploader-thumb" id="sfImageCurrent" style="{{ banner ? '' : 'display:none;' }}">
+                                <img id="sfImagePreview" src="{{ banner ? vich_uploader_asset(banner, 'imageFile') : '' }}" alt="">
+                                <button type="button" class="kb-image-uploader-remove" id="sfImageRemove" aria-label="Retirer">×</button>
+                            </div>
+                            <label class="kb-image-uploader-dropzone" for="sfImageInput">
+                                <i class="bi bi-camera"></i>
+                                <span>Upload</span>
+                            </label>
+                            <input type="file" name="image" id="sfImageInput" accept="image/*" {{ banner ? '' : 'required' }} hidden>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Titre (texte alternatif)</label>
+                        <input type="text" name="title" class="form-control" value="{{ banner ? banner.title : '' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Lien cible (optionnel)</label>
+                        <div class="d-flex align-items-center gap-3">
+                            <input type="url" name="target_url" class="form-control" placeholder="https://..." value="{{ banner ? banner.targetUrl : '' }}">
+                            <div class="form-check text-nowrap mb-0">
+                                <input type="checkbox" name="open_in_new_tab" value="1" class="form-check-input" id="sfOpenNewTab" {{ banner and banner.openInNewTab ? 'checked' : '' }}>
+                                <label class="form-check-label" for="sfOpenNewTab">Nouvel onglet</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <label class="form-label fw-bold">Catégories dédiées (optionnel)</label>
+                <p class="text-muted small">Laisser vide pour une bannière généraliste (visible partout, accueil comme repli catégorie). Choisis une catégorie puis clique "Ajouter" — ses sous-catégories en hériteront automatiquement.</p>
+
+                <div id="sfCategoryChips" class="d-flex flex-wrap gap-2 mb-3">
+                    {% for cat in banner ? banner.categories : [] %}
+                        <span class="badge bg-light text-dark border d-inline-flex align-items-center gap-2" data-category-chip="{{ cat.id }}">
+                            {{ cat.name }}
+                            <input type="hidden" name="categories[]" value="{{ cat.id }}">
+                            <button type="button" class="btn-close" style="font-size:10px;" data-remove-chip></button>
+                        </span>
+                    {% endfor %}
+                </div>
+
+                <div class="d-flex align-items-end gap-2 mb-3" data-category-picker>
+                    <select data-category-level="1" class="form-select" style="max-width:260px;">
+                        <option value="">— Catégorie —</option>
+                        {% for cat in rootCategories %}
+                            <option value="{{ cat.id }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="button" class="btn btn-outline-primary" id="sfAddCategoryBtn">Ajouter</button>
+                </div>
+                <input type="hidden" data-category-final-value value="">
+
+                <button type="submit" class="btn btn-success mt-2">{{ banner ? 'Enregistrer' : 'Ajouter' }}</button>
+                <a href="{{ path('manage_sidebar_filler_index') }}" class="btn btn-outline-secondary mt-2">Annuler</a>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ asset('js/manage/category-picker.js') }}"></script>
+    <script>
+        (function () {
+            const input = document.getElementById('sfImageInput');
+            const currentBlock = document.getElementById('sfImageCurrent');
+            const preview = document.getElementById('sfImagePreview');
+            const removeBtn = document.getElementById('sfImageRemove');
+            const status = document.getElementById('sfImageStatus');
+
+            input.addEventListener('change', function () {
+                const file = this.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    preview.src = e.target.result;
+                    currentBlock.style.display = 'block';
+                    status.textContent = 'Nouvelle image sélectionnée';
+                };
+                reader.readAsDataURL(file);
+            });
+
+            removeBtn.addEventListener('click', () => {
+                input.value = '';
+                preview.src = '';
+                currentBlock.style.display = 'none';
+                status.textContent = 'Aucune image choisie';
+            });
+        })();
+
+        // Ajout de catégories à la liste : le picker cascade sert à choisir UNE catégorie à la
+        // fois (son script d'origine, inchangé), ce bouton l'empile dans la liste de puces,
+        // puis réinitialise le picker pour en choisir une autre si besoin.
+        (function () {
+            const chipsWrap = document.getElementById('sfCategoryChips');
+            const addBtn = document.getElementById('sfAddCategoryBtn');
+            const finalInput = document.querySelector('[data-category-final-value]');
+            const picker = document.querySelector('[data-category-picker]');
+
+            function existingIds() {
+                return Array.from(chipsWrap.querySelectorAll('[data-category-chip]')).map((el) => el.dataset.categoryChip);
+            }
+
+            addBtn.addEventListener('click', () => {
+                const id = finalInput.value;
+                if (!id || existingIds().includes(id)) return;
+
+                const rootSelect = picker.querySelector('select[data-category-level="1"]');
+                const selects = picker.querySelectorAll('select[data-category-level]');
+                const lastSelect = selects[selects.length - 1];
+                const label = lastSelect.options[lastSelect.selectedIndex]?.textContent || ('#' + id);
+
+                const chip = document.createElement('span');
+                chip.className = 'badge bg-light text-dark border d-inline-flex align-items-center gap-2';
+                chip.dataset.categoryChip = id;
+                chip.innerHTML = `${label} <input type="hidden" name="categories[]" value="${id}"> <button type="button" class="btn-close" style="font-size:10px;" data-remove-chip></button>`;
+                chipsWrap.appendChild(chip);
+
+                // Réinitialise le picker pour permettre d'en choisir une autre.
+                picker.querySelectorAll('select[data-category-level]').forEach((s) => {
+                    if (s !== rootSelect) s.remove();
+                });
+                rootSelect.value = '';
+                finalInput.value = '';
+            });
+
+            chipsWrap.addEventListener('click', (e) => {
+                if (e.target.matches('[data-remove-chip]')) {
+                    e.target.closest('[data-category-chip]').remove();
+                }
+            });
+        })();
+    </script>
+{% endblock %}

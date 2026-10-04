@@ -3,11 +3,19 @@
    Vanilla JS, sans dépendance.
    ========================================================================== */
 document.addEventListener('DOMContentLoaded', () => {
-    regroupMiniCarouselForMobileGrid('bestSellersMiniCarousel');
-    regroupMiniCarouselForMobileGrid('newArrivalsMiniCarousel');
+    function syncMiniCarousels() {
+        regroupMiniCarouselForMobileGrid('bestSellersMiniCarousel', 6, 3);
+        regroupMiniCarouselForMobileGrid('newArrivalsMiniCarousel', 6, 3);
+        regroupMiniCarouselForMobileGrid('recentlyViewedMiniCarousel', 10, 5);
+    }
+    syncMiniCarousels();
     initMiniCarousels();
-    initMiniCarouselMobileScroll('bestSellersMiniCarousel');
-    initMiniCarouselMobileScroll('newArrivalsMiniCarousel');
+
+    let miniCarouselResizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(miniCarouselResizeTimer);
+        miniCarouselResizeTimer = setTimeout(syncMiniCarousels, 150);
+    });
     initDealsCarousel();
     shortenDealCurrencyOnSmallScreens();
     initTrendingTabs();
@@ -29,6 +37,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initHotDealCard();
     initLatestBlogsCarousel();
     fillSidebarWithBanners();
+    fillSidebarWithBanners('searchSidebarFiller', '.search-sidebar-col', '.search-results-col');
+    fillSidebarWithBanners('categorySidebarFiller', '.search-sidebar-col', '.search-results-col');
     // initAddToCartButtons() retiré : géré désormais globalement (toutes pages) par cart-added-modal.js
 });
 /* --------------------------------------------------------------------------
@@ -167,22 +177,34 @@ function initDealsCarousel() {
    au doigt (scroll natif + snap), séparé du système page-par-page à transform
    utilisé par les autres mini-carrousels.
    -------------------------------------------------------------------------- */
-function regroupMiniCarouselForMobileGrid(carouselId) {
+function regroupMiniCarouselForMobileGrid(carouselId, mobileGroupSize = 6, desktopGroupSize = null) {
     const carousel = document.getElementById(carouselId);
-    if (!carousel || window.innerWidth > 991) return;
-    if (carousel.dataset.mobileGridDone === '1') return;
+    if (!carousel) return;
 
     const track = carousel.querySelector('.home-mini-carousel-track');
     const dotsWrap = carousel.querySelector('.home-mini-carousel-dots');
     if (!track) return;
 
-    const products = Array.from(track.querySelectorAll('.home-mini-product'));
+    // Les produits d'origine ne sont mis en cache qu'une seule fois (ils sont peut-être déjà
+    // répartis en plusieurs pages, rendues côté serveur) — chaque recalcul repart de cet
+    // ensemble complet, jamais d'un état déjà transformé par un appel précédent.
+    if (!carousel._allMiniProducts) {
+        carousel._allMiniProducts = Array.from(track.querySelectorAll('.home-mini-product'));
+    }
+    const products = carousel._allMiniProducts;
     if (products.length === 0) return;
 
-    const GROUP_SIZE = 6;
+    const isMobile = window.innerWidth <= 991;
+    const groupSize = isMobile ? mobileGroupSize : (desktopGroupSize || mobileGroupSize);
+
+    // Rien à refaire si la taille de groupe n'a pas changé depuis le dernier calcul (un
+    // redimensionnement qui reste du même côté du seuil 991px, par exemple).
+    if (carousel.dataset.lastGroupSize === String(groupSize)) return;
+    carousel.dataset.lastGroupSize = String(groupSize);
+
     const groups = [];
-    for (let i = 0; i < products.length; i += GROUP_SIZE) {
-        groups.push(products.slice(i, i + GROUP_SIZE));
+    for (let i = 0; i < products.length; i += groupSize) {
+        groups.push(products.slice(i, i + groupSize));
     }
 
     track.innerHTML = '';
@@ -204,7 +226,13 @@ function regroupMiniCarouselForMobileGrid(carouselId) {
         });
     }
 
-    carousel.dataset.mobileGridDone = '1';
+    if (isMobile) {
+        carousel.dataset.mobileGridDone = '1';
+        initMiniCarouselMobileScroll(carouselId);
+    } else {
+        delete carousel.dataset.mobileGridDone;
+        wireDesktopMiniCarousel(carousel);
+    }
 }
 
 function initMiniCarouselMobileScroll(carouselId) {
@@ -217,26 +245,35 @@ function initMiniCarouselMobileScroll(carouselId) {
     if (!track || pages.length === 0) return;
 
     let currentIndex = 0;
-    let syncTimer = null;
 
     function setActiveDot(index) {
-        if (dots[currentIndex]) dots[currentIndex].classList.remove('active');
+        const allDots = carousel.querySelectorAll('.dot');
+        if (allDots[currentIndex]) allDots[currentIndex].classList.remove('active');
         currentIndex = index;
-        if (dots[currentIndex]) dots[currentIndex].classList.add('active');
+        if (allDots[currentIndex]) allDots[currentIndex].classList.add('active');
     }
 
+    // Les points sont reconstruits à chaque regroupement : on leur attache de nouveaux
+    // écouteurs à chaque fois (les anciens nœuds, eux, ont disparu avec dotsWrap.innerHTML).
     dots.forEach((dot, i) => {
         dot.addEventListener('click', () => {
             track.scrollTo({ left: pages[i].offsetLeft, behavior: 'smooth' });
         });
     });
 
+    // Le train (track), lui, reste le même élément d'un regroupement à l'autre — sans ce
+    // verrou, chaque redimensionnement empilerait un nouvel écouteur de scroll en double.
+    if (track.dataset.scrollSyncWired === '1') return;
+    track.dataset.scrollSyncWired = '1';
+
+    let syncTimer = null;
     track.addEventListener('scroll', () => {
         clearTimeout(syncTimer);
         syncTimer = setTimeout(() => {
+            const currentPages = track.querySelectorAll('.home-mini-carousel-page');
             let closest = 0;
             let closestDist = Infinity;
-            pages.forEach((p, i) => {
+            currentPages.forEach((p, i) => {
                 const d = Math.abs(p.offsetLeft - track.scrollLeft);
                 if (d < closestDist) { closestDist = d; closest = i; }
             });
@@ -245,73 +282,78 @@ function initMiniCarouselMobileScroll(carouselId) {
     }, { passive: true });
 }
 
-function initMiniCarousels() {
+function wireDesktopMiniCarousel(carousel) {
     const AUTOPLAY_DELAY = 4000;
+    const track = carousel.querySelector('.home-mini-carousel-track, .home-deals-track, .home-top-categories-track');
+    const dots = carousel.querySelectorAll('.dot');
+    const prevBtn = carousel.querySelector('[data-carousel-prev]');
+    const nextBtn = carousel.querySelector('[data-carousel-next]');
+    if (!track) return;
+
+    const pages = track.querySelectorAll(':scope > *');
+    let currentPage = 0;
+    let timer = null;
+    const totalPages = pages.length || dots.length || 1;
+
+    // Chaque page occupe 100% de la largeur du track (pas de pixels figés, pas de risque
+    // de valeur qui dérape) ; on fait glisser avec un pourcentage, toujours relatif à la
+    // largeur réelle du moment.
+    pages.forEach((page) => {
+        page.style.flex = '0 0 100%';
+        page.style.width = '100%';
+    });
+    track.style.width = '100%';
+    track.style.display = 'flex';
+    track.style.transform = 'translateX(0%)';
+    track.style.transition = 'transform 0.4s ease';
+    carousel.style.overflow = 'hidden';
+
+    function goToPage(index) {
+        currentPage = index;
+        track.style.transform = `translateX(-${currentPage * 100}%)`;
+        dots.forEach((dot, i) => dot.classList.toggle('active', i === currentPage));
+    }
+
+    function next() {
+        goToPage((currentPage + 1) % totalPages);
+    }
+
+    function startAutoplay() {
+        clearInterval(timer);
+        timer = setInterval(next, AUTOPLAY_DELAY);
+    }
+
+    dots.forEach((dot) => {
+        dot.addEventListener('click', () => {
+            goToPage(parseInt(dot.dataset.page, 10));
+            startAutoplay();
+        });
+    });
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            goToPage(Math.max(0, currentPage - 1));
+            startAutoplay();
+        });
+    }
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            goToPage(Math.min(totalPages - 1, currentPage + 1));
+            startAutoplay();
+        });
+    }
+
+    carousel.addEventListener('mouseenter', () => clearInterval(timer));
+    carousel.addEventListener('mouseleave', startAutoplay);
+
+    goToPage(0);
+    if (totalPages > 1) startAutoplay();
+}
+
+function initMiniCarousels() {
     document.querySelectorAll('[data-mini-carousel]').forEach((carousel) => {
         if (carousel.dataset.mobileGridDone === '1') return;
-        const track = carousel.querySelector('.home-mini-carousel-track, .home-deals-track, .home-top-categories-track');
-        const dots = carousel.querySelectorAll('.dot');
-        const prevBtn = carousel.querySelector('[data-carousel-prev]');
-        const nextBtn = carousel.querySelector('[data-carousel-next]');
-        if (!track) return;
-
-        const pages = track.querySelectorAll(':scope > *');
-        let currentPage = 0;
-        let timer = null;
-        const totalPages = pages.length || dots.length || 1;
-
-        // Chaque page occupe 100% de la largeur du track (pas de pixels figés, pas de risque
-        // de valeur qui dérape) ; on fait glisser avec un pourcentage, toujours relatif à la
-        // largeur réelle du moment.
-        pages.forEach((page) => {
-            page.style.flex = '0 0 100%';
-            page.style.width = '100%';
-        });
-        track.style.width = '100%';
-        track.style.display = 'flex';
-        track.style.transition = 'transform 0.4s ease';
-        carousel.style.overflow = 'hidden';
-
-        function goToPage(index) {
-            currentPage = index;
-            track.style.transform = `translateX(-${currentPage * 100}%)`;
-            dots.forEach((dot, i) => dot.classList.toggle('active', i === currentPage));
-        }
-
-        function next() {
-            goToPage((currentPage + 1) % totalPages);
-        }
-
-        function startAutoplay() {
-            clearInterval(timer);
-            timer = setInterval(next, AUTOPLAY_DELAY);
-        }
-
-        dots.forEach((dot) => {
-            dot.addEventListener('click', () => {
-                goToPage(parseInt(dot.dataset.page, 10));
-                startAutoplay();
-            });
-        });
-
-        if (prevBtn) {
-            prevBtn.addEventListener('click', () => {
-                goToPage(Math.max(0, currentPage - 1));
-                startAutoplay();
-            });
-        }
-        if (nextBtn) {
-            nextBtn.addEventListener('click', () => {
-                goToPage(Math.min(totalPages - 1, currentPage + 1));
-                startAutoplay();
-            });
-        }
-
-        carousel.addEventListener('mouseenter', () => clearInterval(timer));
-        carousel.addEventListener('mouseleave', startAutoplay);
-
-        goToPage(0);
-        if (totalPages > 1) startAutoplay();
+        wireDesktopMiniCarousel(carousel);
     });
 }
 /* --------------------------------------------------------------------------
@@ -349,12 +391,29 @@ function initTrendingTabs() {
 function getTrendingGroupSize(panel) {
     if (window.innerWidth <= 414) return 4;
     if (window.innerWidth <= 796) return 9;
+
+    // Option réservée aux panneaux qui le demandent explicitement : un nombre différent
+    // spécifiquement entre 797px et cette largeur-ci (ex: "Consulté récemment", qui passe à
+    // 10 par page ≤991px au lieu de son réglage desktop habituel).
+    if (panel.dataset.perPage991 && window.innerWidth <= 991) {
+        return parseInt(panel.dataset.perPage991, 10);
+    }
+
+    // Option réservée aux panneaux qui le demandent explicitement (data-paging-max-width) :
+    // au-delà de cette largeur, plus de découpage du tout — grille plate complète, comme
+    // avant. Les autres sections du site, qui ne posent pas cet attribut, ne sont pas
+    // concernées et gardent leur comportement d'origine.
+    const pagingMaxWidth = panel.dataset.pagingMaxWidth ? parseInt(panel.dataset.pagingMaxWidth, 10) : null;
+    if (pagingMaxWidth && window.innerWidth > pagingMaxWidth) {
+        return panel._trendingAllCards ? panel._trendingAllCards.length : 9999;
+    }
+
     return parseInt(panel.dataset.desktopPerPage || '8', 10);
 }
 
 function initTrendingPanel(panel) {
     if (!panel._trendingAllCards) {
-        panel._trendingAllCards = Array.from(panel.querySelectorAll('.product-card'));
+        panel._trendingAllCards = Array.from(panel.querySelectorAll('.product-card, .home-mini-product'));
         // Les cartes sont récupérées, mais les coquilles de pages générées par le
         // serveur (avant la création de la piste glissante par ce script) restent
         // vides dans le DOM une fois leurs cartes déplacées — on les retire ici.
@@ -389,7 +448,7 @@ function initTrendingPanel(panel) {
         const pageDiv = document.createElement('div');
         pageDiv.className = 'trending-product-page';
         const grid = document.createElement('div');
-        grid.className = 'home-product-grid';
+        grid.className = panel.classList.contains('home-mini-carousel-as-panel') ? 'home-mini-product-grid' : 'home-product-grid';
         group.forEach((card) => grid.appendChild(card));
         pageDiv.appendChild(grid);
         track.appendChild(pageDiv);
@@ -686,12 +745,12 @@ function initHotDealCard() {
  * l'image), les trie de la plus grande à la plus petite, puis ajoute chaque
  * bannière si — et seulement si — elle tient encore dans l'espace restant.
  */
-function fillSidebarWithBanners() {
-    const container = document.getElementById('homeSidebarFiller');
+function fillSidebarWithBanners(containerId = 'homeSidebarFiller', sidebarSelector = '.home-left-col', mainSelector = '.home-center-col') {
+    const container = document.getElementById(containerId);
     if (!container) return;
 
-    const leftCol = document.querySelector('.home-left-col');
-    const centerCol = document.querySelector('.home-center-col');
+    const leftCol = document.querySelector(sidebarSelector);
+    const centerCol = document.querySelector(mainSelector);
     if (!leftCol || !centerCol) return;
 
     const GAP = 12; // doit correspondre à .home-sidebar-filler { gap: 12px; }
@@ -822,6 +881,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 if (!data.success) return;
 
+                // Avant toute chose : efface l'état "groupe ouvert" sur TOUTES les cartes — sans
+                // ça, chaque carte précédemment ouverte par un retrait de souhait restait ouverte
+                // indéfiniment, s'accumulant à chaque nouveau clic.
+                document.querySelectorAll('.product-card.is-touch-active, .home-deal-card.is-touch-active').forEach((el) => {
+                    el.classList.remove('is-touch-active');
+                });
+
                 document.querySelectorAll(`[data-add-to-wishlist="${productId}"]`).forEach((el) => {
                     el.classList.toggle('is-wishlisted', data.added);
                     const icon = el.querySelector('i');
@@ -928,5 +994,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         window.addEventListener('resize', measure);
         measure();
+        window.addEventListener('load', measure); // re-mesure une fois tout chargé (polices, images) —
+                                                     // certains navigateurs stabilisent la mise en page
+                                                     // un peu après DOMContentLoaded, pas au même instant.
     });
 });
