@@ -1,0 +1,15 @@
+{# ==========================================================================
+   Bannière publicitaire réutilisable, lisible sur mobile :
+   <picture> sert l'image MOBILE (≤767px) si elle existe, sinon l'image desktop.
+   Attendu : ad (Advertisement), zoneKey (pour le suivi des clics), extraClass (optionnel)
+   ========================================================================== #}
+{% if ad and ad.imageName %}
+    <a {% if ad.targetUrl %}href="{{ path('ads_click', { id: ad.id, zoneKey: zoneKey }) }}" rel="sponsored{{ ad.openInNewTab ? ' noopener' : '' }}"{% endif %}{% if ad.openInNewTab %} target="_blank"{% endif %} class="ad-banner {{ extraClass|default('') }}{{ ad.targetUrl ? ' ad-clickable' : '' }}">
+        <picture>
+            {% if ad.mobileImageName %}
+                <source media="(max-width: 767px)" srcset="{{ vich_uploader_asset(ad, 'mobileImageFile') }}">
+            {% endif %}
+            <img src="{{ vich_uploader_asset(ad, 'imageFile') }}" alt="{{ ad.title }}" loading="lazy">
+        </picture>
+    </a>
+{% endif %}

@@ -262,9 +262,6 @@ class HomeController extends AbstractController
 
         // --- Popular Tags ---
         $featuredBrands = $brandRepository->findFeaturedHomepage();
-        $adLifestyleLeft = $adZonePicker->pick('homepage_lifestyle_left', 'public');
-        $adLifestyleCenter = $adZonePicker->pick('homepage_lifestyle_center', 'public');
-        $adLifestyleRight = $adZonePicker->pick('homepage_lifestyle_right', 'public');
 
         // --- Most Viewed ---
         $mostViewedSettings = $mostViewedSettingRepository->getSingleton();
@@ -365,9 +362,6 @@ class HomeController extends AbstractController
             'topCategories' => $topCategories,
             'topVendors' => $topVendors,
             'featuredBrands' => $featuredBrands,
-            'adLifestyleLeft' => $adLifestyleLeft,
-            'adLifestyleCenter' => $adLifestyleCenter,
-            'adLifestyleRight' => $adLifestyleRight,
             'mostViewedProducts' => $mostViewedProducts,
             'mostViewedEnabled' => $mostViewedSettings->isEnabled(),
             'recentlyViewedProducts' => $recentlyViewedProducts,

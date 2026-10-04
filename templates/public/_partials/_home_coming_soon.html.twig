@@ -105,7 +105,12 @@
 
     {% if comingSoonBanner and comingSoonBanner.imageName %}
         <a {% if comingSoonBanner.targetUrl %}href="{{ path('ads_click', { id: comingSoonBanner.id, zoneKey: 'futur_section_banner' }) }}"{% endif %}{% if comingSoonBanner.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="home-center-banner{{ comingSoonBanner.targetUrl ? ' ad-clickable' : '' }}">
+<picture>
+            {% if comingSoonBanner.mobileImageName %}
+                <source media="(max-width: 767px)" srcset="{{ vich_uploader_asset(comingSoonBanner, 'mobileImageFile') }}">
+            {% endif %}
             <img src="{{ vich_uploader_asset(comingSoonBanner, 'imageFile') }}" alt="{{ comingSoonBanner.title }}" loading="lazy">
+        </picture>
         </a>
     {% endif %}
 </section>

@@ -37,6 +37,13 @@ class Advertisement
     #[ORM\Column(nullable: true)]
     private ?string $imageName = null;
 
+    /** Version mobile facultative (format plus haut), servie automatiquement sur téléphone via <picture>. */
+    #[Vich\UploadableField(mapping: 'ad_banners', fileNameProperty: 'mobileImageName')]
+    private ?File $mobileImageFile = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?string $mobileImageName = null;
+
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $targetUrl = null; // lien de destination au clic
 
@@ -164,6 +171,29 @@ class Advertisement
     public function getImageName(): ?string
     {
         return $this->imageName;
+    }
+
+    public function setMobileImageFile(?File $mobileImageFile = null): void
+    {
+        $this->mobileImageFile = $mobileImageFile;
+        if (null !== $mobileImageFile) {
+            $this->updatedAt = new \DateTimeImmutable();
+        }
+    }
+
+    public function getMobileImageFile(): ?File
+    {
+        return $this->mobileImageFile;
+    }
+
+    public function setMobileImageName(?string $mobileImageName): void
+    {
+        $this->mobileImageName = $mobileImageName;
+    }
+
+    public function getMobileImageName(): ?string
+    {
+        return $this->mobileImageName;
     }
 
     public function getTargetUrl(): ?string

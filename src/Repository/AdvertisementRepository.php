@@ -119,6 +119,37 @@ class AdvertisementRepository extends ServiceEntityRepository
             ->execute();
     }
 
+    /**
+     * Pubs actives PLACÉES sur une zone et liées exactement à $category —
+     * ou, si $category vaut null, pubs généralistes de la zone (aucune catégorie liée).
+     *
+     * @return Advertisement[]
+     */
+    public function findActiveByZoneAndRelatedCategory(string $zoneKey, string $targetSpace, ?Category $category): array
+    {
+        $now = new \DateTimeImmutable();
+        $qb = $this->createQueryBuilder('a')
+            ->innerJoin('a.zonePlacements', 'zp')
+            ->andWhere('zp.zoneKey = :zoneKey')
+            ->andWhere('a.targetSpace = :space')
+            ->andWhere('a.status = :status')
+            ->andWhere('a.startAt <= :now')
+            ->andWhere('a.endAt IS NULL OR a.endAt > :now')
+            ->setParameter('zoneKey', $zoneKey)
+            ->setParameter('space', $targetSpace)
+            ->setParameter('status', 'active')
+            ->setParameter('now', $now)
+            ->orderBy('a.position', 'ASC');
+
+        if ($category) {
+            $qb->andWhere('a.relatedCategory = :category')->setParameter('category', $category);
+        } else {
+            $qb->andWhere('a.relatedCategory IS NULL');
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
     public function findOneActiveByZoneAndCategory(string $zoneKey, Category $category, string $targetSpace): ?Advertisement
     {
         $now = new \DateTimeImmutable();

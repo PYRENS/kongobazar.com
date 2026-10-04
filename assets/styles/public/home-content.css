@@ -2010,3 +2010,18 @@
 @media (max-width: 360px) {
     .home-cat-carousel-track { --cat-cols: 3; }
 }
+/* --------------------------------------------------------------------------
+   Bannières larges de l'accueil (centrale, bloc catégorie, Prochainement) sur mobile :
+   on affiche l'image telle quelle (image mobile 750×375 si fournie, sinon desktop entière),
+   sans le ratio desktop forcé qui la rendait minuscule.
+   -------------------------------------------------------------------------- */
+.home-center-banner picture,
+.category-block-banner picture { display: block; }
+@media (max-width: 767px) {
+    .home-center-banner img,
+    .category-block-banner img {
+        aspect-ratio: auto;
+        max-height: none;
+        height: auto;
+    }
+}

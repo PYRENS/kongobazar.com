@@ -42,6 +42,15 @@
                 <div class="search-tab-content">
                 <div class="search-tab-main">
                 {% if tab == 'products' %}
+                    {% if term|length >= 2 and productsTotalCount > 0 %}
+                        <div class="listing-toolbar">
+                            {% include 'public/_partials/_listing_highlights.html.twig' with { highlights: listingHighlights } %}
+                            <div class="listing-sort-group">
+                                {% include 'public/_partials/_listing_page_info.html.twig' with { total: productsTotalCount } %}
+                                {% include 'public/_partials/_listing_sort.html.twig' %}
+                            </div>
+                        </div>
+                    {% endif %}
                     <div id="searchProductsResults">
                         {% include 'public/_partials/_search_products_results.html.twig' %}
                     </div>
@@ -213,6 +222,7 @@
                         <form method="get" action="{{ path('catalog_search') }}" data-live-filter data-live-filter-target="searchProductsResults" data-live-filter-count-target="products" data-live-filter-self-target="searchFiltersBody">
                             <input type="hidden" name="q" value="{{ term }}">
                             <input type="hidden" name="type" value="products">
+                            <input type="hidden" name="tri" value="{{ currentSort|default('') }}">
 
                             <h6>Lieu de livraison</h6>
                             <button type="button" id="filterGeoBtn" class="search-filter-geo-btn">

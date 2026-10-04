@@ -13,6 +13,13 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class ProductRepository extends ServiceEntityRepository
 {
+    /** Tris proposés par le sélecteur « Trier par » (/categorie et onglet Produits de /recherche). '' = tri par défaut. */
+    public const SEARCH_SORTS = [
+        '' => 'Meilleures ventes',
+        'nouveautes' => 'Nouveautés',
+        'prix_asc' => 'Prix croissant',
+        'prix_desc' => 'Prix décroissant',
+    ];
     public function __construct(
         ManagerRegistry $registry,
         private readonly \App\Repository\AdministrativeUnitRepository $administrativeUnitRepository,
@@ -895,9 +902,17 @@ class ProductRepository extends ServiceEntityRepository
         ?int $locationId = null,
         array $sellerTypes = [],
         array $conditions = [],
+        string $sort = '',
     ): array {
-        $qb = $this->buildSearchQuery($term, $categoryIds, $brandIds, $minPrice, $maxPrice, $locationId, $sellerTypes, $conditions)
-            ->orderBy('p.salesCount', 'DESC');
+        $qb = $this->buildSearchQuery($term, $categoryIds, $brandIds, $minPrice, $maxPrice, $locationId, $sellerTypes, $conditions);
+
+        match ($sort) {
+            'nouveautes' => $qb->orderBy('p.createdAt', 'DESC'),
+            'prix_asc' => $qb->addSelect('COALESCE(dcprice.discountedPrice, p.basePrice) AS HIDDEN effectivePrice')->orderBy('effectivePrice', 'ASC'),
+            'prix_desc' => $qb->addSelect('COALESCE(dcprice.discountedPrice, p.basePrice) AS HIDDEN effectivePrice')->orderBy('effectivePrice', 'DESC'),
+            default => $qb->orderBy('p.salesCount', 'DESC'),
+        };
+        $qb->addOrderBy('p.id', 'DESC'); // ordre stable : un même produit ne saute pas d'une page à l'autre
 
         if (null !== $limit) {
             $qb->setMaxResults($limit);
@@ -1006,10 +1021,16 @@ class ProductRepository extends ServiceEntityRepository
 
         $categories = [];
         $brands = [];
+        $sellerIds = [];
+        $conditions = [];
         $minPrice = null;
         $maxPrice = null;
 
         foreach ($products as $product) {
+            if ($product->getSellerProfile()) {
+                $sellerIds[$product->getSellerProfile()->getId()] = true;
+            }
+            $conditions[$product->getCondition()] = true;
             $category = $product->getCategory();
             if ($category) {
                 $categories[$category->getId()] ??= ['id' => $category->getId(), 'name' => $category->getName(), 'count' => 0];
@@ -1034,6 +1055,9 @@ class ProductRepository extends ServiceEntityRepository
             'brands' => array_values($brands),
             'minPrice' => $minPrice ?? 0,
             'maxPrice' => $maxPrice ?? 0,
+            // Repères chiffrés affichés sous le titre de /categorie et en tête de l'onglet Produits de /recherche
+            'sellerCount' => count($sellerIds),
+            'conditions' => array_keys($conditions), // 'new' et/ou 'used'
         ];
     }
 
@@ -1096,6 +1120,11 @@ class ProductRepository extends ServiceEntityRepository
             ->leftJoin('p.sellerProfile', 'spsearch')
             ->leftJoin('spsearch.location', 'locsearch')
             ->leftJoin('spsearch.deliveryZones', 'dzsearch')
+            // Prix réellement affiché au client : prix de vente flash actif s'il y en a une, sinon prix de base
+            // (même règle que Product::getDisplayCurrentPrice()). Utilisé par le filtre Prix ET le tri par prix.
+            ->leftJoin('p.discountCampaigns', 'dcprice', 'WITH', 'dcprice.status = :dcpriceStatus AND dcprice.startAt <= :dcpriceNow AND dcprice.endAt > :dcpriceNow')
+            ->setParameter('dcpriceStatus', 'active')
+            ->setParameter('dcpriceNow', new \DateTimeImmutable())
             ->andWhere('p.status = :status')
             ->andWhere('p.title LIKE :term OR p.reference LIKE :term OR p.ean LIKE :term OR bsearch.name LIKE :term OR locsearch.name LIKE :term OR dzsearch.name LIKE :term')
             ->setParameter('status', 'active')
@@ -1164,10 +1193,10 @@ class ProductRepository extends ServiceEntityRepository
             $qb->andWhere('p.brand IN (:brandIds)')->setParameter('brandIds', $brandIds);
         }
         if (null !== $minPrice) {
-            $qb->andWhere('p.basePrice >= :minPrice')->setParameter('minPrice', $minPrice);
+            $qb->andWhere('COALESCE(dcprice.discountedPrice, p.basePrice) >= :minPrice')->setParameter('minPrice', $minPrice);
         }
         if (null !== $maxPrice) {
-            $qb->andWhere('p.basePrice <= :maxPrice')->setParameter('maxPrice', $maxPrice);
+            $qb->andWhere('COALESCE(dcprice.discountedPrice, p.basePrice) <= :maxPrice')->setParameter('maxPrice', $maxPrice);
         }
 
         return $qb;

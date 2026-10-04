@@ -84,12 +84,12 @@
 
 {% if searchFilters.maxPrice > searchFilters.minPrice %}
     <h6>Prix</h6>
-    <div class="price-range-filter mb-3" data-price-range data-min="{{ searchFilters.minPrice|round }}" data-max="{{ searchFilters.maxPrice|round }}">
+    {# Les valeurs du filtre restent en USD (montants enregistrés) ; seul l'affichage des bornes suit la devise choisie (live-filter.js). #}
+    <div class="price-range-filter mb-3" data-price-range data-min="{{ searchFilters.minPrice|round }}" data-max="{{ searchFilters.maxPrice|round }}" data-display-currency="{{ current_currency() }}" data-rate="{{ usd_to_cdf_rate()|default('') }}">
         <div class="price-range-values">
             <span data-price-range-min-label>{{ (selectedMinPrice ?? searchFilters.minPrice)|round }}</span>
             <span>—</span>
             <span data-price-range-max-label>{{ (selectedMaxPrice ?? searchFilters.maxPrice)|round }}</span>
-            <span>USD</span>
         </div>
         <div class="price-range-track">
             <div class="price-range-track-fill" data-price-range-fill></div>

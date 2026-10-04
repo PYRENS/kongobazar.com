@@ -3189,3 +3189,290 @@ html, body {
     margin-left: 0;
     margin-right: 0;
 }
+/* --------------------------------------------------------------------------
+   Publicités de la page /categorie (Z1 haut de liste, Z2 carte sponsorisée, Z3 bas de liste)
+   -------------------------------------------------------------------------- */
+.ad-banner { display: block; position: relative; }
+.ad-banner picture,
+.ad-banner img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+.ad-banner img { border-radius: 6px; }
+
+/* Z1 — bannière haut de liste : desktop 1050×180, mobile 750×375 (image mobile) */
+.category-ad-top { margin-top: 24px; }
+.category-ad-top .ad-banner img { aspect-ratio: 1050 / 180; object-fit: cover; }
+@media (max-width: 767px) {
+    .category-ad-top { margin-top: 16px; }
+    /* Si l'annonceur a fourni l'image mobile, on respecte son ratio 2:1 ; sinon, l'image desktop entière, jamais rognée */
+    .category-ad-top .ad-banner img { aspect-ratio: auto; object-fit: contain; }
+}
+
+/* Z2 — carte sponsorisée : occupe exactement une case de la grille produits */
+.ad-grid-card {
+    position: relative;
+    display: block;
+    min-height: 100%;
+    background: #f7f7f7;
+    text-decoration: none;
+}
+.ad-grid-card img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+}
+.ad-sponsored-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 2;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+/* Z3 — bannières bas de liste : même bande que la page Recherche */
+.category-ads-strip .ad-banner img { aspect-ratio: 440 / 160; object-fit: cover; }
+
+/* Ordre mobile propre à /categorie (les colonnes passent en display:contents ≤991px) :
+   sous-catégories → bannière haut → produits → bannières bas → Autour de moi */
+@media (max-width: 991px) {
+    .category-page .search-top-row { order: 1; }
+    .category-page .category-ad-top { order: 2; }
+    .category-page #searchProductsResults { order: 3; }
+    .category-page .category-ads-separator { order: 4; }
+    .category-page .category-ads-strip { order: 5; }
+    .category-page .search-ads-separator:not(.category-ads-separator) { order: 6; }
+    .category-page .search-around-me { order: 7; }
+    .category-page .search-filter-inline { order: 8; }
+}
+/* --------------------------------------------------------------------------
+   « Trier par » + repères chiffrés (/categorie et onglet Produits de /recherche)
+   -------------------------------------------------------------------------- */
+.listing-highlights {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    margin-top: 8px;
+    font-size: 13px;
+    color: #666;
+}
+.listing-highlights span { display: inline-flex; align-items: center; gap: 5px; }
+.listing-highlights i { color: var(--kb-theme-color); }
+.listing-highlights strong { color: var(--kb-text); }
+
+.listing-sort {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    white-space: nowrap;
+}
+.listing-sort-label { font-size: 14px; color: #666; }
+.listing-sort-select { width: auto; min-width: 190px; cursor: pointer; }
+
+/* /categorie : le tri se cale à droite du titre */
+.category-hero-sort { margin-left: auto; align-self: center; }
+
+/* /recherche : barre au-dessus de la grille, repères à gauche, tri à droite */
+.listing-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 24px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+}
+.listing-toolbar .listing-highlights { margin-top: 0; }
+
+@media (max-width: 767px) {
+    .category-hero { flex-wrap: wrap; }
+    .category-hero-sort { margin-left: 0; width: 100%; }
+    .listing-sort { width: 100%; }
+    .listing-sort-select { flex: 1; min-width: 0; }
+    .listing-toolbar { flex-direction: column; align-items: stretch; }
+}
+/* --------------------------------------------------------------------------
+   Cartes produits centrées sur /recherche et /categorie
+   (grille de résultats + « Autour de moi ») — sans toucher aux cartes de l'accueil
+   -------------------------------------------------------------------------- */
+#searchProductsResults .product-card-body,
+.search-around-me .product-card-body {
+    text-align: center;
+}
+#searchProductsResults .product-card-price,
+.search-around-me .product-card-price {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: baseline;
+    column-gap: 8px;
+}
+#searchProductsResults .price-old,
+.search-around-me .price-old {
+    margin-left: 0; /* l'écart est géré par column-gap, pour rester centré même quand le prix barré passe à la ligne */
+}
+#searchProductsResults .product-card-delivery-zone,
+.search-around-me .product-card-delivery-zone {
+    text-align: center;
+}
+/* --------------------------------------------------------------------------
+   En-tête /categorie sur mobile : le texte reste TOUJOURS à droite de l'illustration
+   (seul « Trier par » passe sur sa propre ligne, en dessous)
+   -------------------------------------------------------------------------- */
+@media (max-width: 767px) {
+    .category-hero .category-hero-image,
+    .category-hero .category-hero-icon {
+        flex-shrink: 0;
+    }
+    .category-hero-info {
+        flex: 1 1 0;   /* largeur de départ nulle : il ne force jamais le passage à la ligne */
+        min-width: 0;  /* autorise ses propres lignes (titre, repères) à se replier */
+    }
+    .category-hero-info h4 { overflow-wrap: anywhere; }
+}
+@media (max-width: 414px) {
+    .category-hero { gap: 14px; }
+    .category-hero .category-hero-image,
+    .category-hero .category-hero-icon {
+        width: 72px;
+        height: 72px;
+    }
+    .category-hero-info h4 { font-size: 18px; }
+    .listing-highlights { gap: 4px 12px; font-size: 12px; }
+}
+/* --------------------------------------------------------------------------
+   Sous-catégories de la page /categorie : UNE seule ligne qui défile
+   (flèches gauche/droite sur ordinateur, glissement au doigt sur mobile)
+   -------------------------------------------------------------------------- */
+.category-subcats {
+    position: relative;
+    margin-top: 20px;
+    margin-bottom: 30px;
+}
+.category-subcats-track {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    padding: 4px 0;
+}
+.category-subcats-track::-webkit-scrollbar { display: none; }
+/* Place réservée aux flèches seulement si la ligne déborde (classe posée par le JS) */
+.category-subcats.is-scrollable .category-subcats-track {
+    padding-left: 40px;
+    padding-right: 40px;
+    scroll-padding: 0 40px;
+}
+.category-subcats-track .top-category-item {
+    flex: 0 0 110px;
+    min-width: 0;
+    width: auto;
+    background: none;
+    padding: 0;
+    border-radius: 0;
+    gap: 8px;
+    text-decoration: none;
+    scroll-snap-align: start;
+}
+.category-subcats-track .top-category-label {
+    width: 100%;
+    font-size: 13px;
+    line-height: 1.25;
+    text-align: center;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+/* Flèches centrées sur les ronds (et non sur l'ensemble rond + libellé) */
+.category-subcats .home-cat-carousel-arrow { top: 49px; }
+.category-subcats .home-cat-carousel-arrow--prev { left: 0; }
+.category-subcats .home-cat-carousel-arrow--next { right: 0; }
+
+@media (max-width: 575px) {
+    .category-subcats { margin-bottom: 20px; }
+    .category-subcats-track { gap: 10px; }
+    .category-subcats.is-scrollable .category-subcats-track {
+        padding-left: 30px;
+        padding-right: 30px;
+        scroll-padding: 0 30px;
+    }
+    .category-subcats-track .top-category-item { flex-basis: 76px; }
+    .category-subcats-track .top-category-circle { width: 64px; height: 64px; }
+    .category-subcats-track .top-category-circle i { font-size: 22px; }
+    .category-subcats-track .top-category-label { font-size: 11px; }
+    .category-subcats .home-cat-carousel-arrow { top: 36px; width: 26px; height: 26px; font-size: 12px; }
+}
+/* --------------------------------------------------------------------------
+   /categorie — ronds des sous-catégories plus petits
+   (ordinateur 70px au lieu de 90px, mobile 56px au lieu de 64px)
+   -------------------------------------------------------------------------- */
+.category-subcats-track { gap: 12px; }
+.category-subcats-track .top-category-item { flex-basis: 90px; gap: 6px; }
+.category-subcats-track .top-category-circle { width: 70px; height: 70px; }
+.category-subcats-track .top-category-circle i { font-size: 24px; }
+.category-subcats-track .top-category-label { font-size: 12px; }
+/* Flèches recentrées sur les ronds : 4px de marge haute + moitié du rond */
+.category-subcats .home-cat-carousel-arrow { top: 39px; }
+
+@media (max-width: 575px) {
+    .category-subcats-track { gap: 8px; }
+    .category-subcats-track .top-category-item { flex-basis: 68px; }
+    .category-subcats-track .top-category-circle { width: 56px; height: 56px; }
+    .category-subcats-track .top-category-circle i { font-size: 20px; }
+    .category-subcats-track .top-category-label { font-size: 11px; }
+    .category-subcats .home-cat-carousel-arrow { top: 32px; }
+}
+/* --------------------------------------------------------------------------
+   Position dans la liste (« 1–30 sur 72 articles · Page 1 / 3 ») à gauche de « Trier par »
+   -------------------------------------------------------------------------- */
+.listing-sort-group {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+}
+.listing-page-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #666;
+    white-space: nowrap;
+}
+.listing-page-info strong { color: var(--kb-text); }
+.listing-page-info-sep { color: #bbb; }
+
+@media (max-width: 767px) {
+    .listing-sort-group {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .listing-page-info { white-space: normal; flex-wrap: wrap; }
+}
+/* --------------------------------------------------------------------------
+   Hero : image de fond desktop / mobile via variables CSS (posées en ligne par _hero.html.twig).
+   Sur tablette/mobile (carrousel en 4:3), l'image mobile 800×600 remplit tout le cadre.
+   -------------------------------------------------------------------------- */
+.hero-slide { background-image: var(--hero-bg); }
+@media (max-width: 991px) {
+    .hero-slide { background-image: var(--hero-bg-mobile, var(--hero-bg)); }
+}
+.hero-slide picture,
+.hero-side-ad picture { display: block; }

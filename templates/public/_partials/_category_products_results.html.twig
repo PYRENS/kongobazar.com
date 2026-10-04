@@ -1,11 +1,12 @@
 {# ==========================================================================
-   Grille de résultats produits + "Voir plus" — extrait pour être réutilisable
-   en chargement normal ET en mise à jour en direct (sans recharger la page).
-   Contexte attendu : products, reviewStats, productsHasMore, term,
-   selectedCategoryIds, selectedBrandIds, selectedMinPrice, selectedMaxPrice, productsNextShow
+   Grille produits + pagination de la page /categorie — utilisée au chargement
+   complet ET par le filtre en direct (une seule source, plus de divergence).
+   Contexte attendu : products, reviewStats, currentPage, totalPages,
+   filterParams (tous les filtres actifs + slug), categoryGridCardAd (optionnel)
    ========================================================================== #}
-{% set pageParams = filterParams|default({ q: term, type: tab, category: selectedCategoryIds, brand: selectedBrandIds, min_price: selectedMinPrice, max_price: selectedMaxPrice }) %}
 {% if products|length > 0 %}
+    {# Carte sponsorisée : après le 10e produit (2 rangées desktop), ou en fin de liste s'il y en a moins #}
+    {% set adSlot = min(10, products|length) %}
     <div class="home-product-grid" style="margin-top: 20px;">
         {% for product in products %}
             <div class="product-card">
@@ -37,39 +38,40 @@
                     </div>
                 </div>
             </div>
+
+            {% if loop.index == adSlot and categoryGridCardAd|default(null) and categoryGridCardAd.imageName %}
+                {% set ad = categoryGridCardAd %}
+                <a {% if ad.targetUrl %}href="{{ path('ads_click', { id: ad.id, zoneKey: 'category_grid_card' }) }}" rel="sponsored{{ ad.openInNewTab ? ' noopener' : '' }}"{% endif %}{% if ad.openInNewTab %} target="_blank"{% endif %} class="product-card ad-grid-card{{ ad.targetUrl ? ' ad-clickable' : '' }}">
+                    <img src="{{ vich_uploader_asset(ad, 'imageFile') }}" alt="{{ ad.title }}" loading="lazy">
+                    <span class="ad-sponsored-badge">Sponsorisé</span>
+                </a>
+            {% endif %}
         {% endfor %}
     </div>
-    {% if tab == 'products' and totalPages|default(1) > 1 %}
+
+    {% if totalPages > 1 %}
         <nav class="search-pagination" aria-label="Pages de résultats">
             {% if currentPage > 1 %}
-                <a href="{{ path('catalog_search', pageParams|merge({ page: currentPage - 1 })) }}" class="search-pagination-link" data-live-filter-loadmore>
+                <a href="{{ path('catalog_category', filterParams|merge({ page: currentPage - 1 })) }}" class="search-pagination-link" data-live-filter-loadmore>
                     <i class="bi bi-chevron-left"></i>
                 </a>
             {% endif %}
-
             {% for p in 1..totalPages %}
                 {% if p == 1 or p == totalPages or (p >= currentPage - 1 and p <= currentPage + 1) %}
-                    <a href="{{ path('catalog_search', pageParams|merge({ page: p })) }}" class="search-pagination-link{{ p == currentPage ? ' active' : '' }}" data-live-filter-loadmore>
+                    <a href="{{ path('catalog_category', filterParams|merge({ page: p })) }}" class="search-pagination-link{{ p == currentPage ? ' active' : '' }}" data-live-filter-loadmore>
                         {{ p }}
                     </a>
                 {% elseif p == currentPage - 2 or p == currentPage + 2 %}
                     <span class="search-pagination-dots">…</span>
                 {% endif %}
             {% endfor %}
-
             {% if currentPage < totalPages %}
-                <a href="{{ path('catalog_search', pageParams|merge({ page: currentPage + 1 })) }}" class="search-pagination-link" data-live-filter-loadmore>
+                <a href="{{ path('catalog_category', filterParams|merge({ page: currentPage + 1 })) }}" class="search-pagination-link" data-live-filter-loadmore>
                     <i class="bi bi-chevron-right"></i>
                 </a>
             {% endif %}
         </nav>
-    {% elseif productsHasMore|default(false) %}
-        <div style="text-align:center; margin-top:24px;">
-            <a href="{{ path('catalog_search', pageParams|merge({ show: productsNextShow })) }}" class="btn btn-outline offers-load-more" data-live-filter-loadmore>
-                {{ 'offers.load_more'|trans }}
-            </a>
-        </div>
     {% endif %}
 {% else %}
-    <p class="text-muted" style="margin-top:20px;">{{ 'search.no_results'|trans }}</p>
+    <p class="text-muted" style="margin-top:20px;">Aucun produit ne correspond à ces filtres dans cette catégorie.</p>
 {% endif %}

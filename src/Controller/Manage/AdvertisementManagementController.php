@@ -17,22 +17,20 @@ class AdvertisementManagementController extends AbstractController
 {
     /** Chaque zone : libellé + dimensions exactes attendues en pixels (null = pas encore de contrainte définie) + page où elle apparaît. */
     public const ZONE_INFO = [
-        'homepage_hero_main' => ['label' => 'Hero — carrousel principal', 'width' => 754, 'height' => 420, 'page' => 'Accueil'],
-        'homepage_hero_side_top' => ['label' => 'Hero — bannière latérale haute', 'width' => 270, 'height' => 200, 'page' => 'Accueil'],
-        'homepage_hero_side_bottom' => ['label' => 'Hero — bannière latérale basse', 'width' => 270, 'height' => 200, 'page' => 'Accueil'],
+        'homepage_hero_main' => ['label' => 'Hero — carrousel principal', 'width' => 754, 'height' => 420, 'mobileWidth' => 800, 'mobileHeight' => 600, 'page' => 'Accueil'],
+        'homepage_hero_side_top' => ['label' => 'Hero — bannière latérale haute', 'width' => 270, 'height' => 200, 'mobileWidth' => 300, 'mobileHeight' => 400, 'page' => 'Accueil'],
+        'homepage_hero_side_bottom' => ['label' => 'Hero — bannière latérale basse', 'width' => 270, 'height' => 200, 'mobileWidth' => 300, 'mobileHeight' => 400, 'page' => 'Accueil'],
         'sidebar_top' => ['label' => 'Colonne gauche — 1', 'width' => 270, 'height' => 240, 'page' => 'Accueil'],
         'sidebar_2' => ['label' => 'Colonne gauche — 2', 'width' => 270, 'height' => 480, 'page' => 'Accueil'],
-        'sidebar_3' => ['label' => 'Colonne gauche — 3', 'width' => 1044, 'height' => 250, 'page' => 'Accueil'],
+        // Zone affichée UNIQUEMENT sur tablette/mobile (≤991px) : un seul format, directement pensé pour le mobile.
+        'sidebar_3' => ['label' => 'Colonne gauche — 3 (mobile/tablette uniquement)', 'width' => 750, 'height' => 375, 'page' => 'Accueil'],
         'sidebar_middle' => ['label' => 'Colonne gauche — 4', 'width' => 270, 'height' => 240, 'page' => 'Accueil'],
-        'homepage_center_banner' => ['label' => 'Bannière centrale', 'width' => 1044, 'height' => 250, 'page' => 'Accueil'],
-        'category_block_banner' => ['label' => 'Bannière bas de bloc catégorie (liée à une catégorie précise)', 'width' => 1044, 'height' => 180, 'page' => 'Catégorie'],
-        'futur_section_banner' => ['label' => 'Bannière section "Prochainement" (accueil, statut futur)', 'width' => 1044, 'height' => 180, 'page' => 'Accueil'],
-        'homepage_lifestyle_left' => ['label' => 'Mosaïque lifestyle — gauche', 'width' => 255, 'height' => 220, 'page' => 'Accueil'],
-        'homepage_lifestyle_center' => ['label' => 'Mosaïque lifestyle — centre', 'width' => 510, 'height' => 220, 'page' => 'Accueil'],
-        'homepage_lifestyle_right' => ['label' => 'Mosaïque lifestyle — droite', 'width' => 255, 'height' => 220, 'page' => 'Accueil'],
+        'homepage_center_banner' => ['label' => 'Bannière centrale', 'width' => 1044, 'height' => 250, 'mobileWidth' => 750, 'mobileHeight' => 375, 'page' => 'Accueil'],
+        'category_block_banner' => ['label' => 'Bannière bas de bloc catégorie (liée à une catégorie précise)', 'width' => 1044, 'height' => 180, 'mobileWidth' => 750, 'mobileHeight' => 375, 'page' => 'Catégorie'],
+        'futur_section_banner' => ['label' => 'Bannière section "Prochainement" (accueil, statut futur)', 'width' => 1044, 'height' => 180, 'mobileWidth' => 750, 'mobileHeight' => 375, 'page' => 'Accueil'],
         'footer_social_banner' => ['label' => 'Footer — bannière sociale', 'width' => 270, 'height' => 130, 'page' => 'Footer (toutes pages)'],
         'footer_mosaic' => ['label' => 'Footer — mosaïque photos', 'width' => 200, 'height' => 90, 'page' => 'Footer (toutes pages)'],
-        'solde_between_batches' => ['label' => 'Solde — bannière entre les lots de produits', 'width' => 1366, 'height' => 262, 'page' => 'Accueil (Solde)'],
+        'solde_between_batches' => ['label' => 'Solde — bannière entre les lots de produits', 'width' => 1366, 'height' => 262, 'mobileWidth' => 750, 'mobileHeight' => 375, 'page' => 'Accueil (Solde)'],
         'mega_menu_catalogue_1' => ['label' => 'Méga-menu — bannière 1', 'width' => 320, 'height' => 180, 'page' => 'Méga-menu (toutes pages)'],
         'mega_menu_catalogue_2' => ['label' => 'Méga-menu — bannière 2', 'width' => 320, 'height' => 180, 'page' => 'Méga-menu (toutes pages)'],
         'mega_menu_catalogue_3' => ['label' => 'Méga-menu — bannière 3', 'width' => 320, 'height' => 180, 'page' => 'Méga-menu (toutes pages)'],
@@ -43,6 +41,12 @@ class AdvertisementManagementController extends AbstractController
         'search_results_banner_1' => ['label' => 'Recherche — bannière 1', 'width' => 440, 'height' => 160, 'page' => 'Recherche'],
         'search_results_banner_2' => ['label' => 'Recherche — bannière 2', 'width' => 440, 'height' => 160, 'page' => 'Recherche'],
         'search_results_banner_3' => ['label' => 'Recherche — bannière 3', 'width' => 440, 'height' => 160, 'page' => 'Recherche'],
+        // Page /categorie — pubs liées à une catégorie, héritées par ses sous-catégories, sinon généralistes (sans catégorie).
+        'category_top_banner' => ['label' => 'Catégorie — bannière haut de liste', 'width' => 1050, 'height' => 180, 'mobileWidth' => 750, 'mobileHeight' => 375, 'page' => 'Catégorie'],
+        'category_grid_card' => ['label' => 'Catégorie — carte sponsorisée dans la grille produits', 'width' => 400, 'height' => 500, 'page' => 'Catégorie'],
+        'category_bottom_banner_1' => ['label' => 'Catégorie — bannière bas de liste 1', 'width' => 440, 'height' => 160, 'page' => 'Catégorie'],
+        'category_bottom_banner_2' => ['label' => 'Catégorie — bannière bas de liste 2', 'width' => 440, 'height' => 160, 'page' => 'Catégorie'],
+        'category_bottom_banner_3' => ['label' => 'Catégorie — bannière bas de liste 3', 'width' => 440, 'height' => 160, 'page' => 'Catégorie'],
     ];
 
     #[Route('/publicites', name: 'manage_ads_index', host: 'manage.kongobazar.com', methods: ['GET'])]
@@ -310,35 +314,53 @@ class AdvertisementManagementController extends AbstractController
         ]);
     }
 
-    #[Route('/publicites/nouveau', name: 'manage_ads_create', host: 'manage.kongobazar.com', methods: ['POST'])]
-    public function create(Request $request, EntityManagerInterface $em): RedirectResponse
+    #[Route('/publicites/{id}/modifier', name: 'manage_ads_update', host: 'manage.kongobazar.com', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function update(Advertisement $ad, Request $request, EntityManagerInterface $em): Response
     {
         $zoneKeys = $request->request->all('zone_keys');
         if (empty($zoneKeys)) {
-            $this->addFlash('error', 'Choisis au moins une zone d\'affichage.');
-            return $this->redirectToRoute('manage_ads_new');
+            return $this->renderFormAfterError($ad, $request, $em, 'Choisis au moins une zone d\'affichage.');
         }
 
         if ($error = $this->validateImageForZones($request, $zoneKeys)) {
-            $this->addFlash('error', $error);
-            return $this->redirectToRoute('manage_ads_new');
+            return $this->renderFormAfterError($ad, $request, $em, $error);
         }
 
         try {
-            $ad = new Advertisement();
             $this->hydrate($ad, $request, $em);
-            $ad->setZoneKey($zoneKeys[0]);
-            $em->persist($ad);
-
             $this->syncZonePlacements($ad, $zoneKeys, $em);
             $em->flush();
         } catch (\Throwable $e) {
-            $this->addFlash('error', 'Impossible d\'enregistrer la publicité : ' . $e->getMessage());
-            return $this->redirectToRoute('manage_ads_new');
+            return $this->renderFormAfterError($ad, $request, $em, 'Impossible de mettre à jour la publicité : ' . $e->getMessage());
         }
 
-        $this->addFlash('success', 'Publicité créée.');
+        $this->addFlash('success', 'Publicité mise à jour.');
         return $this->redirectToRoute('manage_ads_index');
+    }
+
+    /**
+     * En cas d'erreur, réaffiche le formulaire AVEC les valeurs déjà saisies, au lieu de rediriger
+     * vers un formulaire vide. Rien n'est enregistré (pas de flush). Seuls les fichiers image sont
+     * à re-choisir : un navigateur ne permet jamais de pré-remplir un champ fichier.
+     */
+    private function renderFormAfterError(?Advertisement $ad, Request $request, EntityManagerInterface $em, string $error): Response
+    {
+        $draft = $ad ?? new Advertisement();
+        try {
+            $this->hydrate($draft, $request, $em, false);
+        } catch (\Throwable) {
+            // valeurs reprises en partie seulement (ex. dates incohérentes) : on réaffiche quand même ce qui a pu l'être
+        }
+
+        $this->addFlash('error', $error . ' — Les champs saisis ont été conservés ; seules les images sont à choisir à nouveau.');
+
+        return $this->render('manage/advertisements/form.html.twig', [
+            'ad' => $draft,
+            'zoneKeys' => self::ZONE_INFO,
+            'selectedZoneKeys' => $request->request->all('zone_keys'),
+            'sellers' => [],
+            'categories' => $em->getRepository(Category::class)->findBy([], ['name' => 'ASC']),
+        ], new Response('', Response::HTTP_UNPROCESSABLE_ENTITY));
     }
 
     #[Route('/publicites/{id}/modifier', name: 'manage_ads_edit', host: 'manage.kongobazar.com', methods: ['GET'], requirements: ['id' => '\d+'])]
@@ -355,32 +377,6 @@ class AdvertisementManagementController extends AbstractController
         ]);
     }
 
-    #[Route('/publicites/{id}/modifier', name: 'manage_ads_update', host: 'manage.kongobazar.com', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function update(Advertisement $ad, Request $request, EntityManagerInterface $em): RedirectResponse
-    {
-        $zoneKeys = $request->request->all('zone_keys');
-        if (empty($zoneKeys)) {
-            $this->addFlash('error', 'Choisis au moins une zone d\'affichage.');
-            return $this->redirectToRoute('manage_ads_edit', ['id' => $ad->getId()]);
-        }
-
-        if ($error = $this->validateImageForZones($request, $zoneKeys)) {
-            $this->addFlash('error', $error);
-            return $this->redirectToRoute('manage_ads_edit', ['id' => $ad->getId()]);
-        }
-
-        try {
-            $this->hydrate($ad, $request, $em);
-            $this->syncZonePlacements($ad, $zoneKeys, $em);
-            $em->flush();
-        } catch (\Throwable $e) {
-            $this->addFlash('error', 'Impossible de mettre à jour la publicité : ' . $e->getMessage());
-            return $this->redirectToRoute('manage_ads_edit', ['id' => $ad->getId()]);
-        }
-
-        $this->addFlash('success', 'Publicité mise à jour.');
-        return $this->redirectToRoute('manage_ads_index');
-    }
 
     #[Route('/publicites/{id}/supprimer', name: 'manage_ads_delete', host: 'manage.kongobazar.com', methods: ['POST'], requirements: ['id' => '\d+'])]
     public function delete(Advertisement $ad, EntityManagerInterface $em): RedirectResponse
@@ -422,8 +418,44 @@ class AdvertisementManagementController extends AbstractController
     }
 
     /** Bloque si l'image envoyée ne correspond pas exactement à CHAQUE zone cochée ayant une contrainte définie. */
+    /** Image mobile facultative : contrôlée seulement contre les zones cochées qui en acceptent une (mobileWidth/mobileHeight). */
+    private function validateMobileImageForZones(Request $request, array $zoneKeys): ?string
+    {
+        $mobileFile = $request->files->get('mobile_image_file');
+        if (!$mobileFile) {
+            return null;
+        }
+
+        $dimensions = @getimagesize($mobileFile->getPathname());
+        if (!$dimensions) {
+            return 'Impossible de lire les dimensions de l\'image mobile envoyée.';
+        }
+        [$actualWidth, $actualHeight] = $dimensions;
+
+        $mobileZones = array_values(array_filter($zoneKeys, fn ($key) => isset(self::ZONE_INFO[$key]['mobileWidth'])));
+        if (!$mobileZones) {
+            return null; // aucune zone cochée n'utilise d'image mobile : le fichier est simplement ignoré (voir hydrate())
+        }
+
+        $mismatches = [];
+        foreach ($mobileZones as $zoneKey) {
+            $expected = self::ZONE_INFO[$zoneKey];
+            if ($actualWidth !== $expected['mobileWidth'] || $actualHeight !== $expected['mobileHeight']) {
+                $mismatches[] = sprintf('%s (attendu %dx%d)', $expected['label'], $expected['mobileWidth'], $expected['mobileHeight']);
+            }
+        }
+
+        return $mismatches
+            ? sprintf('L\'image mobile fait %dx%d px, ce qui ne correspond pas à : %s.', $actualWidth, $actualHeight, implode(', ', $mismatches))
+            : null;
+    }
+
     private function validateImageForZones(Request $request, array $zoneKeys): ?string
     {
+        if ($error = $this->validateMobileImageForZones($request, $zoneKeys)) {
+            return $error;
+        }
+
         $file = $request->files->get('image_file');
         if (!$file) {
             return null;
@@ -456,7 +488,8 @@ class AdvertisementManagementController extends AbstractController
         return null;
     }
 
-    private function hydrate(Advertisement $ad, Request $request, EntityManagerInterface $em): void
+    /** $withFiles = false : reprise des seules valeurs texte (réaffichage du formulaire après une erreur). */
+    private function hydrate(Advertisement $ad, Request $request, EntityManagerInterface $em, bool $withFiles = true): void
     {
         $title = (string) $request->request->get('title');
         $ad->setTitle($title);
@@ -502,10 +535,22 @@ class AdvertisementManagementController extends AbstractController
 
         $sellerId = $request->request->get('advertiser_id');
         $ad->setAdvertiser($sellerId ? $em->getRepository(SellerProfile::class)->find((int) $sellerId) : null);
+        if (!$withFiles) {
+            return;
+        }
 
         $file = $request->files->get('image_file');
         if ($file) {
             $ad->setImageFile($file);
+        }
+
+        // Image mobile : prise en compte seulement si au moins une zone cochée en utilise une.
+        $acceptsMobile = (bool) array_filter($request->request->all('zone_keys'), fn ($key) => isset(self::ZONE_INFO[$key]['mobileWidth']));
+        $mobileFile = $acceptsMobile ? $request->files->get('mobile_image_file') : null;
+        if ($mobileFile) {
+            $ad->setMobileImageFile($mobileFile);
+        } elseif ($request->request->get('remove_mobile_image')) {
+            $ad->setMobileImageName(null);
         }
     }
 }

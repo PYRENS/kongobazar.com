@@ -6,7 +6,12 @@
    ========================================================================== #}
 {% if ad and ad.imageName %}
     <a {% if ad.targetUrl %}href="{{ path('ads_click', { id: ad.id, zoneKey: 'solde_between_batches' }) }}"{% endif %}{% if ad.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="solde-batch-ad{{ ad.targetUrl ? ' ad-clickable' : '' }}">
-        <img src="{{ vich_uploader_asset(ad, 'imageFile') }}" alt="{{ ad.title }}" loading="lazy">
+<picture>
+            {% if ad.mobileImageName %}
+                <source media="(max-width: 767px)" srcset="{{ vich_uploader_asset(ad, 'mobileImageFile') }}">
+            {% endif %}
+            <img src="{{ vich_uploader_asset(ad, 'imageFile') }}" alt="{{ ad.title }}" loading="lazy">
+        </picture>
     </a>
 {% endif %}
 

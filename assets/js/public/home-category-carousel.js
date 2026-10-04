@@ -21,6 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function updateArrows() {
             const maxScroll = track.scrollWidth - track.clientWidth;
+            // Marges latérales réservées aux flèches uniquement quand il y a vraiment de quoi faire défiler
+            carousel.classList.toggle('is-scrollable', maxScroll > 2);
             prevBtn.hidden = track.scrollLeft <= 2;
             nextBtn.hidden = track.scrollLeft >= maxScroll - 2;
         }

@@ -84,6 +84,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const fill = wrap.querySelector('[data-price-range-fill]');
                 const rangeMin = parseFloat(wrap.dataset.min);
                 const rangeMax = parseFloat(wrap.dataset.max);
+                const displayCurrency = wrap.dataset.displayCurrency || 'USD';
+                const rate = parseFloat(wrap.dataset.rate || '0');
+
+                // Les valeurs envoyées au serveur restent en USD ; seul le libellé suit la devise choisie.
+                function formatAmount(value) {
+                    if ('CDF' === displayCurrency && rate > 0) {
+                        return Math.round(value * rate).toLocaleString('fr-FR') + ' CDF';
+                    }
+                    return value + ' USD';
+                }
 
                 function update() {
                     let minVal = parseFloat(minInput.value);
@@ -91,8 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (minVal > maxVal) { [minVal, maxVal] = [maxVal, minVal]; }
                     minInput.value = minVal;
                     maxInput.value = maxVal;
-                    minLabel.textContent = minVal;
-                    maxLabel.textContent = maxVal;
+                    minLabel.textContent = formatAmount(minVal);
+                    maxLabel.textContent = formatAmount(maxVal);
                     minHidden.value = minVal;
                     maxHidden.value = maxVal;
                     const left = ((minVal - rangeMin) / (rangeMax - rangeMin)) * 100;
@@ -153,6 +163,20 @@ function hasActiveFilters() {
                 }
             }
 
+            // Repères chiffrés (« Prix dès … · N marques … ») : recalculés sur la nouvelle sélection.
+            // Position dans la liste (« 1–30 sur 72 articles · Page 1 / 3 »).
+            if (data.pageInfoHtml) {
+                document.querySelectorAll('[data-listing-pageinfo]').forEach((el) => {
+                    el.outerHTML = data.pageInfoHtml;
+                });
+            }
+
+            if (data.highlightsHtml) {
+                document.querySelectorAll('[data-listing-highlights]').forEach((el) => {
+                    el.outerHTML = data.highlightsHtml;
+                });
+            }
+
             if (data.counts) {
                 Object.entries(data.counts).forEach(([key, value]) => {
                     document.querySelectorAll(`[data-live-filter-count="${key}"]`).forEach((el) => {
@@ -198,10 +222,26 @@ function hasActiveFilters() {
             }
         });
 
+        // « Trier par » : le sélecteur est en tête de page (hors du formulaire) et pilote son champ caché « tri ».
+        const sortHidden = form.querySelector('input[name="tri"]');
+        const sortSelects = document.querySelectorAll('[data-live-filter-sort]');
+        if (sortHidden) {
+            sortSelects.forEach((select) => {
+                select.dataset.liveSortWired = 'true';
+                select.addEventListener('change', () => {
+                    sortHidden.value = select.value;
+                    submitLive();
+                });
+            });
+        }
+
         document.querySelectorAll('[data-live-filter-reset]').forEach((resetLink) => {
             resetLink.addEventListener('click', (e) => {
                 e.preventDefault();
                 if (resetLink.classList.contains('is-disabled')) return;
+                // La réinitialisation remet aussi le tri par défaut (l'URL de réinitialisation n'en porte pas).
+                if (sortHidden) sortHidden.value = '';
+                sortSelects.forEach((select) => { select.value = ''; });
                 fetchAndApply(resetLink.href);
                 form.reset();
             });
@@ -209,5 +249,20 @@ function hasActiveFilters() {
 
         wireFilterWidgets(form);
         toggleResetVisibility();
+    });
+
+    // « Trier par » sur une page sans formulaire de filtres : simple rechargement avec ?tri=…
+    document.querySelectorAll('[data-live-filter-sort]').forEach((select) => {
+        if (select.dataset.liveSortWired) return;
+        select.addEventListener('change', () => {
+            const url = new URL(window.location.href);
+            if (select.value) {
+                url.searchParams.set('tri', select.value);
+            } else {
+                url.searchParams.delete('tri');
+            }
+            url.searchParams.delete('page');
+            window.location.href = url.toString();
+        });
     });
 });

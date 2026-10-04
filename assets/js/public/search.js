@@ -80,14 +80,14 @@ function renderSuggestions(data, term, box, form) {
                 : `<span class="suggestion-thumb suggestion-thumb--empty"></span>`;
 
             const oldPriceHtml = item.oldPrice
-                ? `<span class="suggestion-price-old">${item.oldPrice} ${item.currency}</span>`
+                ? `<span class="suggestion-price-old">${item.oldPrice}</span>`
                 : '';
             link.innerHTML = `
                 ${img}
                 <span class="suggestion-title">${item.title}</span>
                 <span class="suggestion-price-wrap">
                     ${oldPriceHtml}
-                    <span class="suggestion-price">${item.price} ${item.currency}</span>
+                    <span class="suggestion-price">${item.price}</span>
                 </span>
             `;
             box.appendChild(link);

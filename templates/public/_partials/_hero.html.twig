@@ -71,9 +71,14 @@
                 {% for ad in heroSlides %}
                     <a {% if ad.targetUrl %}href="{{ path('ads_click', { id: ad.id, zoneKey: 'homepage_hero_main' }) }}"{% endif %}
                        class="hero-slide{{ loop.first ? ' active' : '' }}"
-                       style="background-image:url('{{ vich_uploader_asset(ad, 'imageFile') }}')"
+                       style="--hero-bg:url('{{ vich_uploader_asset(ad, 'imageFile') }}');{% if ad.mobileImageName %} --hero-bg-mobile:url('{{ vich_uploader_asset(ad, 'mobileImageFile') }}');{% endif %}"
                        aria-hidden="{{ loop.first ? 'false' : 'true' }}">
-                        <img class="hero-slide-img" src="{{ vich_uploader_asset(ad, 'imageFile') }}" alt="{{ ad.title|default('') }}" loading="{{ loop.first ? 'eager' : 'lazy' }}">
+                        <picture>
+                            {% if ad.mobileImageName %}
+                                <source media="(max-width: 991px)" srcset="{{ vich_uploader_asset(ad, 'mobileImageFile') }}">
+                            {% endif %}
+                            <img class="hero-slide-img" src="{{ vich_uploader_asset(ad, 'imageFile') }}" alt="{{ ad.title|default('') }}" loading="{{ loop.first ? 'eager' : 'lazy' }}">
+                        </picture>
                     </a>
                 {% endfor %}
             </div>
@@ -96,12 +101,22 @@
     <div class="hero-side-ads" data-hide-below-width="{{ hero_side_ads_hide_below_width() }}">
         {% if sideAdTop is defined and sideAdTop %}
             <a {% if sideAdTop.targetUrl %}href="{{ path('ads_click', { id: sideAdTop.id, zoneKey: 'homepage_hero_side_top' }) }}"{% endif %}{% if sideAdTop.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="hero-side-ad{{ sideAdTop.targetUrl ? ' ad-clickable' : '' }}">
-                <img src="{{ vich_uploader_asset(sideAdTop, 'imageFile') }}" alt="{{ sideAdTop.title }}" loading="lazy">
+                <picture>
+                    {% if sideAdTop.mobileImageName %}
+                        <source media="(max-width: 991px)" srcset="{{ vich_uploader_asset(sideAdTop, 'mobileImageFile') }}">
+                    {% endif %}
+                    <img src="{{ vich_uploader_asset(sideAdTop, 'imageFile') }}" alt="{{ sideAdTop.title }}" loading="lazy">
+                </picture>
             </a>
         {% endif %}
         {% if sideAdBottom is defined and sideAdBottom %}
             <a {% if sideAdBottom.targetUrl %}href="{{ path('ads_click', { id: sideAdBottom.id, zoneKey: 'homepage_hero_side_bottom' }) }}"{% endif %}{% if sideAdBottom.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="hero-side-ad{{ sideAdBottom.targetUrl ? ' ad-clickable' : '' }}">
-                <img src="{{ vich_uploader_asset(sideAdBottom, 'imageFile') }}" alt="{{ sideAdBottom.title }}" loading="lazy">
+                <picture>
+                    {% if sideAdBottom.mobileImageName %}
+                        <source media="(max-width: 991px)" srcset="{{ vich_uploader_asset(sideAdBottom, 'mobileImageFile') }}">
+                    {% endif %}
+                    <img src="{{ vich_uploader_asset(sideAdBottom, 'imageFile') }}" alt="{{ sideAdBottom.title }}" loading="lazy">
+                </picture>
             </a>
         {% endif %}
     </div>

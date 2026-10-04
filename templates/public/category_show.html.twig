@@ -13,7 +13,7 @@
 {% block title %}{{ category.name }} — KongoBazar{% endblock %}
 
 {% block body %}
-    <div class="container-kb search-page-header" style="padding: 30px 0;">
+    <div class="container-kb search-page-header category-page" style="padding: 30px 0;">
         <div class="category-hero">
             {% if category.imageName %}
                 <img src="{{ vich_uploader_asset(category, 'imageFile') }}" alt="{{ category.name }}" class="category-hero-image">
@@ -25,7 +25,16 @@
             <div class="category-hero-info">
                 <h4>{{ category.name }}</h4>
                 <span class="category-hero-count">{{ articleCount }} article{{ articleCount != 1 ? 's' : '' }} disponible{{ articleCount != 1 ? 's' : '' }}</span>
+                {% include 'public/_partials/_listing_highlights.html.twig' with { highlights: listingHighlights|default(null) } %}
             </div>
+            {% if articleCount > 0 %}
+                <div class="category-hero-sort">
+                    <div class="listing-sort-group">
+                        {% include 'public/_partials/_listing_page_info.html.twig' with { total: articleCount } %}
+                        {% include 'public/_partials/_listing_sort.html.twig' %}
+                    </div>
+                </div>
+            {% endif %}
         </div>
         <hr class="category-hero-separator">
 
@@ -33,82 +42,56 @@
             <div class="search-results-col">
                 <div class="search-top-row">
                     {% if children|length > 0 %}
-                        <div class="search-category-grid" style="margin-top: 20px; margin-bottom: 40px;">
-                            {% for child in children %}
-                                <a href="{{ path('catalog_category', { slug: child.slug }) }}" class="top-category-item">
-                                    <span class="top-category-circle" style="background:{{ child.effectiveColor }};">
-                                        {% if child.imageName %}
-                                            <img src="{{ vich_uploader_asset(child, 'imageFile') }}" alt="{{ child.name }}" loading="lazy">
-                                        {% else %}
-                                            <i class="bi {{ child.icon|default('bi-tag') }}"></i>
-                                        {% endif %}
-                                    </span>
-                                    <span class="top-category-label">{{ child.name }}</span>
-                                </a>
-                            {% endfor %}
-                        </div>
+                        {# Sous-catégories : une seule ligne, flèches gauche/droite + glissement au doigt (home-category-carousel.js) #}
+                        <section class="category-subcats" data-cat-carousel aria-label="Sous-catégories de {{ category.name }}">
+                            <button type="button" class="carousel-arrow home-cat-carousel-arrow home-cat-carousel-arrow--prev" data-cat-carousel-prev aria-label="{{ 'home.prev'|trans }}" hidden>
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+                            <div class="category-subcats-track" data-cat-carousel-track>
+                                {% for child in children %}
+                                    <a href="{{ path('catalog_category', { slug: child.slug }) }}" class="top-category-item" title="{{ child.name }}">
+                                        <span class="top-category-circle" style="background:{{ child.effectiveColor }};">
+                                            {% if child.imageName %}
+                                                <img src="{{ vich_uploader_asset(child, 'imageFile') }}" alt="{{ child.name }}" loading="lazy">
+                                            {% else %}
+                                                <i class="bi {{ child.icon|default('bi-tag') }}"></i>
+                                            {% endif %}
+                                        </span>
+                                        <span class="top-category-label">{{ child.name }}</span>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                            <button type="button" class="carousel-arrow home-cat-carousel-arrow home-cat-carousel-arrow--next" data-cat-carousel-next aria-label="{{ 'home.next'|trans }}" hidden>
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </section>
                         <hr class="category-hero-separator" style="margin-bottom: 0;">
                     {% endif %}
                 </div>
 
                 <div class="search-tab-content">
-                    <div id="searchProductsResults" style="margin-top: 30px;">
-                        {% if products|length > 0 %}
-                            <div class="home-product-grid" style="margin-top: 20px;">
-                                {% for product in products %}
-                                    <div class="product-card">
-                                        <div class="product-card-media">
-                                            <img src="{{ product.images|length > 0 ? vich_uploader_asset(product.images|first, 'imageFile') : '' }}" alt="{{ product.title }}" class="product-card-main-image" loading="lazy">
-                                            {% if product.activeDiscountPercent %}
-                                                <span class="badge-discount">-{{ product.activeDiscountPercent }}%</span>
-                                            {% elseif product.compareAtPrice %}
-                                                <span class="badge-discount">-{{ ((1 - (product.basePrice / product.compareAtPrice)) * 100)|round }}%</span>
-                                            {% endif %}
-                                            {% if product.brand and product.brand.logoName %}
-                                                <img src="{{ vich_uploader_asset(product.brand, 'logoFile') }}" alt="{{ product.brand.name }}" class="product-card-brand-logo">
-                                            {% endif %}
-                                            {% include 'public/_partials/_product_icons_wishlist.html.twig' with { product: product } %}
-                                        </div>
-                                        <div class="product-card-body">
-                                            <a href="{{ path('catalog_product', { slug: product.slug }) }}" class="product-card-title">{{ product.title }}</a>
-                                            <div class="product-card-price">
-                                                <span class="price-now">{{ product.displayCurrentPrice|price(product.currency) }}</span>
-                                                {% if product.displayOldPrice %}
-                                                    <span class="price-old">{{ product.displayOldPrice|price(product.currency) }}</span>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            </div>
+                    {# Z1 — bannière haut de liste (image mobile servie automatiquement sur téléphone) #}
+                    {% if categoryTopAd|default(null) %}
+                        <div class="category-ad-top">
+                            {% include 'public/_partials/_ad_banner.html.twig' with { ad: categoryTopAd, zoneKey: 'category_top_banner' } %}
+                        </div>
+                    {% endif %}
 
-                            {% if totalPages > 1 %}
-                                <nav class="search-pagination" aria-label="Pages de résultats">
-                                    {% if currentPage > 1 %}
-                                        <a href="{{ path('catalog_category', { slug: category.slug, brand: selectedBrandIds, min_price: selectedMinPrice, max_price: selectedMaxPrice, page: currentPage - 1 }) }}" class="search-pagination-link" data-live-filter-loadmore>
-                                            <i class="bi bi-chevron-left"></i>
-                                        </a>
-                                    {% endif %}
-                                    {% for p in 1..totalPages %}
-                                        {% if p == 1 or p == totalPages or (p >= currentPage - 1 and p <= currentPage + 1) %}
-                                            <a href="{{ path('catalog_category', { slug: category.slug, brand: selectedBrandIds, min_price: selectedMinPrice, max_price: selectedMaxPrice, page: p }) }}" class="search-pagination-link{{ p == currentPage ? ' active' : '' }}" data-live-filter-loadmore>
-                                                {{ p }}
-                                            </a>
-                                        {% elseif p == currentPage - 2 or p == currentPage + 2 %}
-                                            <span class="search-pagination-dots">…</span>
-                                        {% endif %}
-                                    {% endfor %}
-                                    {% if currentPage < totalPages %}
-                                        <a href="{{ path('catalog_category', { slug: category.slug, brand: selectedBrandIds, min_price: selectedMinPrice, max_price: selectedMaxPrice, page: currentPage + 1 }) }}" class="search-pagination-link" data-live-filter-loadmore>
-                                            <i class="bi bi-chevron-right"></i>
-                                        </a>
-                                    {% endif %}
-                                </nav>
-                            {% endif %}
-                        {% else %}
-                            <p class="text-muted" style="margin-top:20px;">Aucun produit dans cette catégorie pour le moment.</p>
-                        {% endif %}
+                    <div id="searchProductsResults" style="margin-top: 30px;">
+                        {% include 'public/_partials/_category_products_results.html.twig' %}
                     </div>
+
+                    {# Z3 — 3 bannières bas de liste (défilement horizontal au doigt sur mobile) #}
+                    {% if categoryBottomAds|default([])|length > 0 %}
+                        <hr class="search-ads-separator category-ads-separator">
+                        <div class="search-ads-strip category-ads-strip">
+                            {% for row in categoryBottomAds %}
+                                <div class="search-ads-strip-item">
+                                    {% include 'public/_partials/_ad_banner.html.twig' with { ad: row.ad, zoneKey: row.zoneKey } %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
 
                     <hr class="search-ads-separator">
                     <div class="search-around-me" id="aroundMeSection">
@@ -179,6 +162,7 @@
                 {% include 'public/_partials/_filters_sidebar.html.twig' with {
                     formAction: path('catalog_category', { slug: category.slug }),
                     resetUrl: path('catalog_category', { slug: category.slug }),
+                    hideCategoryFilter: true,
                 } %}
 
                 {% if sidebarFillerBanners|default([])|length > 0 %}

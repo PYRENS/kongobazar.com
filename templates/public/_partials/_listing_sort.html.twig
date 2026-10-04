@@ -1,0 +1,14 @@
+{# ==========================================================================
+   Sélecteur « Trier par » — placé en tête de page, HORS du formulaire de filtres :
+   live-filter.js le relie au champ caché « tri » du formulaire (filtre en direct),
+   ou recharge la page avec ?tri=… s'il n'y a pas de formulaire.
+   Attendu : sortOptions (ProductRepository::SEARCH_SORTS), currentSort
+   ========================================================================== #}
+<label class="listing-sort">
+    <span class="listing-sort-label"><i class="bi bi-sort-down"></i> Trier par</span>
+    <select class="form-select listing-sort-select" data-live-filter-sort aria-label="Trier les produits">
+        {% for value, label in sortOptions|default({}) %}
+            <option value="{{ value }}" {{ value == currentSort|default('') ? 'selected' : '' }}>{{ label }}</option>
+        {% endfor %}
+    </select>
+</label>

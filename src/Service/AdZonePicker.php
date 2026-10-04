@@ -4,6 +4,7 @@ namespace App\Service;
 
 use App\Entity\Advertisement;
 use App\Entity\Campaign;
+use App\Entity\Category;
 use App\Repository\AdvertisementRepository;
 use App\Repository\AdZoneSettingRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -91,6 +92,49 @@ class AdZonePicker
         $this->recordImpression($ad, $zoneKey);
 
         return $ad;
+    }
+
+    /**
+     * Pub d'une zone liée à une catégorie, AVEC héritage : la catégorie elle-même, puis ses parentes
+     * en remontant jusqu'au rayon, puis une pub généraliste (sans catégorie). Null si rien : la zone
+     * disparaît sans laisser de trou. $excludeIds évite d'afficher 2 fois la même pub sur une page.
+     */
+    public function pickForCategory(string $zoneKey, Category $category, string $targetSpace = 'public', array $excludeIds = []): ?Advertisement
+    {
+        $setting = $this->settingRepository->findOneByZoneKey($zoneKey);
+        if ($setting && !$setting->isEnabled()) {
+            return null;
+        }
+
+        $levels = array_reverse($category->getAncestors()); // catégorie courante d'abord, puis ses parentes
+        $levels[] = null;                                    // enfin, les pubs généralistes
+
+        foreach ($levels as $level) {
+            $candidates = array_values(array_filter(
+                $this->advertisementRepository->findActiveByZoneAndRelatedCategory($zoneKey, $targetSpace, $level),
+                static fn (Advertisement $a) => !in_array($a->getId(), $excludeIds, true)
+            ));
+            if (!$candidates) {
+                continue;
+            }
+
+            $selected = null;
+            if ($setting && 'fixed' === $setting->getMode() && $setting->getFixedAdvertisement()) {
+                foreach ($candidates as $candidate) {
+                    if ($candidate->getId() === $setting->getFixedAdvertisement()->getId()) {
+                        $selected = $candidate;
+                        break;
+                    }
+                }
+            }
+            $selected ??= $candidates[array_rand($candidates)];
+
+            $this->recordImpression($selected, $zoneKey);
+
+            return $selected;
+        }
+
+        return null;
     }
 
     private function recordImpression(Advertisement $ad, string $zoneKey): void

@@ -27,6 +27,7 @@ class CategoryController extends AbstractController
         SidebarFillerBannerRepository $sidebarFillerBannerRepository,
         ProductReviewRepository $reviewRepository,
         StorageInterface $storage,
+        \App\Service\AdZonePicker $adZonePicker,
     ): Response {
         $category = $categoryRepository->findOneBy(['slug' => $slug]);
         if (!$category) {
@@ -58,13 +59,17 @@ class CategoryController extends AbstractController
         $locationId = $request->query->get('location') ? (int) $request->query->get('location') : null;
         $sellerTypes = $request->query->all('vendeur');
         $productConditions = $request->query->all('etat');
+        $sort = (string) $request->query->get('tri', '');
+        if (!array_key_exists($sort, \App\Repository\ProductRepository::SEARCH_SORTS)) {
+            $sort = '';
+        }
 
         $perPage = 30;
         $page = max(1, (int) $request->query->get('page', 1));
 
         $searchFilters = $productRepository->getSearchFilterOptions('', $categoryIds, $brandIds, $minPrice, $maxPrice, $locationId, $sellerTypes, $productConditions);
         $totalCount = $productRepository->countSearchProducts('', $categoryIds, $brandIds, $minPrice, $maxPrice, $locationId, $sellerTypes, $productConditions);
-        $products = $productRepository->searchByTerm('', $perPage, ($page - 1) * $perPage, $categoryIds, $brandIds, $minPrice, $maxPrice, $locationId, $sellerTypes, $productConditions);
+        $products = $productRepository->searchByTerm('', $perPage, ($page - 1) * $perPage, $categoryIds, $brandIds, $minPrice, $maxPrice, $locationId, $sellerTypes, $productConditions, $sort);
 
         $reviewStats = $reviewRepository->getStatsForProducts(array_map(fn ($p) => $p->getId(), $products));
 
@@ -93,12 +98,30 @@ class CategoryController extends AbstractController
 
         $breadcrumbs = [];
         foreach ($category->getAncestors() as $ancestor) {
+            // getAncestors() inclut la catégorie courante en dernier : elle est ajoutée juste après, sans lien.
+            if ($ancestor === $category) {
+                continue;
+            }
             $breadcrumbs[] = [
                 'label' => $ancestor->getName(),
                 'url' => $this->generateUrl('catalog_category', ['slug' => $ancestor->getSlug()]),
             ];
         }
         $breadcrumbs[] = ['label' => $category->getName(), 'url' => null];
+
+        // Filtres actifs — réutilisés par la pagination (avant, changer de page perdait la
+        // sous-catégorie, le type de vendeur, l'état et le lieu) et par l'URL du filtre en direct.
+        $filterParams = array_filter([
+            'slug' => $category->getSlug(),
+            'category' => $selectedCategoryIds ?: null,
+            'brand' => $brandIds ?: null,
+            'min_price' => $minPrice,
+            'max_price' => $maxPrice,
+            'vendeur' => $sellerTypes ?: null,
+            'etat' => $productConditions ?: null,
+            'location' => $locationId,
+            'tri' => $sort ?: null,
+        ], fn ($value) => null !== $value);
 
         $templateParams = [
             'category' => $category,
@@ -119,6 +142,14 @@ class CategoryController extends AbstractController
             'currentPage' => $page,
             'totalPages' => (int) max(1, ceil($totalCount / $perPage)),
             'productsHasMore' => false,
+            'perPage' => $perPage,
+            'filterParams' => $filterParams,
+            'sortOptions' => \App\Repository\ProductRepository::SEARCH_SORTS,
+            'currentSort' => $sort,
+            // Repères chiffrés = la sélection réellement affichée (mêmes chiffres que les filtres), mis à jour en direct.
+            'listingHighlights' => $searchFilters,
+            // Carte sponsorisée intercalée dans la grille (aussi lors des mises à jour en direct).
+            'categoryGridCardAd' => count($products) >= 4 ? $adZonePicker->pickForCategory('category_grid_card', $category) : null,
         ];
 
         // Appelé par le filtre en direct : ne renvoyer que les morceaux HTML concernés,
@@ -126,23 +157,31 @@ class CategoryController extends AbstractController
         // filtrage de fonctionner sur cette page.
         if ($request->isXmlHttpRequest()) {
             return $this->json([
-                'html' => $this->renderView('public/_partials/_search_products_results.html.twig', $templateParams + ['tab' => 'products']),
-                'filtersHtml' => $this->renderView('public/_partials/_search_filters_body.html.twig', $templateParams + ['hideCategoryFilter' => false]),
+                'html' => $this->renderView('public/_partials/_category_products_results.html.twig', $templateParams),
+                'filtersHtml' => $this->renderView('public/_partials/_search_filters_body.html.twig', $templateParams + ['hideCategoryFilter' => true]),
+                'highlightsHtml' => $this->renderView('public/_partials/_listing_highlights.html.twig', ['highlights' => $searchFilters]),
+                'pageInfoHtml' => $this->renderView('public/_partials/_listing_page_info.html.twig', [
+                    'total' => $totalCount, 'currentPage' => $page, 'totalPages' => (int) max(1, ceil($totalCount / $perPage)), 'perPage' => $perPage,
+                ]),
                 'counts' => ['products' => $totalCount],
-                'url' => $this->generateUrl('catalog_category', array_filter([
-                    'slug' => $category->getSlug(),
-                    'category' => $selectedCategoryIds ?: null,
-                    'brand' => $brandIds ?: null,
-                    'min_price' => $minPrice,
-                    'max_price' => $maxPrice,
-                    'vendeur' => $sellerTypes ?: null,
-                    'etat' => $productConditions ?: null,
-                    'location' => $locationId,
-                ])),
+                'url' => $this->generateUrl('catalog_category', $filterParams),
             ]);
         }
 
+        // Bannières haut et bas de liste : uniquement au chargement complet (pas à chaque filtre),
+        // pour ne pas gonfler les compteurs d'affichage. Les 3 du bas ne montrent jamais la même pub.
+        $categoryBottomAds = [];
+        foreach ([1, 2, 3] as $n) {
+            $zoneKey = 'category_bottom_banner_' . $n;
+            $ad = $adZonePicker->pickForCategory($zoneKey, $category, 'public', array_map(fn ($row) => $row['ad']->getId(), $categoryBottomAds));
+            if ($ad) {
+                $categoryBottomAds[] = ['ad' => $ad, 'zoneKey' => $zoneKey];
+            }
+        }
+
         return $this->render('public/category_show.html.twig', $templateParams + [
+            'categoryTopAd' => $adZonePicker->pickForCategory('category_top_banner', $category),
+            'categoryBottomAds' => $categoryBottomAds,
             'sidebarFillerBanners' => $sidebarFillerBannerRepository->findForCategory($category),
             'breadcrumbs' => $breadcrumbs,
             'aroundMeProducts' => $aroundMeProducts,

@@ -36,6 +36,7 @@ class SearchController extends AbstractController
         StorageInterface $storage,
         \App\Repository\BrandRepository $brandRepository,
         \App\Repository\AdministrativeUnitRepository $administrativeUnitRepository,
+        \App\Service\PriceFormatter $priceFormatter,
     ): JsonResponse {
         $term = trim((string) $request->query->get('q', ''));
 
@@ -55,7 +56,7 @@ class SearchController extends AbstractController
         $locations = $administrativeUnitRepository->searchByName($term, $fetchLimit);
 
         return new JsonResponse([
-            'products' => $this->formatProducts(array_slice($products, 0, self::PER_SECTION), $storage),
+            'products' => $this->formatProducts(array_slice($products, 0, self::PER_SECTION), $storage, $priceFormatter),
             'productsHasMore' => count($products) > self::PER_SECTION,
             'categories' => $this->formatCategories(array_slice($categories, 0, self::PER_SECTION)),
             'categoriesHasMore' => count($categories) > self::PER_SECTION,
@@ -107,6 +108,25 @@ class SearchController extends AbstractController
         $locationId = $request->query->get('location') ? (int) $request->query->get('location') : null;
         $sellerTypes = $request->query->all('vendeur');
         $productConditions = $request->query->all('etat');
+        $sort = (string) $request->query->get('tri', '');
+        if (!array_key_exists($sort, ProductRepository::SEARCH_SORTS)) {
+            $sort = '';
+        }
+
+        // Filtres actifs — réutilisés par la pagination (avant, changer de page perdait le type de
+        // vendeur, l'état et le lieu) et par l'URL renvoyée au filtre en direct.
+        $filterParams = array_filter([
+            'q' => $term,
+            'type' => $tab,
+            'category' => $categoryIds ?: null,
+            'brand' => $brandIds ?: null,
+            'min_price' => $minPrice,
+            'max_price' => $maxPrice,
+            'vendeur' => $sellerTypes ?: null,
+            'etat' => $productConditions ?: null,
+            'location' => $locationId,
+            'tri' => $sort ?: null,
+        ], fn ($value) => null !== $value);
 
         // Pagination de l'onglet Produits : 30 par page, pages distinctes (pas un total qui
         // s'accumule comme "Voir plus").
@@ -120,7 +140,7 @@ class SearchController extends AbstractController
 
         $products = $hasTerm
             ? ('products' === $tab
-                ? $productRepository->searchByTerm($term, $perPage, ($currentPage - 1) * $perPage, $categoryIds, $brandIds, $minPrice, $maxPrice, $locationId, $sellerTypes, $productConditions)
+                ? $productRepository->searchByTerm($term, $perPage, ($currentPage - 1) * $perPage, $categoryIds, $brandIds, $minPrice, $maxPrice, $locationId, $sellerTypes, $productConditions, $sort)
                 : $productRepository->searchByTerm($term, self::PER_SECTION + 1))
             : [];
         $productsTotalCount = $hasTerm
@@ -232,6 +252,12 @@ class SearchController extends AbstractController
             'newItemsByTab' => $newItemsByTab,
             'newItemsTabProductCounts' => $newItemsTabProductCounts,
             'term' => $term,
+            'filterParams' => $filterParams,
+            'sortOptions' => ProductRepository::SEARCH_SORTS,
+            'currentSort' => $sort,
+            // Repères chiffrés = la sélection réellement affichée (mêmes chiffres que les filtres), mis à jour en direct.
+            'listingHighlights' => $hasTerm ? $searchFilters : null,
+            'perPage' => $perPage,
             'tab' => $tab,
             'tabs' => self::TABS,
             'products' => $products,
@@ -273,17 +299,14 @@ class SearchController extends AbstractController
             return $this->json([
                 'html' => $this->renderView('public/_partials/_search_products_results.html.twig', $templateParams),
                 'filtersHtml' => $this->renderView('public/_partials/_search_filters_body.html.twig', $templateParams),
+                'highlightsHtml' => $this->renderView('public/_partials/_listing_highlights.html.twig', ['highlights' => $searchFilters]),
+                'pageInfoHtml' => $this->renderView('public/_partials/_listing_page_info.html.twig', [
+                    'total' => $productsTotalCount, 'currentPage' => $currentPage, 'totalPages' => (int) max(1, ceil($productsTotalCount / $perPage)), 'perPage' => $perPage,
+                ]),
                 'counts' => [
                     'products' => $productsTotalCount,
                 ],
-                'url' => $this->generateUrl('catalog_search', array_filter([
-                    'q' => $term,
-                    'type' => $tab,
-                    'category' => $categoryIds ?: null,
-                    'brand' => $brandIds ?: null,
-                    'min_price' => $minPrice,
-                    'max_price' => $maxPrice,
-                ])),
+                'url' => $this->generateUrl('catalog_search', $filterParams),
             ]);
         }
 
@@ -297,18 +320,18 @@ class SearchController extends AbstractController
         ]);
     }
 
-    private function formatProducts(array $products, StorageInterface $storage): array
+    private function formatProducts(array $products, StorageInterface $storage, \App\Service\PriceFormatter $priceFormatter): array
     {
-        return array_map(function ($product) use ($storage) {
+        return array_map(function ($product) use ($storage, $priceFormatter) {
             $firstImage = $product->getImages()->first() ?: null;
             $imageUrl = $firstImage ? $storage->resolveUri($firstImage, 'imageFile') : null;
 
             return [
                 'title' => $product->getTitle(),
                 'url' => $this->generateUrl('catalog_product', ['slug' => $product->getSlug()]),
-                'price' => $product->getDisplayCurrentPrice(),
-                'oldPrice' => $product->getDisplayOldPrice(),
-                'currency' => $product->getCurrency(),
+                // Montants déjà convertis et formatés dans la devise choisie par le visiteur (USD/CDF)
+                'price' => $priceFormatter->display($product->getDisplayCurrentPrice(), $product->getCurrency()),
+                'oldPrice' => $product->getDisplayOldPrice() ? $priceFormatter->display($product->getDisplayOldPrice(), $product->getCurrency()) : null,
                 'image' => $imageUrl,
             ];
         }, $products);

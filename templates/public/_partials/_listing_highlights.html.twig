@@ -1,0 +1,30 @@
+{# ==========================================================================
+   Repères chiffrés de la liste de produits AFFICHÉE (/categorie, onglet Produits de /recherche).
+   Mêmes chiffres que les filtres (prix réellement affiché, vente flash comprise) ;
+   le conteneur est toujours rendu (data-listing-highlights) pour que le filtre en direct
+   puisse le remplacer après chaque changement.
+   Attendu : highlights = résultat de ProductRepository::getSearchFilterOptions() (ou null)
+   ========================================================================== #}
+<div class="listing-highlights" data-listing-highlights>
+    {% if highlights|default(null) %}
+        {% set brandCount = highlights.brands|default([])|length %}
+        {% set sellerCount = highlights.sellerCount|default(0) %}
+        {% set conditions = highlights.conditions|default([]) %}
+        {% if highlights.maxPrice > 0 %}
+            <span><i class="bi bi-tag"></i> Prix dès <strong>{{ highlights.minPrice|price('USD') }}</strong></span>
+        {% endif %}
+        {% if brandCount > 0 %}
+            <span><i class="bi bi-award"></i> {{ brandCount }} marque{{ brandCount > 1 ? 's' : '' }}</span>
+        {% endif %}
+        {% if sellerCount > 0 %}
+            <span><i class="bi bi-shop"></i> {{ sellerCount }} vendeur{{ sellerCount > 1 ? 's' : '' }}</span>
+        {% endif %}
+        {% if 'new' in conditions and 'used' in conditions %}
+            <span><i class="bi bi-stars"></i> Neuf et occasion</span>
+        {% elseif 'new' in conditions %}
+            <span><i class="bi bi-stars"></i> Neuf uniquement</span>
+        {% elseif 'used' in conditions %}
+            <span><i class="bi bi-arrow-repeat"></i> Occasion uniquement</span>
+        {% endif %}
+    {% endif %}
+</div>

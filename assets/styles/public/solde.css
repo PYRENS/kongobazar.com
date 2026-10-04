@@ -567,3 +567,8 @@
     padding: 16px 20px;
     border-top: 1px solid var(--kb-border);
 }
+/* Bannière entre les lots : image mobile 750×375 (ou desktop entière) sans ratio desktop forcé */
+.solde-batch-ad picture { display: block; }
+@media (max-width: 767px) {
+    .solde-batch-ad img { aspect-ratio: auto; height: auto; object-fit: contain; }
+}

@@ -70,6 +70,11 @@
 
 {% if centerAdBanner is defined and centerAdBanner and centerAdBanner.imageName %}
     <a {% if centerAdBanner.targetUrl %}href="{{ path('ads_click', { id: centerAdBanner.id, zoneKey: 'homepage_center_banner' }) }}"{% endif %}{% if centerAdBanner.openInNewTab %} target="_blank" rel="noopener"{% endif %} class="home-center-banner{{ centerAdBanner.targetUrl ? ' ad-clickable' : '' }}">
-        <img src="{{ vich_uploader_asset(centerAdBanner, 'imageFile') }}" alt="{{ centerAdBanner.title }}" loading="lazy">
+<picture>
+            {% if centerAdBanner.mobileImageName %}
+                <source media="(max-width: 767px)" srcset="{{ vich_uploader_asset(centerAdBanner, 'mobileImageFile') }}">
+            {% endif %}
+            <img src="{{ vich_uploader_asset(centerAdBanner, 'imageFile') }}" alt="{{ centerAdBanner.title }}" loading="lazy">
+        </picture>
     </a>
 {% endif %}

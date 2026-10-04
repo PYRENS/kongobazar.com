@@ -58,6 +58,12 @@ class PriceFormatter
             : number_format((float) $amount, 2, '.', $nbsp) . $nbsp . 'USD';
     }
 
+    /** Taux courant 1 USD = X CDF (null si absent) — exposé au JS de la barre de prix pour afficher ses bornes dans la devise choisie. */
+    public function getUsdToCdfRate(): ?string
+    {
+        return $this->getRate();
+    }
+
     private function getTargetCurrency(): string
     {
         $request = $this->requestStack->getCurrentRequest();

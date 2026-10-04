@@ -21,6 +21,7 @@
             </div>
         </div>
         <form method="get" action="{{ formAction }}" data-live-filter data-live-filter-target="{{ liveFilterTarget|default('searchProductsResults') }}" data-live-filter-count-target="products" data-live-filter-self-target="searchFiltersBody">
+            <input type="hidden" name="tri" value="{{ currentSort|default('') }}">
             <h6>Lieu de livraison</h6>
             <button type="button" id="filterGeoBtn" class="search-filter-geo-btn">
                 <i class="bi bi-geo-alt"></i> Autour de moi
