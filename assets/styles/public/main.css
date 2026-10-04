@@ -3167,3 +3167,25 @@ html, body {
     word-break: break-word;
     hyphens: auto;
 }
+/* --------------------------------------------------------------------------
+   "Comment ça marche" — variantes selon l'emplacement choisi en admin
+   -------------------------------------------------------------------------- */
+/* Dans la colonne centrale : pas de marges négatives, espacement aligné sur les autres sections (50px) */
+.home-how-it-works--column {
+    margin-top: 50px;
+    margin-left: 0;
+    margin-right: 0;
+}
+/* Colonne centrale plus étroite sur écrans moyens : 2 colonnes au lieu de 4 */
+@media (min-width: 992px) and (max-width: 1199px) {
+    .home-how-it-works--column {
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+}
+/* Dans le bas de page pleine largeur (son conteneur porte déjà les marges négatives) */
+.home-how-it-works--bottom {
+    margin-top: 50px;
+    margin-left: 0;
+    margin-right: 0;
+}

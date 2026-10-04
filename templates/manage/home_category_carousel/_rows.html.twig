@@ -1,0 +1,67 @@
+{# Lignes du tableau — rendu initial ET fragment AJAX (recherche / tri / pagination en direct). #}
+{% for row in rows %}
+    {% set category = row.category %}
+    <tr class="{{ row.item.active ? '' : 'hcc-row-inactive' }}">
+        <td>
+            <div class="d-flex align-items-center gap-1">
+                <button type="button" class="admin-btn admin-btn--outline" title="Monter"
+                        data-hcc-move="{{ path('manage_home_category_carousel_move', {id: row.item.id, direction: 'up'}) }}"
+                        {{ (not canReorder or row.isFirst) ? 'disabled' : '' }}><i class="bi bi-arrow-up"></i></button>
+                <button type="button" class="admin-btn admin-btn--outline" title="Descendre"
+                        data-hcc-move="{{ path('manage_home_category_carousel_move', {id: row.item.id, direction: 'down'}) }}"
+                        {{ (not canReorder or row.isLast) ? 'disabled' : '' }}><i class="bi bi-arrow-down"></i></button>
+                <span class="text-muted small ms-1">#{{ row.item.position + 1 }}</span>
+            </div>
+        </td>
+        <td>
+            <div class="hcc-preview" style="background:{{ category.effectiveThemeColor ?? '#2FA8E0' }};">
+                {% if category.imageName %}
+                    <img src="{{ vich_uploader_asset(category, 'imageFile') }}" alt="{{ category.name }}" loading="lazy">
+                {% else %}
+                    <i class="bi {{ category.icon|default('bi-tag') }}"></i>
+                {% endif %}
+            </div>
+        </td>
+        <td>
+            <a href="{{ url('catalog_category', {slug: category.slug}) }}" target="_blank" rel="noopener" class="fw-semibold">
+                {{ category.name }} <i class="bi bi-box-arrow-up-right small text-muted"></i>
+            </a>
+            {% if not category.active %}
+                <span class="badge bg-secondary ms-1">Catégorie inactive</span>
+            {% endif %}
+        </td>
+        <td class="text-muted small">{{ row.path }}</td>
+        <td>
+            {% if row.productCount > 0 %}
+                <span class="badge bg-success-subtle text-success">{{ row.productCount }}</span>
+            {% else %}
+                <span class="badge bg-warning-subtle text-warning" title="Masquée sur le site tant qu'elle n'a aucun produit actif">0 — masquée</span>
+            {% endif %}
+        </td>
+        <td class="hcc-toggle-cell">
+            <div class="form-check form-switch mb-0">
+                <input type="checkbox" class="form-check-input hcc-item-toggle" role="switch"
+                       title="Afficher / masquer sur l'accueil"
+                       data-toggle-url="{{ path('manage_home_category_carousel_item_toggle', {id: row.item.id}) }}"
+                       {{ row.item.active ? 'checked' : '' }}>
+            </div>
+        </td>
+        <td>
+            <div>
+                <button type="button" class="btn btn-sm btn-outline-danger"
+                        data-hcc-remove="{{ path('manage_home_category_carousel_remove', {id: row.item.id}) }}"
+                        data-name="{{ category.name }}">Retirer</button>
+            </div>
+        </td>
+    </tr>
+{% else %}
+    <tr>
+        <td colspan="7" class="text-muted text-center py-4">
+            {% if term is defined and term %}
+                Aucune catégorie ne correspond à « {{ term }} ».
+            {% else %}
+                Aucune catégorie choisie — l'accueil est en <strong>mode automatique</strong> (toutes les feuilles ayant des produits).
+            {% endif %}
+        </td>
+    </tr>
+{% endfor %}

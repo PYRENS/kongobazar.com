@@ -1,0 +1,10 @@
+{# Pagination — rendu initial ET fragment AJAX. #}
+{% if pages > 1 %}
+    <nav class="d-flex flex-wrap gap-1">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-hcc-page="{{ page - 1 }}" {{ page <= 1 ? 'disabled' : '' }}><i class="bi bi-chevron-left"></i></button>
+        {% for p in 1..pages %}
+            <button type="button" class="btn btn-sm {{ p == page ? 'btn-primary' : 'btn-outline-secondary' }}" data-hcc-page="{{ p }}">{{ p }}</button>
+        {% endfor %}
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-hcc-page="{{ page + 1 }}" {{ page >= pages ? 'disabled' : '' }}><i class="bi bi-chevron-right"></i></button>
+    </nav>
+{% endif %}

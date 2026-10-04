@@ -68,6 +68,9 @@ class HomeController extends AbstractController
         \App\Repository\PartnerRepository $partnerRepository,
         \App\Repository\SponsorSectionSettingRepository $sponsorSectionSettingRepository,
         \App\Repository\PartnerSectionSettingRepository $partnerSectionSettingRepository,
+        \App\Repository\HomeCategoryCarouselItemRepository $homeCategoryCarouselItemRepository,
+        \App\Repository\HomeCategoryCarouselSettingRepository $homeCategoryCarouselSettingRepository,
+        \App\Repository\HowItWorksSettingRepository $howItWorksSettingRepository,
     ): Response {
         $liveCampaign = $campaignRepository->findCurrentlyLive();
         if ($liveCampaign) {
@@ -85,6 +88,31 @@ class HomeController extends AbstractController
         $adZonePicker->recordImpressions($heroSlides, 'homepage_hero_main');
         $sideAdTop = $adZonePicker->pick('homepage_hero_side_top', 'public');
         $sideAdBottom = $adZonePicker->pick('homepage_hero_side_bottom', 'public');
+
+        // --- Carrousel "Catégorie" (feuilles, sous le Hero) ---
+        // Choix admin dans l'ordre (en ignorant celles inactives ou sans produit actif),
+        // sinon mode automatique : toutes les feuilles actives ayant des produits actifs.
+        $categoryCarouselItems = [];
+        if ($homeCategoryCarouselSettingRepository->getSingleton()->isEnabled()) {
+            $carouselItems = $homeCategoryCarouselItemRepository->findAllOrdered();
+            if ($carouselItems) {
+                // Mode manuel : seules les catégories ACTIVÉES en admin sont affichées.
+                $chosenCategories = array_map(
+                    fn ($item) => $item->getCategory(),
+                    array_values(array_filter($carouselItems, fn ($item) => $item->isActive()))
+                );
+                $carouselCounts = $categoryRepository->countActiveProductsByCategoryIds(array_map(fn ($c) => $c->getId(), $chosenCategories));
+                $categoryCarouselItems = array_values(array_filter(
+                    $chosenCategories,
+                    fn ($c) => $c->isActive() && ($carouselCounts[$c->getId()] ?? 0) > 0
+                ));
+            } else {
+                $categoryCarouselItems = $categoryRepository->findLeafCategoriesWithActiveProducts();
+            }
+        }
+
+        // --- "Comment ça marche" (afficher/masquer + emplacement, pilotés en admin) ---
+        $howItWorksSetting = $howItWorksSettingRepository->getSingleton();
 
         // --- Colonne gauche ---
         $hotDealSetting = $hotDealSectionSettingRepository->getSingleton();
@@ -288,6 +316,9 @@ class HomeController extends AbstractController
 
         return $this->render('public/home.html.twig', [
             'seoData' => $seoData,
+            'categoryCarouselItems' => $categoryCarouselItems,
+            'howItWorksEnabled' => $howItWorksSetting->isEnabled(),
+            'howItWorksPosition' => $howItWorksSetting->getPosition(),
             'dealsEnabled' => $homeDealsSettings->isEnabled(),
             'trendingEnabled' => $trendingSectionSettings->isEnabled(),
             'categoryBlocksEnabled' => $categoryBlockSectionSettings->isEnabled(),

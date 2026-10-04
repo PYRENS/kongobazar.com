@@ -1,0 +1,475 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Carrousel Catégorie — Accueil{% endblock %}
+{% block page_icon %}bi-grid-3x2-gap{% endblock %}
+{% block page_title %}Carrousel "Catégorie" — Accueil (sous le Hero){% endblock %}
+
+{% block body %}
+    {# --- Cartes statistiques (toujours juste après le titre) --- #}
+    <div class="row g-3 mb-3">
+        <div class="col-xl-3 col-md-4">
+            <div class="sw-card ctb-stat ctb-stat-blue h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-blue"><i class="bi bi-grid-3x2-gap"></i></div>
+                <div class="ctb-stat-val" id="hccStatChosen">{{ allCount }}</div>
+                <div class="ctb-stat-label">Catégories choisies</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-4">
+            <div class="sw-card ctb-stat ctb-stat-green h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-green"><i class="bi bi-diagram-3"></i></div>
+                <div class="ctb-stat-val">{{ autoLeafCount }}</div>
+                <div class="ctb-stat-label">Feuilles ayant des produits (mode auto)</div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-4">
+            <div class="sw-card ctb-stat ctb-stat-orange h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-orange"><i class="bi bi-magic"></i></div>
+                <div class="ctb-stat-val" id="hccStatMode">{{ allCount > 0 ? 'Manuel' : 'Auto' }}</div>
+                <div class="ctb-stat-label">Mode d'affichage actuel</div>
+            </div>
+        </div>
+    </div>
+
+    {# --- Visibilité --- #}
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-toggle-on text-primary me-2"></i>Visibilité</h6></div>
+        <div class="card-body">
+            <div class="form-check form-switch">
+                <input type="checkbox" class="form-check-input" id="hccEnabledSwitch" role="switch" {{ setting.enabled ? 'checked' : '' }} data-toggle-url="{{ path('manage_home_category_carousel_toggle') }}">
+                <label class="form-check-label" for="hccEnabledSwitch">Afficher le carrousel "Catégorie" sur la page d'accueil</label>
+            </div>
+            <small id="hccEnabledFeedback" class="text-muted"></small>
+            <p class="text-muted small mb-0 mt-2">
+                <i class="bi bi-info-circle"></i>
+                Si la liste ci-dessous est vide, le carrousel affiche <strong>automatiquement</strong> toutes les catégories feuilles ayant au moins un produit actif.
+                Une catégorie choisie sans aucun produit actif est masquée sur le site (sans être retirée d'ici).
+            </p>
+        </div>
+    </div>
+
+    {# --- Ajout : sélection en cascade (comme "Top Catégorie"), chaque niveau filtrable par saisie --- #}
+    <div class="sw-card mb-3">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-plus-circle text-primary me-2"></i>Ajouter une catégorie</h6></div>
+        <div class="card-body">
+            <p class="text-muted small mb-2">
+                Descends dans l'arborescence niveau par niveau (tape dans chaque liste pour filtrer).
+                Seule une catégorie <strong>sans sous-catégorie</strong> (reliée directement aux produits) peut être ajoutée —
+                les niveaux qui ont encore des sous-catégories sont marqués d'une flèche <i class="bi bi-chevron-right"></i>.
+            </p>
+            <div class="hcc-cascade" id="hccCascade" data-children-url="{{ path('manage_home_category_carousel_children') }}"></div>
+            <input type="hidden" id="hccSelectedLeaf">
+            <button type="button" class="btn btn-primary mt-2" id="hccAddBtn" data-add-url="{{ path('manage_home_category_carousel_add') }}" disabled>
+                <i class="bi bi-plus-lg"></i> Ajouter au carrousel
+            </button>
+            <small id="hccAddFeedback" class="d-block mt-2"></small>
+        </div>
+    </div>
+
+    {# --- Liste : recherche autocomplétée + nb/page + tri + pagination, tout en direct --- #}
+    <div class="sw-card">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-list-ol text-primary me-2"></i>Catégories du carrousel</h6></div>
+        <div class="card-body pb-0">
+            <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
+                <div class="kb-combobox" style="max-width:280px;">
+                    <div class="kb-combobox-field">
+                        <input type="text" id="hccSearchInput" class="form-control" placeholder="Rechercher dans la liste…" value="{{ term }}" autocomplete="off">
+                        <button type="button" class="kb-combobox-clear" id="hccSearchClear" title="Effacer" {{ term ? '' : 'hidden' }}><i class="bi bi-x-lg"></i></button>
+                    </div>
+                    <div class="kb-combobox-results" id="hccSearchSuggestions" hidden></div>
+                </div>
+                <select id="hccPerPage" class="form-select" style="max-width:130px;">
+                    {% for n in perPageChoices %}
+                        <option value="{{ n }}" {{ perPage == n ? 'selected' : '' }}>{{ n }} / page</option>
+                    {% endfor %}
+                </select>
+                <span class="text-muted small ms-auto" id="hccCountInfo">{{ total }} catégorie{{ total > 1 ? 's' : '' }} — page {{ page }} / {{ pages }}</span>
+            </div>
+            <div class="alert alert-light border small py-2 mb-2" id="hccReorderHint" {{ canReorder ? 'hidden' : '' }}>
+                <i class="bi bi-info-circle"></i> Les flèches de réordonnancement ne sont actives qu'en tri par <strong>Ordre ↑</strong>, sans recherche.
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table admin-table ctb-table table-hover mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th style="width:150px;"><a href="#" class="admin-sort-link" data-hcc-sort="position">Ordre <i></i></a></th>
+                        <th style="width:80px;">Aperçu</th>
+                        <th><a href="#" class="admin-sort-link" data-hcc-sort="name">Catégorie <i></i></a></th>
+                        <th><a href="#" class="admin-sort-link" data-hcc-sort="path">Chemin <i></i></a></th>
+                        <th><a href="#" class="admin-sort-link" data-hcc-sort="products">Produits actifs <i></i></a></th>
+                        <th style="width:90px;"><a href="#" class="admin-sort-link" data-hcc-sort="active">Actif <i></i></a></th>
+                        <th style="width:110px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="hccRowsBody">
+                    {% include 'manage/home_category_carousel/_rows.html.twig' %}
+                </tbody>
+            </table>
+        </div>
+        <div class="card-body pt-3" id="hccPagination">
+            {% include 'manage/home_category_carousel/_pagination.html.twig' %}
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        const fragmentUrl = '{{ path('manage_home_category_carousel_fragment') }}';
+        const state = {
+            q: {{ term|json_encode|raw }},
+            sort: '{{ sort }}',
+            dir: '{{ dir }}',
+            perPage: {{ perPage }},
+            page: {{ page }},
+        };
+
+        const rowsBody = document.getElementById('hccRowsBody');
+        const pagination = document.getElementById('hccPagination');
+        const countInfo = document.getElementById('hccCountInfo');
+        const reorderHint = document.getElementById('hccReorderHint');
+        const statChosen = document.getElementById('hccStatChosen');
+        const statMode = document.getElementById('hccStatMode');
+        const statActive = document.getElementById('hccStatActive');
+
+        function escapeHtml(s) {
+            return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        function updateSortIcons() {
+            document.querySelectorAll('[data-hcc-sort]').forEach((link) => {
+                const icon = link.querySelector('i');
+                if (link.dataset.hccSort === state.sort) {
+                    icon.className = 'bi bi-caret-' + (state.dir === 'ASC' ? 'up' : 'down') + '-fill';
+                } else {
+                    icon.className = 'bi bi-arrow-down-up admin-sort-icon-idle';
+                }
+            });
+        }
+
+        /* ------------------------------------------------------------------
+           Rafraîchissement en direct (recherche, tri, nb/page, pagination)
+           ------------------------------------------------------------------ */
+        function refresh(onDone) {
+            const params = new URLSearchParams({
+                q: state.q, sort: state.sort, dir: state.dir, perPage: state.perPage, page: state.page,
+            });
+            window.history.replaceState({}, '', '?' + params.toString());
+
+            return fetch(fragmentUrl + '?' + params.toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then((r) => r.json())
+                .then((data) => {
+                    rowsBody.innerHTML = data.rowsHtml;
+                    pagination.innerHTML = data.paginationHtml;
+                    state.page = data.page;
+                    countInfo.textContent = data.total + ' catégorie' + (data.total > 1 ? 's' : '') + ' — page ' + data.page + ' / ' + data.pages;
+                    reorderHint.hidden = data.canReorder;
+                    statChosen.textContent = data.allCount;
+                    statActive.textContent = data.activeCount;
+                    statMode.textContent = data.allCount > 0 ? 'Manuel' : 'Auto';
+                    updateSortIcons();
+                    if (onDone) onDone(data);
+                });
+        }
+
+        document.querySelectorAll('[data-hcc-sort]').forEach((link) => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const field = link.dataset.hccSort;
+                state.dir = (state.sort === field && state.dir === 'ASC') ? 'DESC' : 'ASC';
+                state.sort = field;
+                state.page = 1;
+                refresh();
+            });
+        });
+
+        document.getElementById('hccPerPage').addEventListener('change', function () {
+            state.perPage = parseInt(this.value, 10);
+            state.page = 1;
+            refresh();
+        });
+
+        pagination.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-hcc-page]');
+            if (!btn || btn.disabled) return;
+            state.page = parseInt(btn.dataset.hccPage, 10);
+            refresh();
+        });
+
+        // Monter / descendre / retirer — délégation, car les lignes sont remplacées à chaque rafraîchissement.
+        rowsBody.addEventListener('click', (e) => {
+            const moveBtn = e.target.closest('[data-hcc-move]');
+            if (moveBtn && !moveBtn.disabled) {
+                moveBtn.disabled = true;
+                fetch(moveBtn.dataset.hccMove, { method: 'POST' }).then(() => refresh());
+                return;
+            }
+            const removeBtn = e.target.closest('[data-hcc-remove]');
+            if (removeBtn) {
+                if (!confirm('Retirer « ' + removeBtn.dataset.name + ' » du carrousel ?')) return;
+                fetch(removeBtn.dataset.hccRemove, { method: 'POST' })
+                    .then((r) => r.json())
+                    .then((data) => { showAddFeedback(data.message, data.ok); refresh(); resetCascade(); });
+            }
+        });
+
+        // Interrupteur actif / inactif par catégorie (délégation : les lignes sont remplacées à chaque rafraîchissement).
+        rowsBody.addEventListener('change', (e) => {
+            const sw = e.target.closest('.hcc-item-toggle');
+            if (!sw) return;
+            const wanted = sw.checked;
+            sw.disabled = true;
+            fetch(sw.dataset.toggleUrl, { method: 'POST' })
+                .then((r) => {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                })
+                .then(
+                    (data) => {
+                        // Succès serveur : on affiche l'état RÉEL renvoyé par la base.
+                        sw.checked = data.active;
+                        sw.closest('tr').classList.toggle('hcc-row-inactive', !data.active);
+                        const stat = document.getElementById('hccStatActive');
+                        if (stat) stat.textContent = data.activeCount;
+                    },
+                    // Échec réseau/serveur UNIQUEMENT : on remet l'interrupteur comme avant le clic.
+                    () => { sw.checked = !wanted; }
+                )
+                .finally(() => { sw.disabled = false; });
+        });
+
+        /* ------------------------------------------------------------------
+           Barre de recherche de la liste, avec autocomplétion
+           ------------------------------------------------------------------ */
+        const searchInput = document.getElementById('hccSearchInput');
+        const searchClear = document.getElementById('hccSearchClear');
+        const suggestionsBox = document.getElementById('hccSearchSuggestions');
+        let searchTimer = null;
+
+        function renderSuggestions(list) {
+            if (!list.length || !searchInput.value.trim()) {
+                suggestionsBox.hidden = true;
+                return;
+            }
+            suggestionsBox.innerHTML = list.map((name) =>
+                '<button type="button" class="kb-combobox-option" data-value="' + escapeHtml(name) + '">' + escapeHtml(name) + '</button>'
+            ).join('');
+            suggestionsBox.hidden = false;
+        }
+
+        searchInput.addEventListener('input', () => {
+            searchClear.hidden = !searchInput.value;
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => {
+                state.q = searchInput.value.trim();
+                state.page = 1;
+                refresh((data) => renderSuggestions(data.suggestions));
+            }, 250);
+        });
+        suggestionsBox.addEventListener('click', (e) => {
+            const opt = e.target.closest('.kb-combobox-option');
+            if (!opt) return;
+            searchInput.value = opt.dataset.value;
+            suggestionsBox.hidden = true;
+            state.q = opt.dataset.value;
+            state.page = 1;
+            refresh();
+        });
+        searchClear.addEventListener('click', () => {
+            searchInput.value = '';
+            searchClear.hidden = true;
+            suggestionsBox.hidden = true;
+            state.q = '';
+            state.page = 1;
+            refresh();
+            searchInput.focus();
+        });
+
+        /* ------------------------------------------------------------------
+           Interrupteur Visibilité
+           ------------------------------------------------------------------ */
+        const enabledSwitch = document.getElementById('hccEnabledSwitch');
+        const enabledFeedback = document.getElementById('hccEnabledFeedback');
+        enabledSwitch.addEventListener('change', function () {
+            const wasChecked = this.checked;
+            fetch(this.dataset.toggleUrl, { method: 'POST' })
+                .then((r) => r.json())
+                .then((data) => {
+                    this.checked = data.enabled;
+                    enabledFeedback.textContent = data.enabled ? 'Activé.' : 'Désactivé.';
+                    setTimeout(() => { enabledFeedback.textContent = ''; }, 2000);
+                })
+                .catch(() => {
+                    this.checked = !wasChecked;
+                    enabledFeedback.textContent = 'Erreur — réessaie.';
+                });
+        });
+
+        /* ------------------------------------------------------------------
+           Sélection en cascade (comme "Top Catégorie") — chaque niveau est une
+           liste déroulante filtrable par saisie. Seule une FEUILLE peut être ajoutée.
+           ------------------------------------------------------------------ */
+        const cascade = document.getElementById('hccCascade');
+        const selectedLeaf = document.getElementById('hccSelectedLeaf');
+        const addBtn = document.getElementById('hccAddBtn');
+        const addFeedback = document.getElementById('hccAddFeedback');
+        const ADD_LABEL = addBtn.innerHTML;
+
+        function showAddFeedback(message, ok) {
+            addFeedback.className = 'd-block mt-2 ' + (ok ? 'text-success' : 'text-danger');
+            addFeedback.textContent = message;
+            setTimeout(() => { addFeedback.textContent = ''; }, 3000);
+        }
+
+        function setSelectedLeaf(id, name) {
+            selectedLeaf.value = id || '';
+            addBtn.disabled = !id;
+            addBtn.innerHTML = id
+                ? '<i class="bi bi-plus-lg"></i> Ajouter « ' + escapeHtml(name) + ' » au carrousel'
+                : ADD_LABEL;
+        }
+
+        function removeLevelsAfter(row) {
+            while (row.nextElementSibling) row.nextElementSibling.remove();
+        }
+
+        function loadLevel(parentId, label) {
+            return fetch(cascade.dataset.childrenUrl + '?parent_id=' + (parentId || ''))
+                .then((r) => r.json())
+                .then((data) => {
+                    if (!data.results.length) return;
+                    const row = document.createElement('div');
+                    row.className = 'hcc-cascade-level';
+                    row.innerHTML =
+                        '<span class="hcc-cascade-label">' + escapeHtml(label) + '</span>' +
+                        '<div class="kb-combobox">' +
+                            '<div class="kb-combobox-field">' +
+                                '<input type="text" class="form-control" placeholder="— Choisir (tape pour filtrer) —" autocomplete="off">' +
+                                '<button type="button" class="kb-combobox-clear" title="Effacer" hidden><i class="bi bi-x-lg"></i></button>' +
+                                '<button type="button" class="kb-combobox-toggle" title="Tout afficher"><i class="bi bi-chevron-down"></i></button>' +
+                            '</div>' +
+                            '<div class="kb-combobox-results" hidden></div>' +
+                        '</div>';
+                    cascade.appendChild(row);
+                    wireLevel(row, data.results);
+                });
+        }
+
+        function wireLevel(row, options) {
+            const input = row.querySelector('input');
+            const clearBtn = row.querySelector('.kb-combobox-clear');
+            const toggleBtn = row.querySelector('.kb-combobox-toggle');
+            const results = row.querySelector('.kb-combobox-results');
+            let selected = null;
+
+            function render(filter) {
+                const needle = (filter || '').toLowerCase();
+                const list = options.filter((o) => !needle || o.name.toLowerCase().includes(needle));
+                if (!list.length) {
+                    results.innerHTML = '<div class="kb-combobox-empty">Aucun résultat.</div>';
+                    results.hidden = false;
+                    return;
+                }
+                results.innerHTML = list.map((o) => {
+                    const blocked = !o.hasChildren && o.alreadyAdded;
+                    const right = o.hasChildren
+                        ? '<i class="bi bi-chevron-right text-muted" title="A des sous-catégories"></i>'
+                        : '<span class="badge ' + (o.productCount > 0 ? 'bg-success-subtle text-success' : 'bg-light text-muted') + '" title="Produits actifs">' + o.productCount + '</span>' +
+                          (o.alreadyAdded ? '<span class="badge bg-secondary">Déjà ajoutée</span>' : '');
+                    return '<button type="button" class="kb-combobox-option" data-id="' + o.id + '"' + (blocked ? ' disabled' : '') + '>' +
+                               '<span class="kb-combobox-option-main">' + escapeHtml(o.name) + '</span>' + right +
+                           '</button>';
+                }).join('');
+                results.hidden = false;
+            }
+
+            function choose(option) {
+                selected = option;
+                input.value = option.name;
+                clearBtn.hidden = false;
+                results.hidden = true;
+                removeLevelsAfter(row);
+                if (option.hasChildren) {
+                    setSelectedLeaf(null);
+                    loadLevel(option.id, 'Sous-catégorie de « ' + option.name + ' »');
+                } else {
+                    setSelectedLeaf(option.id, option.name);
+                }
+            }
+
+            function reset() {
+                selected = null;
+                input.value = '';
+                clearBtn.hidden = true;
+                removeLevelsAfter(row);
+                setSelectedLeaf(null);
+            }
+
+            input.addEventListener('focus', () => render(selected ? '' : input.value));
+            input.addEventListener('input', () => {
+                clearBtn.hidden = !input.value;
+                render(input.value);
+            });
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const first = results.querySelector('.kb-combobox-option:not(:disabled)');
+                    if (first && !results.hidden) first.click();
+                } else if (e.key === 'Escape') {
+                    results.hidden = true;
+                }
+            });
+            // Texte modifié sans nouveau choix : on réaffiche le choix en cours (pas de choix "fantôme").
+            input.addEventListener('blur', () => setTimeout(() => {
+                if (selected && input.value !== selected.name) input.value = selected.name;
+            }, 200));
+            toggleBtn.addEventListener('click', () => {
+                if (!results.hidden) { results.hidden = true; return; }
+                render('');
+            });
+            clearBtn.addEventListener('click', () => { reset(); input.focus(); });
+            results.addEventListener('click', (e) => {
+                const btn = e.target.closest('.kb-combobox-option');
+                if (!btn || btn.disabled) return;
+                choose(options.find((o) => String(o.id) === btn.dataset.id));
+            });
+        }
+
+        function resetCascade() {
+            cascade.innerHTML = '';
+            setSelectedLeaf(null);
+            loadLevel(null, 'Rayon');
+        }
+
+        addBtn.addEventListener('click', () => {
+            if (!selectedLeaf.value) return;
+            addBtn.disabled = true;
+            const body = new FormData();
+            body.append('category_id', selectedLeaf.value);
+            fetch(addBtn.dataset.addUrl, { method: 'POST', body })
+                .then((r) => r.json())
+                .then((data) => {
+                    showAddFeedback(data.message, data.ok);
+                    if (data.ok) {
+                        resetCascade();
+                        // Affiche la nouvelle ligne : retour à l'ordre réel, dernière page.
+                        state.q = ''; searchInput.value = ''; searchClear.hidden = true;
+                        state.sort = 'position'; state.dir = 'ASC'; state.page = 9999;
+                        refresh();
+                    } else {
+                        addBtn.disabled = false;
+                    }
+                });
+        });
+
+        // Fermeture des listes au clic à l'extérieur
+        document.addEventListener('click', (e) => {
+            cascade.querySelectorAll('.kb-combobox').forEach((box) => {
+                if (!box.contains(e.target)) box.querySelector('.kb-combobox-results').hidden = true;
+            });
+            if (!searchInput.closest('.kb-combobox').contains(e.target)) suggestionsBox.hidden = true;
+        });
+
+        resetCascade();
+        updateSortIcons();
+    })();
+    </script>
+{% endblock %}

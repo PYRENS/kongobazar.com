@@ -203,7 +203,7 @@
                     </ul>
                 </li>
 
-                <li class="admin-nav-group {{ app.request.attributes.get('_route') starts with 'manage_home_deals_setting' or app.request.attributes.get('_route') starts with 'manage_home_trending_tabs' or app.request.attributes.get('_route') starts with 'manage_home_category_blocks' or app.request.attributes.get('_route') starts with 'manage_top_category_items' or app.request.attributes.get('_route') starts with 'manage_top_vendor' or app.request.attributes.get('_route') starts with 'manage_new_items' or app.request.attributes.get('_route') starts with 'manage_most_viewed' or app.request.attributes.get('_route') starts with 'manage_best_sellers' or app.request.attributes.get('_route') starts with 'manage_hot_deal' or app.request.attributes.get('_route') starts with 'manage_promo_strip' or app.request.attributes.get('_route') starts with 'manage_sidebar_new_arrivals' or app.request.attributes.get('_route') starts with 'manage_coming_soon' or app.request.attributes.get('_route') starts with 'manage_individual_section' ? 'open' : '' }}">
+                <li class="admin-nav-group {{ app.request.attributes.get('_route') starts with 'manage_home_deals_setting' or app.request.attributes.get('_route') starts with 'manage_home_trending_tabs' or app.request.attributes.get('_route') starts with 'manage_home_category_blocks' or app.request.attributes.get('_route') starts with 'manage_top_category_items' or app.request.attributes.get('_route') starts with 'manage_home_category_carousel' or app.request.attributes.get('_route') starts with 'manage_top_vendor' or app.request.attributes.get('_route') starts with 'manage_new_items' or app.request.attributes.get('_route') starts with 'manage_most_viewed' or app.request.attributes.get('_route') starts with 'manage_best_sellers' or app.request.attributes.get('_route') starts with 'manage_hot_deal' or app.request.attributes.get('_route') starts with 'manage_promo_strip' or app.request.attributes.get('_route') starts with 'manage_sidebar_new_arrivals' or app.request.attributes.get('_route') starts with 'manage_coming_soon' or app.request.attributes.get('_route') starts with 'manage_individual_section' or app.request.attributes.get('_route') starts with 'manage_how_it_works' ? 'open' : '' }}">
                     <button type="button" class="admin-nav-group-toggle">
                         <i class="bi bi-house-door"></i> <span class="hide-menu">Sections accueil</span> <i class="bi bi-chevron-down admin-nav-group-arrow"></i>
                     </button>
@@ -219,6 +219,12 @@
                         </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_top_category_items' ? 'active' : '' }}">
                             <a href="{{ path('manage_top_category_items_setting') }}"><i class="bi bi-circle-square"></i> <span class="hide-menu">Top Catégorie accueil</span></a>
+                        </li>
+                        <li class="{{ app.request.attributes.get('_route') starts with 'manage_home_category_carousel' ? 'active' : '' }}">
+                            <a href="{{ path('manage_home_category_carousel_index') }}"><i class="bi bi-grid-3x2-gap"></i> <span class="hide-menu">Carrousel Catégorie accueil</span></a>
+                        </li>
+                        <li class="{{ app.request.attributes.get('_route') starts with 'manage_how_it_works' ? 'active' : '' }}">
+                            <a href="{{ path('manage_how_it_works_setting') }}"><i class="bi bi-signpost-2"></i> <span class="hide-menu">Comment ça marche accueil</span></a>
                         </li>
                         <li class="{{ app.request.attributes.get('_route') starts with 'manage_top_vendor' ? 'active' : '' }}">
                             <a href="{{ path('manage_top_vendor_setting') }}"><i class="bi bi-award"></i> <span class="hide-menu">Top Vendeur accueil</span></a>

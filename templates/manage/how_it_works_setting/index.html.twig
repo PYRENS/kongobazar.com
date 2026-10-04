@@ -1,0 +1,266 @@
+{% extends 'manage/base.html.twig' %}
+
+{% block title %}Comment ça marche — Accueil{% endblock %}
+{% block page_icon %}bi-signpost-2{% endblock %}
+{% block page_title %}Section "Comment ça marche" — Accueil{% endblock %}
+
+{% macro slot(key, current, enabled) %}
+    <button type="button" class="hiw-plan-slot{{ key == current ? ' is-current' : '' }}{{ key == current and not enabled ? ' is-hidden' : '' }}" data-hiw-slot="{{ key }}" title="Placer la section ici">
+        <i class="bi bi-signpost-2"></i>
+        <span class="hiw-plan-slot-text">Comment ça marche</span>
+    </button>
+{% endmacro %}
+{% import _self as m %}
+
+{% block body %}
+    {% set current = setting.position %}
+
+    {# --- Cartes statistiques (toujours juste après le titre) --- #}
+    <div class="row g-3 mb-3">
+        <div class="col-xl-3 col-md-4">
+            <div class="sw-card ctb-stat {{ setting.enabled ? 'ctb-stat-green' : 'ctb-stat-orange' }} h-100" id="hiwStatStatusCard">
+                <div class="ctb-stat-icon {{ setting.enabled ? 'ctb-stat-icon-green' : 'ctb-stat-icon-orange' }}" id="hiwStatStatusIcon"><i class="bi {{ setting.enabled ? 'bi-eye' : 'bi-eye-slash' }}"></i></div>
+                <div class="ctb-stat-val" id="hiwStatStatus">{{ setting.enabled ? 'Affichée' : 'Masquée' }}</div>
+                <div class="ctb-stat-label">Statut sur l'accueil</div>
+            </div>
+        </div>
+        <div class="col-xl-6 col-md-8">
+            <div class="sw-card ctb-stat ctb-stat-blue h-100">
+                <div class="ctb-stat-icon ctb-stat-icon-blue"><i class="bi bi-geo-alt"></i></div>
+                <div class="ctb-stat-val hiw-stat-position" id="hiwStatPosition">{{ setting.positionLabel }}</div>
+                <div class="ctb-stat-label">Emplacement actuel</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-6">
+            {# --- Visibilité --- #}
+            <div class="sw-card mb-3">
+                <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-toggle-on text-primary me-2"></i>Visibilité</h6></div>
+                <div class="card-body">
+                    <div class="form-check form-switch">
+                        <input type="checkbox" class="form-check-input" id="hiwEnabledSwitch" role="switch" {{ setting.enabled ? 'checked' : '' }} data-toggle-url="{{ path('manage_how_it_works_toggle') }}">
+                        <label class="form-check-label" for="hiwEnabledSwitch">Afficher la section "Comment ça marche" sur la page d'accueil</label>
+                    </div>
+                    <small id="hiwEnabledFeedback" class="text-muted"></small>
+                </div>
+            </div>
+
+            {# --- Emplacement : liste déroulante avec saisie --- #}
+            <div class="sw-card mb-3">
+                <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-geo-alt text-primary me-2"></i>Emplacement</h6></div>
+                <div class="card-body">
+                    <p class="text-muted small mb-2">Choisis où la section apparaît. Tape pour filtrer, ou clique directement sur un emplacement du plan à droite. L'enregistrement est immédiat.</p>
+                    <div class="kb-combobox" id="hiwCombobox" data-save-url="{{ path('manage_how_it_works_position') }}">
+                        <div class="kb-combobox-field">
+                            <input type="text" class="form-control" id="hiwComboInput" value="{{ setting.positionLabel }}" autocomplete="off">
+                            <button type="button" class="kb-combobox-toggle" id="hiwComboToggle" title="Tout afficher"><i class="bi bi-chevron-down"></i></button>
+                        </div>
+                        <div class="kb-combobox-results" id="hiwComboResults" hidden></div>
+                    </div>
+                    <small id="hiwPositionFeedback" class="d-block mt-2"></small>
+                    <p class="text-muted small mb-0 mt-2">
+                        <i class="bi bi-info-circle"></i>
+                        En "colonne centrale", la section est moins large (la colonne gauche est à côté) : les 4 étapes passent sur 2 colonnes sur les écrans moyens.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        {# --- Aperçu : plan de la page d'accueil --- #}
+        <div class="col-lg-6">
+            <div class="sw-card mb-3">
+                <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-layout-text-window-reverse text-primary me-2"></i>Aperçu sur la page d'accueil</h6></div>
+                <div class="card-body">
+                    <div class="hiw-plan" id="hiwPlan">
+                        <div class="hiw-plan-block">Hero (carrousel + Top Rayons + pubs)</div>
+                        {{ m.slot('after_hero', current, setting.enabled) }}
+                        <div class="hiw-plan-block">Carrousel Catégorie</div>
+                        {{ m.slot('after_category_carousel', current, setting.enabled) }}
+                        <div class="hiw-plan-block">Bandeau promo</div>
+                        {{ m.slot('after_promo_strip', current, setting.enabled) }}
+                        <div class="hiw-plan-columns">
+                            <div class="hiw-plan-block hiw-plan-block--side">Colonne gauche</div>
+                            <div class="hiw-plan-center">
+                                <div class="hiw-plan-block">Ventes flash</div>
+                                {{ m.slot('after_deals', current, setting.enabled) }}
+                                <div class="hiw-plan-block">Articles tendances</div>
+                                {{ m.slot('after_trending', current, setting.enabled) }}
+                                <div class="hiw-plan-block">Nouveauté · Prochainement · Particulier · Blocs catégorie</div>
+                            </div>
+                        </div>
+                        <div class="hiw-plan-block">Consulté récemment · Top Catégorie · Plus consultés · Blog · Sponsors · Partenaires</div>
+                        {{ m.slot('before_footer', current, setting.enabled) }}
+                        <div class="hiw-plan-block hiw-plan-block--footer">Pied de page</div>
+                    </div>
+                    <p class="text-muted small mb-0 mt-2" id="hiwPlanHiddenNote" {{ setting.enabled ? 'hidden' : '' }}>
+                        <i class="bi bi-eye-slash"></i> La section est actuellement <strong>masquée</strong> : l'emplacement est conservé pour sa réactivation.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        const POSITIONS = {{ positions|json_encode|raw }};
+        let current = {{ current|json_encode|raw }};
+        let enabled = {{ setting.enabled ? 'true' : 'false' }};
+
+        const statStatus = document.getElementById('hiwStatStatus');
+        const statStatusCard = document.getElementById('hiwStatStatusCard');
+        const statStatusIcon = document.getElementById('hiwStatStatusIcon');
+        const statPosition = document.getElementById('hiwStatPosition');
+        const plan = document.getElementById('hiwPlan');
+        const planHiddenNote = document.getElementById('hiwPlanHiddenNote');
+
+        function escapeHtml(s) {
+            return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        /* Met à jour cartes stats + plan selon l'état courant */
+        function paint() {
+            statStatus.textContent = enabled ? 'Affichée' : 'Masquée';
+            statStatusCard.classList.toggle('ctb-stat-green', enabled);
+            statStatusCard.classList.toggle('ctb-stat-orange', !enabled);
+            statStatusIcon.className = 'ctb-stat-icon ' + (enabled ? 'ctb-stat-icon-green' : 'ctb-stat-icon-orange');
+            statStatusIcon.innerHTML = '<i class="bi ' + (enabled ? 'bi-eye' : 'bi-eye-slash') + '"></i>';
+            statPosition.textContent = POSITIONS[current];
+            planHiddenNote.hidden = enabled;
+            plan.querySelectorAll('[data-hiw-slot]').forEach((slot) => {
+                const isCurrent = slot.dataset.hiwSlot === current;
+                slot.classList.toggle('is-current', isCurrent);
+                slot.classList.toggle('is-hidden', isCurrent && !enabled);
+            });
+        }
+
+        /* ------------------------------------------------------------------
+           Interrupteur Visibilité
+           ------------------------------------------------------------------ */
+        const enabledSwitch = document.getElementById('hiwEnabledSwitch');
+        const enabledFeedback = document.getElementById('hiwEnabledFeedback');
+        enabledSwitch.addEventListener('change', function () {
+            const wanted = this.checked;
+            this.disabled = true;
+            fetch(this.dataset.toggleUrl, { method: 'POST' })
+                .then((r) => {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                })
+                .then(
+                    (data) => {
+                        enabled = data.enabled;
+                        this.checked = enabled;
+                        enabledFeedback.textContent = enabled ? 'Activée.' : 'Désactivée.';
+                        setTimeout(() => { enabledFeedback.textContent = ''; }, 2000);
+                        paint();
+                    },
+                    () => {
+                        this.checked = !wanted;
+                        enabledFeedback.textContent = 'Erreur — réessaie.';
+                    }
+                )
+                .finally(() => { this.disabled = false; });
+        });
+
+        /* ------------------------------------------------------------------
+           Emplacement — liste déroulante avec saisie + clic sur le plan
+           ------------------------------------------------------------------ */
+        const combo = document.getElementById('hiwCombobox');
+        const comboInput = document.getElementById('hiwComboInput');
+        const comboToggle = document.getElementById('hiwComboToggle');
+        const comboResults = document.getElementById('hiwComboResults');
+        const positionFeedback = document.getElementById('hiwPositionFeedback');
+
+        function showPositionFeedback(message, ok) {
+            positionFeedback.className = 'd-block mt-2 ' + (ok ? 'text-success' : 'text-danger');
+            positionFeedback.textContent = message;
+            setTimeout(() => { positionFeedback.textContent = ''; }, 2500);
+        }
+
+        function render(filter) {
+            const needle = (filter || '').toLowerCase();
+            const keys = Object.keys(POSITIONS).filter((k) => !needle || POSITIONS[k].toLowerCase().includes(needle));
+            if (!keys.length) {
+                comboResults.innerHTML = '<div class="kb-combobox-empty">Aucun emplacement trouvé.</div>';
+            } else {
+                comboResults.innerHTML = keys.map((k) =>
+                    '<button type="button" class="kb-combobox-option" data-key="' + k + '">' +
+                        '<span class="kb-combobox-option-main">' + escapeHtml(POSITIONS[k]) + '</span>' +
+                        (k === current ? '<i class="bi bi-check-lg text-success"></i>' : '') +
+                    '</button>'
+                ).join('');
+            }
+            comboResults.hidden = false;
+        }
+
+        function savePosition(key) {
+            comboResults.hidden = true;
+            if (key === current) {
+                comboInput.value = POSITIONS[current];
+                return;
+            }
+            const previous = current;
+            current = key;           // affichage immédiat
+            comboInput.value = POSITIONS[key];
+            paint();
+
+            const body = new FormData();
+            body.append('position', key);
+            fetch(combo.dataset.saveUrl, { method: 'POST', body })
+                .then((r) => {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                })
+                .then(
+                    (data) => {
+                        current = data.position;
+                        comboInput.value = data.label;
+                        paint();
+                        showPositionFeedback(data.message, true);
+                    },
+                    () => {
+                        current = previous;  // échec serveur : on revient à l'ancien emplacement
+                        comboInput.value = POSITIONS[previous];
+                        paint();
+                        showPositionFeedback('Erreur — emplacement non enregistré.', false);
+                    }
+                );
+        }
+
+        comboInput.addEventListener('focus', () => { comboInput.select(); render(''); });
+        comboInput.addEventListener('input', () => render(comboInput.value));
+        comboInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const first = comboResults.querySelector('.kb-combobox-option');
+                if (first && !comboResults.hidden) first.click();
+            } else if (e.key === 'Escape') {
+                comboResults.hidden = true;
+                comboInput.value = POSITIONS[current];
+            }
+        });
+        comboToggle.addEventListener('click', () => {
+            if (!comboResults.hidden) { comboResults.hidden = true; return; }
+            render('');
+        });
+        comboResults.addEventListener('click', (e) => {
+            const opt = e.target.closest('.kb-combobox-option');
+            if (opt) savePosition(opt.dataset.key);
+        });
+        plan.addEventListener('click', (e) => {
+            const slot = e.target.closest('[data-hiw-slot]');
+            if (slot) savePosition(slot.dataset.hiwSlot);
+        });
+        document.addEventListener('click', (e) => {
+            if (!combo.contains(e.target) && !comboResults.hidden) {
+                comboResults.hidden = true;
+                comboInput.value = POSITIONS[current]; // texte tapé sans choix : on réaffiche l'emplacement réel
+            }
+        });
+
+        paint();
+    })();
+    </script>
+{% endblock %}

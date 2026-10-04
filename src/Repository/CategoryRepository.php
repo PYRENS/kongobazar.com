@@ -225,6 +225,54 @@ class CategoryRepository extends ServiceEntityRepository
         return $qb->getQuery()->getResult();
     }
 
+    /**
+     * Catégories FEUILLES (aucune sous-catégorie) actives ayant au moins un produit actif —
+     * mode automatique du carrousel "Catégorie" de l'accueil.
+     *
+     * @return Category[]
+     */
+    public function findLeafCategoriesWithActiveProducts(): array
+    {
+        return $this->createQueryBuilder('c')
+            ->andWhere('c.active = true')
+            ->andWhere('NOT EXISTS (SELECT ch.id FROM App\Entity\Category ch WHERE ch.parent = c)')
+            ->andWhere('EXISTS (SELECT lp.id FROM App\Entity\Product lp WHERE lp.category = c AND lp.status = :leafStatus)')
+            ->setParameter('leafStatus', 'active')
+            ->orderBy('c.name', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+
+    /**
+     * Nombre de produits ACTIFS rattachés directement à chacune des catégories données.
+     *
+     * @param int[] $categoryIds
+     * @return array<int, int> [categoryId => nombre]
+     */
+    public function countActiveProductsByCategoryIds(array $categoryIds): array
+    {
+        if (!$categoryIds) {
+            return [];
+        }
+
+        $rows = $this->getEntityManager()->createQueryBuilder()
+            ->select('IDENTITY(p.category) AS categoryId, COUNT(p.id) AS total')
+            ->from(\App\Entity\Product::class, 'p')
+            ->andWhere('p.category IN (:ids)')->setParameter('ids', $categoryIds)
+            ->andWhere('p.status = :status')->setParameter('status', 'active')
+            ->groupBy('p.category')
+            ->getQuery()
+            ->getArrayResult();
+
+        $map = [];
+        foreach ($rows as $row) {
+            $map[(int) $row['categoryId']] = (int) $row['total'];
+        }
+
+        return $map;
+    }
+
     public function findRootCategories(?int $excludeId = null): array
     {
         $qb = $this->createQueryBuilder('c')

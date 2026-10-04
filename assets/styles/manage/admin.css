@@ -1178,3 +1178,180 @@ body.admin-body {
     cursor: pointer;
     padding: 0;
 }
+/* --------------------------------------------------------------------------
+   Liste déroulante avec saisie (combobox) — réutilisable sur tout champ admin :
+   champ texte + croix d'effacement + flèche "tout parcourir" + liste de résultats.
+   -------------------------------------------------------------------------- */
+.kb-combobox {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+}
+.kb-combobox-field {
+    position: relative;
+}
+.kb-combobox-field .form-control {
+    padding-right: 64px;
+}
+.kb-combobox-clear,
+.kb-combobox-toggle {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: none;
+    color: #999;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+}
+.kb-combobox-toggle { right: 4px; }
+.kb-combobox-clear { right: 32px; font-size: 12px; }
+.kb-combobox-field .form-control:only-of-type ~ .kb-combobox-clear:last-child { right: 4px; }
+.kb-combobox-clear:hover,
+.kb-combobox-toggle:hover { color: #333; }
+.kb-combobox-results {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 1060;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+    max-height: 320px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+.kb-combobox-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    border-bottom: 1px solid #f2f2f2;
+    background: none;
+    text-align: left;
+    font-size: 14px;
+    cursor: pointer;
+}
+.kb-combobox-option:last-child { border-bottom: none; }
+.kb-combobox-option:hover:not(:disabled) { background: #f4f9fd; }
+.kb-combobox-option:disabled { opacity: 0.55; cursor: not-allowed; }
+.kb-combobox-option-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+.kb-combobox-option-path {
+    color: #999;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.kb-combobox-empty {
+    padding: 10px 12px;
+    color: #999;
+    font-size: 13px;
+}
+.admin-dark .kb-combobox-results { background: #1b2026; border-color: #3a3f46; }
+.admin-dark .kb-combobox-option { color: #e2e2e2; border-bottom-color: #2a3038; }
+.admin-dark .kb-combobox-option:hover:not(:disabled) { background: #22282f; }
+
+/* Aperçu rond d'une catégorie dans la liste "Carrousel Catégorie" */
+.hcc-preview {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.hcc-preview img { width: 100%; height: 100%; object-fit: cover; }
+.hcc-preview i { color: #fff; font-size: 18px; }
+/* Sélection en cascade du carrousel "Catégorie" : un niveau par ligne, chacun filtrable par saisie */
+.hcc-cascade-level {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 10px;
+    max-width: 420px;
+}
+.hcc-cascade-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #888;
+}
+/* Ligne désactivée dans la liste "Carrousel Catégorie" (l'interrupteur reste bien visible) */
+.hcc-row-inactive td:not(.hcc-toggle-cell) { opacity: 0.5; }
+/* --------------------------------------------------------------------------
+   "Comment ça marche" — plan miniature de la page d'accueil (aperçu admin)
+   -------------------------------------------------------------------------- */
+.hiw-stat-position { font-size: 16px; line-height: 1.3; }
+.hiw-plan {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+}
+.hiw-plan-block {
+    background: #f1f3f5;
+    border: 1px solid #e2e5e9;
+    border-radius: 4px;
+    padding: 8px 10px;
+    color: #666;
+    text-align: center;
+}
+.hiw-plan-block--side { display: flex; align-items: center; justify-content: center; }
+.hiw-plan-block--footer { background: #e4e7eb; }
+.hiw-plan-columns {
+    display: grid;
+    grid-template-columns: 30% 1fr;
+    gap: 6px;
+}
+.hiw-plan-center {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.hiw-plan-slot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 1px dashed #c9d1d9;
+    border-radius: 4px;
+    background: transparent;
+    color: #b0b7bf;
+    padding: 3px 8px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+.hiw-plan-slot .hiw-plan-slot-text { display: none; }
+.hiw-plan-slot:hover { border-color: #2FA8E0; color: #2FA8E0; background: #f4f9fd; }
+.hiw-plan-slot:hover .hiw-plan-slot-text { display: inline; }
+.hiw-plan-slot.is-current {
+    border: 2px solid #2FA8E0;
+    background: rgba(47, 168, 224, 0.12);
+    color: #1b7fae;
+    font-weight: 700;
+    padding: 8px 10px;
+    font-size: 12px;
+}
+.hiw-plan-slot.is-current .hiw-plan-slot-text { display: inline; }
+.hiw-plan-slot.is-current.is-hidden {
+    border-color: #adb5bd;
+    background: repeating-linear-gradient(45deg, #f8f9fa, #f8f9fa 6px, #eef0f2 6px, #eef0f2 12px);
+    color: #868e96;
+}
+.admin-dark .hiw-plan-block { background: #22282f; border-color: #3a3f46; color: #aab; }
